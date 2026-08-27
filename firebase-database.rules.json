@@ -1,0 +1,12 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {"$uid": {".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid"}},
+    "products": {".read": "auth != null", ".write": "auth != null"},
+    "categories": {".read": "auth != null", ".write": "auth != null"},
+    "suppliers": {".read": "auth != null", ".write": "auth != null"},
+    "stockMovements": {".read": "auth != null", ".write": "auth != null"},
+    "activityLogs": {".read": "auth != null", ".write": "auth != null"}
+  }
+}

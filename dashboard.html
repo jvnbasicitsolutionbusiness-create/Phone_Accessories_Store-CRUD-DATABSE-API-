@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | StockFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dashboard-page">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand sidebar-brand" href="dashboard.html"><span class="brand-mark">S</span><span>Stock<span>Flow</span></span></a>
+    <nav class="sidebar-nav">
+      <a class="active" href="#"><span>⌂</span> Dashboard</a>
+      <a href="#"><span>▣</span> Products</a>
+      <a href="#"><span>◈</span> Categories</a>
+      <a href="#"><span>♢</span> Suppliers</a>
+      <a href="#"><span>↓</span> Stock In</a>
+      <a href="#"><span>↑</span> Stock Out</a>
+      <a href="#"><span>▤</span> Reports</a>
+      <a href="#"><span>♙</span> Users</a>
+      <a href="#"><span>⚙</span> Settings</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="mini-user"><div class="avatar">AD</div><div><b>Admin</b><small>Administrator</small></div></div><button id="logoutBtn" class="logout-btn">↪ Logout</button></div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <main class="dashboard-main">
+    <header class="dash-header">
+      <button id="menuBtn" class="mobile-menu" aria-label="Open menu">☰</button>
+      <div><p class="muted">Thursday, August 27, 2026</p><h1>Dashboard</h1></div>
+      <div class="header-actions"><button class="icon-btn" aria-label="Notifications">♢<i></i></button><div class="header-user"><div class="avatar">AD</div><div><b id="dashUser">Admin</b><small>Verified account</small></div></div></div>
+    </header>
+    <section class="welcome-banner"><div><div class="eyebrow"><span></span> Inventory overview</div><h2>Good afternoon, Admin.</h2><p>Here's a quick look at your store inventory.</p></div><div class="banner-icon">📦</div></section>
+    <section class="stats-grid">
+      <div class="stat-card"><div class="stat-icon blue">▣</div><small>Total Products</small><strong>248</strong><span class="trend">↑ 8.4% this month</span></div>
+      <div class="stat-card"><div class="stat-icon green">◈</div><small>Total Stock</small><strong>1,842</strong><span class="trend">↑ 12.1% this month</span></div>
+      <div class="stat-card"><div class="stat-icon orange">⚠</div><small>Low Stock</small><strong>14</strong><span class="trend neutral">Needs attention</span></div>
+      <div class="stat-card"><div class="stat-icon red">!</div><small>Out of Stock</small><strong>5</strong><span class="trend danger">Restock required</span></div>
+    </section>
+    <section class="dashboard-grid">
+      <div class="panel"><div class="panel-head"><div><h3>Recent inventory activity</h3><p>Sample data for frontend prototype</p></div><a href="#">View all →</a></div><div class="activity-list">
+        <div class="activity"><span class="activity-icon in">↓</span><div><b>Stock received</b><small>USB-C Cable · 50 units</small></div><time>10 min ago</time></div>
+        <div class="activity"><span class="activity-icon out">↑</span><div><b>Stock released</b><small>Phone Case · 8 units</small></div><time>32 min ago</time></div>
+        <div class="activity"><span class="activity-icon edit">✎</span><div><b>Product updated</b><small>Wireless Charger · Price changed</small></div><time>1 hr ago</time></div>
+      </div></div>
+      <div class="panel"><div class="panel-head"><div><h3>Stock alerts</h3><p>Products requiring attention</p></div></div><div class="alert-list">
+        <div class="alert-item"><div><b>Fast Charger 25W</b><small>Only 3 left</small></div><span class="badge badge-warning">Low</span></div>
+        <div class="alert-item"><div><b>USB-C Cable 1m</b><small>Only 2 left</small></div><span class="badge badge-warning">Low</span></div>
+        <div class="alert-item"><div><b>MagSafe Case</b><small>0 units</small></div><span class="badge badge-danger">Out</span></div>
+      </div></div>
+    </section>
+    <p class="prototype-label">Frontend prototype • Inventory data will be connected to the backend/API in a later phase.</p>
+  </main>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

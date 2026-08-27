@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | StockFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-page">
+  <div class="auth-shell">
+    <div class="auth-brand"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Stock<span>Flow</span></span></a></div>
+    <div class="auth-layout register-layout">
+      <section class="auth-intro">
+        <div class="eyebrow"><span></span> Join StockFlow</div>
+        <h1>Create your store management <em>account.</em></h1>
+        <p>Register an account now. Real email/SMS verification will be connected during the backend phase.</p>
+        <div class="benefit-list">
+          <div><span>01</span><b>Register</b><small>Provide your account information.</small></div>
+          <div><span>02</span><b>Verify</b><small>Confirm your email or phone using OTP.</small></div>
+          <div><span>03</span><b>Access</b><small>Sign in and enter StockFlow.</small></div>
+        </div>
+      </section>
+      <section class="auth-card">
+        <div class="auth-card-head"><h2>Create account</h2><p>All fields marked with * are required.</p></div>
+        <div id="registerMessage" class="form-message" role="alert"></div>
+        <form id="registerForm" novalidate>
+          <div class="field"><label for="fullName">Full name *</label><input id="fullName" type="text" placeholder="Juan Dela Cruz"><small class="field-error"></small></div>
+          <div class="two-fields">
+            <div class="field"><label for="username">Username *</label><input id="username" type="text" placeholder="juanstore"><small class="field-error"></small></div>
+            <div class="field"><label for="age">Age *</label><input id="age" type="number" min="18" max="100" placeholder="18"><small class="field-error"></small></div>
+          </div>
+          <div class="field"><label for="email">Email address *</label><input id="email" type="email" autocomplete="email" placeholder="juan@gmail.com"><small class="field-error"></small></div>
+          <div class="field"><label for="phone">Phone number *</label><input id="phone" type="tel" autocomplete="tel" placeholder="09XXXXXXXXX"><small class="field-error"></small></div>
+          <div class="field"><label for="registerPassword">Password *</label><div class="password-wrap"><input id="registerPassword" type="password" autocomplete="new-password" placeholder="Create a strong password"><button class="password-toggle" type="button" data-target="registerPassword">Show</button></div><div class="password-meter"><span id="passwordBar"></span></div><small id="passwordHint" class="password-hint">Use 8+ characters with uppercase, lowercase, number, and symbol.</small><small class="field-error"></small></div>
+          <div class="field"><label for="confirmPassword">Confirm password *</label><div class="password-wrap"><input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password"><button class="password-toggle" type="button" data-target="confirmPassword">Show</button></div><small class="field-error"></small></div>
+          <div class="account-role"><span>Account role</span><b>Employee</b><small>Admin and Manager accounts must be assigned by authorized personnel.</small></div>
+          <label class="check terms"><input id="terms" type="checkbox"><span>I agree to the StockFlow Terms and Conditions.</span></label>
+          <button class="btn btn-primary btn-full" type="submit">Create account <span>→</span></button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="login.html">Sign in</a></p>
+      </section>
+    </div>
+  </div>
+  <script src="js/config.js"></script><script src="js/auth.js"></script>
+</body>
+</html>

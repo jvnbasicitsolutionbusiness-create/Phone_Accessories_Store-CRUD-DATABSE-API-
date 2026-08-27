@@ -1,0 +1,1 @@
+const navToggle=document.getElementById('navToggle');const mainNav=document.getElementById('mainNav');if(navToggle){navToggle.addEventListener('click',()=>mainNav.classList.toggle('open'));mainNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>mainNav.classList.remove('open')))}
