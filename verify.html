@@ -1,37 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Account | StockFlow</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="config.css">
-  <link rel="stylesheet" href="auth.css">
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+        content="Verify your StockFlow account">
+
+    <title>Verify Account | StockFlow</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="auth.css">
+
 </head>
+
+
 <body class="auth-page">
-  <div class="auth-shell compact-shell">
-    <div class="auth-brand"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Stock<span>Flow</span></span></a></div>
-    <section class="auth-card verification-card">
-      <div class="verify-icon">✓</div>
-      <div class="auth-card-head"><h2>Verify your account</h2><p>Enter the 6-digit verification code sent to your registered contact.</p></div>
-      <div id="verifyDestination" class="destination">your registered email or phone</div>
-      <div id="verifyMessage" class="form-message" role="alert"></div>
-      <form id="verifyForm" novalidate>
-        <div class="otp-inputs" id="otpInputs">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 1">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 2">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 3">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 4">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 5">
-          <input maxlength="1" inputmode="numeric" aria-label="OTP digit 6">
+
+    <div class="auth-shell compact-shell">
+
+
+        <!-- BRAND -->
+
+        <div class="auth-brand">
+
+            <a class="brand" href="index.html">
+
+                <span class="brand-mark">
+                    S
+                </span>
+
+                <span>
+                    Stock<span>Flow</span>
+                </span>
+
+            </a>
+
         </div>
-        <button class="btn btn-primary btn-full" type="submit">Verify account</button>
-      </form>
-      <div class="resend-row"><span>Didn't receive a code?</span><button id="resendOtp" type="button" disabled>Resend in <b id="countdown">60</b>s</button></div>
-      <p class="demo-hint">Development prototype OTP: <b>123456</b></p>
-    </section>
-  </div>
-  <script src="js/config.js"></script><script src="js/auth.js"></script>
+
+
+        <!-- VERIFY CARD -->
+
+        <section class="auth-card verification-card">
+
+
+            <div class="verify-icon">
+                ✓
+            </div>
+
+
+            <div class="auth-card-head">
+
+                <h2>
+                    Verify your account
+                </h2>
+
+                <p>
+                    Enter the 6-digit verification code
+                    sent to your registered contact.
+                </p>
+
+            </div>
+
+
+            <div
+                id="verifyDestination"
+                class="destination">
+
+                your registered email or phone
+
+            </div>
+
+
+            <div
+                id="verifyMessage"
+                class="form-message"
+                role="alert">
+            </div>
+
+
+            <form
+                id="verifyForm"
+                novalidate>
+
+
+                <!-- OTP -->
+
+                <div
+                    class="otp-inputs"
+                    id="otpInputs">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        aria-label="OTP digit 1">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 2">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 3">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 4">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 5">
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 6">
+
+                </div>
+
+
+                <button
+                    class="btn btn-primary btn-full"
+                    type="submit">
+
+                    Verify account
+
+                </button>
+
+            </form>
+
+
+            <!-- RESEND -->
+
+            <div class="resend-row">
+
+                <span>
+                    Didn't receive a code?
+                </span>
+
+                <button
+                    id="resendOtp"
+                    type="button"
+                    disabled>
+
+                    Resend in
+
+                    <b id="countdown">
+                        60
+                    </b>
+
+                    s
+
+                </button>
+
+            </div>
+
+
+            <p class="demo-hint">
+
+                Development prototype OTP:
+                <b>123456</b>
+
+            </p>
+
+        </section>
+
+    </div>
+
+
+    <script src="config.js" defer></script>
+    <script src="auth.js" defer></script>
+
 </body>
+
 </html>
