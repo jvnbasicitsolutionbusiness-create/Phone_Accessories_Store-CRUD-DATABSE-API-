@@ -1,39 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | StockFlow</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="config.css">
-  <link rel="stylesheet" href="auth.css">
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+        content="Login to StockFlow Inventory Management System">
+
+    <title>Login | StockFlow</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="auth.css">
+
 </head>
+
+
 <body class="auth-page">
-  <div class="auth-shell">
-    <div class="auth-brand"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>Stock<span>Flow</span></span></a></div>
-    <div class="auth-layout">
-      <section class="auth-intro">
-        <div class="eyebrow"><span></span> Inventory management</div>
-        <h1>Welcome back to your <em>store.</em></h1>
-        <p>Sign in to monitor inventory, manage products, and keep your daily stock workflow moving.</p>
-        <div class="security-note"><span>✓</span><div><strong>Secure account access</strong><small>Verification and account security are built into the authentication flow.</small></div></div>
-      </section>
-      <section class="auth-card">
-        <div class="auth-card-head"><h2>Sign in</h2><p>Use your StockFlow account to continue.</p></div>
-        <div id="loginMessage" class="form-message" role="alert"></div>
-        <form id="loginForm" novalidate>
-          <div class="field"><label for="loginIdentity">Username or email</label><input id="loginIdentity" name="identity" type="text" autocomplete="username" placeholder="Enter username or email"><small class="field-error"></small></div>
-          <div class="field"><label for="loginPassword">Password</label><div class="password-wrap"><input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password"><button class="password-toggle" type="button" data-target="loginPassword" aria-label="Show password">Show</button></div><small class="field-error"></small></div>
-          <div class="form-row"><label class="check"><input id="rememberMe" type="checkbox"><span>Remember me</span></label><a href="forgot-password.html">Forgot password?</a></div>
-          <button class="btn btn-primary btn-full" type="submit">Sign in <span>→</span></button>
-        </form>
-        <div class="auth-divider"><span>or</span></div>
-        <p class="auth-switch">Don't have an account? <a href="register.html">Create one</a></p>
-        <p class="demo-hint">Demo account: <b>admin</b> / <b>StockFlow@123</b></p>
-      </section>
+
+    <div class="auth-shell">
+
+        <!-- BRAND -->
+
+        <div class="auth-brand">
+
+            <a class="brand" href="index.html">
+
+                <span class="brand-mark">
+                    S
+                </span>
+
+                <span>
+                    Stock<span>Flow</span>
+                </span>
+
+            </a>
+
+        </div>
+
+
+        <div class="auth-layout">
+
+            <!-- INTRO -->
+
+            <section class="auth-intro">
+
+                <div class="eyebrow">
+
+                    <span></span>
+
+                    Inventory management
+
+                </div>
+
+
+                <h1>
+                    Welcome back to your
+                    <em>store.</em>
+                </h1>
+
+
+                <p>
+                    Sign in to monitor inventory,
+                    manage products, and keep your
+                    daily stock workflow moving.
+                </p>
+
+
+                <div class="security-note">
+
+                    <span>✓</span>
+
+                    <div>
+
+                        <strong>
+                            Secure account access
+                        </strong>
+
+                        <small>
+                            Verification and account security
+                            are built into the authentication flow.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- LOGIN FORM -->
+
+            <section class="auth-card">
+
+                <div class="auth-card-head">
+
+                    <h2>
+                        Sign in
+                    </h2>
+
+                    <p>
+                        Use your StockFlow account to continue.
+                    </p>
+
+                </div>
+
+
+                <div id="loginMessage"
+                    class="form-message"
+                    role="alert">
+                </div>
+
+
+                <form id="loginForm"
+                    novalidate>
+
+
+                    <!-- USERNAME -->
+
+                    <div class="field">
+
+                        <label for="loginIdentity">
+                            Username or email
+                        </label>
+
+                        <input
+                            id="loginIdentity"
+                            name="identity"
+                            type="text"
+                            autocomplete="username"
+                            placeholder="Enter username or email"
+                            required>
+
+                        <small class="field-error"></small>
+
+                    </div>
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="field">
+
+                        <label for="loginPassword">
+                            Password
+                        </label>
+
+
+                        <div class="password-wrap">
+
+                            <input
+                                id="loginPassword"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="Enter your password"
+                                required>
+
+
+                            <button
+                                class="password-toggle"
+                                type="button"
+                                data-target="loginPassword"
+                                aria-label="Show password">
+
+                                Show
+
+                            </button>
+
+                        </div>
+
+
+                        <small class="field-error"></small>
+
+                    </div>
+
+
+                    <!-- OPTIONS -->
+
+                    <div class="form-row">
+
+                        <label class="check">
+
+                            <input
+                                id="rememberMe"
+                                type="checkbox">
+
+                            <span>
+                                Remember me
+                            </span>
+
+                        </label>
+
+
+                        <a href="forgot-password.html">
+                            Forgot password?
+                        </a>
+
+                    </div>
+
+
+                    <!-- LOGIN -->
+
+                    <button
+                        class="btn btn-primary btn-full"
+                        type="submit">
+
+                        Sign in
+
+                        <span>→</span>
+
+                    </button>
+
+                </form>
+
+
+                <div class="auth-divider">
+
+                    <span>
+                        or
+                    </span>
+
+                </div>
+
+
+                <p class="auth-switch">
+
+                    Don't have an account?
+
+                    <a href="register.html">
+                        Create one
+                    </a>
+
+                </p>
+
+
+                <p class="demo-hint">
+
+                    Development prototype:
+
+                    <b>admin</b> /
+
+                    <b>StockFlow@123</b>
+
+                </p>
+
+            </section>
+
+        </div>
+
     </div>
-  </div>
-  <script src="js/config.js"></script><script src="js/auth.js"></script>
+
+
+    <!-- Correct ROOT paths -->
+
+    <script src="config.js" defer></script>
+    <script src="auth.js" defer></script>
+
 </body>
+
 </html>
