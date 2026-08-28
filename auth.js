@@ -1,14 +1,10 @@
 // ============================================================
-// STOCKFLOW AUTHENTICATION SYSTEM
-// Firebase + Google Apps Script
+// STOCKFLOW AUTHENTICATION
+// Firebase + Google Apps Script + real Gmail OTP
 // ============================================================
 
 const SF = window.STOCKFLOW_CONFIG || {};
-
-
-// ============================================================
-// DEMO ADMIN ACCOUNT
-// ============================================================
+const DEMO_OTP = SF.DEMO_OTP || "123456";
 
 const DEMO_USER = {
     fullName: "Admin User",
@@ -18,16 +14,12 @@ const DEMO_USER = {
     phone: "09123456789",
     password: "StockFlow@123",
     role: "Admin",
-    verified: true
+    verified: true,
+    demo: false,
+    accountStatus: "Active"
 };
 
-
-// ============================================================
-// FIREBASE URL
-// ============================================================
-
 function firebaseUrl(path) {
-
     if (!SF.FIREBASE_DATABASE_URL) {
         throw new Error("Firebase URL is missing.");
     }
@@ -35,36 +27,20 @@ function firebaseUrl(path) {
     return `${SF.FIREBASE_DATABASE_URL.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}.json`;
 }
 
-
-// ============================================================
-// FIREBASE GET
-// ============================================================
-
 async function firebaseGet(path) {
-
     const response = await fetch(firebaseUrl(path));
 
     if (!response.ok) {
         throw new Error(`Firebase GET failed: ${response.status}`);
     }
 
-    return await response.json();
+    return response.json();
 }
 
-
-// ============================================================
-// FIREBASE PUT
-// ============================================================
-
 async function firebasePut(path, data) {
-
     const response = await fetch(firebaseUrl(path), {
         method: "PUT",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     });
 
@@ -72,23 +48,13 @@ async function firebasePut(path, data) {
         throw new Error(`Firebase PUT failed: ${response.status}`);
     }
 
-    return await response.json();
+    return response.json();
 }
 
-
-// ============================================================
-// FIREBASE PATCH
-// ============================================================
-
 async function firebasePatch(path, data) {
-
     const response = await fetch(firebaseUrl(path), {
         method: "PATCH",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     });
 
@@ -96,1631 +62,779 @@ async function firebasePatch(path, data) {
         throw new Error(`Firebase PATCH failed: ${response.status}`);
     }
 
-    return await response.json();
+    return response.json();
 }
 
-
-// ============================================================
-// GOOGLE APPS SCRIPT POST
-// ============================================================
-
 async function sheetPost(data) {
-
-    if (
-        !SF.ENABLE_GOOGLE_SHEET_SYNC ||
-        !SF.GOOGLE_APPS_SCRIPT_URL
-    ) {
-        console.warn("Google Sheet sync disabled.");
-
-        return {
-            success: false,
-            skipped: true
-        };
+    if (!SF.ENABLE_GOOGLE_SHEET_SYNC || !SF.GOOGLE_APPS_SCRIPT_URL) {
+        throw new Error("Google Apps Script is disabled or missing.");
     }
 
-
-    const response = await fetch(
-        SF.GOOGLE_APPS_SCRIPT_URL,
-        {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-            },
-
-            body: JSON.stringify(data)
-        }
-    );
-
+    const response = await fetch(SF.GOOGLE_APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(data)
+    });
 
     if (!response.ok) {
-        throw new Error(
-            `Google Apps Script failed: ${response.status}`
-        );
+        throw new Error(`Google Apps Script failed: ${response.status}`);
     }
-
 
     const text = await response.text();
 
-
     try {
-
         return JSON.parse(text);
-
-    } catch (error) {
-
-        console.error(
-            "Invalid Apps Script response:",
-            text
-        );
-
-        throw new Error(
-            "Google Apps Script returned an invalid response."
-        );
+    } catch {
+        console.error("Invalid Apps Script response:", text);
+        throw new Error("Apps Script returned an invalid response.");
     }
 }
 
-
-// ============================================================
-// UI MESSAGE
-// ============================================================
-
 function setMessage(element, type, message) {
-
     if (!element) return;
 
-    element.className =
-        `form-message show ${type}`;
-
+    element.className = `form-message show ${type}`;
     element.textContent = message;
 }
 
-
-// ============================================================
-// CLEAR FORM ERRORS
-// ============================================================
-
 function clearErrors(form) {
-
     if (!form) return;
 
-    form.querySelectorAll(".field-error")
-        .forEach(element => {
-            element.textContent = "";
-        });
+    form.querySelectorAll(".field-error").forEach(el => {
+        el.textContent = "";
+    });
 
-
-    form.querySelectorAll("input")
-        .forEach(element => {
-            element.classList.remove("invalid");
-        });
+    form.querySelectorAll("input").forEach(el => {
+        el.classList.remove("invalid");
+    });
 }
 
-
-// ============================================================
-// FIELD ERROR
-// ============================================================
-
 function showError(input, message) {
-
     if (!input) return;
 
     input.classList.add("invalid");
 
-
     const errorElement =
-        input.closest(".field")
-            ?.querySelector(".field-error");
-
+        input.closest(".field")?.querySelector(".field-error");
 
     if (errorElement) {
         errorElement.textContent = message;
     }
 }
 
-
-// ============================================================
-// VALIDATION
-// ============================================================
-
 function validEmail(value) {
-
     return /^\S+@\S+\.\S+$/.test(value);
 }
 
-
 function validPhone(value) {
-
-    const phone =
-        value.replace(/[\s-]/g, "");
-
+    const phone = value.replace(/[\s-]/g, "");
     return /^(09\d{9}|\+639\d{9})$/.test(phone);
 }
 
-
-// ============================================================
-// PASSWORD STRENGTH
-// ============================================================
-
 function passwordScore(value) {
-
-    let score = 0;
-
-
-    if (value.length >= 8) {
-        score++;
-    }
-
-
-    if (/[A-Z]/.test(value)) {
-        score++;
-    }
-
-
-    if (/[a-z]/.test(value)) {
-        score++;
-    }
-
-
-    if (/\d/.test(value)) {
-        score++;
-    }
-
-
-    if (/[^A-Za-z0-9]/.test(value)) {
-        score++;
-    }
-
-
-    return score;
+    return (
+        (value.length >= 8 ? 1 : 0) +
+        (/[A-Z]/.test(value) ? 1 : 0) +
+        (/[a-z]/.test(value) ? 1 : 0) +
+        (/\d/.test(value) ? 1 : 0) +
+        (/[^A-Za-z0-9]/.test(value) ? 1 : 0)
+    );
 }
 
+// Password toggle
+document.querySelectorAll(".password-toggle").forEach(button => {
+    button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.target);
+        if (!input) return;
 
-// ============================================================
-// PASSWORD TOGGLE
-// ============================================================
-
-document
-    .querySelectorAll(".password-toggle")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const input =
-                    document.getElementById(
-                        button.dataset.target
-                    );
-
-
-                if (!input) return;
-
-
-                const show =
-                    input.type === "password";
-
-
-                input.type =
-                    show ? "text" : "password";
-
-
-                button.textContent =
-                    show ? "Hide" : "Show";
-            }
-        );
-
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        button.textContent = show ? "Hide" : "Show";
     });
-
+});
 
 // ============================================================
 // LOGIN
 // ============================================================
 
-const loginForm =
-    document.getElementById("loginForm");
-
+const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
+    loginForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearErrors(loginForm);
 
-    loginForm.addEventListener(
-        "submit",
-        async event => {
+        const identity = document.getElementById("loginIdentity");
+        const password = document.getElementById("loginPassword");
+        const message = document.getElementById("loginMessage");
 
-            event.preventDefault();
+        const identityValue = identity?.value.trim() || "";
+        const passwordValue = password?.value || "";
 
+        if (!identityValue) {
+            showError(identity, "Username or email is required.");
+            return;
+        }
 
-            clearErrors(loginForm);
+        if (!passwordValue) {
+            showError(password, "Password is required.");
+            return;
+        }
 
+        try {
+            let user = null;
 
-            const identity =
-                document.getElementById(
-                    "loginIdentity"
-                );
+            // Firebase first
+            if (SF.ENABLE_FIREBASE) {
+                try {
+                    const users = await firebaseGet("users");
 
+                    if (users) {
+                        for (const [uid, account] of Object.entries(users)) {
+                            const identityMatches =
+                                account.username === identityValue ||
+                                account.email === identityValue;
 
-            const password =
-                document.getElementById(
-                    "loginPassword"
-                );
-
-
-            const message =
-                document.getElementById(
-                    "loginMessage"
-                );
-
-
-            const identityValue =
-                identity.value.trim();
-
-
-            const passwordValue =
-                password.value;
-
-
-            // ------------------------------
-            // VALIDATION
-            // ------------------------------
-
-            if (!identityValue) {
-
-                showError(
-                    identity,
-                    "Username or email is required."
-                );
-
-                return;
-            }
-
-
-            if (!passwordValue) {
-
-                showError(
-                    password,
-                    "Password is required."
-                );
-
-                return;
-            }
-
-
-            try {
-
-                let user = null;
-
-
-                // ==================================================
-                // 1. TRY FIREBASE
-                // ==================================================
-
-                if (SF.ENABLE_FIREBASE) {
-
-                    try {
-
-                        const users =
-                            await firebaseGet("users");
-
-
-                        if (users) {
-
-                            for (
-                                const [uid, account]
-                                of Object.entries(users)
+                            if (
+                                identityMatches &&
+                                account.password === passwordValue
                             ) {
-
-                                const matchesIdentity =
-                                    account.username === identityValue ||
-                                    account.email === identityValue;
-
-
-                                const matchesPassword =
-                                    account.password === passwordValue;
-
-
-                                if (
-                                    matchesIdentity &&
-                                    matchesPassword
-                                ) {
-
-                                    user = {
-                                        ...account,
-                                        uid
-                                    };
-
-                                    break;
-                                }
+                                user = { ...account, uid };
+                                break;
                             }
                         }
-
-                    } catch (firebaseError) {
-
-                        console.warn(
-                            "Firebase login failed:",
-                            firebaseError
-                        );
                     }
+                } catch (error) {
+                    console.warn("Firebase login failed:", error);
                 }
+            }
 
+            // Apps Script / Sheet fallback
+            if (!user && SF.ENABLE_GOOGLE_SHEET_SYNC) {
+                try {
+                    const result = await sheetPost({
+                        action: "login",
+                        identity: identityValue,
+                        password: passwordValue
+                    });
 
-                // ==================================================
-                // 2. TRY GOOGLE SHEETS
-                // ==================================================
-
-                if (
-                    !user &&
-                    SF.ENABLE_GOOGLE_SHEET_SYNC
-                ) {
-
-                    try {
-
-                        const result =
-                            await sheetPost({
-                                action: "login",
-
-                                identity:
-                                    identityValue,
-
-                                password:
-                                    passwordValue
-                            });
-
-
-                        if (result.success) {
-
-                            user = {
-
-                                username:
-                                    result.user?.username ||
-                                    identityValue,
-
-                                fullName:
-                                    result.user?.name ||
-                                    result.user?.fullName ||
-                                    "StockFlow User",
-
-                                role:
-                                    result.user?.accountStatus ||
-                                    result.user?.role ||
-                                    "Employee",
-
-                                email:
-                                    result.user?.gmail ||
-                                    result.user?.email ||
-                                    "",
-
-                                verified:
-                                    result.verified !== false
-
-                            };
-
-                        }
-
-                    } catch (sheetError) {
-
-                        console.warn(
-                            "Google Sheet login failed:",
-                            sheetError
-                        );
+                    if (result.success) {
+                        user = {
+                            uid: result.user?.uid || null,
+                            username: result.user?.username || identityValue,
+                            fullName:
+                                result.user?.name ||
+                                result.user?.fullName ||
+                                "StockFlow User",
+                            role:
+                                result.user?.role ||
+                                result.user?.accountStatus ||
+                                "Employee",
+                            email:
+                                result.user?.gmail ||
+                                result.user?.email ||
+                                "",
+                            phone: result.user?.phone || "",
+                            verified: result.verified === true,
+                            demo: result.demo === true,
+                            accountStatus:
+                                result.user?.accountStatus ||
+                                (result.demo ? "Demo" : "Active")
+                        };
+                    } else if (
+                        result.message === "Your account is not verified yet."
+                    ) {
+                        setMessage(message, "error", result.message);
+                        return;
                     }
+                } catch (error) {
+                    console.warn("Apps Script login failed:", error);
                 }
+            }
 
+            // Demo admin shortcut
+            if (
+                !user &&
+                identityValue === "admin" &&
+                passwordValue === "StockFlow@123"
+            ) {
+                user = { ...DEMO_USER };
+            }
 
-                // ==================================================
-                // 3. DEMO ADMIN
-                // ==================================================
-
-                if (
-                    !user &&
-                    identityValue === "admin" &&
-                    passwordValue === "StockFlow@123"
-                ) {
-
-                    user = {
-                        ...DEMO_USER
-                    };
-                }
-
-
-                // ==================================================
-                // INVALID LOGIN
-                // ==================================================
-
-                if (!user) {
-
-                    setMessage(
-                        message,
-                        "error",
-                        "Invalid username/email or password."
-                    );
-
-                    return;
-                }
-
-
-                // ==================================================
-                // VERIFY ACCOUNT STATUS
-                // ==================================================
-
-                if (user.verified === false) {
-
-                    setMessage(
-                        message,
-                        "error",
-                        "Your account is not verified yet."
-                    );
-
-                    return;
-                }
-
-
-                // ==================================================
-                // CREATE SESSION
-                // ==================================================
-
-                const session = {
-
-                    uid:
-                        user.uid || null,
-
-                    username:
-                        user.username,
-
-                    fullName:
-                        user.fullName ||
-                        user.name ||
-                        "StockFlow User",
-
-                    role:
-                        user.role ||
-                        user.accountStatus ||
-                        "Employee",
-
-                    email:
-                        user.email ||
-                        user.gmail ||
-                        "",
-
-                    verified: true
-
-                };
-
-
-                sessionStorage.setItem(
-                    "stockflow_session",
-                    JSON.stringify(session)
-                );
-
-
-                // ==================================================
-                // LOGIN SUCCESS
-                // ==================================================
-
-                window.location.href =
-                    "dashboard.html";
-
-            } catch (error) {
-
-                console.error(
-                    "LOGIN ERROR:",
-                    error
-                );
-
-
+            if (!user) {
                 setMessage(
                     message,
                     "error",
-                    "Unable to connect to the authentication service."
+                    "Invalid username/email or password."
                 );
+                return;
             }
 
-        }
-    );
-}
+            // A real account must be verified.
+            // A demo account is intentionally allowed.
+            if (user.verified === false && user.demo !== true) {
+                setMessage(
+                    message,
+                    "error",
+                    "Your account is not verified yet. Please complete verification first."
+                );
+                return;
+            }
 
+            const session = {
+                uid: user.uid || null,
+                username: user.username,
+                fullName:
+                    user.fullName ||
+                    user.name ||
+                    "StockFlow User",
+                role:
+                    user.role ||
+                    user.accountStatus ||
+                    "Employee",
+                email:
+                    user.email ||
+                    user.gmail ||
+                    "",
+                phone: user.phone || "",
+                verified: user.verified === true,
+                demo: user.demo === true,
+                accountStatus:
+                    user.accountStatus ||
+                    (user.demo ? "Demo" : "Active")
+            };
+
+            sessionStorage.setItem(
+                "stockflow_session",
+                JSON.stringify(session)
+            );
+
+            window.location.href = "dashboard.html";
+        } catch (error) {
+            console.error("LOGIN ERROR:", error);
+
+            setMessage(
+                message,
+                "error",
+                "Unable to connect to the authentication service."
+            );
+        }
+    });
+}
 
 // ============================================================
 // REGISTER
 // ============================================================
 
-const registerForm =
-    document.getElementById("registerForm");
-
+const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
-
-    const password =
-        document.getElementById(
-            "registerPassword"
-        );
-
-
-    const passwordBar =
-        document.getElementById(
-            "passwordBar"
-        );
-
-
-    const passwordHint =
-        document.getElementById(
-            "passwordHint"
-        );
-
-
-    // ========================================================
-    // PASSWORD STRENGTH METER
-    // ========================================================
-
-    if (password) {
-
-        password.addEventListener(
-            "input",
-            () => {
-
-                const strength =
-                    passwordScore(
-                        password.value
-                    );
-
-
-                if (passwordBar) {
-
-                    passwordBar.style.width =
-                        `${strength * 20}%`;
-                }
-
-
-                if (passwordHint) {
-
-                    if (strength < 3) {
-
-                        passwordHint.textContent =
-                            "Weak password";
-
-                    } else if (strength < 5) {
-
-                        passwordHint.textContent =
-                            "Medium password";
-
-                    } else {
-
-                        passwordHint.textContent =
-                            "Strong password";
-                    }
-                }
-
-            }
-        );
-    }
-
-
-    // ========================================================
-    // REGISTER SUBMIT
-    // ========================================================
-
-    registerForm.addEventListener(
-        "submit",
-        async event => {
-
-            event.preventDefault();
-
-
-            clearErrors(registerForm);
-
-
-            const fullName =
-                document.getElementById(
-                    "fullName"
-                );
-
-
-            const username =
-                document.getElementById(
-                    "username"
-                );
-
-
-            const age =
-                document.getElementById(
-                    "age"
-                );
-
-
-            const email =
-                document.getElementById(
-                    "email"
-                );
-
-
-            const phone =
-                document.getElementById(
-                    "phone"
-                );
-
-
-            const registerPassword =
-                document.getElementById(
-                    "registerPassword"
-                );
-
-
-            const confirmPassword =
-                document.getElementById(
-                    "confirmPassword"
-                );
-
-
-            const terms =
-                document.getElementById(
-                    "terms"
-                );
-
-
-            const message =
-                document.getElementById(
-                    "registerMessage"
-                );
-
-
-            let valid = true;
-
-
-            // ==================================================
-            // VALIDATION
-            // ==================================================
-
-            if (
-                fullName.value.trim().length < 2
-            ) {
-
-                showError(
-                    fullName,
-                    "Enter your full name."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                !/^[A-Za-z0-9_.-]{4,20}$/
-                    .test(username.value.trim())
-            ) {
-
-                showError(
-                    username,
-                    "Use 4–20 valid username characters."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                Number(age.value) < 18 ||
-                Number(age.value) > 100
-            ) {
-
-                showError(
-                    age,
-                    "Age must be 18–100."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                !validEmail(
-                    email.value.trim()
-                )
-            ) {
-
-                showError(
-                    email,
-                    "Enter a valid email."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                !validPhone(
-                    phone.value.trim()
-                )
-            ) {
-
-                showError(
-                    phone,
-                    "Use 09XXXXXXXXX or +639XXXXXXXXX."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                passwordScore(
-                    registerPassword.value
-                ) < 5
-            ) {
-
-                showError(
-                    registerPassword,
-                    "Use 8+ characters, uppercase, lowercase, number and symbol."
-                );
-
-                valid = false;
-            }
-
-
-            if (
-                confirmPassword.value !==
-                registerPassword.value
-            ) {
-
-                showError(
-                    confirmPassword,
-                    "Passwords do not match."
-                );
-
-                valid = false;
-            }
-
-
-            if (!terms.checked) {
-
-                setMessage(
-                    message,
-                    "error",
-                    "Please agree to the Terms and Conditions."
-                );
-
-                valid = false;
-            }
-
-
-            if (!valid) return;
-
-
-            // ==================================================
-            // CREATE USER OBJECT
-            // ==================================================
-
-            const uid =
-                `sf_${Date.now()}_${Math.random()
-                    .toString(36)
-                    .slice(2, 8)}`;
-
-
-            const user = {
-
-                fullName:
-                    fullName.value.trim(),
-
-                username:
-                    username.value.trim(),
-
-                age:
-                    Number(age.value),
-
-                email:
-                    email.value.trim(),
-
-                phone:
-                    phone.value.trim(),
-
-                password:
-                    registerPassword.value,
-
-                role:
-                    "Employee",
-
-                verified:
-                    false,
-
-                accountStatus:
-                    "Pending Verification",
-
-                createdAt:
-                    new Date().toISOString()
-
-            };
-
-
-            try {
-
-                // ==================================================
-                // GENERATE DEVELOPMENT OTP
-                // ==================================================
-
-                const otp =
-                    String(
-                        Math.floor(
-                            100000 +
-                            Math.random() * 900000
-                        )
-                    );
-
-
-                // ==================================================
-                // SAVE TO FIREBASE
-                // ==================================================
-
-                if (SF.ENABLE_FIREBASE) {
-
-                    await firebasePut(
-                        `users/${uid}`,
-                        {
-                            ...user,
-                            otp: otp
-                        }
-                    );
-                }
-
-
-                // ==================================================
-                // SAVE TO GOOGLE SHEETS
-                // ==================================================
-
-                if (
-                    SF.ENABLE_GOOGLE_SHEET_SYNC
-                ) {
-
-                    try {
-
-                        const sheetResult =
-                            await sheetPost({
-
-                                action:
-                                    "register",
-
-                                name:
-                                    user.fullName,
-
-                                username:
-                                    user.username,
-
-                                password:
-                                    user.password,
-
-                                age:
-                                    user.age,
-
-                                accountStatus:
-                                    user.accountStatus,
-
-                                gmail:
-                                    user.email,
-
-                                phone:
-                                    user.phone,
-
-                                otp:
-                                    otp,
-
-                                uid:
-                                    uid
-
-                            });
-
-
-                        if (
-                            sheetResult &&
-                            sheetResult.otp
-                        ) {
-
-                            sessionStorage.setItem(
-                                "stockflow_demo_otp",
-                                String(
-                                    sheetResult.otp
-                                )
-                            );
-
-                        } else {
-
-                            sessionStorage.setItem(
-                                "stockflow_demo_otp",
-                                otp
-                            );
-                        }
-
-                    } catch (sheetError) {
-
-                        console.warn(
-                            "Google Sheet registration failed:",
-                            sheetError
-                        );
-
-                        // Firebase registration is still preserved.
-                        sessionStorage.setItem(
-                            "stockflow_demo_otp",
-                            otp
-                        );
-                    }
-
-                } else {
-
-                    sessionStorage.setItem(
-                        "stockflow_demo_otp",
-                        otp
-                    );
-                }
-
-
-                // ==================================================
-                // STORE PENDING ACCOUNT
-                // ==================================================
-
-                sessionStorage.setItem(
-                    "stockflow_pending_user",
-                    JSON.stringify({
-
-                        uid:
-                            uid,
-
-                        username:
-                            user.username,
-
-                        email:
-                            user.email,
-
-                        phone:
-                            user.phone
-                    })
-                );
-
-
-                // ==================================================
-                // SUCCESS
-                // ==================================================
-
-                setMessage(
-                    message,
-                    "success",
-                    "Registration successful. Redirecting to verification..."
-                );
-
-
-                setTimeout(
-                    () => {
-
-                        window.location.href =
-                            "verify.html";
-
-                    },
-                    700
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "REGISTRATION ERROR:",
-                    error
-                );
-
-
-                setMessage(
-                    message,
-                    "error",
-                    "Registration could not be saved. Check Firebase and Google Apps Script configuration."
-                );
-            }
-
+    const password = document.getElementById("registerPassword");
+    const passwordBar = document.getElementById("passwordBar");
+    const passwordHint = document.getElementById("passwordHint");
+
+    password?.addEventListener("input", () => {
+        const strength = passwordScore(password.value);
+
+        if (passwordBar) {
+            passwordBar.style.width = `${strength * 20}%`;
         }
-    );
+
+        if (passwordHint) {
+            passwordHint.textContent =
+                strength < 3
+                    ? "Weak password"
+                    : strength < 5
+                        ? "Medium password"
+                        : "Strong password";
+        }
+    });
+
+    registerForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearErrors(registerForm);
+
+        const fullName = document.getElementById("fullName");
+        const username = document.getElementById("username");
+        const age = document.getElementById("age");
+        const email = document.getElementById("email");
+        const phone = document.getElementById("phone");
+        const registerPassword =
+            document.getElementById("registerPassword");
+        const confirmPassword =
+            document.getElementById("confirmPassword");
+        const terms = document.getElementById("terms");
+        const message = document.getElementById("registerMessage");
+
+        let valid = true;
+
+        if (fullName.value.trim().length < 2) {
+            showError(fullName, "Enter your full name.");
+            valid = false;
+        }
+
+        if (!/^[A-Za-z0-9_.-]{4,20}$/.test(username.value.trim())) {
+            showError(username, "Use 4–20 valid username characters.");
+            valid = false;
+        }
+
+        if (Number(age.value) < 18 || Number(age.value) > 100) {
+            showError(age, "Age must be 18–100.");
+            valid = false;
+        }
+
+        if (!validEmail(email.value.trim())) {
+            showError(email, "Enter a valid email.");
+            valid = false;
+        }
+
+        if (!validPhone(phone.value.trim())) {
+            showError(phone, "Use 09XXXXXXXXX or +639XXXXXXXXX.");
+            valid = false;
+        }
+
+        if (passwordScore(registerPassword.value) < 5) {
+            showError(
+                registerPassword,
+                "Use 8+ characters, uppercase, lowercase, number and symbol."
+            );
+            valid = false;
+        }
+
+        if (confirmPassword.value !== registerPassword.value) {
+            showError(confirmPassword, "Passwords do not match.");
+            valid = false;
+        }
+
+        if (!terms.checked) {
+            setMessage(
+                message,
+                "error",
+                "Please agree to the Terms and Conditions."
+            );
+            valid = false;
+        }
+
+        if (!valid) return;
+
+        const uid =
+            `sf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+        const user = {
+            fullName: fullName.value.trim(),
+            username: username.value.trim(),
+            age: Number(age.value),
+            email: email.value.trim(),
+            phone: phone.value.trim(),
+            password: registerPassword.value,
+            role: "Employee",
+            verified: false,
+            demo: false,
+            accountStatus: "Pending Verification",
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            // Apps Script creates the server-side real OTP
+            // and sends it to Gmail.
+            const sheetResult = await sheetPost({
+                action: "register",
+                uid,
+                name: user.fullName,
+                username: user.username,
+                password: user.password,
+                age: user.age,
+                gmail: user.email,
+                phone: user.phone
+            });
+
+            if (!sheetResult.success) {
+                throw new Error(
+                    sheetResult.message || "Google Sheet registration failed."
+                );
+            }
+
+            // Save the account in Firebase.
+            // IMPORTANT: do not save the real OTP in Firebase.
+            if (SF.ENABLE_FIREBASE) {
+                await firebasePut(`users/${uid}`, user);
+            }
+
+            sessionStorage.setItem(
+                "stockflow_pending_user",
+                JSON.stringify({
+                    uid,
+                    username: user.username,
+                    email: user.email,
+                    phone: user.phone
+                })
+            );
+
+            sessionStorage.setItem(
+                "stockflow_verification_mode",
+                "registration"
+            );
+
+            // Only the DEMO OTP is stored client-side.
+            sessionStorage.setItem(
+                "stockflow_demo_otp",
+                DEMO_OTP
+            );
+
+            setMessage(
+                message,
+                "success",
+                "Registration saved. A real OTP was sent to your Gmail. You may use 123456 for DEMO access only."
+            );
+
+            setTimeout(() => {
+                window.location.href = "verify.html";
+            }, 800);
+        } catch (error) {
+            console.error("REGISTRATION ERROR:", error);
+
+            setMessage(
+                message,
+                "error",
+                error.message ||
+                "Registration could not be saved. Check Firebase and Google Apps Script configuration."
+            );
+        }
+    });
 }
 
-
 // ============================================================
-// OTP VERIFICATION
+// VERIFY
 // ============================================================
 
-const verifyForm =
-    document.getElementById(
-        "verifyForm"
-    );
-
+const verifyForm = document.getElementById("verifyForm");
 
 if (verifyForm) {
+    const otpInputs = [
+        ...document.querySelectorAll("#otpInputs input")
+    ];
 
-    const otpInputs =
-        [
-            ...document.querySelectorAll(
-                "#otpInputs input"
-            )
-        ];
-
-
-    const pending =
-        JSON.parse(
-            sessionStorage.getItem(
-                "stockflow_pending_user"
-            ) || "null"
-        );
-
-
-    const destination =
-        document.getElementById(
-            "verifyDestination"
-        );
-
-
-    const message =
-        document.getElementById(
-            "verifyMessage"
-        );
-
-
-    if (pending) {
-
-        destination.textContent =
-            pending.email;
-    }
-
-
-    // ========================================================
-    // OTP INPUT
-    // ========================================================
-
-    otpInputs.forEach(
-        (input, index) => {
-
-            input.addEventListener(
-                "input",
-                () => {
-
-                    input.value =
-                        input.value.replace(
-                            /\D/g,
-                            ""
-                        );
-
-
-                    if (
-                        input.value &&
-                        index <
-                            otpInputs.length - 1
-                    ) {
-
-                        otpInputs[
-                            index + 1
-                        ].focus();
-                    }
-                }
-            );
-
-
-            input.addEventListener(
-                "keydown",
-                event => {
-
-                    if (
-                        event.key ===
-                            "Backspace" &&
-                        !input.value &&
-                        index > 0
-                    ) {
-
-                        otpInputs[
-                            index - 1
-                        ].focus();
-                    }
-                }
-            );
-
-        }
+    const pending = JSON.parse(
+        sessionStorage.getItem("stockflow_pending_user") || "null"
     );
 
+    const destination =
+        document.getElementById("verifyDestination");
 
-    // ========================================================
-    // VERIFY
-    // ========================================================
+    const message =
+        document.getElementById("verifyMessage");
 
-    verifyForm.addEventListener(
-        "submit",
-        async event => {
+    const mode =
+        sessionStorage.getItem("stockflow_verification_mode") ||
+        "registration";
 
-            event.preventDefault();
+    if (pending && destination) {
+        destination.textContent = pending.email;
+    }
 
+    if (mode === "reverify") {
+        const heading = document.querySelector(".auth-card-head h2");
+        const paragraph = document.querySelector(".auth-card-head p");
 
-            const otp =
-                otpInputs
-                    .map(input => input.value)
-                    .join("");
+        if (heading) heading.textContent = "Re-verify your account";
+        if (paragraph) {
+            paragraph.textContent =
+                "Use the real 6-digit code sent to your registered Gmail.";
+        }
+    }
 
-
-            const expectedOtp =
-                sessionStorage.getItem(
-                    "stockflow_demo_otp"
-                );
-
-
-            if (otp.length !== 6) {
-
-                setMessage(
-                    message,
-                    "error",
-                    "Enter the complete 6-digit OTP."
-                );
-
-                return;
-            }
-
+    otpInputs.forEach((input, index) => {
+        input.addEventListener("input", () => {
+            input.value = input.value.replace(/\D/g, "");
 
             if (
-                otp !== expectedOtp
+                input.value &&
+                index < otpInputs.length - 1
             ) {
+                otpInputs[index + 1].focus();
+            }
+        });
 
+        input.addEventListener("keydown", event => {
+            if (
+                event.key === "Backspace" &&
+                !input.value &&
+                index > 0
+            ) {
+                otpInputs[index - 1].focus();
+            }
+        });
+    });
+
+    verifyForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const otp = otpInputs
+            .map(input => input.value)
+            .join("");
+
+        if (otp.length !== 6) {
+            setMessage(
+                message,
+                "error",
+                "Enter the complete 6-digit OTP."
+            );
+            return;
+        }
+
+        if (!pending) {
+            setMessage(
+                message,
+                "error",
+                "Verification session expired. Please register or start re-verification again."
+            );
+            return;
+        }
+
+        try {
+            const result = await sheetPost({
+                action: "verifyOtp",
+                identity: pending.username,
+                otp
+            });
+
+            if (!result.success) {
                 setMessage(
                     message,
                     "error",
-                    "Incorrect verification code."
+                    result.message || "Incorrect verification code."
                 );
-
                 return;
             }
 
-
-            if (!pending) {
-
-                setMessage(
-                    message,
-                    "error",
-                    "Registration session expired. Please register again."
-                );
-
-                return;
+            // Demo OTP 123456:
+            // account remains NOT VERIFIED and is marked DEMO.
+            // Real OTP:
+            // account becomes ACTIVE and VERIFIED.
+            if (SF.ENABLE_FIREBASE && pending.uid) {
+                await firebasePatch(`users/${pending.uid}`, {
+                    verified: result.verified === true,
+                    demo: result.demo === true,
+                    accountStatus:
+                        result.demo ? "Demo" : "Active",
+                    verifiedAt:
+                        result.verified === true
+                            ? new Date().toISOString()
+                            : null
+                });
             }
 
+            sessionStorage.removeItem("stockflow_pending_user");
+            sessionStorage.removeItem("stockflow_demo_otp");
+            sessionStorage.removeItem("stockflow_verification_mode");
 
-            try {
-
-                // ==================================================
-                // UPDATE FIREBASE
-                // ==================================================
-
-                if (
-                    SF.ENABLE_FIREBASE &&
-                    pending.uid
-                ) {
-
-                    await firebasePatch(
-                        `users/${pending.uid}`,
-                        {
-                            verified: true,
-
-                            accountStatus:
-                                "Active",
-
-                            otp: null,
-
-                            verifiedAt:
-                                new Date().toISOString()
-                        }
-                    );
-                }
-
-
-                // ==================================================
-                // UPDATE GOOGLE SHEET
-                // ==================================================
-
-                if (
-                    SF.ENABLE_GOOGLE_SHEET_SYNC
-                ) {
-
-                    try {
-
-                        await sheetPost({
-
-                            action:
-                                "verifyOtp",
-
-                            identity:
-                                pending.username,
-
-                            otp:
-                                otp
-                        });
-
-                    } catch (sheetError) {
-
-                        console.warn(
-                            "Google Sheet verification failed:",
-                            sheetError
-                        );
-                    }
-                }
-
-
-                // ==================================================
-                // CLEAN SESSION
-                // ==================================================
-
-                sessionStorage.removeItem(
-                    "stockflow_pending_user"
-                );
-
-
-                sessionStorage.removeItem(
-                    "stockflow_demo_otp"
-                );
-
-
-                // ==================================================
-                // SUCCESS
-                // ==================================================
-
+            if (result.demo) {
                 setMessage(
                     message,
                     "success",
-                    "Account verified successfully. Redirecting to login..."
+                    "DEMO access granted. Your account is NOT fully verified. Redirecting to the dashboard..."
                 );
 
+                setTimeout(() => {
+                    // Create demo session for immediate dashboard access.
+                    const session = {
+                        uid: pending.uid,
+                        username: pending.username,
+                        fullName: "StockFlow User",
+                        role: "Employee",
+                        email: pending.email,
+                        phone: pending.phone,
+                        verified: false,
+                        demo: true,
+                        accountStatus: "Demo"
+                    };
 
-                setTimeout(
-                    () => {
+                    // Recover the full name from Firebase if available.
+                    if (SF.ENABLE_FIREBASE) {
+                        firebaseGet(`users/${pending.uid}`)
+                            .then(user => {
+                                if (user) {
+                                    session.fullName =
+                                        user.fullName || session.fullName;
+                                    session.role =
+                                        user.role || session.role;
+                                }
+                            })
+                            .catch(() => {})
+                            .finally(() => {
+                                sessionStorage.setItem(
+                                    "stockflow_session",
+                                    JSON.stringify(session)
+                                );
+                                window.location.href = "dashboard.html";
+                            });
+                    } else {
+                        sessionStorage.setItem(
+                            "stockflow_session",
+                            JSON.stringify(session)
+                        );
+                        window.location.href = "dashboard.html";
+                    }
+                }, 900);
 
-                        window.location.href =
-                            "login.html";
-
-                    },
-                    1000
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "VERIFICATION ERROR:",
-                    error
-                );
-
-
-                setMessage(
-                    message,
-                    "error",
-                    "Verification failed. Please check your database connection."
-                );
+                return;
             }
 
-        }
-    );
+            setMessage(
+                message,
+                "success",
+                "Account fully verified. Redirecting to login..."
+            );
 
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 1000);
+        } catch (error) {
+            console.error("VERIFICATION ERROR:", error);
+
+            setMessage(
+                message,
+                "error",
+                error.message ||
+                "Verification failed. Check your connection."
+            );
+        }
+    });
 
     // ========================================================
-    // RESEND OTP
+    // RESEND
     // ========================================================
 
     let seconds = 60;
-
-
     const resendButton =
-        document.getElementById(
-            "resendOtp"
-        );
-
-
+        document.getElementById("resendOtp");
     const countdown =
-        document.getElementById(
-            "countdown"
-        );
-
-
-    const timer =
-        setInterval(
-            () => {
-
-                seconds--;
-
-
-                if (countdown) {
-
-                    countdown.textContent =
-                        seconds;
-                }
-
-
-                if (seconds <= 0) {
-
-                    clearInterval(timer);
-
-
-                    if (resendButton) {
-
-                        resendButton.disabled =
-                            false;
-
-                        resendButton.textContent =
-                            "Resend code";
-                    }
-                }
-
-            },
-            1000
-        );
-
-
-    if (resendButton) {
-
-        resendButton.addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    const newOtp =
-                        String(
-                            Math.floor(
-                                100000 +
-                                Math.random() *
-                                900000
-                            )
-                        );
-
-
-                    // ------------------------------------------
-                    // FIREBASE
-                    // ------------------------------------------
-
-                    if (
-                        SF.ENABLE_FIREBASE &&
-                        pending?.uid
-                    ) {
-
-                        await firebasePatch(
-                            `users/${pending.uid}`,
-                            {
-                                otp: newOtp
-                            }
-                        );
-                    }
-
-
-                    // ------------------------------------------
-                    // GOOGLE SHEETS
-                    // ------------------------------------------
-
-                    if (
-                        SF.ENABLE_GOOGLE_SHEET_SYNC
-                    ) {
-
-                        try {
-
-                            const result =
-                                await sheetPost({
-
-                                    action:
-                                        "updateOtp",
-
-                                    identity:
-                                        pending.username,
-
-                                    otp:
-                                        newOtp
-
-                                });
-
-
-                            sessionStorage.setItem(
-                                "stockflow_demo_otp",
-                                String(
-                                    result?.otp ||
-                                    newOtp
-                                )
-                            );
-
-                        } catch (error) {
-
-                            sessionStorage.setItem(
-                                "stockflow_demo_otp",
-                                newOtp
-                            );
-                        }
-
-                    } else {
-
-                        sessionStorage.setItem(
-                            "stockflow_demo_otp",
-                            newOtp
-                        );
-                    }
-
-
-                    // ------------------------------------------
-                    // RESET TIMER
-                    // ------------------------------------------
-
-                    seconds = 60;
-
-
-                    resendButton.disabled =
-                        true;
-
-
-                    resendButton.textContent =
-                        `Resend in ${seconds}s`;
-
-
-                    setMessage(
-                        message,
-                        "success",
-                        "A new verification code has been generated."
-                    );
-
-
-                    const resendTimer =
-                        setInterval(
-                            () => {
-
-                                seconds--;
-
-
-                                if (countdown) {
-
-                                    countdown.textContent =
-                                        seconds;
-                                }
-
-
-                                if (
-                                    seconds <= 0
-                                ) {
-
-                                    clearInterval(
-                                        resendTimer
-                                    );
-
-
-                                    resendButton.disabled =
-                                        false;
-
-                                    resendButton.textContent =
-                                        "Resend code";
-                                }
-
-                            },
-                            1000
-                        );
-
-                } catch (error) {
-
-                    console.error(
-                        "RESEND OTP ERROR:",
-                        error
-                    );
-
-
-                    setMessage(
-                        message,
-                        "error",
-                        "Unable to generate a new verification code."
-                    );
-                }
-
+        document.getElementById("countdown");
+
+    const updateCountdown = () => {
+        if (countdown) countdown.textContent = seconds;
+
+        if (seconds <= 0) {
+            if (resendButton) {
+                resendButton.disabled = false;
+                resendButton.textContent = "Resend code";
             }
-        );
-    }
+            return;
+        }
 
+        seconds--;
+        setTimeout(updateCountdown, 1000);
+    };
+
+    updateCountdown();
+
+    resendButton?.addEventListener("click", async () => {
+        if (!pending) return;
+
+        try {
+            resendButton.disabled = true;
+
+            const result = await sheetPost({
+                action: "requestOtp",
+                identity: pending.username
+            });
+
+            if (!result.success) {
+                throw new Error(
+                    result.message || "Unable to send OTP."
+                );
+            }
+
+            seconds = 60;
+            resendButton.textContent = "Resend in 60s";
+            updateCountdown();
+
+            setMessage(
+                message,
+                "success",
+                "A new REAL OTP was sent to your registered Gmail. 123456 remains DEMO ONLY."
+            );
+        } catch (error) {
+            resendButton.disabled = false;
+            resendButton.textContent = "Resend code";
+
+            setMessage(
+                message,
+                "error",
+                error.message || "Unable to send a new OTP."
+            );
+        }
+    });
 }
-
 
 // ============================================================
 // FORGOT PASSWORD
 // ============================================================
 
-const forgotForm =
-    document.getElementById(
-        "forgotForm"
-    );
-
+const forgotForm = document.getElementById("forgotForm");
 
 if (forgotForm) {
+    forgotForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearErrors(forgotForm);
 
-    forgotForm.addEventListener(
-        "submit",
-        async event => {
+        const contact =
+            document.getElementById("recoveryContact");
+        const message =
+            document.getElementById("forgotMessage");
 
-            event.preventDefault();
+        const value = contact.value.trim();
 
-
-            clearErrors(forgotForm);
-
-
-            const contact =
-                document.getElementById(
-                    "recoveryContact"
-                );
-
-
-            const message =
-                document.getElementById(
-                    "forgotMessage"
-                );
-
-
-            const value =
-                contact.value.trim();
-
-
-            if (!value) {
-
-                showError(
-                    contact,
-                    "Enter your email or phone number."
-                );
-
-                return;
-            }
-
-
-            if (
-                value.includes("@") &&
-                !validEmail(value)
-            ) {
-
-                showError(
-                    contact,
-                    "Enter a valid email address."
-                );
-
-                return;
-            }
-
-
-            if (
-                !value.includes("@") &&
-                !validPhone(value)
-            ) {
-
-                showError(
-                    contact,
-                    "Enter a valid phone number."
-                );
-
-                return;
-            }
-
-
-            try {
-
-                if (
-                    SF.ENABLE_GOOGLE_SHEET_SYNC
-                ) {
-
-                    await sheetPost({
-
-                        action:
-                            "forgotPassword",
-
-                        identity:
-                            value
-                    });
-                }
-
-
-                setMessage(
-                    message,
-                    "success",
-                    "Recovery request submitted. Check your registered contact for instructions."
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "FORGOT PASSWORD ERROR:",
-                    error
-                );
-
-
-                setMessage(
-                    message,
-                    "error",
-                    "Unable to process the recovery request."
-                );
-            }
-
+        if (!value) {
+            showError(
+                contact,
+                "Enter your email or phone number."
+            );
+            return;
         }
-    );
+
+        if (
+            value.includes("@") &&
+            !validEmail(value)
+        ) {
+            showError(
+                contact,
+                "Enter a valid email address."
+            );
+            return;
+        }
+
+        if (
+            !value.includes("@") &&
+            !validPhone(value)
+        ) {
+            showError(
+                contact,
+                "Enter a valid phone number."
+            );
+            return;
+        }
+
+        try {
+            const result = await sheetPost({
+                action: "forgotPassword",
+                identity: value
+            });
+
+            setMessage(
+                message,
+                result.success ? "success" : "error",
+                result.message ||
+                "Recovery request submitted."
+            );
+        } catch (error) {
+            setMessage(
+                message,
+                "error",
+                "Unable to process the recovery request."
+            );
+        }
+    });
 }
