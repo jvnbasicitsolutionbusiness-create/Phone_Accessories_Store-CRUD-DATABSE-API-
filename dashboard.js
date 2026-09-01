@@ -4,7 +4,7 @@
    Dashboard Frontend Controller
    ============================================================
 
-   PURPOSE:
+   PURPOSE (LITERALLY):
    - Connect dashboard.html to the existing backend/API layer
    - Load authenticated resident information
    - Load dashboard statistics
