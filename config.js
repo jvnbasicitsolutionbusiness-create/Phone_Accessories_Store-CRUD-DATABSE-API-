@@ -1,1 +1,1 @@
-const STOCKFLOW_CONFIG = Object.freeze({ API_URL: "PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE", SESSION_KEY: "stockflow_session" });
+const STOCKFLOW_CONFIG = Object.freeze({ API_URL: "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec", SESSION_KEY: "stockflow_session" });
