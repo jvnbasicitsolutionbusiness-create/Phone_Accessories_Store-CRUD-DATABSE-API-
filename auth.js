@@ -45,7 +45,7 @@ const APP_NAME =
 // DEMO ACCOUNT
 // ============================================================
 
-const DEMO_USER = {
+const DEMO_USER = { oten
 
     uid: "stockflow_demo_admin",
 
