@@ -1,31 +1,30 @@
 // ============================================================
 // STOCKFLOW AUTHENTICATION BACKEND
-// GOOGLE APPS SCRIPT + GOOGLE SHEETS
 // ============================================================
-//
 // FEATURES
-// ------------------------------------------------------------
+// ============================================================
 // 1. Employee registration
-// 2. Real Gmail registration OTP
-// 3. Registration OTP expiration
-// 4. Registration OTP resend
-// 5. Demo OTP: 123456
-// 6. Account verification
-// 7. Login
-// 8. Forgot password
-// 9. Real Gmail password-reset OTP
-// 10. Password-reset OTP expiration
-// 11. Password-reset OTP resend
-// 12. Password-reset OTP attempt limit
-// 13. Password update
-// 14. Reset OTP invalidated after successful reset
-// 15. Safe forgot-password response
+// 2. Real Gmail OTP
+// 3. OTP expiration
+// 4. OTP verification
+// 5. OTP resend
+// 6. Login
+// 7. Password recovery
+// 8. Recovery OTP
+// 9. Recovery OTP verification
+// 10. Password reset
+// 11. Account status management
+// 12. Demo OTP: 123456
 //
 // IMPORTANT
 // ------------------------------------------------------------
-// The REAL OTP is never returned to the frontend.
-// The demo OTP 123456 is intentionally supported for school/demo use.
+// The REAL OTP is stored server-side in Google Sheets.
+// The real OTP is NEVER returned to the frontend.
 //
+// DEMO OTP:
+// 123456
+//
+// Demo OTP is for prototype/demo access only.
 // ============================================================
 
 
@@ -40,47 +39,13 @@ const SHEET_ID =
 
 const APP_NAME = "StockFlow";
 
-
-// ------------------------------------------------------------
-// OTP SETTINGS
-// ------------------------------------------------------------
-
 const OTP_MINUTES = 10;
-
-const OTP_RESEND_SECONDS = 60;
-
-const MAX_OTP_ATTEMPTS = 4;
 
 const DEMO_OTP = "123456";
 
 
 // ============================================================
 // SHEET HEADERS
-// ============================================================
-//
-// Existing fields:
-// NAME
-// USERNAME
-// PASSWORD
-// AGE
-// ACCOUNT_S
-// GMAIL
-// PHONE NO.
-// OTP
-//
-// New authentication/recovery fields:
-// OTP_EXPIRES
-// OTP_ATTEMPTS
-// OTP_CHANNEL
-// CREATED_AT
-// VERIFIED_AT
-// RESET_OTP
-// RESET_OTP_EXPIRES
-// RESET_OTP_ATTEMPTS
-// RESET_OTP_CHANNEL
-// RESET_REQUESTED_AT
-// RESET_VERIFIED
-//
 // ============================================================
 
 const HEADERS = [
@@ -93,33 +58,34 @@ const HEADERS = [
   "GMAIL",
   "PHONE NO.",
   "OTP",
-
-  "OTP_EXPIRES",
-  "OTP_ATTEMPTS",
-  "OTP_CHANNEL",
-
-  "CREATED_AT",
-  "VERIFIED_AT",
-
-  "RESET_OTP",
-  "RESET_OTP_EXPIRES",
-  "RESET_OTP_ATTEMPTS",
-  "RESET_OTP_CHANNEL",
-  "RESET_REQUESTED_AT",
-  "RESET_VERIFIED"
+  "OTP EXPIRES",
+  "OTP PURPOSE",
+  "OTP VERIFIED",
+  "RECOVERY OTP",
+  "RECOVERY EXPIRES",
+  "RECOVERY VERIFIED",
+  "CREATED AT",
+  "VERIFIED AT",
+  "RESET AT"
 
 ];
 
 
 // ============================================================
-// GET SPREADSHEET
+// JSON RESPONSE
 // ============================================================
 
-function getSpreadsheet() {
+function response(data) {
 
-  return SpreadsheetApp.openById(
-    SHEET_ID
-  );
+  return ContentService
+
+    .createTextOutput(
+      JSON.stringify(data)
+    )
+
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
 
 }
 
@@ -131,7 +97,9 @@ function getSpreadsheet() {
 function getSheet() {
 
   const spreadsheet =
-    getSpreadsheet();
+    SpreadsheetApp.openById(
+      SHEET_ID
+    );
 
   let sheet =
     spreadsheet.getSheetByName(
@@ -151,6 +119,7 @@ function getSheet() {
 
   ensureHeaders(sheet);
 
+
   return sheet;
 
 }
@@ -162,69 +131,19 @@ function getSheet() {
 
 function ensureHeaders(sheet) {
 
-  const requiredColumns =
-    HEADERS.length;
-
-
-  const currentLastColumn =
-    sheet.getLastColumn();
-
-
-  // ----------------------------------------------------------
-  // Completely empty sheet
-  // ----------------------------------------------------------
-
-  if (
-    sheet.getLastRow() === 0 ||
-    currentLastColumn === 0
-  ) {
-
+  const currentHeaders =
     sheet
       .getRange(
         1,
         1,
         1,
-        requiredColumns
-      )
-      .setValues([
-        HEADERS
-      ]);
-
-    sheet
-      .getRange(
-        1,
-        1,
-        1,
-        requiredColumns
-      )
-      .setFontWeight("bold");
-
-    return;
-
-  }
-
-
-  // ----------------------------------------------------------
-  // Read existing headers
-  // ----------------------------------------------------------
-
-  const existingHeaders =
-    sheet
-      .getRange(
-        1,
-        1,
-        1,
-        Math.max(
-          currentLastColumn,
-          requiredColumns
-        )
+        HEADERS.length
       )
       .getValues()[0];
 
 
-  // ----------------------------------------------------------
-  // Add missing headers
-  // ----------------------------------------------------------
+  let needsUpdate = false;
+
 
   for (
     let i = 0;
@@ -232,235 +151,81 @@ function ensureHeaders(sheet) {
     i++
   ) {
 
-    const existing =
-      String(
-        existingHeaders[i] || ""
-      ).trim();
-
-
     if (
-      existing !== HEADERS[i]
+      currentHeaders[i] !==
+      HEADERS[i]
     ) {
 
-      sheet
-        .getRange(
-          1,
-          i + 1
-        )
-        .setValue(
-          HEADERS[i]
-        );
+      needsUpdate = true;
+
+      break;
 
     }
 
   }
 
 
-  sheet
+  if (needsUpdate) {
+
+    sheet
+      .getRange(
+        1,
+        1,
+        1,
+        HEADERS.length
+      )
+      .setValues([
+        HEADERS
+      ]);
+
+
+    sheet
+      .getRange(
+        1,
+        1,
+        1,
+        HEADERS.length
+      )
+      .setFontWeight(
+        "bold"
+      );
+
+  }
+
+}
+
+
+// ============================================================
+// GET ALL USER ROWS
+// ============================================================
+
+function getRows(sheet) {
+
+  const lastRow =
+    sheet.getLastRow();
+
+
+  if (lastRow < 2) {
+
+    return [];
+
+  }
+
+
+  return sheet
     .getRange(
+      2,
       1,
-      1,
-      1,
+      lastRow - 1,
       HEADERS.length
     )
-    .setFontWeight("bold");
+    .getValues();
 
 }
 
 
 // ============================================================
-// JSON RESPONSE
-// ============================================================
-
-function response(data) {
-
-  return ContentService
-    .createTextOutput(
-      JSON.stringify(data)
-    )
-    .setMimeType(
-      ContentService.MimeType.JSON
-    );
-
-}
-
-
-// ============================================================
-// GET API
-// ============================================================
-
-function doGet(e) {
-
-  return response({
-
-    success: true,
-
-    service: APP_NAME,
-
-    message:
-      "StockFlow Authentication API is running."
-
-  });
-
-}
-
-
-// ============================================================
-// POST API
-// ============================================================
-
-function doPost(e) {
-
-  try {
-
-    const raw =
-      e &&
-      e.postData &&
-      e.postData.contents
-        ? e.postData.contents
-        : "{}";
-
-
-    const data =
-      JSON.parse(raw);
-
-
-    const action =
-      String(
-        data.action || ""
-      )
-      .trim();
-
-
-    switch (action) {
-
-
-      // ======================================================
-      // REGISTRATION
-      // ======================================================
-
-      case "register":
-
-        return registerUser(data);
-
-
-      // ======================================================
-      // REGISTRATION OTP
-      // ======================================================
-
-      case "verifyOtp":
-
-        return verifyOTP(data);
-
-
-      case "resendOtp":
-
-        return resendOTP(data);
-
-
-      case "requestOtp":
-
-        return resendOTP(data);
-
-
-      case "updateOtp":
-
-        return resendOTP(data);
-
-
-      // ======================================================
-      // LOGIN
-      // ======================================================
-
-      case "login":
-
-        return loginUser(data);
-
-
-      // ======================================================
-      // USER
-      // ======================================================
-
-      case "getUser":
-
-        return getUser(data);
-
-
-      case "updateStatus":
-
-        return updateAccountStatus(data);
-
-
-      // ======================================================
-      // PASSWORD RECOVERY
-      // ======================================================
-
-      case "forgotPassword":
-
-        return forgotPassword(data);
-
-
-      case "requestResetOtp":
-
-        return requestResetOTP(data);
-
-
-      case "verifyResetOtp":
-
-        return verifyResetOTP(data);
-
-
-      case "resetPassword":
-
-        return resetPassword(data);
-
-
-      case "resendResetOtp":
-
-        return resendResetOTP(data);
-
-
-      default:
-
-        return response({
-
-          success: false,
-
-          message:
-            "Unknown API action."
-
-        });
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "API ERROR:",
-      error
-    );
-
-
-    return response({
-
-      success: false,
-
-      message:
-        error &&
-        error.message
-          ? error.message
-          : "Server error."
-
-    });
-
-  }
-
-}
-
-
-// ============================================================
-// NORMALIZE
+// NORMALIZE VALUE
 // ============================================================
 
 function normalize(value) {
@@ -475,10 +240,10 @@ function normalize(value) {
 
 
 // ============================================================
-// LOWERCASE NORMALIZE
+// NORMALIZE EMAIL
 // ============================================================
 
-function normalizeLower(value) {
+function normalizeEmail(value) {
 
   return normalize(
     value
@@ -488,14 +253,46 @@ function normalizeLower(value) {
 
 
 // ============================================================
+// NORMALIZE PHONE
+// ============================================================
+
+function normalizePhone(value) {
+
+  let phone =
+    normalize(value)
+      .replace(
+        /[\s()-]/g,
+        ""
+      );
+
+
+  // Convert Philippine
+  // 09XXXXXXXXX
+  // to +639XXXXXXXXX
+
+  if (
+    /^09\d{9}$/.test(phone)
+  ) {
+
+    phone =
+      "+63" +
+      phone.substring(1);
+
+  }
+
+
+  return phone;
+
+}
+
+
+// ============================================================
 // FIND USER
 // ============================================================
-//
-// Identity can be:
-// USERNAME
-// GMAIL
-// PHONE NUMBER
-//
+// Identity may be:
+// - username
+// - email
+// - phone
 // ============================================================
 
 function findUser(identity) {
@@ -503,61 +300,43 @@ function findUser(identity) {
   const sheet =
     getSheet();
 
-
-  const lastRow =
-    sheet.getLastRow();
-
-
-  if (
-    lastRow < 2
-  ) {
-
-    return null;
-
-  }
-
-
-  const values =
-    sheet
-      .getRange(
-        2,
-        1,
-        lastRow - 1,
-        HEADERS.length
-      )
-      .getValues();
+  const rows =
+    getRows(sheet);
 
 
   const target =
-    normalizeLower(
-      identity
-    );
+    normalize(identity)
+      .toLowerCase();
+
+
+  const targetPhone =
+    normalizePhone(identity);
 
 
   for (
     let i = 0;
-    i < values.length;
+    i < rows.length;
     i++
   ) {
 
     const row =
-      values[i];
+      rows[i];
 
 
     const username =
-      normalizeLower(
+      normalize(
         row[1]
-      );
+      ).toLowerCase();
 
 
     const email =
-      normalizeLower(
+      normalize(
         row[5]
-      );
+      ).toLowerCase();
 
 
     const phone =
-      normalize(
+      normalizePhone(
         row[6]
       );
 
@@ -568,7 +347,10 @@ function findUser(identity) {
 
       target === email ||
 
-      target === phone
+      (
+        targetPhone &&
+        targetPhone === phone
+      )
 
     ) {
 
@@ -603,7 +385,8 @@ function generateOTP() {
 
     Math.floor(
       100000 +
-      Math.random() * 900000
+      Math.random() *
+      900000
     )
 
   );
@@ -612,25 +395,17 @@ function generateOTP() {
 
 
 // ============================================================
-// GENERATE UID
+// OTP EXPIRATION
 // ============================================================
 
-function generateUID() {
+function getOTPExpiration() {
 
-  return (
-
-    "sf_" +
+  return new Date(
 
     Date.now() +
-
-    "_" +
-
-    Math.random()
-      .toString(36)
-      .substring(
-        2,
-        8
-      )
+    OTP_MINUTES *
+    60 *
+    1000
 
   );
 
@@ -638,10 +413,10 @@ function generateUID() {
 
 
 // ============================================================
-// ESCAPE HTML
+// EMAIL ESCAPE
 // ============================================================
 
-function escapeHTML(value) {
+function escapeHtml(value) {
 
   return String(value)
 
@@ -674,14 +449,14 @@ function escapeHTML(value) {
 
 
 // ============================================================
-// SEND REGISTRATION OTP EMAIL
+// SEND GMAIL OTP
 // ============================================================
 
-function sendRegistrationOTPEmail(
+function sendGmailOTP(
   email,
   fullName,
   otp,
-  isResend
+  purpose
 ) {
 
   if (!email) {
@@ -693,12 +468,29 @@ function sendRegistrationOTPEmail(
   }
 
 
-  const subject =
-    isResend
+  let subject;
 
-      ? "StockFlow - New verification code"
 
-      : "StockFlow - Verify your account";
+  if (
+    purpose === "recovery"
+  ) {
+
+    subject =
+      "StockFlow - Password Recovery Code";
+
+  } else if (
+    purpose === "resend"
+  ) {
+
+    subject =
+      "StockFlow - New Verification Code";
+
+  } else {
+
+    subject =
+      "StockFlow - Account Verification Code";
+
+  }
 
 
   const plainText =
@@ -708,174 +500,26 @@ function sendRegistrationOTPEmail(
       fullName ||
       "StockFlow User"
     ) +
-
     ",\n\n" +
 
     "Your StockFlow verification code is:\n\n" +
 
     otp +
-
     "\n\n" +
 
     "This code expires in " +
     OTP_MINUTES +
     " minutes.\n\n" +
-
-    "If you did not request this code, " +
-    "you can safely ignore this email.\n\n" +
-
-    "StockFlow";
-
-
-  const htmlBody =
-
-    "<div style=\"" +
-
-      "font-family:Arial,sans-serif;" +
-      "max-width:560px;" +
-      "margin:auto;" +
-      "padding:20px;" +
-
-    "\">" +
-
-
-      "<h2 style=\"color:#1769e0\">" +
-
-        "StockFlow" +
-
-      "</h2>" +
-
-
-      "<p>Hello " +
-
-        escapeHTML(
-          fullName ||
-          "StockFlow User"
-        ) +
-
-      ",</p>" +
-
-
-      "<p>Your verification code is:</p>" +
-
-
-      "<div style=\"" +
-
-        "font-size:32px;" +
-        "font-weight:800;" +
-        "letter-spacing:8px;" +
-        "padding:18px;" +
-        "background:#f1f5f9;" +
-        "border-radius:12px;" +
-        "text-align:center;" +
-        "color:#10233f;" +
-
-      "\">" +
-
-        otp +
-
-      "</div>" +
-
-
-      "<p>This code expires in <b>" +
-
-        OTP_MINUTES +
-
-        " minutes</b>.</p>" +
-
-
-      "<p style=\"" +
-
-        "color:#64748b;" +
-        "font-size:13px;" +
-
-      "\">" +
-
-        "If you did not request this code, " +
-        "you can safely ignore this email." +
-
-      "</p>" +
-
-
-      "<p>— StockFlow</p>" +
-
-    "</div>";
-
-
-  MailApp.sendEmail({
-
-    to: email,
-
-    subject: subject,
-
-    body: plainText,
-
-    htmlBody: htmlBody,
-
-    name: APP_NAME
-
-  });
-
-}
-
-
-// ============================================================
-// SEND PASSWORD RESET OTP EMAIL
-// ============================================================
-
-function sendResetOTPEmail(
-  email,
-  fullName,
-  otp,
-  isResend
-) {
-
-  if (!email) {
-
-    throw new Error(
-      "Registered Gmail address is missing."
-    );
-
-  }
-
-
-  const subject =
-
-    isResend
-
-      ? "StockFlow - New password reset code"
-
-      : "StockFlow - Password reset code";
-
-
-  const plainText =
-
-    "Hello " +
 
     (
-      fullName ||
-      "StockFlow User"
+      purpose === "recovery"
+        ? "Use this code to continue resetting your StockFlow password."
+        : "Use this code to verify your StockFlow account."
     ) +
-
-    ",\n\n" +
-
-    "We received a request to reset your StockFlow password.\n\n" +
-
-    "Your password reset verification code is:\n\n" +
-
-    otp +
 
     "\n\n" +
 
-    "This code expires in " +
-
-    OTP_MINUTES +
-
-    " minutes.\n\n" +
-
-    "If you did not request a password reset, " +
-
-    "please ignore this email and keep your current password.\n\n" +
+    "If you did not request this code, please ignore this email.\n\n" +
 
     "StockFlow";
 
@@ -883,25 +527,24 @@ function sendResetOTPEmail(
   const htmlBody =
 
     "<div style=\"" +
-
       "font-family:Arial,sans-serif;" +
       "max-width:560px;" +
       "margin:auto;" +
       "padding:20px;" +
-
     "\">" +
 
-
-      "<h2 style=\"color:#1769e0\">" +
+      "<h2 style=\"" +
+        "color:#1769e0;" +
+        "margin-bottom:20px;" +
+      "\">" +
 
         "StockFlow" +
 
       "</h2>" +
 
-
       "<p>Hello " +
 
-        escapeHTML(
+        escapeHtml(
           fullName ||
           "StockFlow User"
         ) +
@@ -911,16 +554,16 @@ function sendResetOTPEmail(
 
       "<p>" +
 
-        "We received a request to reset your StockFlow password." +
+        (
+          purpose === "recovery"
+            ? "We received a request to reset your StockFlow password."
+            : "Your StockFlow verification code is:"
+        ) +
 
       "</p>" +
 
 
-      "<p>Your password reset code is:</p>" +
-
-
       "<div style=\"" +
-
         "font-size:32px;" +
         "font-weight:800;" +
         "letter-spacing:8px;" +
@@ -929,7 +572,7 @@ function sendResetOTPEmail(
         "border-radius:12px;" +
         "text-align:center;" +
         "color:#10233f;" +
-
+        "margin:20px 0;" +
       "\">" +
 
         otp +
@@ -937,23 +580,44 @@ function sendResetOTPEmail(
       "</div>" +
 
 
-      "<p>This code expires in <b>" +
+      "<p>" +
 
-        OTP_MINUTES +
+        "This code expires in " +
 
-        " minutes</b>.</p>" +
+        "<b>" +
+          OTP_MINUTES +
+          " minutes" +
+        "</b>." +
+
+      "</p>" +
+
+
+      (
+        purpose === "recovery"
+
+          ?
+
+          "<p>" +
+            "If you did not request a password reset, " +
+            "you can safely ignore this email." +
+          "</p>"
+
+          :
+
+          "<p>" +
+            "If you did not request this code, " +
+            "you can safely ignore this email." +
+          "</p>"
+
+      ) +
 
 
       "<p style=\"" +
-
         "color:#64748b;" +
         "font-size:13px;" +
-
       "\">" +
 
-        "If you did not request a password reset, " +
-        "you can safely ignore this email. " +
-        "Your current password will remain unchanged." +
+        "Never share your verification code with anyone." +
 
       "</p>" +
 
@@ -965,17 +629,205 @@ function sendResetOTPEmail(
 
   MailApp.sendEmail({
 
-    to: email,
+    to:
+      email,
 
-    subject: subject,
+    subject:
+      subject,
 
-    body: plainText,
+    body:
+      plainText,
 
-    htmlBody: htmlBody,
+    htmlBody:
+      htmlBody,
 
-    name: APP_NAME
+    name:
+      APP_NAME
 
   });
+
+}
+
+
+// ============================================================
+// TEST API
+// ============================================================
+
+function doGet() {
+
+  return response({
+
+    success: true,
+
+    message:
+      "StockFlow Google Apps Script API is running.",
+
+    system:
+      "StockFlow Inventory System"
+
+  });
+
+}
+
+
+// ============================================================
+// MAIN POST API
+// ============================================================
+
+function doPost(e) {
+
+  try {
+
+    const raw =
+
+      e &&
+      e.postData &&
+      e.postData.contents
+
+        ?
+
+        e.postData.contents
+
+        :
+
+        "{}";
+
+
+    const data =
+      JSON.parse(raw);
+
+
+    const action =
+      normalize(
+        data.action
+      );
+
+
+    switch (action) {
+
+
+      // ------------------------------------------------------
+      // REGISTRATION
+      // ------------------------------------------------------
+
+      case "register":
+
+        return registerUser(data);
+
+
+      // ------------------------------------------------------
+      // VERIFY REGISTRATION OTP
+      // ------------------------------------------------------
+
+      case "verifyOtp":
+
+        return verifyOTP(data);
+
+
+      // ------------------------------------------------------
+      // RESEND REGISTRATION OTP
+      // ------------------------------------------------------
+
+      case "resendOtp":
+
+      case "requestOtp":
+
+        return resendOTP(data);
+
+
+      // ------------------------------------------------------
+      // LOGIN
+      // ------------------------------------------------------
+
+      case "login":
+
+        return loginUser(data);
+
+
+      // ------------------------------------------------------
+      // PASSWORD RECOVERY
+      // ------------------------------------------------------
+
+      case "forgotPassword":
+
+        return forgotPassword(data);
+
+
+      // ------------------------------------------------------
+      // REQUEST RECOVERY OTP
+      // ------------------------------------------------------
+
+      case "requestRecoveryOtp":
+
+        return requestRecoveryOTP(data);
+
+
+      // ------------------------------------------------------
+      // VERIFY RECOVERY OTP
+      // ------------------------------------------------------
+
+      case "verifyRecoveryOtp":
+
+        return verifyRecoveryOTP(data);
+
+
+      // ------------------------------------------------------
+      // RESET PASSWORD
+      // ------------------------------------------------------
+
+      case "resetPassword":
+
+        return resetPassword(data);
+
+
+      // ------------------------------------------------------
+      // GET USER
+      // ------------------------------------------------------
+
+      case "getUser":
+
+        return getUser(data);
+
+
+      // ------------------------------------------------------
+      // UPDATE STATUS
+      // ------------------------------------------------------
+
+      case "updateStatus":
+
+        return updateAccountStatus(data);
+
+
+      default:
+
+        return response({
+
+          success: false,
+
+          message:
+            "Unknown API action."
+
+        });
+
+    }
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    return response({
+
+      success: false,
+
+      message:
+        error.message ||
+        "Server error."
+
+    });
+
+  }
 
 }
 
@@ -990,21 +842,22 @@ function registerUser(data) {
     getSheet();
 
 
+  const rows =
+    getRows(sheet);
+
+
   const name =
-    normalize(
-      data.name
-    );
+    normalize(data.name);
 
 
   const username =
-    normalize(
-      data.username
-    );
+    normalize(data.username);
 
 
   const password =
     String(
-      data.password || ""
+      data.password ||
+      ""
     );
 
 
@@ -1015,25 +868,16 @@ function registerUser(data) {
 
 
   const gmail =
-    normalizeLower(
-      data.gmail ||
-      data.email
+    normalizeEmail(
+      data.gmail
     );
 
 
   const phone =
-    normalize(
+    normalizePhone(
       data.phone
     );
 
-
-  const role =
-    "Employee";
-
-
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
 
   if (
 
@@ -1043,11 +887,11 @@ function registerUser(data) {
 
     !password ||
 
+    !age ||
+
     !gmail ||
 
-    !phone ||
-
-    !age
+    !phone
 
   ) {
 
@@ -1074,7 +918,7 @@ function registerUser(data) {
       success: false,
 
       message:
-        "Enter a valid Gmail/email address."
+        "Invalid Gmail/email address."
 
     });
 
@@ -1082,100 +926,17 @@ function registerUser(data) {
 
 
   if (
-    age < 18 ||
-    age > 100
-  ) {
-
-    return response({
-
-      success: false,
-
-      message:
-        "Age must be between 18 and 100."
-
-    });
-
-  }
-
-
-  // ----------------------------------------------------------
-  // PASSWORD VALIDATION
-  // ----------------------------------------------------------
-
-  if (
-    password.length < 8
-  ) {
-
-    return response({
-
-      success: false,
-
-      message:
-        "Password must contain at least 8 characters."
-
-    });
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CHECK DUPLICATES
-  // ----------------------------------------------------------
-
-  const existingUsername =
-    findUser(
-      username
-    );
-
-
-  if (existingUsername) {
-
-    return response({
-
-      success: false,
-
-      message:
-        "Username already exists."
-
-    });
-
-  }
-
-
-  const existingEmail =
-    findUser(
-      gmail
-    );
-
-
-  if (existingEmail) {
-
-    return response({
-
-      success: false,
-
-      message:
-        "Gmail address already exists."
-
-    });
-
-  }
-
-
-  const existingPhone =
-    findUser(
+    !/^(\+639\d{9})$/.test(
       phone
-    );
-
-
-  if (existingPhone) {
+    )
+  ) {
 
     return response({
 
       success: false,
 
       message:
-        "Phone number already exists."
+        "Invalid Philippine phone number."
 
     });
 
@@ -1183,7 +944,88 @@ function registerUser(data) {
 
 
   // ----------------------------------------------------------
-  // GENERATE OTP
+  // DUPLICATE CHECK
+  // ----------------------------------------------------------
+
+  for (
+    let i = 0;
+    i < rows.length;
+    i++
+  ) {
+
+    const existingUsername =
+      normalize(
+        rows[i][1]
+      ).toLowerCase();
+
+
+    const existingEmail =
+      normalizeEmail(
+        rows[i][5]
+      );
+
+
+    const existingPhone =
+      normalizePhone(
+        rows[i][6]
+      );
+
+
+    if (
+      existingUsername ===
+      username.toLowerCase()
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Username already exists."
+
+      });
+
+    }
+
+
+    if (
+      existingEmail ===
+      gmail
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Gmail address already exists."
+
+      });
+
+    }
+
+
+    if (
+      existingPhone ===
+      phone
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Phone number already exists."
+
+      });
+
+    }
+
+  }
+
+
+  // ----------------------------------------------------------
+  // GENERATE REAL OTP
   // ----------------------------------------------------------
 
   const otp =
@@ -1191,12 +1033,7 @@ function registerUser(data) {
 
 
   const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
-    );
+    getOTPExpiration();
 
 
   const createdAt =
@@ -1204,7 +1041,7 @@ function registerUser(data) {
 
 
   // ----------------------------------------------------------
-  // APPEND USER
+  // PUBLIC REGISTRATION = EMPLOYEE ONLY
   // ----------------------------------------------------------
 
   sheet.appendRow([
@@ -1227,36 +1064,32 @@ function registerUser(data) {
 
     expires,
 
-    0,
+    "registration",
 
-    "gmail",
+    false,
+
+    "",
+
+    "",
+
+    false,
 
     createdAt,
 
     "",
 
-    "",
-
-    "",
-
-    0,
-
-    "",
-
-    "",
-
-    false
+    ""
 
   ]);
 
 
-  // ----------------------------------------------------------
-  // SEND REAL OTP
-  // ----------------------------------------------------------
+  const newRow =
+    sheet.getLastRow();
+
 
   try {
 
-    sendRegistrationOTPEmail(
+    sendGmailOTP(
 
       gmail,
 
@@ -1264,19 +1097,15 @@ function registerUser(data) {
 
       otp,
 
-      false
+      "registration"
 
     );
 
   } catch (mailError) {
 
-    const lastRow =
-      sheet.getLastRow();
-
     sheet.deleteRow(
-      lastRow
+      newRow
     );
-
 
     throw new Error(
 
@@ -1289,30 +1118,24 @@ function registerUser(data) {
   }
 
 
-  // ----------------------------------------------------------
-  // SUCCESS
-  // ----------------------------------------------------------
-
   return response({
 
     success: true,
 
-    message:
-      "Registration successful. A verification code was sent to your Gmail.",
-
     username:
       username,
 
-    uid:
-      data.uid ||
-      generateUID(),
+    role:
+      "Employee",
 
     otpSent:
       true,
 
-    // Demo code is intentionally provided.
     demoOtp:
-      DEMO_OTP
+      DEMO_OTP,
+
+    message:
+      "Registration successful. A verification code was sent to your Gmail."
 
   });
 
@@ -1355,9 +1178,7 @@ function verifyOTP(data) {
 
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -1378,10 +1199,16 @@ function verifyOTP(data) {
     found.row;
 
 
-  const currentStatus =
+  const storedOTP =
     normalize(
-      row[4]
-    ).toUpperCase();
+      row[7]
+    );
+
+
+  const expires =
+    row[8]
+      ? new Date(row[8])
+      : null;
 
 
   // ----------------------------------------------------------
@@ -1402,19 +1229,29 @@ function verifyOTP(data) {
       );
 
 
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        11
+      )
+      .setValue(
+        false
+      );
+
+
     return response({
 
       success: true,
 
-      demo: true,
-
       verified: false,
+
+      demo: true,
 
       accountStatus:
         "Demo",
 
       message:
-        "Demo access granted. Your account is not fully verified."
+        "Demo mode activated. Your account is not fully verified."
 
     });
 
@@ -1422,18 +1259,12 @@ function verifyOTP(data) {
 
 
   // ----------------------------------------------------------
-  // CHECK OTP ATTEMPTS
+  // REAL OTP
   // ----------------------------------------------------------
 
-  const attempts =
-    Number(
-      row[9] || 0
-    );
-
-
   if (
-    attempts >=
-    MAX_OTP_ATTEMPTS
+    !storedOTP ||
+    otp !== storedOTP
   ) {
 
     return response({
@@ -1441,29 +1272,17 @@ function verifyOTP(data) {
       success: false,
 
       message:
-        "Too many incorrect OTP attempts. Please request a new verification code."
+        "Invalid verification code."
 
     });
 
   }
 
 
-  // ----------------------------------------------------------
-  // CHECK EXPIRATION
-  // ----------------------------------------------------------
-
-  const expires =
-    row[8]
-      ? new Date(
-          row[8]
-        )
-      : null;
-
-
   if (
     expires &&
     Date.now() >
-      expires.getTime()
+    expires.getTime()
   ) {
 
     return response({
@@ -1479,67 +1298,7 @@ function verifyOTP(data) {
 
 
   // ----------------------------------------------------------
-  // CHECK OTP
-  // ----------------------------------------------------------
-
-  const storedOTP =
-    normalize(
-      row[7]
-    );
-
-
-  if (
-    otp !== storedOTP
-  ) {
-
-    const newAttempts =
-      attempts + 1;
-
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        10
-      )
-      .setValue(
-        newAttempts
-      );
-
-
-    const remaining =
-      Math.max(
-        0,
-        MAX_OTP_ATTEMPTS -
-        newAttempts
-      );
-
-
-    return response({
-
-      success: false,
-
-      attempts:
-        newAttempts,
-
-      remainingAttempts:
-        remaining,
-
-      message:
-        remaining > 0
-
-          ? "Invalid OTP. " +
-            remaining +
-            " attempt(s) remaining."
-
-          : "Too many incorrect OTP attempts. Please request a new code."
-
-    });
-
-  }
-
-
-  // ----------------------------------------------------------
-  // VERIFY ACCOUNT
+  // ACTIVATE ACCOUNT
   // ----------------------------------------------------------
 
   found.sheet
@@ -1552,42 +1311,30 @@ function verifyOTP(data) {
     );
 
 
-  // Clear registration OTP
-
   found.sheet
     .getRange(
       found.rowNumber,
-      8
+      11
     )
     .setValue(
-      ""
+      true
     );
 
 
   found.sheet
     .getRange(
       found.rowNumber,
-      9
+      8,
+      1,
+      2
     )
-    .setValue(
-      ""
-    );
+    .clearContent();
 
 
   found.sheet
     .getRange(
       found.rowNumber,
-      10
-    )
-    .setValue(
-      0
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      13
+      16
     )
     .setValue(
       new Date()
@@ -1598,9 +1345,9 @@ function verifyOTP(data) {
 
     success: true,
 
-    demo: false,
-
     verified: true,
+
+    demo: false,
 
     accountStatus:
       "VERIFIED",
@@ -1640,9 +1387,7 @@ function resendOTP(data) {
 
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -1670,8 +1415,7 @@ function resendOTP(data) {
 
 
   if (
-    status ===
-    "VERIFIED"
+    status === "VERIFIED"
   ) {
 
     return response({
@@ -1690,13 +1434,8 @@ function resendOTP(data) {
     generateOTP();
 
 
-  const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
-    );
+  const newExpiration =
+    getOTPExpiration();
 
 
   found.sheet
@@ -1715,7 +1454,7 @@ function resendOTP(data) {
       9
     )
     .setValue(
-      expires
+      newExpiration
     );
 
 
@@ -1725,39 +1464,35 @@ function resendOTP(data) {
       10
     )
     .setValue(
-      0
+      "registration"
     );
 
 
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      11
-    )
-    .setValue(
-      "gmail"
+  try {
+
+    sendGmailOTP(
+
+      normalizeEmail(row[5]),
+
+      normalize(row[0]),
+
+      newOTP,
+
+      "resend"
+
     );
 
+  } catch (error) {
 
-  // ----------------------------------------------------------
-  // SEND EMAIL
-  // ----------------------------------------------------------
+    throw new Error(
 
-  sendRegistrationOTPEmail(
+      "Unable to send the new verification code. " +
 
-    normalizeLower(
-      row[5]
-    ),
+      error.message
 
-    normalize(
-      row[0]
-    ),
+    );
 
-    newOTP,
-
-    true
-
-  );
+  }
 
 
   return response({
@@ -1778,20 +1513,21 @@ function resendOTP(data) {
 
 
 // ============================================================
-// LOGIN USER
+// LOGIN
 // ============================================================
 
 function loginUser(data) {
 
   const identity =
-    normalizeLower(
+    normalize(
       data.identity
     );
 
 
   const password =
     String(
-      data.password || ""
+      data.password ||
+      ""
     );
 
 
@@ -1813,9 +1549,7 @@ function loginUser(data) {
 
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -1838,7 +1572,8 @@ function loginUser(data) {
 
   const savedPassword =
     String(
-      row[2] || ""
+      row[2] ||
+      ""
     );
 
 
@@ -1870,8 +1605,7 @@ function loginUser(data) {
   // ----------------------------------------------------------
 
   if (
-    status ===
-    "DEMO"
+    status === "DEMO"
   ) {
 
     return response({
@@ -1916,7 +1650,7 @@ function loginUser(data) {
 
 
   // ----------------------------------------------------------
-  // UNVERIFIED
+  // VERIFIED ACCOUNT
   // ----------------------------------------------------------
 
   if (
@@ -1939,10 +1673,6 @@ function loginUser(data) {
 
   }
 
-
-  // ----------------------------------------------------------
-  // LOGIN SUCCESS
-  // ----------------------------------------------------------
 
   return response({
 
@@ -1967,7 +1697,7 @@ function loginUser(data) {
         row[3],
 
       accountStatus:
-        row[4],
+        "VERIFIED",
 
       gmail:
         row[5],
@@ -1988,14 +1718,10 @@ function loginUser(data) {
 // ============================================================
 // FORGOT PASSWORD
 // ============================================================
+// This is the endpoint used by your existing
+// forgot-password.html.
 //
-// This endpoint intentionally does not reveal whether the
-// account exists.
-//
-// Frontend can call:
-// action: "forgotPassword"
-// identity: email / username / phone
-//
+// It immediately creates and sends the recovery OTP.
 // ============================================================
 
 function forgotPassword(data) {
@@ -2013,7 +1739,7 @@ function forgotPassword(data) {
       success: false,
 
       message:
-        "Email, username, or phone number is required."
+        "Email or phone number is required."
 
     });
 
@@ -2021,14 +1747,13 @@ function forgotPassword(data) {
 
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   // ----------------------------------------------------------
-  // SECURITY RESPONSE
-  // ----------------------------------------------------------
+  // SECURITY:
+// Do not reveal whether an account exists.
+// ----------------------------------------------------------
 
   if (!found) {
 
@@ -2039,7 +1764,7 @@ function forgotPassword(data) {
       recoveryStarted: false,
 
       message:
-        "If an account matches the information provided, a password reset code will be sent."
+        "If an account matches the information provided, a recovery code will be sent."
 
     });
 
@@ -2050,26 +1775,27 @@ function forgotPassword(data) {
     found.row;
 
 
-  const email =
-    normalizeLower(
-      row[5]
-    );
+  const status =
+    normalize(
+      row[4]
+    ).toUpperCase();
 
 
   // ----------------------------------------------------------
-  // REQUIRE REGISTERED EMAIL
+  // DISABLED ACCOUNT
   // ----------------------------------------------------------
 
-  if (!email) {
+  if (
+    status ===
+    "DISABLED"
+  ) {
 
     return response({
 
-      success: true,
-
-      recoveryStarted: false,
+      success: false,
 
       message:
-        "If an account matches the information provided, recovery instructions will be sent."
+        "This account is disabled. Please contact the administrator."
 
     });
 
@@ -2077,25 +1803,36 @@ function forgotPassword(data) {
 
 
   // ----------------------------------------------------------
-  // GENERATE RESET OTP
+  // GENERATE RECOVERY OTP
   // ----------------------------------------------------------
 
-  const resetOTP =
+  const recoveryOTP =
     generateOTP();
 
 
-  const resetExpires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
+  const expiration =
+    getOTPExpiration();
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      12
+    )
+    .setValue(
+      recoveryOTP
     );
 
 
-  // ----------------------------------------------------------
-  // SAVE RESET INFORMATION
-  // ----------------------------------------------------------
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      13
+    )
+    .setValue(
+      expiration
+    );
+
 
   found.sheet
     .getRange(
@@ -2103,99 +1840,41 @@ function forgotPassword(data) {
       14
     )
     .setValue(
-      resetOTP
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      15
-    )
-    .setValue(
-      resetExpires
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      16
-    )
-    .setValue(
-      0
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      17
-    )
-    .setValue(
-      "gmail"
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      18
-    )
-    .setValue(
-      new Date()
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      19
-    )
-    .setValue(
       false
     );
 
-
-  // ----------------------------------------------------------
-  // SEND RESET EMAIL
-  // ----------------------------------------------------------
 
   try {
 
-    sendResetOTPEmail(
+    sendGmailOTP(
 
-      email,
+      normalizeEmail(row[5]),
 
-      normalize(
-        row[0]
-      ),
+      normalize(row[0]),
 
-      resetOTP,
+      recoveryOTP,
 
-      false
+      "recovery"
 
     );
 
-  } catch (mailError) {
-
-    // Clear reset OTP if email fails.
+  } catch (error) {
 
     found.sheet
       .getRange(
         found.rowNumber,
-        14,
+        12,
         1,
-        6
+        3
       )
       .clearContent();
 
 
     throw new Error(
 
-      "Unable to send the password reset email. " +
+      "Recovery email could not be sent. " +
 
-      mailError.message
+      error.message
 
     );
 
@@ -2210,12 +1889,14 @@ function forgotPassword(data) {
 
     otpSent: true,
 
-    // Demo OTP remains available for school prototype.
+    // Only tells frontend that demo exists.
+    // The REAL OTP is NEVER returned.
+
     demoOtp:
       DEMO_OTP,
 
     message:
-      "If the account exists, a password reset code has been sent to the registered Gmail."
+      "If the account exists, a recovery code has been sent to the registered Gmail."
 
   });
 
@@ -2223,27 +1904,24 @@ function forgotPassword(data) {
 
 
 // ============================================================
-// REQUEST RESET OTP
+// REQUEST RECOVERY OTP
 // ============================================================
-//
-// Alias endpoint for frontend compatibility.
-//
+// This is useful if the frontend has a dedicated
+// "Send code again" button.
 // ============================================================
 
-function requestResetOTP(data) {
+function requestRecoveryOTP(data) {
 
-  return forgotPassword(
-    data
-  );
+  return forgotPassword(data);
 
 }
 
 
 // ============================================================
-// VERIFY RESET OTP
+// VERIFY RECOVERY OTP
 // ============================================================
 
-function verifyResetOTP(data) {
+function verifyRecoveryOTP(data) {
 
   const identity =
     normalize(
@@ -2267,7 +1945,7 @@ function verifyResetOTP(data) {
       success: false,
 
       message:
-        "Email/username and reset OTP are required."
+        "Recovery identity and OTP are required."
 
     });
 
@@ -2275,9 +1953,7 @@ function verifyResetOTP(data) {
 
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -2287,7 +1963,7 @@ function verifyResetOTP(data) {
       success: false,
 
       message:
-        "Invalid or expired reset code."
+        "Invalid recovery request."
 
     });
 
@@ -2298,26 +1974,30 @@ function verifyResetOTP(data) {
     found.row;
 
 
+  const storedOTP =
+    normalize(
+      row[11]
+    );
+
+
+  const expiration =
+    row[12]
+      ? new Date(row[12])
+      : null;
+
+
   // ----------------------------------------------------------
-  // DEMO OTP
-  // ----------------------------------------------------------
-  //
-  // Demo OTP allows the prototype to continue to the
-  // password-reset screen.
-  //
-  // The account is NOT automatically verified.
-  //
+  // DEMO RECOVERY
   // ----------------------------------------------------------
 
   if (
-    otp ===
-    DEMO_OTP
+    otp === DEMO_OTP
   ) {
 
     found.sheet
       .getRange(
         found.rowNumber,
-        19
+        14
       )
       .setValue(
         true
@@ -2330,10 +2010,11 @@ function verifyResetOTP(data) {
 
       demo: true,
 
-      resetVerified: true,
+      recoveryVerified:
+        true,
 
       message:
-        "Demo password-reset verification accepted."
+        "Demo recovery verification successful."
 
     });
 
@@ -2341,18 +2022,12 @@ function verifyResetOTP(data) {
 
 
   // ----------------------------------------------------------
-  // CHECK ATTEMPTS
+  // REAL RECOVERY OTP
   // ----------------------------------------------------------
 
-  const attempts =
-    Number(
-      row[15] || 0
-    );
-
-
   if (
-    attempts >=
-    MAX_OTP_ATTEMPTS
+    !storedOTP ||
+    otp !== storedOTP
   ) {
 
     return response({
@@ -2360,29 +2035,17 @@ function verifyResetOTP(data) {
       success: false,
 
       message:
-        "Too many incorrect reset-code attempts. Please request a new code."
+        "Invalid recovery code."
 
     });
 
   }
 
 
-  // ----------------------------------------------------------
-  // CHECK EXPIRATION
-  // ----------------------------------------------------------
-
-  const expires =
-    row[14]
-      ? new Date(
-          row[14]
-        )
-      : null;
-
-
   if (
-    !expires ||
+    expiration &&
     Date.now() >
-      expires.getTime()
+    expiration.getTime()
   ) {
 
     return response({
@@ -2390,7 +2053,7 @@ function verifyResetOTP(data) {
       success: false,
 
       message:
-        "This password reset code has expired. Please request a new one."
+        "This recovery code has expired. Please request a new one."
 
     });
 
@@ -2398,74 +2061,13 @@ function verifyResetOTP(data) {
 
 
   // ----------------------------------------------------------
-  // CHECK OTP
-  // ----------------------------------------------------------
-
-  const savedOTP =
-    normalize(
-      row[13]
-    );
-
-
-  if (
-    otp !==
-    savedOTP
-  ) {
-
-    const newAttempts =
-      attempts + 1;
-
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        16
-      )
-      .setValue(
-        newAttempts
-      );
-
-
-    const remaining =
-      Math.max(
-        0,
-        MAX_OTP_ATTEMPTS -
-        newAttempts
-      );
-
-
-    return response({
-
-      success: false,
-
-      attempts:
-        newAttempts,
-
-      remainingAttempts:
-        remaining,
-
-      message:
-        remaining > 0
-
-          ? "Incorrect reset code. " +
-            remaining +
-            " attempt(s) remaining."
-
-          : "Too many incorrect attempts. Please request a new reset code."
-
-    });
-
-  }
-
-
-  // ----------------------------------------------------------
-  // RESET OTP VERIFIED
+  // MARK RECOVERY AS VERIFIED
   // ----------------------------------------------------------
 
   found.sheet
     .getRange(
       found.rowNumber,
-      19
+      14
     )
     .setValue(
       true
@@ -2478,201 +2080,11 @@ function verifyResetOTP(data) {
 
     demo: false,
 
-    resetVerified: true,
+    recoveryVerified:
+      true,
 
     message:
-      "Reset code verified successfully."
-
-  });
-
-}
-
-
-// ============================================================
-// RESEND PASSWORD RESET OTP
-// ============================================================
-
-function resendResetOTP(data) {
-
-  const identity =
-    normalize(
-      data.identity
-    );
-
-
-  if (!identity) {
-
-    return response({
-
-      success: false,
-
-      message:
-        "Email, username, or phone number is required."
-
-    });
-
-  }
-
-
-  const found =
-    findUser(
-      identity
-    );
-
-
-  // ----------------------------------------------------------
-  // Do not reveal account existence
-  // ----------------------------------------------------------
-
-  if (!found) {
-
-    return response({
-
-      success: true,
-
-      message:
-        "If the account exists, a new reset code will be sent."
-
-    });
-
-  }
-
-
-  const row =
-    found.row;
-
-
-  const email =
-    normalizeLower(
-      row[5]
-    );
-
-
-  if (!email) {
-
-    return response({
-
-      success: true,
-
-      message:
-        "If the account exists, a new reset code will be sent."
-
-    });
-
-  }
-
-
-  // ----------------------------------------------------------
-  // GENERATE NEW OTP
-  // ----------------------------------------------------------
-
-  const resetOTP =
-    generateOTP();
-
-
-  const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
-    );
-
-
-  // ----------------------------------------------------------
-  // SAVE NEW RESET OTP
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      14
-    )
-    .setValue(
-      resetOTP
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      15
-    )
-    .setValue(
-      expires
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      16
-    )
-    .setValue(
-      0
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      17
-    )
-    .setValue(
-      "gmail"
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      18
-    )
-    .setValue(
-      new Date()
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      19
-    )
-    .setValue(
-      false
-    );
-
-
-  // ----------------------------------------------------------
-  // SEND EMAIL
-  // ----------------------------------------------------------
-
-  sendResetOTPEmail(
-
-    email,
-
-    normalize(
-      row[0]
-    ),
-
-    resetOTP,
-
-    true
-
-  );
-
-
-  return response({
-
-    success: true,
-
-    otpSent: true,
-
-    demoOtp:
-      DEMO_OTP,
-
-    message:
-      "A new password reset code has been sent to your Gmail."
+      "Recovery code verified successfully."
 
   });
 
@@ -2694,7 +2106,13 @@ function resetPassword(data) {
   const newPassword =
     String(
       data.newPassword ||
-      data.password ||
+      ""
+    );
+
+
+  const confirmPassword =
+    String(
+      data.confirmPassword ||
       ""
     );
 
@@ -2717,7 +2135,7 @@ function resetPassword(data) {
 
 
   // ----------------------------------------------------------
-  // PASSWORD REQUIREMENTS
+  // PASSWORD VALIDATION
   // ----------------------------------------------------------
 
   if (
@@ -2808,14 +2226,26 @@ function resetPassword(data) {
   }
 
 
-  // ----------------------------------------------------------
-  // FIND USER
-  // ----------------------------------------------------------
+  if (
+    confirmPassword &&
+    newPassword !==
+    confirmPassword
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Passwords do not match."
+
+    });
+
+  }
+
 
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -2825,7 +2255,7 @@ function resetPassword(data) {
       success: false,
 
       message:
-        "Unable to reset password."
+        "Unable to process password reset."
 
     });
 
@@ -2836,16 +2266,16 @@ function resetPassword(data) {
     found.row;
 
 
-  // ----------------------------------------------------------
-  // CHECK RESET VERIFICATION
-  // ----------------------------------------------------------
+  const recoveryVerified =
+    row[13] === true;
 
-  const resetVerified =
-    row[18] === true;
 
+  // ----------------------------------------------------------
+  // SECURITY CHECK
+  // ----------------------------------------------------------
 
   if (
-    !resetVerified
+    !recoveryVerified
   ) {
 
     return response({
@@ -2853,7 +2283,7 @@ function resetPassword(data) {
       success: false,
 
       message:
-        "Please verify the password reset code first."
+        "Recovery verification is required before changing the password."
 
     });
 
@@ -2875,8 +2305,18 @@ function resetPassword(data) {
 
 
   // ----------------------------------------------------------
-  // INVALIDATE RESET OTP
+  // CLEAR RECOVERY DATA
   // ----------------------------------------------------------
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      12,
+      1,
+      3
+    )
+    .clearContent();
+
 
   found.sheet
     .getRange(
@@ -2884,27 +2324,7 @@ function resetPassword(data) {
       14
     )
     .setValue(
-      ""
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      15
-    )
-    .setValue(
-      ""
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      16
-    )
-    .setValue(
-      0
+      false
     );
 
 
@@ -2914,40 +2334,19 @@ function resetPassword(data) {
       17
     )
     .setValue(
-      ""
+      new Date()
     );
 
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      18
-    )
-    .setValue(
-      ""
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      19
-    )
-    .setValue(
-      false
-    );
-
-
-  // ----------------------------------------------------------
-  // SUCCESS
-  // ----------------------------------------------------------
 
   return response({
 
     success: true,
 
+    passwordReset:
+      true,
+
     message:
-      "Password has been reset successfully. You can now log in with your new password."
+      "Password reset successfully. You can now log in with your new password."
 
   });
 
@@ -2966,10 +2365,22 @@ function getUser(data) {
     );
 
 
+  if (!identity) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username, email or phone is required."
+
+    });
+
+  }
+
+
   const found =
-    findUser(
-      identity
-    );
+    findUser(identity);
 
 
   if (!found) {
@@ -3031,9 +2442,9 @@ function getUser(data) {
 function updateAccountStatus(data) {
 
   const username =
-    normalizeLower(
+    normalize(
       data.username
-    );
+    ).toLowerCase();
 
 
   const status =
@@ -3076,9 +2487,7 @@ function updateAccountStatus(data) {
 
 
   const found =
-    findUser(
-      username
-    );
+    findUser(username);
 
 
   if (!found) {
