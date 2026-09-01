@@ -1,1 +1,1622 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow Dashboard</title><link rel="stylesheet" href="styles.css"></head><body><main class="card"><h1>StockFlow Dashboard</h1><p>Welcome, <b data-user-name></b> (<span data-user-role></span>)</p><button id="logoutBtn">Logout</button></main><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="dashboard.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="Barangay Resident Service Portal — Resident Dashboard">
+
+    <meta name="theme-color" content="#0f4c81">
+
+    <title>Resident Dashboard | Barangay Resident Service Portal</title>
+
+    <!-- =========================================================
+         EXTERNAL ICON LIBRARY
+         ========================================================= -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- =========================================================
+         DASHBOARD STYLES
+         ========================================================= -->
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+<!-- ============================================================
+     APPLICATION SHELL
+     ============================================================ -->
+<div class="app-shell">
+
+
+    <!-- ========================================================
+         SIDEBAR
+         ======================================================== -->
+    <aside class="sidebar" id="sidebar">
+
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+
+            <div class="barangay-logo">
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+
+            <div class="barangay-brand">
+                <h2>Barangay Portal</h2>
+                <span>Resident Service Portal</span>
+            </div>
+
+        </div>
+
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar-nav">
+
+            <!-- Main -->
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    MAIN
+                </span>
+
+                <a
+                    href="dashboard.html"
+                    class="nav-item active"
+                    data-module="dashboard"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Dashboard
+                    </span>
+                </a>
+
+            </div>
+
+
+            <!-- Services -->
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    SERVICES
+                </span>
+
+
+                <!-- Service Requests -->
+                <a
+                    href="service-requests.html"
+                    class="nav-item"
+                    data-module="service-requests"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Service Requests
+                    </span>
+
+                    <span
+                        class="nav-badge"
+                        id="serviceRequestBadge"
+                        hidden
+                    >
+                        0
+                    </span>
+                </a>
+
+
+                <!-- Appointments -->
+                <a
+                    href="appointments.html"
+                    class="nav-item"
+                    data-module="appointments"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Appointments
+                    </span>
+
+                    <span
+                        class="nav-badge"
+                        id="appointmentBadge"
+                        hidden
+                    >
+                        0
+                    </span>
+                </a>
+
+
+                <!-- Complaints -->
+                <a
+                    href="complaints.html"
+                    class="nav-item"
+                    data-module="complaints"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-comment-dots"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Complaints
+                    </span>
+
+                    <span
+                        class="nav-badge"
+                        id="complaintBadge"
+                        hidden
+                    >
+                        0
+                    </span>
+                </a>
+
+            </div>
+
+
+            <!-- Information -->
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    INFORMATION
+                </span>
+
+
+                <!-- Announcements -->
+                <a
+                    href="announcements.html"
+                    class="nav-item"
+                    data-module="announcements"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Announcements
+                    </span>
+
+                    <span
+                        class="nav-badge"
+                        id="announcementBadge"
+                        hidden
+                    >
+                        0
+                    </span>
+                </a>
+
+
+                <!-- Notifications -->
+                <a
+                    href="notifications.html"
+                    class="nav-item"
+                    data-module="notifications"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-bell"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        Notifications
+                    </span>
+
+                    <span
+                        class="nav-badge notification-badge"
+                        id="notificationBadge"
+                        hidden
+                    >
+                        0
+                    </span>
+                </a>
+
+            </div>
+
+
+            <!-- Account -->
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    ACCOUNT
+                </span>
+
+
+                <!-- Profile -->
+                <a
+                    href="profile.html"
+                    class="nav-item"
+                    data-module="profile"
+                >
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+
+                    <span class="nav-label">
+                        My Profile
+                    </span>
+                </a>
+
+            </div>
+
+        </nav>
+
+
+        <!-- Sidebar Bottom -->
+        <div class="sidebar-footer">
+
+            <button
+                type="button"
+                class="logout-button"
+                id="logoutBtn"
+            >
+                <span class="nav-icon">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </span>
+
+                <span class="nav-label">
+                    Logout
+                </span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ========================================================
+         MAIN AREA
+         ======================================================== -->
+    <main class="main-content">
+
+
+        <!-- ====================================================
+             TOP HEADER
+             ==================================================== -->
+        <header class="top-header">
+
+            <!-- Mobile Menu -->
+            <button
+                type="button"
+                class="mobile-menu-btn"
+                id="mobileMenuBtn"
+                aria-label="Open navigation menu"
+            >
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+
+            <!-- Page Title -->
+            <div class="header-page-title">
+
+                <h1>
+                    Resident Dashboard
+                </h1>
+
+                <p>
+                    Barangay Resident Service Portal
+                </p>
+
+            </div>
+
+
+            <!-- Header Right -->
+            <div class="header-actions">
+
+
+                <!-- Notification -->
+                <a
+                    href="notifications.html"
+                    class="header-notification"
+                    id="headerNotificationBtn"
+                    aria-label="Notifications"
+                    title="Notifications"
+                >
+
+                    <i class="fa-regular fa-bell"></i>
+
+                    <span
+                        class="header-notification-count"
+                        id="headerNotificationCount"
+                        hidden
+                    >
+                        0
+                    </span>
+
+                </a>
+
+
+                <!-- Resident Identity -->
+                <div class="resident-identity">
+
+                    <div
+                        class="resident-avatar"
+                        id="residentAvatar"
+                    >
+                        <span data-user-initial>
+                            R
+                        </span>
+                    </div>
+
+                    <div class="resident-details">
+
+                        <strong data-user-name>
+                            Resident
+                        </strong>
+
+                        <span data-user-role>
+                            Resident
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ====================================================
+             DASHBOARD CONTENT
+             ==================================================== -->
+        <section class="dashboard-content">
+
+
+            <!-- =================================================
+                 WELCOME SECTION
+                 ================================================= -->
+            <section class="welcome-section">
+
+                <div class="welcome-content">
+
+                    <span class="welcome-label">
+                        <i class="fa-solid fa-house"></i>
+                        RESIDENT PORTAL
+                    </span>
+
+                    <h2>
+                        Welcome back,
+                        <span data-user-first-name>
+                            Resident
+                        </span>
+                    </h2>
+
+                    <p>
+                        Manage your barangay services, requests,
+                        appointments, and complaints from one place.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-date">
+
+                    <span>
+                        TODAY
+                    </span>
+
+                    <strong id="currentDate">
+                        Loading...
+                    </strong>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 QUICK ACTIONS
+                 ================================================= -->
+            <section class="quick-actions-section">
+
+                <div class="section-heading">
+
+                    <div>
+                        <span class="section-kicker">
+                            QUICK ACTIONS
+                        </span>
+
+                        <h3>
+                            Start a Transaction
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <div class="quick-actions-grid">
+
+
+                    <!-- Request Service -->
+                    <a
+                        href="service-requests.html?action=new"
+                        class="quick-action-card"
+                        data-action="new-service-request"
+                    >
+
+                        <div class="quick-action-icon">
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                        </div>
+
+                        <div class="quick-action-content">
+
+                            <h4>
+                                Request a Service
+                            </h4>
+
+                            <p>
+                                Apply for a barangay certificate
+                                or available service.
+                            </p>
+
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right quick-action-arrow"></i>
+
+                    </a>
+
+
+
+                    <!-- Book Appointment -->
+                    <a
+                        href="appointments.html?action=new"
+                        class="quick-action-card"
+                        data-action="new-appointment"
+                    >
+
+                        <div class="quick-action-icon">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                        </div>
+
+                        <div class="quick-action-content">
+
+                            <h4>
+                                Book an Appointment
+                            </h4>
+
+                            <p>
+                                Select an available date and
+                                time for your transaction.
+                            </p>
+
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right quick-action-arrow"></i>
+
+                    </a>
+
+
+
+                    <!-- Submit Complaint -->
+                    <a
+                        href="complaints.html?action=new"
+                        class="quick-action-card"
+                        data-action="new-complaint"
+                    >
+
+                        <div class="quick-action-icon">
+                            <i class="fa-solid fa-message"></i>
+                        </div>
+
+                        <div class="quick-action-content">
+
+                            <h4>
+                                Submit a Complaint
+                            </h4>
+
+                            <p>
+                                Report an incident or submit
+                                a formal complaint.
+                            </p>
+
+                        </div>
+
+                        <i class="fa-solid fa-arrow-right quick-action-arrow"></i>
+
+                    </a>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 STATISTICS
+                 ================================================= -->
+            <section class="statistics-section">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            ACCOUNT OVERVIEW
+                        </span>
+
+                        <h3>
+                            Your Transactions
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div class="statistics-grid">
+
+
+                    <!-- Service Requests -->
+                    <a
+                        href="service-requests.html"
+                        class="stat-card"
+                        data-stat-link="service-requests"
+                    >
+
+                        <div class="stat-card-top">
+
+                            <div class="stat-icon stat-icon-blue">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+
+                            <span class="stat-card-arrow">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </span>
+
+                        </div>
+
+                        <div class="stat-card-value" id="totalServiceRequests">
+                            0
+                        </div>
+
+                        <div class="stat-card-label">
+                            Service Requests
+                        </div>
+
+                        <div class="stat-card-meta">
+                            <span id="pendingServiceRequests">
+                                0 pending
+                            </span>
+                        </div>
+
+                    </a>
+
+
+
+                    <!-- Appointments -->
+                    <a
+                        href="appointments.html"
+                        class="stat-card"
+                        data-stat-link="appointments"
+                    >
+
+                        <div class="stat-card-top">
+
+                            <div class="stat-icon stat-icon-green">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+
+                            <span class="stat-card-arrow">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </span>
+
+                        </div>
+
+                        <div class="stat-card-value" id="totalAppointments">
+                            0
+                        </div>
+
+                        <div class="stat-card-label">
+                            Appointments
+                        </div>
+
+                        <div class="stat-card-meta">
+                            <span id="upcomingAppointments">
+                                0 upcoming
+                            </span>
+                        </div>
+
+                    </a>
+
+
+
+                    <!-- Complaints -->
+                    <a
+                        href="complaints.html"
+                        class="stat-card"
+                        data-stat-link="complaints"
+                    >
+
+                        <div class="stat-card-top">
+
+                            <div class="stat-icon stat-icon-orange">
+                                <i class="fa-solid fa-comment-dots"></i>
+                            </div>
+
+                            <span class="stat-card-arrow">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </span>
+
+                        </div>
+
+                        <div class="stat-card-value" id="totalComplaints">
+                            0
+                        </div>
+
+                        <div class="stat-card-label">
+                            Complaints
+                        </div>
+
+                        <div class="stat-card-meta">
+                            <span id="activeComplaints">
+                                0 active
+                            </span>
+                        </div>
+
+                    </a>
+
+
+
+                    <!-- Notifications -->
+                    <a
+                        href="notifications.html"
+                        class="stat-card"
+                        data-stat-link="notifications"
+                    >
+
+                        <div class="stat-card-top">
+
+                            <div class="stat-icon stat-icon-purple">
+                                <i class="fa-solid fa-bell"></i>
+                            </div>
+
+                            <span class="stat-card-arrow">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </span>
+
+                        </div>
+
+                        <div class="stat-card-value" id="unreadNotifications">
+                            0
+                        </div>
+
+                        <div class="stat-card-label">
+                            Notifications
+                        </div>
+
+                        <div class="stat-card-meta">
+                            <span>
+                                Unread updates
+                            </span>
+                        </div>
+
+                    </a>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 TWO-COLUMN DASHBOARD
+                 ================================================= -->
+            <section class="dashboard-grid">
+
+
+                <!-- =============================================
+                     RECENT SERVICE REQUESTS
+                     ============================================= -->
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                SERVICE REQUESTS
+                            </span>
+
+                            <h3>
+                                Recent Requests
+                            </h3>
+
+                        </div>
+
+                        <a
+                            href="service-requests.html"
+                            class="panel-link"
+                        >
+                            View All
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+
+                    <div
+                        class="panel-body"
+                        id="recentRequestsContainer"
+                    >
+
+                        <!-- Loading -->
+                        <div class="panel-loading" id="requestsLoading">
+
+                            <span class="loading-spinner"></span>
+
+                            <span>
+                                Loading requests...
+                            </span>
+
+                        </div>
+
+
+                        <!-- Empty State -->
+                        <div
+                            class="empty-state"
+                            id="requestsEmpty"
+                            hidden
+                        >
+
+                            <div class="empty-state-icon">
+                                <i class="fa-regular fa-file-lines"></i>
+                            </div>
+
+                            <h4>
+                                No service requests yet
+                            </h4>
+
+                            <p>
+                                Your submitted service requests
+                                will appear here.
+                            </p>
+
+                            <a
+                                href="service-requests.html?action=new"
+                                class="small-action-btn"
+                            >
+                                Request a Service
+                            </a>
+
+                        </div>
+
+
+                        <!-- Dynamic Requests -->
+                        <div
+                            class="transaction-list"
+                            id="recentRequestsList"
+                            hidden
+                        >
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     UPCOMING APPOINTMENTS
+                     ============================================= -->
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                APPOINTMENTS
+                            </span>
+
+                            <h3>
+                                Upcoming Appointments
+                            </h3>
+
+                        </div>
+
+                        <a
+                            href="appointments.html"
+                            class="panel-link"
+                        >
+                            View All
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+
+                    <div
+                        class="panel-body"
+                        id="appointmentsContainer"
+                    >
+
+                        <!-- Loading -->
+                        <div
+                            class="panel-loading"
+                            id="appointmentsLoading"
+                        >
+
+                            <span class="loading-spinner"></span>
+
+                            <span>
+                                Loading appointments...
+                            </span>
+
+                        </div>
+
+
+                        <!-- Empty State -->
+                        <div
+                            class="empty-state"
+                            id="appointmentsEmpty"
+                            hidden
+                        >
+
+                            <div class="empty-state-icon">
+                                <i class="fa-regular fa-calendar"></i>
+                            </div>
+
+                            <h4>
+                                No upcoming appointments
+                            </h4>
+
+                            <p>
+                                Your scheduled appointments
+                                will appear here.
+                            </p>
+
+                            <a
+                                href="appointments.html?action=new"
+                                class="small-action-btn"
+                            >
+                                Book Appointment
+                            </a>
+
+                        </div>
+
+
+                        <!-- Dynamic Appointments -->
+                        <div
+                            class="appointment-list"
+                            id="upcomingAppointmentsList"
+                            hidden
+                        >
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 RECENT NOTIFICATIONS / UPDATES
+                 ================================================= -->
+            <section class="dashboard-panel full-width-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            RECENT UPDATES
+                        </span>
+
+                        <h3>
+                            Latest Notifications
+                        </h3>
+
+                    </div>
+
+                    <a
+                        href="notifications.html"
+                        class="panel-link"
+                    >
+                        View All
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+
+                </div>
+
+
+                <div
+                    class="notification-list"
+                    id="dashboardNotifications"
+                >
+
+                    <!-- Loading -->
+                    <div
+                        class="panel-loading"
+                        id="notificationsLoading"
+                    >
+
+                        <span class="loading-spinner"></span>
+
+                        <span>
+                            Loading notifications...
+                        </span>
+
+                    </div>
+
+
+                    <!-- Empty State -->
+                    <div
+                        class="empty-state"
+                        id="notificationsEmpty"
+                        hidden
+                    >
+
+                        <div class="empty-state-icon">
+                            <i class="fa-regular fa-bell"></i>
+                        </div>
+
+                        <h4>
+                            You're all caught up
+                        </h4>
+
+                        <p>
+                            New service, appointment,
+                            complaint, and account updates
+                            will appear here.
+                        </p>
+
+                    </div>
+
+
+                    <!-- Dynamic Notifications -->
+                    <div
+                        id="notificationItems"
+                        hidden
+                    >
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 ANNOUNCEMENTS
+                 ================================================= -->
+            <section class="dashboard-panel full-width-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            BARANGAY INFORMATION
+                        </span>
+
+                        <h3>
+                            Latest Announcements
+                        </h3>
+
+                    </div>
+
+                    <a
+                        href="announcements.html"
+                        class="panel-link"
+                    >
+                        View All
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+
+                </div>
+
+
+                <div
+                    class="announcement-grid"
+                    id="dashboardAnnouncements"
+                >
+
+                    <!-- Loading -->
+                    <div
+                        class="panel-loading"
+                        id="announcementsLoading"
+                    >
+
+                        <span class="loading-spinner"></span>
+
+                        <span>
+                            Loading announcements...
+                        </span>
+
+                    </div>
+
+
+                    <!-- Empty State -->
+                    <div
+                        class="empty-state"
+                        id="announcementsEmpty"
+                        hidden
+                    >
+
+                        <div class="empty-state-icon">
+                            <i class="fa-regular fa-newspaper"></i>
+                        </div>
+
+                        <h4>
+                            No announcements available
+                        </h4>
+
+                        <p>
+                            Official barangay announcements
+                            will appear here.
+                        </p>
+
+                    </div>
+
+
+                    <!-- Dynamic Announcements -->
+                    <div
+                        id="announcementItems"
+                        hidden
+                    >
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 SYSTEM STATUS
+                 ================================================= -->
+            <section class="system-status">
+
+                <div class="system-status-indicator">
+
+                    <span
+                        class="status-dot"
+                        id="systemStatusDot"
+                    ></span>
+
+                    <span id="systemStatusText">
+                        Checking portal connection...
+                    </span>
+
+                </div>
+
+                <div class="system-status-time">
+
+                    Last updated:
+                    <span id="lastUpdated">
+                        Just now
+                    </span>
+
+                </div>
+
+            </section>
+
+
+        </section>
+
+
+        <!-- ====================================================
+             FOOTER
+             ==================================================== -->
+        <footer class="main-footer">
+
+            <div>
+                Barangay Resident Service Portal
+            </div>
+
+            <div>
+                © <span id="currentYear"></span>
+                All Rights Reserved.
+            </div>
+
+        </footer>
+
+    </main>
+
+</div>
+
+
+
+<!-- ============================================================
+     MOBILE SIDEBAR OVERLAY
+     ============================================================ -->
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay"
+    hidden
+></div>
+
+
+
+<!-- ============================================================
+     GLOBAL LOADING OVERLAY
+     ============================================================ -->
+<div
+    class="global-loading"
+    id="globalLoading"
+    hidden
+>
+
+    <div class="global-loading-box">
+
+        <span class="loading-spinner large"></span>
+
+        <p id="globalLoadingMessage">
+            Please wait...
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================================================
+     GLOBAL TOAST CONTAINER
+     dashboard.js can use this for API success/error messages.
+     ============================================================ -->
+<div
+    class="toast-container"
+    id="toastContainer"
+    aria-live="polite"
+    aria-atomic="true"
+></div>
+
+
+
+<!-- ============================================================
+     JAVASCRIPT DEPENDENCIES
+     
+     IMPORTANT:
+     1. config.js
+     2. API.js
+     3. auth.js
+     4. dashboard.js
+
+     Keep this order because dashboard.js depends on the
+     configuration, API client, and authentication layer.
+     ============================================================ -->
+
+<script src="config.js"></script>
+
+<script src="API.js"></script>
+
+<script src="auth.js"></script>
+
+<script src="dashboard.js"></script>
+
+
+<!-- ============================================================
+     BASIC DASHBOARD UI INITIALIZATION
+     
+     This only handles presentation-level behavior.
+     Database/API operations remain inside dashboard.js/API.js.
+     ============================================================ -->
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* ========================================================
+       CURRENT DATE
+       ======================================================== */
+
+    const currentDateElement =
+        document.getElementById("currentDate");
+
+    if (currentDateElement) {
+
+        const today = new Date();
+
+        currentDateElement.textContent =
+            today.toLocaleDateString("en-PH", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+
+    }
+
+
+    /* ========================================================
+       CURRENT YEAR
+       ======================================================== */
+
+    const currentYearElement =
+        document.getElementById("currentYear");
+
+    if (currentYearElement) {
+        currentYearElement.textContent =
+            new Date().getFullYear();
+    }
+
+
+    /* ========================================================
+       MOBILE SIDEBAR
+       ======================================================== */
+
+    const mobileMenuBtn =
+        document.getElementById("mobileMenuBtn");
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const sidebarOverlay =
+        document.getElementById("sidebarOverlay");
+
+
+    function openSidebar() {
+
+        if (!sidebar) return;
+
+        sidebar.classList.add("sidebar-open");
+
+        if (sidebarOverlay) {
+            sidebarOverlay.hidden = false;
+            sidebarOverlay.classList.add("overlay-visible");
+        }
+
+    }
+
+
+    function closeSidebar() {
+
+        if (!sidebar) return;
+
+        sidebar.classList.remove("sidebar-open");
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.remove("overlay-visible");
+
+            setTimeout(function () {
+                sidebarOverlay.hidden = true;
+            }, 200);
+
+        }
+
+    }
+
+
+    if (mobileMenuBtn) {
+
+        mobileMenuBtn.addEventListener(
+            "click",
+            openSidebar
+        );
+
+    }
+
+
+    if (sidebarOverlay) {
+
+        sidebarOverlay.addEventListener(
+            "click",
+            closeSidebar
+        );
+
+    }
+
+
+    /* Close sidebar after selecting a module on mobile */
+
+    document.querySelectorAll(".nav-item").forEach(function (item) {
+
+        item.addEventListener("click", function () {
+
+            if (window.innerWidth <= 900) {
+                closeSidebar();
+            }
+
+        });
+
+    });
+
+
+    /* ========================================================
+       ACTIVE NAVIGATION
+       ======================================================== */
+
+    const currentPage =
+        window.location.pathname
+            .split("/")
+            .pop()
+            .toLowerCase();
+
+
+    document.querySelectorAll(".nav-item").forEach(function (item) {
+
+        const href =
+            item.getAttribute("href");
+
+        if (!href) return;
+
+        const targetPage =
+            href.split("?")[0].toLowerCase();
+
+        if (
+            targetPage === currentPage ||
+            (
+                currentPage === "" &&
+                targetPage === "dashboard.html"
+            )
+        ) {
+
+            document
+                .querySelectorAll(".nav-item")
+                .forEach(function (nav) {
+                    nav.classList.remove("active");
+                });
+
+            item.classList.add("active");
+
+        }
+
+    });
+
+
+    /* ========================================================
+       NOTIFICATION BADGE VISIBILITY
+       ======================================================== */
+
+    function updateBadgeVisibility(elementId, value) {
+
+        const badge =
+            document.getElementById(elementId);
+
+        if (!badge) return;
+
+        const count =
+            Number(value) || 0;
+
+        if (count > 0) {
+
+            badge.textContent =
+                count > 99 ? "99+" : count;
+
+            badge.hidden = false;
+
+        } else {
+
+            badge.hidden = true;
+
+        }
+
+    }
+
+
+    /*
+     * Expose this helper for dashboard.js.
+     *
+     * Example:
+     *
+     * window.updateDashboardBadge(
+     *     "notificationBadge",
+     *     unreadCount
+     * );
+     */
+
+    window.updateDashboardBadge =
+        updateBadgeVisibility;
+
+
+    /* ========================================================
+       SYSTEM STATUS UI
+       ======================================================== */
+
+    window.setDashboardSystemStatus =
+        function (online, message) {
+
+            const dot =
+                document.getElementById("systemStatusDot");
+
+            const text =
+                document.getElementById("systemStatusText");
+
+            if (!dot || !text) return;
+
+
+            if (online) {
+
+                dot.classList.add("online");
+
+                dot.classList.remove("offline");
+
+                text.textContent =
+                    message ||
+                    "Portal connected";
+
+            } else {
+
+                dot.classList.add("offline");
+
+                dot.classList.remove("online");
+
+                text.textContent =
+                    message ||
+                    "Portal connection unavailable";
+
+            }
+
+        };
+
+
+    /* ========================================================
+       LAST UPDATED
+       ======================================================== */
+
+    window.updateDashboardTimestamp =
+        function () {
+
+            const element =
+                document.getElementById("lastUpdated");
+
+            if (!element) return;
+
+            element.textContent =
+                new Date().toLocaleTimeString(
+                    "en-PH",
+                    {
+                        hour: "numeric",
+                        minute: "2-digit"
+                    }
+                );
+
+        };
+
+
+    /* ========================================================
+       TOAST SYSTEM
+       ======================================================== */
+
+    window.showDashboardToast =
+        function (
+            message,
+            type = "info"
+        ) {
+
+            const container =
+                document.getElementById("toastContainer");
+
+            if (!container) return;
+
+
+            const toast =
+                document.createElement("div");
+
+            toast.className =
+                "dashboard-toast toast-" + type;
+
+
+            let icon =
+                "fa-circle-info";
+
+
+            if (type === "success") {
+                icon = "fa-circle-check";
+            }
+
+            if (type === "error") {
+                icon = "fa-circle-xmark";
+            }
+
+            if (type === "warning") {
+                icon = "fa-triangle-exclamation";
+            }
+
+
+            toast.innerHTML = `
+
+                <i class="fa-solid ${icon}"></i>
+
+                <span>
+                    ${String(message)}
+                </span>
+
+                <button
+                    type="button"
+                    aria-label="Close notification"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            `;
+
+
+            container.appendChild(toast);
+
+
+            requestAnimationFrame(function () {
+
+                toast.classList.add(
+                    "toast-visible"
+                );
+
+            });
+
+
+            const closeButton =
+                toast.querySelector("button");
+
+
+            if (closeButton) {
+
+                closeButton.addEventListener(
+                    "click",
+                    function () {
+
+                        toast.classList.remove(
+                            "toast-visible"
+                        );
+
+                        setTimeout(function () {
+
+                            toast.remove();
+
+                        }, 250);
+
+                    }
+                );
+
+            }
+
+
+            setTimeout(function () {
+
+                if (
+                    toast &&
+                    toast.parentNode
+                ) {
+
+                    toast.classList.remove(
+                        "toast-visible"
+                    );
+
+                    setTimeout(function () {
+
+                        if (toast.parentNode) {
+                            toast.remove();
+                        }
+
+                    }, 250);
+
+                }
+
+            }, 5000);
+
+        };
+
+
+    /* ========================================================
+       WINDOW RESIZE
+       ======================================================== */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            if (window.innerWidth > 900) {
+                closeSidebar();
+            }
+
+        }
+    );
+
+});
+
+</script>
+
+</body>
+</html>
