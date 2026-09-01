@@ -258,7 +258,7 @@ function normalizeEmail(value) {
 
 function normalizePhone(value) {
 
-  let phone =
+  let phone = oten
     normalize(value)
       .replace(
         /[\s()-]/g,
