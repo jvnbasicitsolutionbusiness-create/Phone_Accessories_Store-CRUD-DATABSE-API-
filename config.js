@@ -3,6 +3,7 @@
 // ============================================================
 
 window.STOCKFLOW_CONFIG = {
+
     FIREBASE_DATABASE_URL:
         "https://midtermexamproject-default-rtdb.firebaseio.com/",
 
@@ -12,10 +13,13 @@ window.STOCKFLOW_CONFIG = {
     GOOGLE_SHEET_ID:
         "1w3j0sV9rDiBvS4cpHU31iGb4KIeyUPoALZf5vLH2ivY",
 
-    ENABLE_FIREBASE: true,
-    ENABLE_GOOGLE_SHEET_SYNC: true,
+    ENABLE_FIREBASE:
+        true,
 
-    // Demo OTP is intentionally fixed.
-    // It NEVER activates a real account.
-    DEMO_OTP: "123456"
+    ENABLE_GOOGLE_SHEET_SYNC:
+        true,
+
+    DEMO_OTP:
+        "123456"
+
 };
