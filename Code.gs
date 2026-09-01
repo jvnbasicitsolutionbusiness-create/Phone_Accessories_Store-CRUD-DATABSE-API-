@@ -1,307 +1,211 @@
 // ============================================================
-// STOCKFLOW GOOGLE APPS SCRIPT BACKEND
+// STOCKFLOW AUTHENTICATION BACKEND
+// Google Apps Script + Google Sheets + REAL GMAIL OTP
 // ============================================================
-// VERSION: 2.0
 //
 // FEATURES
 // ------------------------------------------------------------
-// 1. Employee registration
-// 2. Protected Admin registration
+// 1. Public Employee Registration
+// 2. Protected Admin Registration
 // 3. Real Gmail OTP
-// 4. Optional real SMS OTP through Twilio
-// 5. OTP expiration
-// 6. Maximum 4 incorrect OTP attempts
-// 7. 30-minute OTP lockout
-// 8. Login authentication
-// 9. Login attempt protection
-// 10. Resend OTP
-// 11. Forgot password
-// 12. Password reset
-// 13. Duplicate account protection
-// 14. Server-side role assignment
+// 4. OTP Expiration
+// 5. OTP Resend
+// 6. OTP Attempt Limit
+// 7. Temporary OTP Lock
+// 8. Account Verification
+// 9. Secure Login
+// 10. User Lookup
+// 11. Account Status Management
+// 12. Password SHA-256 Hashing
 //
-// IMPORTANT
+// IMPORTANT:
 // ------------------------------------------------------------
-// - There is NO universal demo OTP.
-// - "123456" is NOT accepted.
-// - Real OTPs are generated server-side.
-// - Real OTPs are never returned to the frontend.
-// - Admin registration requires a server-side secret key.
-// - SMS requires Twilio credentials stored in Script Properties.
+// NEVER put ADMIN_REGISTRATION_KEY directly in your HTML/JS.
+// Set it inside:
+// Apps Script > Project Settings > Script Properties
+//
+// Required Script Property:
+//
+// ADMIN_REGISTRATION_KEY
+//
+// Example:
+//
+// ADMIN_REGISTRATION_KEY = YourVerySecretAdminKey123
+//
+// Optional:
+//
+// ADMIN_EMAILS = yourgmail@gmail.com,anotheradmin@gmail.com
 //
 // ============================================================
 
 
 // ============================================================
-// BASIC CONFIGURATION
+// CONFIGURATION
 // ============================================================
 
-const SPREADSHEET_ID =
+const SHEET_ID =
   "1w3j0sV9rDiBvS4cpHU31iGb4KIeyUPoALZf5vLH2ivY";
 
-const SHEET_NAME = "StockFlowUsers";
+const SHEET_NAME = "USER";
 
 const APP_NAME = "StockFlow";
 
 
-// ============================================================
-// SECURITY CONFIGURATION
-// ============================================================
+// OTP SETTINGS
+const OTP_LENGTH = 6;
 
-const OTP_MINUTES = 10;
+const OTP_EXPIRATION_MINUTES = 10;
 
 const MAX_OTP_ATTEMPTS = 4;
 
 const OTP_LOCK_MINUTES = 30;
 
-const MAX_LOGIN_ATTEMPTS = 5;
-
-const LOGIN_LOCK_MINUTES = 15;
-
-const RESET_TOKEN_MINUTES = 15;
+const RESEND_COOLDOWN_SECONDS = 60;
 
 
 // ============================================================
-// OTP CHANNELS
+// ACCOUNT ROLES
 // ============================================================
 
-const OTP_CHANNEL_EMAIL = "email";
+const ROLE_EMPLOYEE = "Employee";
+const ROLE_ADMIN = "Admin";
 
-const OTP_CHANNEL_PHONE = "phone";
+
+// ============================================================
+// ACCOUNT STATUS
+// ============================================================
+
+const STATUS_PENDING = "PENDING";
+const STATUS_VERIFIED = "VERIFIED";
+const STATUS_SUSPENDED = "SUSPENDED";
+const STATUS_DISABLED = "DISABLED";
 
 
 // ============================================================
 // SHEET HEADERS
 // ============================================================
 //
-// Existing fields are preserved.
-// Additional security fields are added at the end.
-//
+// Existing USER sheets with the old 8 columns will be expanded.
 // ============================================================
 
 const HEADERS = [
+
   "UID",
-  "Full Name",
-  "Username",
-  "Age",
-  "Gmail",
-  "Phone",
-  "Password",
-  "Role",
-  "Account Status",
-  "Verified",
+  "NAME",
+  "USERNAME",
+  "PASSWORD_HASH",
+  "AGE",
+  "ACCOUNT_STATUS",
+  "GMAIL",
+  "PHONE_NO",
+  "ROLE",
+
   "OTP",
-  "OTP Expires",
-  "Created At",
-  "Verified At",
-  "OTP Attempts",
-  "OTP Lock Until",
-  "Login Attempts",
-  "Login Lock Until",
-  "OTP Channel",
-  "Reset Token",
-  "Reset Token Expires"
+  "OTP_EXPIRES",
+
+  "OTP_ATTEMPTS",
+  "OTP_LOCK_UNTIL",
+  "OTP_LAST_SENT",
+
+  "CREATED_AT",
+  "VERIFIED_AT"
+
 ];
 
 
 // ============================================================
-// HTTP GET
+// GET SCRIPT PROPERTIES
 // ============================================================
 
-function doGet() {
+function getScriptProperties_() {
 
-  return json_({
-    success: true,
-    service: APP_NAME,
-    status: "online",
-    message: "StockFlow authentication API is running."
-  });
+  return PropertiesService.getScriptProperties();
 
 }
 
 
 // ============================================================
-// HTTP POST
+// GET ADMIN REGISTRATION KEY
 // ============================================================
 
-function doPost(e) {
+function getAdminRegistrationKey_() {
 
-  try {
+  const key =
+    getScriptProperties_()
+      .getProperty("ADMIN_REGISTRATION_KEY");
 
-    const raw =
-      e &&
-      e.postData &&
-      e.postData.contents
-        ? e.postData.contents
-        : "{}";
+  if (!key) {
 
-    const data = JSON.parse(raw);
-
-    const action =
-      String(data.action || "")
-        .trim();
-
-    switch (action) {
-
-      // ------------------------------------------------------
-      // EMPLOYEE REGISTRATION
-      // ------------------------------------------------------
-
-      case "register":
-        return json_(
-          registerEmployee_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // ADMIN REGISTRATION
-      // ------------------------------------------------------
-
-      case "adminRegister":
-        return json_(
-          registerAdmin_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // VERIFY OTP
-      // ------------------------------------------------------
-
-      case "verifyOtp":
-        return json_(
-          verifyOtp_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // RESEND / REQUEST OTP
-      // ------------------------------------------------------
-
-      case "requestOtp":
-        return json_(
-          requestOtp_(data)
-        );
-
-
-      case "updateOtp":
-        return json_(
-          requestOtp_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // LOGIN
-      // ------------------------------------------------------
-
-      case "login":
-        return json_(
-          login_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // FORGOT PASSWORD
-      // ------------------------------------------------------
-
-      case "forgotPassword":
-        return json_(
-          forgotPassword_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // RESET PASSWORD
-      // ------------------------------------------------------
-
-      case "resetPassword":
-        return json_(
-          resetPassword_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // ADMIN KEY CHECK
-      // ------------------------------------------------------
-
-      case "checkAdminRegistration":
-        return json_(
-          checkAdminRegistration_(data)
-        );
-
-
-      // ------------------------------------------------------
-      // UNKNOWN ACTION
-      // ------------------------------------------------------
-
-      default:
-
-        return json_({
-          success: false,
-          message: "Unknown action."
-        });
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      "DO POST ERROR:",
-      error
+    throw new Error(
+      "ADMIN_REGISTRATION_KEY is not configured in Apps Script."
     );
-
-    return json_({
-      success: false,
-      message:
-        error &&
-        error.message
-          ? error.message
-          : "Server error."
-    });
 
   }
 
-}
-
-
-// ============================================================
-// JSON RESPONSE
-// ============================================================
-
-function json_(data) {
-
-  return ContentService
-    .createTextOutput(
-      JSON.stringify(data)
-    )
-    .setMimeType(
-      ContentService.MimeType.JSON
-    );
+  return key.trim();
 
 }
 
 
 // ============================================================
-// GET SHEET
+// GET ADMIN EMAIL ALLOWLIST
+// ============================================================
+//
+// Optional.
+//
+// Example Script Property:
+//
+// ADMIN_EMAILS
+//
+// yourgmail@gmail.com,admin2@gmail.com
+//
+// If empty, only ADMIN_REGISTRATION_KEY is required.
 // ============================================================
 
-function getSheet_() {
+function getAdminEmails_() {
 
-  const ss =
-    SpreadsheetApp.openById(
-      SPREADSHEET_ID
-    );
+  const value =
+    getScriptProperties_()
+      .getProperty("ADMIN_EMAILS");
+
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map(email => email.trim().toLowerCase())
+    .filter(Boolean);
+
+}
+
+
+// ============================================================
+// OPEN SPREADSHEET
+// ============================================================
+
+function getSpreadsheet_() {
+
+  return SpreadsheetApp.openById(SHEET_ID);
+
+}
+
+
+// ============================================================
+// GET USER SHEET
+// ============================================================
+
+function getSheet() {
+
+  const spreadsheet = getSpreadsheet_();
 
   let sheet =
-    ss.getSheetByName(
-      SHEET_NAME
-    );
+    spreadsheet.getSheetByName(SHEET_NAME);
 
   if (!sheet) {
 
     sheet =
-      ss.insertSheet(
-        SHEET_NAME
-      );
+      spreadsheet.insertSheet(SHEET_NAME);
 
   }
 
@@ -321,13 +225,46 @@ function ensureHeaders_(sheet) {
   const requiredColumns =
     HEADERS.length;
 
-  const currentLastColumn =
-    Math.max(
-      sheet.getLastColumn(),
-      requiredColumns
+  const maxColumns =
+    sheet.getMaxColumns();
+
+  if (maxColumns < requiredColumns) {
+
+    sheet.insertColumnsAfter(
+      maxColumns,
+      requiredColumns - maxColumns
     );
 
+  }
+
+
   const current =
+    sheet
+      .getRange(1, 1, 1, requiredColumns)
+      .getValues()[0];
+
+
+  let changed = false;
+
+
+  for (
+    let i = 0;
+    i < requiredColumns;
+    i++
+  ) {
+
+    if (current[i] !== HEADERS[i]) {
+
+      changed = true;
+      break;
+
+    }
+
+  }
+
+
+  if (changed) {
+
     sheet
       .getRange(
         1,
@@ -335,51 +272,17 @@ function ensureHeaders_(sheet) {
         1,
         requiredColumns
       )
-      .getValues()[0];
+      .setValues([HEADERS]);
 
-  let needsUpdate = false;
-
-  for (
-    let i = 0;
-    i < HEADERS.length;
-    i++
-  ) {
-
-    if (
-      String(current[i] || "")
-      !== HEADERS[i]
-    ) {
-
-      needsUpdate = true;
-      break;
-
-    }
-
-  }
-
-  if (needsUpdate) {
 
     sheet
       .getRange(
         1,
         1,
         1,
-        HEADERS.length
+        requiredColumns
       )
-      .setValues([
-        HEADERS
-      ]);
-
-    sheet
-      .getRange(
-        1,
-        1,
-        1,
-        HEADERS.length
-      )
-      .setFontWeight(
-        "bold"
-      );
+      .setFontWeight("bold");
 
   }
 
@@ -387,26 +290,178 @@ function ensureHeaders_(sheet) {
 
 
 // ============================================================
-// GET ROWS
+// JSON RESPONSE
 // ============================================================
 
-function rows_(sheet) {
+function response(data) {
 
-  const lastRow =
-    sheet.getLastRow();
-
-  if (lastRow < 2) {
-    return [];
-  }
-
-  return sheet
-    .getRange(
-      2,
-      1,
-      lastRow - 1,
-      HEADERS.length
+  return ContentService
+    .createTextOutput(
+      JSON.stringify(data)
     )
-    .getValues();
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
+
+}
+
+
+// ============================================================
+// GET API TEST
+// ============================================================
+
+function doGet() {
+
+  return response({
+
+    success: true,
+
+    system: APP_NAME,
+
+    message:
+      "StockFlow Authentication API is running."
+
+  });
+
+}
+
+
+// ============================================================
+// MAIN POST API
+// ============================================================
+
+function doPost(e) {
+
+  try {
+
+    const raw =
+      e &&
+      e.postData &&
+      e.postData.contents
+        ? e.postData.contents
+        : "{}";
+
+
+    const data =
+      JSON.parse(raw);
+
+
+    const action =
+      String(
+        data.action || ""
+      ).trim();
+
+
+    switch (action) {
+
+      // ------------------------------------------------------
+      // PUBLIC EMPLOYEE REGISTRATION
+      // ------------------------------------------------------
+
+      case "register":
+
+        return registerEmployee_(data);
+
+
+      // ------------------------------------------------------
+      // PROTECTED ADMIN REGISTRATION
+      // ------------------------------------------------------
+
+      case "adminRegister":
+
+        return registerAdmin_(data);
+
+
+      // ------------------------------------------------------
+      // OTP VERIFICATION
+      // ------------------------------------------------------
+
+      case "verifyOtp":
+
+        return verifyOTP_(data);
+
+
+      // ------------------------------------------------------
+      // RESEND OTP
+      // ------------------------------------------------------
+
+      case "resendOtp":
+      case "requestOtp":
+      case "updateOtp":
+
+        return resendOTP_(data);
+
+
+      // ------------------------------------------------------
+      // LOGIN
+      // ------------------------------------------------------
+
+      case "login":
+
+        return loginUser_(data);
+
+
+      // ------------------------------------------------------
+      // GET USER
+      // ------------------------------------------------------
+
+      case "getUser":
+
+        return getUser_(data);
+
+
+      // ------------------------------------------------------
+      // UPDATE ACCOUNT STATUS
+      // ------------------------------------------------------
+
+      case "updateStatus":
+
+        return updateAccountStatus_(data);
+
+
+      // ------------------------------------------------------
+      // FORGOT PASSWORD
+      // ------------------------------------------------------
+
+      case "forgotPassword":
+
+        return forgotPassword_(data);
+
+
+      default:
+
+        return response({
+
+          success: false,
+
+          message:
+            "Unknown API action."
+
+        });
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "API ERROR:",
+      error
+    );
+
+
+    return response({
+
+      success: false,
+
+      message:
+        error &&
+        error.message
+          ? error.message
+          : "Server error."
+
+    });
+
+  }
 
 }
 
@@ -427,283 +482,25 @@ function normalize_(value) {
 
 
 // ============================================================
-// LOWERCASE NORMALIZATION
+// NORMALIZE EMAIL
 // ============================================================
 
-function normalizeLower_(value) {
+function normalizeEmail_(value) {
 
-  return normalize_(
-    value
-  ).toLowerCase();
+  return normalize_(value)
+    .toLowerCase();
 
 }
 
 
 // ============================================================
-// FIND USER
-// ============================================================
-
-function findUserRow_(identity) {
-
-  const sheet =
-    getSheet_();
-
-  const rows =
-    rows_(sheet);
-
-  const target =
-    normalizeLower_(
-      identity
-    );
-
-  for (
-    let i = 0;
-    i < rows.length;
-    i++
-  ) {
-
-    const row =
-      rows[i];
-
-    const uid =
-      normalizeLower_(
-        row[0]
-      );
-
-    const username =
-      normalizeLower_(
-        row[2]
-      );
-
-    const gmail =
-      normalizeLower_(
-        row[4]
-      );
-
-    const phone =
-      normalizePhone_(
-        row[5]
-      );
-
-    if (
-      target === uid ||
-      target === username ||
-      target === gmail ||
-      target === normalizeLower_(phone)
-    ) {
-
-      return {
-
-        sheet: sheet,
-
-        rowNumber: i + 2,
-
-        values: row
-
-      };
-
-    }
-
-  }
-
-  return null;
-
-}
-
-
-// ============================================================
-// FIND BY USERNAME
-// ============================================================
-
-function findUsername_(username) {
-
-  return findUserRow_(
-    username
-  );
-
-}
-
-
-// ============================================================
-// FIND BY EMAIL
-// ============================================================
-
-function findEmail_(email) {
-
-  return findUserRow_(
-    email
-  );
-
-}
-
-
-// ============================================================
-// FIND BY PHONE
-// ============================================================
-
-function findPhone_(phone) {
-
-  const normalized =
-    normalizePhone_(
-      phone
-    );
-
-  const sheet =
-    getSheet_();
-
-  const rows =
-    rows_(sheet);
-
-  for (
-    let i = 0;
-    i < rows.length;
-    i++
-  ) {
-
-    const row =
-      rows[i];
-
-    if (
-      normalizePhone_(
-        row[5]
-      ) === normalized
-    ) {
-
-      return {
-
-        sheet: sheet,
-
-        rowNumber: i + 2,
-
-        values: row
-
-      };
-
-    }
-
-  }
-
-  return null;
-
-}
-
-
-// ============================================================
-// PHONE NORMALIZATION
+// NORMALIZE PHONE
 // ============================================================
 
 function normalizePhone_(value) {
 
-  let phone =
-    normalize_(
-      value
-    ).replace(
-      /[\s\-()]/g,
-      ""
-    );
-
-  if (
-    /^09\d{9}$/.test(
-      phone
-    )
-  ) {
-
-    return "+63" +
-      phone.substring(1);
-
-  }
-
-  if (
-    /^639\d{9}$/.test(
-      phone
-    )
-  ) {
-
-    return "+" +
-      phone;
-
-  }
-
-  if (
-    /^\+639\d{9}$/.test(
-      phone
-    )
-  ) {
-
-    return phone;
-
-  }
-
-  return phone;
-
-}
-
-
-// ============================================================
-// VALID EMAIL
-// ============================================================
-
-function validEmail_(email) {
-
-  return /^\S+@\S+\.\S+$/
-    .test(
-      normalize_(email)
-    );
-
-}
-
-
-// ============================================================
-// VALID PHONE
-// ============================================================
-
-function validPhone_(phone) {
-
-  const normalized =
-    normalizePhone_(
-      phone
-    );
-
-  return /^\+639\d{9}$/
-    .test(
-      normalized
-    );
-
-}
-
-
-// ============================================================
-// VALID USERNAME
-// ============================================================
-
-function validUsername_(username) {
-
-  return /^[A-Za-z0-9_.-]{4,20}$/
-    .test(
-      normalize_(username)
-    );
-
-}
-
-
-// ============================================================
-// VALID PASSWORD
-// ============================================================
-
-function validPassword_(password) {
-
-  const value =
-    String(
-      password || ""
-    );
-
-  return (
-    value.length >= 8 &&
-    /[A-Z]/.test(value) &&
-    /[a-z]/.test(value) &&
-    /\d/.test(value) &&
-    /[^A-Za-z0-9]/.test(value)
-  );
+  return normalize_(value)
+    .replace(/[\s-]/g, "");
 
 }
 
@@ -712,151 +509,317 @@ function validPassword_(password) {
 // GENERATE UID
 // ============================================================
 
-function generateUid_(prefix) {
+function generateUID_() {
 
   return (
-    prefix +
-    "_" +
+
+    "sf_" +
     Date.now() +
     "_" +
     Math.random()
       .toString(36)
-      .substring(2, 9)
+      .substring(2, 10)
+
   );
 
 }
 
 
 // ============================================================
-// GENERATE OTP
+// GENERATE 6-DIGIT OTP
 // ============================================================
 
-function generateOtp_() {
+function generateOTP_() {
 
   return String(
+
     Math.floor(
       100000 +
       Math.random() * 900000
     )
+
   );
 
 }
 
 
 // ============================================================
-// GENERATE RESET TOKEN
+// HASH PASSWORD
 // ============================================================
 
-function generateResetToken_() {
+function hashPassword_(password) {
 
-  return Utilities
-    .getUuid()
-    .replace(/-/g, "");
+  const bytes =
+    Utilities.computeDigest(
+      Utilities.DigestAlgorithm.SHA_256,
+      String(password)
+    );
+
+
+  return bytes
+    .map(function(byte) {
+
+      const value =
+        byte < 0
+          ? byte + 256
+          : byte;
+
+      return (
+        "0" +
+        value.toString(16)
+      ).slice(-2);
+
+    })
+    .join("");
 
 }
 
 
 // ============================================================
-// GET ADMIN REGISTRATION KEY
-// ============================================================
-//
-// IMPORTANT:
-// The admin key is NOT stored in the HTML.
-// It is stored in Apps Script Properties.
-//
-// Set it once using:
-//
-// setAdminRegistrationKey()
-//
+// VALIDATE EMAIL
 // ============================================================
 
-function getAdminRegistrationKey_() {
+function validEmail_(email) {
 
-  const properties =
-    PropertiesService
-      .getScriptProperties();
+  return /^\S+@\S+\.\S+$/
+    .test(email);
 
-  return normalize_(
-    properties.getProperty(
-      "STOCKFLOW_ADMIN_REGISTRATION_KEY"
+}
+
+
+// ============================================================
+// VALIDATE PHONE
+// ============================================================
+
+function validPhone_(phone) {
+
+  return /^(09\d{9}|\+639\d{9})$/
+    .test(
+      normalizePhone_(phone)
+    );
+
+}
+
+
+// ============================================================
+// VALIDATE USERNAME
+// ============================================================
+
+function validUsername_(username) {
+
+  return /^[A-Za-z0-9_.-]{4,20}$/
+    .test(username);
+
+}
+
+
+// ============================================================
+// READ DATA ROWS
+// ============================================================
+
+function getRows_(sheet) {
+
+  const lastRow =
+    sheet.getLastRow();
+
+
+  if (lastRow < 2) {
+
+    return [];
+
+  }
+
+
+  return sheet
+    .getRange(
+      2,
+      1,
+      lastRow - 1,
+      HEADERS.length
     )
-  );
+    .getValues();
 
 }
 
 
 // ============================================================
-// SET ADMIN REGISTRATION KEY
+// FIND USER
 // ============================================================
 //
-// RUN THIS MANUALLY ONCE FROM THE APPS SCRIPT EDITOR.
-//
-// Change the value before running.
-//
+// Identity can be:
+// UID
+// Username
+// Gmail
+// Phone
 // ============================================================
 
-function setAdminRegistrationKey() {
+function findUser_(identity) {
 
-  const key =
-    "CHANGE_THIS_TO_YOUR_PRIVATE_ADMIN_KEY";
+  const sheet =
+    getSheet();
 
-  if (
-    key ===
-    "CHANGE_THIS_TO_YOUR_PRIVATE_ADMIN_KEY"
+
+  const rows =
+    getRows_(sheet);
+
+
+  const target =
+    normalize_(identity)
+      .toLowerCase();
+
+
+  for (
+    let i = 0;
+    i < rows.length;
+    i++
   ) {
 
-    throw new Error(
-      "Change the admin registration key before running this function."
-    );
+    const row =
+      rows[i];
+
+
+    const uid =
+      normalize_(row[0])
+        .toLowerCase();
+
+
+    const username =
+      normalize_(row[2])
+        .toLowerCase();
+
+
+    const gmail =
+      normalize_(row[6])
+        .toLowerCase();
+
+
+    const phone =
+      normalize_(row[7])
+        .toLowerCase();
+
+
+    if (
+
+      target === uid ||
+      target === username ||
+      target === gmail ||
+      target === phone
+
+    ) {
+
+      return {
+
+        sheet: sheet,
+
+        rowNumber: i + 2,
+
+        values: row
+
+      };
+
+    }
 
   }
 
-  PropertiesService
-    .getScriptProperties()
-    .setProperty(
-      "STOCKFLOW_ADMIN_REGISTRATION_KEY",
-      key
-    );
 
-  return "Admin registration key saved.";
+  return null;
 
 }
 
 
 // ============================================================
-// VALIDATE ADMIN KEY
+// CHECK DUPLICATE USERNAME / EMAIL / PHONE
 // ============================================================
 
-function validateAdminKey_(providedKey) {
+function checkDuplicate_(username, gmail, phone) {
 
-  const serverKey =
-    getAdminRegistrationKey_();
+  const sheet =
+    getSheet();
 
-  if (!serverKey) {
 
-    throw new Error(
-      "Admin registration is not configured. Set the server-side admin registration key first."
-    );
+  const rows =
+    getRows_(sheet);
+
+
+  const targetUsername =
+    username.toLowerCase();
+
+
+  const targetEmail =
+    gmail.toLowerCase();
+
+
+  const targetPhone =
+    normalizePhone_(phone);
+
+
+  for (
+    let i = 0;
+    i < rows.length;
+    i++
+  ) {
+
+    const row =
+      rows[i];
+
+
+    const existingUsername =
+      normalize_(row[2])
+        .toLowerCase();
+
+
+    const existingEmail =
+      normalize_(row[6])
+        .toLowerCase();
+
+
+    const existingPhone =
+      normalizePhone_(row[7]);
+
+
+    if (
+      existingUsername === targetUsername
+    ) {
+
+      return "Username already exists.";
+
+    }
+
+
+    if (
+      existingEmail === targetEmail
+    ) {
+
+      return "Gmail address already exists.";
+
+    }
+
+
+    if (
+      existingPhone === targetPhone
+    ) {
+
+      return "Phone number already exists.";
+
+    }
 
   }
 
-  return (
-    normalize_(providedKey) ===
-    serverKey
-  );
+
+  return null;
 
 }
 
 
 // ============================================================
-// SEND EMAIL OTP
+// SEND REAL GMAIL OTP
 // ============================================================
 
-function sendOtpEmail_(
+function sendOTPEmail_(
   email,
   fullName,
   otp,
-  purpose
+  isResend
 ) {
 
   if (!email) {
@@ -867,2409 +830,172 @@ function sendOtpEmail_(
 
   }
 
-  let subject =
-    "StockFlow - Verification Code";
 
-  if (
-    purpose ===
-    "registration"
-  ) {
+  const subject =
+    isResend
 
-    subject =
-      "StockFlow - Verify your account";
+      ? "StockFlow - Your New Verification Code"
 
-  }
+      : "StockFlow - Verify Your Account";
 
-  if (
-    purpose ===
-    "resend"
-  ) {
 
-    subject =
-      "StockFlow - New verification code";
-
-  }
-
-  if (
-    purpose ===
-    "password"
-  ) {
-
-    subject =
-      "StockFlow - Password reset code";
-
-  }
-
-  const plain =
+  const plainText =
 
     "Hello " +
-    (
-      fullName ||
-      "StockFlow User"
-    ) +
+    (fullName || "StockFlow User") +
     ",\n\n" +
 
     "Your StockFlow verification code is:\n\n" +
 
     otp +
+
     "\n\n" +
 
-    "This code expires in " +
-    OTP_MINUTES +
+    "This verification code expires in " +
+    OTP_EXPIRATION_MINUTES +
     " minutes.\n\n" +
 
-    "For your security, never share this code with anyone.\n\n" +
+    "For your security, do not share this code with anyone.\n\n" +
 
-    "If you did not request this code, you can ignore this message.\n\n" +
+    "If you did not request this code, please ignore this message.\n\n" +
 
-    "StockFlow";
+    "StockFlow Inventory System";
 
-  const html =
+
+  const htmlBody =
 
     "<div style=\"" +
+
       "font-family:Arial,sans-serif;" +
       "max-width:560px;" +
       "margin:auto;" +
-      "padding:20px;" +
-      "color:#10233f\"" +
-    ">" +
+      "padding:30px;" +
+      "background:#f8fafc;" +
 
-      "<h2 style=\"color:#1769e0\">" +
-        "StockFlow" +
-      "</h2>" +
-
-      "<p>Hello " +
-        escapeHtml_(
-          fullName ||
-          "StockFlow User"
-        ) +
-      ",</p>" +
-
-      "<p>Your verification code is:</p>" +
-
-      "<div style=\"" +
-        "font-size:32px;" +
-        "font-weight:800;" +
-        "letter-spacing:8px;" +
-        "padding:18px;" +
-        "background:#f1f5f9;" +
-        "border-radius:12px;" +
-        "text-align:center;" +
-        "color:#10233f;" +
-        "margin:20px 0;" +
-      "\">" +
-
-        otp +
-
-      "</div>" +
-
-      "<p>" +
-        "This code expires in " +
-        "<b>" +
-          OTP_MINUTES +
-        " minutes" +
-        "</b>." +
-      "</p>" +
-
-      "<p style=\"" +
-        "color:#64748b;" +
-        "font-size:13px;" +
-      "\">" +
-
-        "Never share your verification code with anyone." +
-
-      "</p>" +
-
-      "<p style=\"" +
-        "color:#64748b;" +
-        "font-size:13px;" +
-      "\">" +
-
-        "If you did not request this code, you can ignore this email." +
-
-      "</p>" +
-
-      "<p>— StockFlow</p>" +
-
-    "</div>";
-
-  MailApp.sendEmail({
-
-    to: email,
-
-    subject: subject,
-
-    body: plain,
-
-    htmlBody: html,
-
-    name: "StockFlow"
-
-  });
-
-}
-
-
-// ============================================================
-// TWILIO CONFIGURATION
-// ============================================================
-//
-// To enable actual SMS:
-//
-// Apps Script > Project Settings > Script Properties
-//
-// Add:
-//
-// TWILIO_ACCOUNT_SID
-// TWILIO_AUTH_TOKEN
-// TWILIO_PHONE_NUMBER
-//
-// Example:
-//
-// TWILIO_PHONE_NUMBER = +1xxxxxxxxxx
-//
-// ============================================================
-
-function getTwilioConfig_() {
-
-  const properties =
-    PropertiesService
-      .getScriptProperties();
-
-  return {
-
-    accountSid:
-      normalize_(
-        properties.getProperty(
-          "TWILIO_ACCOUNT_SID"
-        )
-      ),
-
-    authToken:
-      normalize_(
-        properties.getProperty(
-          "TWILIO_AUTH_TOKEN"
-        )
-      ),
-
-    from:
-      normalize_(
-        properties.getProperty(
-          "TWILIO_PHONE_NUMBER"
-        )
-      )
-
-  };
-
-}
-
-
-// ============================================================
-// CHECK SMS CONFIGURATION
-// ============================================================
-
-function isSmsConfigured_() {
-
-  const config =
-    getTwilioConfig_();
-
-  return Boolean(
-    config.accountSid &&
-    config.authToken &&
-    config.from
-  );
-
-}
-
-
-// ============================================================
-// SEND REAL SMS OTP
-// ============================================================
-
-function sendOtpSms_(
-  phone,
-  fullName,
-  otp
-) {
-
-  if (
-    !validPhone_(phone)
-  ) {
-
-    throw new Error(
-      "Invalid Philippine phone number."
-    );
-
-  }
-
-  const config =
-    getTwilioConfig_();
-
-  if (
-    !config.accountSid ||
-    !config.authToken ||
-    !config.from
-  ) {
-
-    throw new Error(
-      "SMS verification is not configured. Add the Twilio credentials to Apps Script Properties."
-    );
-
-  }
-
-  const normalizedPhone =
-    normalizePhone_(
-      phone
-    );
-
-  const message =
-
-    "StockFlow verification code: " +
-    otp +
-    ". Expires in " +
-    OTP_MINUTES +
-    " minutes. Do not share this code.";
-
-  const url =
-
-    "https://api.twilio.com/2010-04-01/Accounts/" +
-    encodeURIComponent(
-      config.accountSid
-    ) +
-    "/Messages.json";
-
-  const payload = {
-
-    To: normalizedPhone,
-
-    From: config.from,
-
-    Body: message
-
-  };
-
-  const authorization =
-    Utilities
-      .base64Encode(
-        config.accountSid +
-        ":" +
-        config.authToken
-      );
-
-  const response =
-    UrlFetchApp.fetch(
-      url,
-      {
-
-        method: "post",
-
-        payload: payload,
-
-        headers: {
-
-          Authorization:
-            "Basic " +
-            authorization
-
-        },
-
-        muteHttpExceptions: true
-
-      }
-    );
-
-  const status =
-    response.getResponseCode();
-
-  const body =
-    response.getContentText();
-
-  if (
-    status < 200 ||
-    status >= 300
-  ) {
-
-    console.error(
-      "TWILIO ERROR:",
-      body
-    );
-
-    throw new Error(
-      "Unable to send the SMS verification code."
-    );
-
-  }
-
-  return true;
-
-}
-
-
-// ============================================================
-// SEND OTP BASED ON CHANNEL
-// ============================================================
-
-function sendOtp_(
-  channel,
-  user,
-  otp,
-  purpose
-) {
-
-  const selectedChannel =
-    normalizeLower_(
-      channel
-    );
-
-  if (
-    selectedChannel ===
-    OTP_CHANNEL_PHONE
-  ) {
-
-    sendOtpSms_(
-      user.phone,
-      user.fullName,
-      otp
-    );
-
-    return "phone";
-
-  }
-
-  sendOtpEmail_(
-    user.email,
-    user.fullName,
-    otp,
-    purpose
-  );
-
-  return "email";
-
-}
-
-
-// ============================================================
-// EMPLOYEE REGISTRATION
-// ============================================================
-
-function registerEmployee_(data) {
-
-  const uid =
-    normalize_(
-      data.uid
-    ) ||
-    generateUid_(
-      "sf_emp"
-    );
-
-  const fullName =
-    normalize_(
-      data.name
-    );
-
-  const username =
-    normalize_(
-      data.username
-    );
-
-  const email =
-    normalize_(
-      data.gmail
-    );
-
-  const phone =
-    normalizePhone_(
-      data.phone
-    );
-
-  const age =
-    Number(
-      data.age
-    );
-
-  const password =
-    String(
-      data.password || ""
-    );
-
-  const channel =
-    normalizeLower_(
-      data.verificationChannel ||
-      data.otpChannel ||
-      "email"
-    );
-
-
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
-
-  if (
-    !fullName ||
-    !username ||
-    !email ||
-    !phone ||
-    !password
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "All employee registration fields are required."
-
-    };
-
-  }
-
-
-  if (
-    !validUsername_(
-      username
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Username must contain 4–20 valid characters."
-
-    };
-
-  }
-
-
-  if (
-    !validEmail_(
-      email
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Enter a valid Gmail/email address."
-
-    };
-
-  }
-
-
-  if (
-    !validPhone_(
-      phone
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Enter a valid Philippine phone number."
-
-    };
-
-  }
-
-
-  if (
-    age < 18 ||
-    age > 100
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Age must be between 18 and 100."
-
-    };
-
-  }
-
-
-  if (
-    !validPassword_(
-      password
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Password must contain 8+ characters, uppercase, lowercase, number and symbol."
-
-    };
-
-  }
-
-
-  if (
-    channel !== "email" &&
-    channel !== "phone"
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Invalid verification method."
-
-    };
-
-  }
-
-
-  if (
-    channel === "phone" &&
-    !isSmsConfigured_()
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Phone verification is currently unavailable. Configure SMS verification first."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // DUPLICATE CHECK
-  // ----------------------------------------------------------
-
-  if (
-    findUsername_(
-      username
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Username is already registered."
-
-    };
-
-  }
-
-
-  if (
-    findEmail_(
-      email
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Email is already registered."
-
-    };
-
-  }
-
-
-  if (
-    findPhone_(
-      phone
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Phone number is already registered."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CREATE OTP
-  // ----------------------------------------------------------
-
-  const otp =
-    generateOtp_();
-
-  const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
-    );
-
-  const now =
-    new Date();
-
-
-  const sheet =
-    getSheet_();
-
-
-  // ----------------------------------------------------------
-  // SAVE EMPLOYEE
-  // ----------------------------------------------------------
-  //
-  // ROLE IS ALWAYS Employee.
-  //
-  // The frontend cannot choose Admin.
-  //
-  // ----------------------------------------------------------
-
-  sheet.appendRow([
-
-    uid,
-
-    fullName,
-
-    username,
-
-    age,
-
-    email,
-
-    phone,
-
-    password,
-
-    "Employee",
-
-    "Pending Verification",
-
-    false,
-
-    otp,
-
-    expires,
-
-    now,
-
-    "",
-
-    0,
-
-    "",
-
-    0,
-
-    "",
-
-    channel,
-
-    "",
-
-    ""
-
-  ]);
-
-
-  const rowNumber =
-    sheet.getLastRow();
-
-
-  try {
-
-    sendOtp_(
-      channel,
-
-      {
-
-        fullName:
-          fullName,
-
-        email:
-          email,
-
-        phone:
-          phone
-
-      },
-
-      otp,
-
-      "registration"
-
-    );
-
-  } catch (error) {
-
-    sheet.deleteRow(
-      rowNumber
-    );
-
-    throw new Error(
-
-      "Registration was not completed because the verification code could not be sent. " +
-      error.message
-
-    );
-
-  }
-
-
-  return {
-
-    success: true,
-
-    uid: uid,
-
-    role: "Employee",
-
-    verified: false,
-
-    accountStatus:
-      "Pending Verification",
-
-    otpSent: true,
-
-    channel: channel,
-
-    message:
-      channel === "phone"
-        ? "Registration saved. A real verification code was sent to your phone."
-        : "Registration saved. A real verification code was sent to your Gmail."
-
-  };
-
-}
-
-
-// ============================================================
-// ADMIN REGISTRATION
-// ============================================================
-//
-// IMPORTANT:
-//
-// This endpoint is separate from employee registration.
-//
-// The client must provide the private admin registration key.
-//
-// The key is validated against Apps Script Properties.
-//
-// ============================================================
-
-function registerAdmin_(data) {
-
-  const adminKey =
-    normalize_(
-      data.adminKey
-    );
-
-
-  // ----------------------------------------------------------
-  // SERVER-SIDE ADMIN KEY
-  // ----------------------------------------------------------
-
-  let validKey = false;
-
-  try {
-
-    validKey =
-      validateAdminKey_(
-        adminKey
-      );
-
-  } catch (error) {
-
-    return {
-
-      success: false,
-
-      message:
-        error.message
-
-    };
-
-  }
-
-
-  if (!validKey) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Admin registration is not authorized."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // REGISTRATION DATA
-  // ----------------------------------------------------------
-
-  const uid =
-    normalize_(
-      data.uid
-    ) ||
-    generateUid_(
-      "sf_admin"
-    );
-
-  const fullName =
-    normalize_(
-      data.name
-    );
-
-  const username =
-    normalize_(
-      data.username
-    );
-
-  const email =
-    normalize_(
-      data.gmail
-    );
-
-  const phone =
-    normalizePhone_(
-      data.phone
-    );
-
-  const age =
-    Number(
-      data.age
-    );
-
-  const password =
-    String(
-      data.password || ""
-    );
-
-  const channel =
-    normalizeLower_(
-      data.verificationChannel ||
-      data.otpChannel ||
-      "email"
-    );
-
-
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
-
-  if (
-    !fullName ||
-    !username ||
-    !email ||
-    !phone ||
-    !password
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "All admin registration fields are required."
-
-    };
-
-  }
-
-
-  if (
-    !validUsername_(
-      username
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Username must contain 4–20 valid characters."
-
-    };
-
-  }
-
-
-  if (
-    !validEmail_(
-      email
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Enter a valid Gmail/email address."
-
-    };
-
-  }
-
-
-  if (
-    !validPhone_(
-      phone
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Enter a valid Philippine phone number."
-
-    };
-
-  }
-
-
-  if (
-    age < 18 ||
-    age > 100
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Age must be between 18 and 100."
-
-    };
-
-  }
-
-
-  if (
-    !validPassword_(
-      password
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Password must contain 8+ characters, uppercase, lowercase, number and symbol."
-
-    };
-
-  }
-
-
-  if (
-    channel !== "email" &&
-    channel !== "phone"
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Invalid verification method."
-
-    };
-
-  }
-
-
-  if (
-    channel === "phone" &&
-    !isSmsConfigured_()
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Phone verification is not configured."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // DUPLICATE CHECK
-  // ----------------------------------------------------------
-
-  if (
-    findUsername_(
-      username
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Username is already registered."
-
-    };
-
-  }
-
-
-  if (
-    findEmail_(
-      email
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Email is already registered."
-
-    };
-
-  }
-
-
-  if (
-    findPhone_(
-      phone
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Phone number is already registered."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // OTP
-  // ----------------------------------------------------------
-
-  const otp =
-    generateOtp_();
-
-  const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60 *
-      1000
-    );
-
-  const now =
-    new Date();
-
-
-  const sheet =
-    getSheet_();
-
-
-  // ----------------------------------------------------------
-  // SAVE ADMIN
-  // ----------------------------------------------------------
-
-  sheet.appendRow([
-
-    uid,
-
-    fullName,
-
-    username,
-
-    age,
-
-    email,
-
-    phone,
-
-    password,
-
-    "Admin",
-
-    "Pending Verification",
-
-    false,
-
-    otp,
-
-    expires,
-
-    now,
-
-    "",
-
-    0,
-
-    "",
-
-    0,
-
-    "",
-
-    channel,
-
-    "",
-
-    ""
-
-  ]);
-
-
-  const rowNumber =
-    sheet.getLastRow();
-
-
-  try {
-
-    sendOtp_(
-      channel,
-
-      {
-
-        fullName:
-          fullName,
-
-        email:
-          email,
-
-        phone:
-          phone
-
-      },
-
-      otp,
-
-      "registration"
-
-    );
-
-  } catch (error) {
-
-    sheet.deleteRow(
-      rowNumber
-    );
-
-    throw new Error(
-
-      "Admin registration was not completed because the verification code could not be sent. " +
-      error.message
-
-    );
-
-  }
-
-
-  return {
-
-    success: true,
-
-    uid: uid,
-
-    role: "Admin",
-
-    verified: false,
-
-    accountStatus:
-      "Pending Verification",
-
-    otpSent: true,
-
-    channel: channel,
-
-    message:
-      "Admin registration authorized. A real verification code was sent."
-
-  };
-
-}
-
-
-// ============================================================
-// VERIFY OTP
-// ============================================================
-
-function verifyOtp_(data) {
-
-  const identity =
-    normalize_(
-      data.identity
-    );
-
-  const otp =
-    normalize_(
-      data.otp
-    );
-
-
-  if (
-    !identity ||
-    !otp
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Verification information is incomplete."
-
-    };
-
-  }
-
-
-  const found =
-    findUserRow_(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Account was not found."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  // ----------------------------------------------------------
-  // SECURITY COLUMN VALUES
-  // ----------------------------------------------------------
-
-  let storedOtp =
-    normalize_(
-      row[10]
-    );
-
-  let expires =
-    row[11]
-      ? new Date(row[11])
-      : null;
-
-  let otpAttempts =
-    Number(
-      row[14] || 0
-    );
-
-  let lockUntil =
-    row[15]
-      ? new Date(row[15])
-      : null;
-
-
-  // ----------------------------------------------------------
-  // CHECK OTP LOCK
-  // ----------------------------------------------------------
-
-  if (
-    lockUntil &&
-    Date.now() <
-    lockUntil.getTime()
-  ) {
-
-    const minutes =
-      Math.ceil(
-        (
-          lockUntil.getTime() -
-          Date.now()
-        ) /
-        60000
-      );
-
-    return {
-
-      success: false,
-
-      locked: true,
-
-      message:
-        "Too many incorrect verification attempts. Try again in " +
-        minutes +
-        " minute(s)."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CLEAR EXPIRED LOCK
-  // ----------------------------------------------------------
-
-  if (
-    lockUntil &&
-    Date.now() >=
-    lockUntil.getTime()
-  ) {
-
-    otpAttempts = 0;
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        15,
-        1,
-        2
-      )
-      .setValues([
-        [
-          0,
-          ""
-        ]
-      ]);
-
-  }
-
-
-  // ----------------------------------------------------------
-  // OTP EXPIRATION
-  // ----------------------------------------------------------
-
-  if (
-    expires &&
-    Date.now() >
-    expires.getTime()
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "This verification code has expired. Request a new code."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // VERIFY CODE
-  // ----------------------------------------------------------
-
-  if (
-    !storedOtp ||
-    otp !== storedOtp
-  ) {
-
-    otpAttempts++;
-
-    if (
-      otpAttempts >=
-      MAX_OTP_ATTEMPTS
-    ) {
-
-      const newLock =
-        new Date(
-          Date.now() +
-          OTP_LOCK_MINUTES *
-          60000
-        );
-
-      found.sheet
-        .getRange(
-          found.rowNumber,
-          15,
-          1,
-          2
-        )
-        .setValues([
-          [
-            otpAttempts,
-            newLock
-          ]
-        ]);
-
-      return {
-
-        success: false,
-
-        locked: true,
-
-        message:
-          "Too many incorrect verification attempts. Your account is temporarily locked for 30 minutes."
-
-      };
-
-    }
-
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        15
-      )
-      .setValue(
-        otpAttempts
-      );
-
-
-    const remaining =
-      MAX_OTP_ATTEMPTS -
-      otpAttempts;
-
-
-    return {
-
-      success: false,
-
-      message:
-        "Incorrect verification code. " +
-        remaining +
-        " attempt(s) remaining."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // SUCCESSFUL VERIFICATION
-  // ----------------------------------------------------------
-
-  const role =
-    normalize_(
-      row[7]
-    ) ||
-    "Employee";
-
-
-  const now =
-    new Date();
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      9,
-      1,
-      13
-    )
-    .setValues([
-      [
-
-        // Account Status
-        "Active",
-
-        // Verified
-        true,
-
-        // OTP
-        "",
-
-        // OTP Expires
-        "",
-
-        // Created At
-        row[12] || now,
-
-        // Verified At
-        now,
-
-        // OTP Attempts
-        0,
-
-        // OTP Lock Until
-        "",
-
-        // Login Attempts
-        0,
-
-        // Login Lock Until
-        "",
-
-        // OTP Channel
-        row[18] || "email",
-
-        // Reset Token
-        "",
-
-        // Reset Token Expires
-        ""
-
-      ]
-    ]);
-
-
-  return {
-
-    success: true,
-
-    verified: true,
-
-    demo: false,
-
-    role: role,
-
-    accountStatus:
-      "Active",
-
-    message:
-      "Account verified successfully."
-
-  };
-
-}
-
-
-// ============================================================
-// REQUEST / RESEND OTP
-// ============================================================
-
-function requestOtp_(data) {
-
-  const identity =
-    normalize_(
-      data.identity
-    );
-
-
-  if (!identity) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Account identity is required."
-
-    };
-
-  }
-
-
-  const found =
-    findUserRow_(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Account was not found."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  // ----------------------------------------------------------
-  // CHECK LOCK
-  // ----------------------------------------------------------
-
-  const lockUntil =
-    row[15]
-      ? new Date(row[15])
-      : null;
-
-
-  if (
-    lockUntil &&
-    Date.now() <
-    lockUntil.getTime()
-  ) {
-
-    const minutes =
-      Math.ceil(
-        (
-          lockUntil.getTime() -
-          Date.now()
-        ) /
-        60000
-      );
-
-    return {
-
-      success: false,
-
-      locked: true,
-
-      message:
-        "Your verification is temporarily locked. Try again in " +
-        minutes +
-        " minute(s)."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // GENERATE NEW OTP
-  // ----------------------------------------------------------
-
-  const otp =
-    generateOtp_();
-
-  const expires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60000
-    );
-
-
-  const channel =
-    normalizeLower_(
-      row[18]
-    ) ||
-    "email";
-
-
-  const user = {
-
-    fullName:
-      normalize_(
-        row[1]
-      ),
-
-    email:
-      normalize_(
-        row[4]
-      ),
-
-    phone:
-      normalizePhone_(
-        row[5]
-      )
-
-  };
-
-
-  // ----------------------------------------------------------
-  // SEND OTP FIRST
-  // ----------------------------------------------------------
-
-  sendOtp_(
-    channel,
-    user,
-    otp,
-    "resend"
-  );
-
-
-  // ----------------------------------------------------------
-  // SAVE OTP
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      9,
-      1,
-      8
-    )
-    .setValues([
-      [
-
-        "Pending Verification",
-
-        false,
-
-        otp,
-
-        expires,
-
-        row[12] ||
-          new Date(),
-
-        row[13] ||
-          "",
-
-        0,
-
-        ""
-
-      ]
-    ]);
-
-
-  return {
-
-    success: true,
-
-    otpSent: true,
-
-    channel: channel,
-
-    message:
-      channel === "phone"
-        ? "A new real verification code was sent to your phone."
-        : "A new real verification code was sent to your Gmail."
-
-  };
-
-}
-
-
-// ============================================================
-// LOGIN
-// ============================================================
-
-function login_(data) {
-
-  const identity =
-    normalizeLower_(
-      data.identity
-    );
-
-  const password =
-    String(
-      data.password || ""
-    );
-
-
-  if (
-    !identity ||
-    !password
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Username/email and password are required."
-
-    };
-
-  }
-
-
-  const found =
-    findUserRow_(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Invalid username/email or password."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  // ----------------------------------------------------------
-  // LOGIN LOCK
-  // ----------------------------------------------------------
-
-  const loginLockUntil =
-    row[17]
-      ? new Date(row[17])
-      : null;
-
-
-  if (
-    loginLockUntil &&
-    Date.now() <
-    loginLockUntil.getTime()
-  ) {
-
-    const minutes =
-      Math.ceil(
-        (
-          loginLockUntil.getTime() -
-          Date.now()
-        ) /
-        60000
-      );
-
-    return {
-
-      success: false,
-
-      locked: true,
-
-      message:
-        "Too many failed login attempts. Try again in " +
-        minutes +
-        " minute(s)."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // RESET EXPIRED LOCK
-  // ----------------------------------------------------------
-
-  if (
-    loginLockUntil &&
-    Date.now() >=
-    loginLockUntil.getTime()
-  ) {
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        17,
-        1,
-        2
-      )
-      .setValues([
-        [
-          0,
-          ""
-        ]
-      ]);
-
-  }
-
-
-  // ----------------------------------------------------------
-  // PASSWORD CHECK
-  // ----------------------------------------------------------
-
-  const storedPassword =
-    String(
-      row[6] || ""
-    );
-
-
-  if (
-    storedPassword !==
-    password
-  ) {
-
-    let attempts =
-      Number(
-        row[16] || 0
-      );
-
-    attempts++;
-
-
-    if (
-      attempts >=
-      MAX_LOGIN_ATTEMPTS
-    ) {
-
-      const newLock =
-        new Date(
-          Date.now() +
-          LOGIN_LOCK_MINUTES *
-          60000
-        );
-
-
-      found.sheet
-        .getRange(
-          found.rowNumber,
-          17,
-          1,
-          2
-        )
-        .setValues([
-          [
-            attempts,
-            newLock
-          ]
-        ]);
-
-
-      return {
-
-        success: false,
-
-        locked: true,
-
-        message:
-          "Too many failed login attempts. Your account is temporarily locked."
-
-      };
-
-    }
-
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        17
-      )
-      .setValue(
-        attempts
-      );
-
-
-    return {
-
-      success: false,
-
-      message:
-        "Invalid username/email or password."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // RESET LOGIN ATTEMPTS
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      17,
-      1,
-      2
-    )
-    .setValues([
-      [
-        0,
-        ""
-      ]
-    ]);
-
-
-  // ----------------------------------------------------------
-  // ACCOUNT VERIFICATION
-  // ----------------------------------------------------------
-
-  const verified =
-    row[9] === true;
-
-  const status =
-    normalize_(
-      row[8]
-    );
-
-  const role =
-    normalize_(
-      row[7]
-    ) ||
-    "Employee";
-
-
-  if (!verified) {
-
-    return {
-
-      success: false,
-
-      verified: false,
-
-      demo: false,
-
-      message:
-        "Your account is not verified yet."
-
-    };
-
-  }
-
-
-  if (
-    status !==
-    "Active"
-  ) {
-
-    return {
-
-      success: false,
-
-      verified: verified,
-
-      message:
-        "Your account is not active."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // SUCCESS
-  // ----------------------------------------------------------
-
-  return {
-
-    success: true,
-
-    verified: true,
-
-    demo: false,
-
-    user: {
-
-      uid:
-        normalize_(
-          row[0]
-        ),
-
-      username:
-        normalize_(
-          row[2]
-        ),
-
-      name:
-        normalize_(
-          row[1]
-        ),
-
-      fullName:
-        normalize_(
-          row[1]
-        ),
-
-      gmail:
-        normalize_(
-          row[4]
-        ),
-
-      email:
-        normalize_(
-          row[4]
-        ),
-
-      phone:
-        normalizePhone_(
-          row[5]
-        ),
-
-      role:
-        role,
-
-      accountStatus:
-        status
-
-    }
-
-  };
-
-}
-
-
-// ============================================================
-// FORGOT PASSWORD
-// ============================================================
-
-function forgotPassword_(data) {
-
-  const identity =
-    normalize_(
-      data.identity
-    );
-
-
-  if (!identity) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Email or username is required."
-
-    };
-
-  }
-
-
-  const found =
-    findUserRow_(
-      identity
-    );
-
-
-  // ----------------------------------------------------------
-  // DO NOT REVEAL WHETHER ACCOUNT EXISTS
-  // ----------------------------------------------------------
-
-  if (!found) {
-
-    return {
-
-      success: true,
-
-      message:
-        "If the account exists, recovery instructions will be sent."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  const email =
-    normalize_(
-      row[4]
-    );
-
-
-  const fullName =
-    normalize_(
-      row[1]
-    );
-
-
-  if (!email) {
-
-    return {
-
-      success: false,
-
-      message:
-        "No recovery email is registered for this account."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // GENERATE RESET OTP
-  // ----------------------------------------------------------
-
-  const resetToken =
-    generateResetToken_();
-
-  const resetExpires =
-    new Date(
-      Date.now() +
-      RESET_TOKEN_MINUTES *
-      60000
-    );
-
-
-  // Reuse OTP field for password reset code.
-  const otp =
-    generateOtp_();
-
-  const otpExpires =
-    new Date(
-      Date.now() +
-      OTP_MINUTES *
-      60000
-    );
-
-
-  // ----------------------------------------------------------
-  // SAVE RESET INFORMATION
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      11,
-      1,
-      11
-    )
-    .setValues([
-      [
-
-        otp,
-
-        otpExpires,
-
-        row[12] ||
-          new Date(),
-
-        row[13] ||
-          "",
-
-        row[14] || 0,
-
-        row[15] || "",
-
-        row[16] || 0,
-
-        row[17] || "",
-
-        "email",
-
-        resetToken,
-
-        resetExpires
-
-      ]
-    ]);
-
-
-  // ----------------------------------------------------------
-  // SEND RESET EMAIL
-  // ----------------------------------------------------------
-
-  sendPasswordResetEmail_(
-    email,
-    fullName,
-    otp
-  );
-
-
-  return {
-
-    success: true,
-
-    otpSent: true,
-
-    message:
-      "If the account exists, a password reset code has been sent to the registered Gmail."
-
-  };
-
-}
-
-
-// ============================================================
-// PASSWORD RESET EMAIL
-// ============================================================
-
-function sendPasswordResetEmail_(
-  email,
-  fullName,
-  otp
-) {
-
-  const subject =
-    "StockFlow - Password Reset Code";
-
-
-  const plain =
-
-    "Hello " +
-    (
-      fullName ||
-      "StockFlow User"
-    ) +
-    ",\n\n" +
-
-    "Your StockFlow password reset code is:\n\n" +
-
-    otp +
-    "\n\n" +
-
-    "This code expires in " +
-    OTP_MINUTES +
-    " minutes.\n\n" +
-
-    "If you did not request a password reset, ignore this message.\n\n" +
-
-    "StockFlow";
-
-
-  const html =
-
-    "<div style=\"" +
-      "font-family:Arial,sans-serif;" +
-      "max-width:560px;" +
-      "margin:auto;" +
-      "padding:20px;" +
     "\">" +
 
-      "<h2 style=\"color:#1769e0\">" +
-        "StockFlow" +
-      "</h2>" +
-
-      "<p>Hello " +
-        escapeHtml_(
-          fullName ||
-          "StockFlow User"
-        ) +
-      ",</p>" +
-
-      "<p>Your password reset code is:</p>" +
 
       "<div style=\"" +
-        "font-size:32px;" +
-        "font-weight:800;" +
-        "letter-spacing:8px;" +
-        "padding:18px;" +
-        "background:#f1f5f9;" +
-        "border-radius:12px;" +
-        "text-align:center;" +
-        "color:#10233f;" +
+        "background:white;" +
+        "padding:30px;" +
+        "border-radius:16px;" +
+        "box-shadow:0 5px 25px rgba(0,0,0,.08);" +
       "\">" +
 
-        otp +
+
+        "<h2 style=\"" +
+          "color:#1769e0;" +
+          "margin-top:0;" +
+        "\">" +
+
+          "StockFlow" +
+
+        "</h2>" +
+
+
+        "<p>Hello " +
+
+          escapeHtml_(
+            fullName ||
+            "StockFlow User"
+          ) +
+
+        ",</p>" +
+
+
+        "<p>" +
+
+          "Use the verification code below to continue your StockFlow account registration." +
+
+        "</p>" +
+
+
+        "<div style=\"" +
+
+          "margin:25px 0;" +
+          "padding:22px;" +
+          "background:#eef5ff;" +
+          "border-radius:14px;" +
+          "text-align:center;" +
+
+        "\">" +
+
+
+          "<div style=\"" +
+
+            "font-size:12px;" +
+            "color:#64748b;" +
+            "margin-bottom:10px;" +
+
+          "\">" +
+
+            "VERIFICATION CODE" +
+
+          "</div>" +
+
+
+          "<div style=\"" +
+
+            "font-size:34px;" +
+            "font-weight:800;" +
+            "letter-spacing:8px;" +
+            "color:#10233f;" +
+
+          "\">" +
+
+            otp +
+
+          "</div>" +
+
+
+        "</div>" +
+
+
+        "<p>" +
+
+          "This code expires in <b>" +
+
+          OTP_EXPIRATION_MINUTES +
+
+          " minutes</b>." +
+
+        "</p>" +
+
+
+        "<p style=\"" +
+
+          "font-size:13px;" +
+          "color:#64748b;" +
+
+        "\">" +
+
+          "For your security, never share this verification code with another person." +
+
+        "</p>" +
+
+
+        "<hr style=\"" +
+
+          "border:0;" +
+          "border-top:1px solid #e2e8f0;" +
+          "margin:25px 0;" +
+
+        "\">" +
+
+
+        "<p style=\"" +
+
+          "font-size:12px;" +
+          "color:#94a3b8;" +
+
+        "\">" +
+
+          "StockFlow Inventory System" +
+
+        "</p>" +
+
 
       "</div>" +
-
-      "<p>" +
-        "This code expires in " +
-        "<b>" +
-          OTP_MINUTES +
-          " minutes" +
-        "</b>." +
-      "</p>" +
-
-      "<p style=\"" +
-        "color:#64748b;" +
-        "font-size:13px;" +
-      "\">" +
-
-        "If you did not request this password reset, ignore this email." +
-
-      "</p>" +
-
-      "<p>— StockFlow</p>" +
 
     "</div>";
 
@@ -3280,278 +1006,13 @@ function sendPasswordResetEmail_(
 
     subject: subject,
 
-    body: plain,
+    body: plainText,
 
-    htmlBody: html,
+    htmlBody: htmlBody,
 
-    name: "StockFlow"
+    name: APP_NAME
 
   });
-
-}
-
-
-// ============================================================
-// RESET PASSWORD
-// ============================================================
-
-function resetPassword_(data) {
-
-  const identity =
-    normalize_(
-      data.identity
-    );
-
-  const otp =
-    normalize_(
-      data.otp
-    );
-
-  const newPassword =
-    String(
-      data.newPassword || ""
-    );
-
-
-  if (
-    !identity ||
-    !otp ||
-    !newPassword
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Password reset information is incomplete."
-
-    };
-
-  }
-
-
-  if (
-    !validPassword_(
-      newPassword
-    )
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "New password must contain 8+ characters, uppercase, lowercase, number and symbol."
-
-    };
-
-  }
-
-
-  const found =
-    findUserRow_(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Unable to complete password reset."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  const storedOtp =
-    normalize_(
-      row[10]
-    );
-
-
-  const otpExpires =
-    row[11]
-      ? new Date(row[11])
-      : null;
-
-
-  if (
-    !storedOtp ||
-    storedOtp !== otp
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Incorrect password reset code."
-
-    };
-
-  }
-
-
-  if (
-    otpExpires &&
-    Date.now() >
-    otpExpires.getTime()
-  ) {
-
-    return {
-
-      success: false,
-
-      message:
-        "Password reset code has expired."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // UPDATE PASSWORD
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      7
-    )
-    .setValue(
-      newPassword
-    );
-
-
-  // ----------------------------------------------------------
-  // CLEAR RESET DATA
-  // ----------------------------------------------------------
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      11,
-      1,
-      11
-    )
-    .setValues([
-      [
-
-        "",
-
-        "",
-
-        row[12] ||
-          new Date(),
-
-        row[13] ||
-          "",
-
-        0,
-
-        "",
-
-        0,
-
-        "",
-
-        row[18] ||
-          "email",
-
-        "",
-
-        ""
-
-      ]
-    ]);
-
-
-  return {
-
-    success: true,
-
-    message:
-      "Password has been reset successfully. You can now log in."
-
-  };
-
-}
-
-
-// ============================================================
-// CHECK ADMIN REGISTRATION
-// ============================================================
-
-function checkAdminRegistration_(data) {
-
-  const adminKey =
-    normalize_(
-      data.adminKey
-    );
-
-
-  if (!adminKey) {
-
-    return {
-
-      success: false,
-
-      authorized: false,
-
-      message:
-        "Admin authorization key is required."
-
-    };
-
-  }
-
-
-  try {
-
-    const authorized =
-      validateAdminKey_(
-        adminKey
-      );
-
-
-    return {
-
-      success: true,
-
-      authorized: authorized,
-
-      message:
-        authorized
-          ? "Admin registration authorized."
-          : "Admin registration is not authorized."
-
-    };
-
-  } catch (error) {
-
-    return {
-
-      success: false,
-
-      authorized: false,
-
-      message:
-        error.message
-
-    };
-
-  }
 
 }
 
@@ -3562,33 +1023,1952 @@ function checkAdminRegistration_(data) {
 
 function escapeHtml_(value) {
 
-  return String(
-    value
-  )
+  return String(value)
 
-    .replace(
-      /&/g,
-      "&amp;"
-    )
+    .replace(/&/g, "&amp;")
 
-    .replace(
-      /</g,
-      "&lt;"
-    )
+    .replace(/</g, "&lt;")
 
-    .replace(
-      />/g,
-      "&gt;"
-    )
+    .replace(/>/g, "&gt;")
 
-    .replace(
-      /"/g,
-      "&quot;"
-    )
+    .replace(/"/g, "&quot;")
 
     .replace(
       /'/g,
       "&#039;"
     );
+
+}
+
+
+// ============================================================
+// REGISTER EMPLOYEE
+// ============================================================
+//
+// PUBLIC ENDPOINT.
+//
+// IMPORTANT:
+// Even if somebody manually sends:
+//
+// role: "Admin"
+//
+// the backend ignores it.
+//
+// Every public registration becomes Employee.
+// ============================================================
+
+function registerEmployee_(data) {
+
+  const lock =
+    LockService.getScriptLock();
+
+
+  lock.waitLock(10000);
+
+
+  try {
+
+    const name =
+      normalize_(data.name);
+
+
+    const username =
+      normalize_(data.username);
+
+
+    const password =
+      String(data.password || "");
+
+
+    const age =
+      Number(data.age);
+
+
+    const gmail =
+      normalizeEmail_(data.gmail);
+
+
+    const phone =
+      normalizePhone_(data.phone);
+
+
+    // --------------------------------------------------------
+    // VALIDATION
+    // --------------------------------------------------------
+
+    if (
+
+      !name ||
+      !username ||
+      !password ||
+      !gmail ||
+      !phone ||
+      !age
+
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "All required registration fields must be completed."
+
+      });
+
+    }
+
+
+    if (
+      name.length < 2
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Please enter a valid full name."
+
+      });
+
+    }
+
+
+    if (
+      !validUsername_(username)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Username must contain 4–20 valid characters."
+
+      });
+
+    }
+
+
+    if (
+      age < 18 ||
+      age > 100
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Age must be between 18 and 100."
+
+      });
+
+    }
+
+
+    if (
+      !validEmail_(gmail)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Please enter a valid Gmail/email address."
+
+      });
+
+    }
+
+
+    if (
+      !validPhone_(phone)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Please enter a valid Philippine phone number."
+
+      });
+
+    }
+
+
+    if (
+      password.length < 8
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Password must contain at least 8 characters."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // DUPLICATE CHECK
+    // --------------------------------------------------------
+
+    const duplicate =
+      checkDuplicate_(
+        username,
+        gmail,
+        phone
+      );
+
+
+    if (duplicate) {
+
+      return response({
+
+        success: false,
+
+        message: duplicate
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // GENERATE ACCOUNT DATA
+    // --------------------------------------------------------
+
+    const uid =
+      generateUID_();
+
+
+    const otp =
+      generateOTP_();
+
+
+    const otpExpires =
+      new Date(
+        Date.now() +
+        OTP_EXPIRATION_MINUTES *
+        60 *
+        1000
+      );
+
+
+    const now =
+      new Date();
+
+
+    const passwordHash =
+      hashPassword_(password);
+
+
+    const sheet =
+      getSheet();
+
+
+    // --------------------------------------------------------
+    // SAVE EMPLOYEE
+    // --------------------------------------------------------
+
+    sheet.appendRow([
+
+      uid,
+
+      name,
+
+      username,
+
+      passwordHash,
+
+      age,
+
+      STATUS_PENDING,
+
+      gmail,
+
+      phone,
+
+      ROLE_EMPLOYEE,
+
+      otp,
+
+      otpExpires,
+
+      0,
+
+      "",
+
+      now,
+
+      now,
+
+      ""
+
+    ]);
+
+
+    const newRow =
+      sheet.getLastRow();
+
+
+    try {
+
+      // ------------------------------------------------------
+      // SEND REAL OTP TO REGISTERED GMAIL
+      // ------------------------------------------------------
+
+      sendOTPEmail_(
+        gmail,
+        name,
+        otp,
+        false
+      );
+
+    } catch (mailError) {
+
+      // Remove account if Gmail delivery fails.
+
+      sheet.deleteRow(
+        newRow
+      );
+
+
+      throw new Error(
+
+        "Registration was not completed because the verification email could not be sent. " +
+
+        mailError.message
+
+      );
+
+    }
+
+
+    return response({
+
+      success: true,
+
+      uid: uid,
+
+      username: username,
+
+      role: ROLE_EMPLOYEE,
+
+      verified: false,
+
+      accountStatus:
+        STATUS_PENDING,
+
+      otpSent: true,
+
+      message:
+        "Employee registration successful. A real verification code was sent to your Gmail."
+
+    });
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+
+}
+
+
+// ============================================================
+// REGISTER ADMIN
+// ============================================================
+//
+// PROTECTED ENDPOINT.
+//
+// The request MUST contain:
+//
+// adminKey
+//
+// The key is checked against Apps Script Script Properties.
+//
+// Optional ADMIN_EMAILS allowlist is also checked.
+// ============================================================
+
+function registerAdmin_(data) {
+
+  const lock =
+    LockService.getScriptLock();
+
+
+  lock.waitLock(10000);
+
+
+  try {
+
+    const suppliedKey =
+      normalize_(
+        data.adminKey
+      );
+
+
+    // --------------------------------------------------------
+    // SERVER-SIDE ADMIN KEY
+    // --------------------------------------------------------
+
+    if (!suppliedKey) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Admin registration is protected."
+
+      });
+
+    }
+
+
+    const realKey =
+      getAdminRegistrationKey_();
+
+
+    if (
+      suppliedKey !== realKey
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Unauthorized admin registration request."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // REGISTRATION DATA
+    // --------------------------------------------------------
+
+    const name =
+      normalize_(data.name);
+
+
+    const username =
+      normalize_(data.username);
+
+
+    const password =
+      String(data.password || "");
+
+
+    const age =
+      Number(data.age);
+
+
+    const gmail =
+      normalizeEmail_(data.gmail);
+
+
+    const phone =
+      normalizePhone_(data.phone);
+
+
+    if (
+
+      !name ||
+      !username ||
+      !password ||
+      !gmail ||
+      !phone ||
+      !age
+
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "All required admin registration fields must be completed."
+
+      });
+
+    }
+
+
+    if (
+      !validUsername_(username)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Invalid username."
+
+      });
+
+    }
+
+
+    if (
+      age < 18 ||
+      age > 100
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Admin age must be between 18 and 100."
+
+      });
+
+    }
+
+
+    if (
+      !validEmail_(gmail)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Invalid admin Gmail address."
+
+      });
+
+    }
+
+
+    if (
+      !validPhone_(phone)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Invalid phone number."
+
+      });
+
+    }
+
+
+    if (
+      password.length < 8
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Password must contain at least 8 characters."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // OPTIONAL ADMIN EMAIL ALLOWLIST
+    // --------------------------------------------------------
+
+    const adminEmails =
+      getAdminEmails_();
+
+
+    if (
+      adminEmails.length > 0 &&
+      !adminEmails.includes(gmail)
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "This Gmail address is not authorized for admin registration."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // DUPLICATE CHECK
+    // --------------------------------------------------------
+
+    const duplicate =
+      checkDuplicate_(
+        username,
+        gmail,
+        phone
+      );
+
+
+    if (duplicate) {
+
+      return response({
+
+        success: false,
+
+        message: duplicate
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // GENERATE ADMIN ACCOUNT
+    // --------------------------------------------------------
+
+    const uid =
+      generateUID_();
+
+
+    const otp =
+      generateOTP_();
+
+
+    const otpExpires =
+      new Date(
+
+        Date.now() +
+        OTP_EXPIRATION_MINUTES *
+        60 *
+        1000
+
+      );
+
+
+    const now =
+      new Date();
+
+
+    const passwordHash =
+      hashPassword_(password);
+
+
+    const sheet =
+      getSheet();
+
+
+    // --------------------------------------------------------
+    // SAVE ADMIN
+    // --------------------------------------------------------
+
+    sheet.appendRow([
+
+      uid,
+
+      name,
+
+      username,
+
+      passwordHash,
+
+      age,
+
+      STATUS_PENDING,
+
+      gmail,
+
+      phone,
+
+      ROLE_ADMIN,
+
+      otp,
+
+      otpExpires,
+
+      0,
+
+      "",
+
+      now,
+
+      now,
+
+      ""
+
+    ]);
+
+
+    const newRow =
+      sheet.getLastRow();
+
+
+    try {
+
+      sendOTPEmail_(
+        gmail,
+        name,
+        otp,
+        false
+      );
+
+    } catch (mailError) {
+
+      sheet.deleteRow(
+        newRow
+      );
+
+
+      throw new Error(
+
+        "Admin registration was not completed because the verification email could not be sent. " +
+
+        mailError.message
+
+      );
+
+    }
+
+
+    return response({
+
+      success: true,
+
+      uid: uid,
+
+      username: username,
+
+      role: ROLE_ADMIN,
+
+      verified: false,
+
+      accountStatus:
+        STATUS_PENDING,
+
+      otpSent: true,
+
+      message:
+        "Admin registration successful. A verification code was sent to the authorized Gmail."
+
+    });
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+
+}
+
+
+// ============================================================
+// VERIFY OTP
+// ============================================================
+
+function verifyOTP_(data) {
+
+  const identity =
+    normalize_(data.identity);
+
+
+  const otp =
+    normalize_(data.otp);
+
+
+  if (
+    !identity ||
+    !otp
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username/email and OTP are required."
+
+    });
+
+  }
+
+
+  if (
+    !/^\d{6}$/.test(otp)
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "OTP must contain exactly 6 digits."
+
+    });
+
+  }
+
+
+  const lock =
+    LockService.getScriptLock();
+
+
+  lock.waitLock(10000);
+
+
+  try {
+
+    const found =
+      findUser_(identity);
+
+
+    if (!found) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Account not found."
+
+      });
+
+    }
+
+
+    const row =
+      found.values;
+
+
+    const status =
+      normalize_(row[5])
+        .toUpperCase();
+
+
+    // --------------------------------------------------------
+    // ACCOUNT ALREADY VERIFIED
+    // --------------------------------------------------------
+
+    if (
+      status === STATUS_VERIFIED
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "This account is already verified."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK OTP LOCK
+    // --------------------------------------------------------
+
+    const lockUntil =
+      row[12]
+        ? new Date(row[12])
+        : null;
+
+
+    if (
+      lockUntil &&
+      Date.now() <
+      lockUntil.getTime()
+    ) {
+
+      const remaining =
+        Math.ceil(
+
+          (
+            lockUntil.getTime() -
+            Date.now()
+
+          ) / 60000
+
+        );
+
+
+      return response({
+
+        success: false,
+
+        locked: true,
+
+        message:
+
+          "Too many incorrect OTP attempts. Try again in approximately " +
+
+          remaining +
+
+          " minute(s)."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK OTP EXPIRATION
+    // --------------------------------------------------------
+
+    const otpExpires =
+      row[10]
+        ? new Date(row[10])
+        : null;
+
+
+    if (
+      !otpExpires ||
+      Date.now() >
+      otpExpires.getTime()
+    ) {
+
+      return response({
+
+        success: false,
+
+        expired: true,
+
+        message:
+          "This OTP has expired. Please request a new verification code."
+
+      });
+
+    }
+
+
+    const storedOTP =
+      normalize_(row[9]);
+
+
+    // --------------------------------------------------------
+    // INCORRECT OTP
+    // --------------------------------------------------------
+
+    if (
+      otp !== storedOTP
+    ) {
+
+      let attempts =
+        Number(row[11]) || 0;
+
+
+      attempts++;
+
+
+      if (
+        attempts >= MAX_OTP_ATTEMPTS
+      ) {
+
+        const newLockUntil =
+          new Date(
+
+            Date.now() +
+            OTP_LOCK_MINUTES *
+            60 *
+            1000
+
+          );
+
+
+        found.sheet
+          .getRange(
+            found.rowNumber,
+            12,
+            1,
+            2
+          )
+          .setValues([
+
+            [
+              attempts,
+              newLockUntil
+            ]
+
+          ]);
+
+
+        return response({
+
+          success: false,
+
+          locked: true,
+
+          message:
+
+            "Maximum OTP attempts reached. Verification is locked for " +
+
+            OTP_LOCK_MINUTES +
+
+            " minutes."
+
+        });
+
+      }
+
+
+      found.sheet
+        .getRange(
+          found.rowNumber,
+          12
+        )
+        .setValue(attempts);
+
+
+      return response({
+
+        success: false,
+
+        attemptsRemaining:
+          MAX_OTP_ATTEMPTS -
+          attempts,
+
+        message:
+          "Incorrect OTP. " +
+
+          (
+            MAX_OTP_ATTEMPTS -
+            attempts
+          ) +
+
+          " attempt(s) remaining."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // SUCCESSFUL VERIFICATION
+    // --------------------------------------------------------
+
+    const verifiedAt =
+      new Date();
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        6
+      )
+      .setValue(
+        STATUS_VERIFIED
+      );
+
+
+    // Clear OTP
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        10
+      )
+      .setValue("");
+
+
+    // Clear expiration
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        11
+      )
+      .setValue("");
+
+
+    // Reset attempts
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        12
+      )
+      .setValue(0);
+
+
+    // Clear lock
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        13
+      )
+      .setValue("");
+
+
+    // Save verification date
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        16
+      )
+      .setValue(
+        verifiedAt
+      );
+
+
+    return response({
+
+      success: true,
+
+      verified: true,
+
+      demo: false,
+
+      uid:
+        normalize_(row[0]),
+
+      username:
+        normalize_(row[2]),
+
+      role:
+        normalize_(row[8]),
+
+      accountStatus:
+        STATUS_VERIFIED,
+
+      message:
+        "Account verified successfully."
+
+    });
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+
+}
+
+
+// ============================================================
+// RESEND OTP
+// ============================================================
+
+function resendOTP_(data) {
+
+  const identity =
+    normalize_(data.identity);
+
+
+  if (!identity) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username, Gmail or phone number is required."
+
+    });
+
+  }
+
+
+  const lock =
+    LockService.getScriptLock();
+
+
+  lock.waitLock(10000);
+
+
+  try {
+
+    const found =
+      findUser_(identity);
+
+
+    if (!found) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "Account not found."
+
+      });
+
+    }
+
+
+    const row =
+      found.values;
+
+
+    const status =
+      normalize_(row[5])
+        .toUpperCase();
+
+
+    // --------------------------------------------------------
+    // ALREADY VERIFIED
+    // --------------------------------------------------------
+
+    if (
+      status === STATUS_VERIFIED
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "This account is already verified."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK OTP LOCK
+    // --------------------------------------------------------
+
+    const lockUntil =
+      row[12]
+        ? new Date(row[12])
+        : null;
+
+
+    if (
+      lockUntil &&
+      Date.now() <
+      lockUntil.getTime()
+    ) {
+
+      return response({
+
+        success: false,
+
+        locked: true,
+
+        message:
+          "OTP verification is temporarily locked. Try again later."
+
+      });
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK RESEND COOLDOWN
+    // --------------------------------------------------------
+
+    const lastSent =
+      row[13]
+        ? new Date(row[13])
+        : null;
+
+
+    if (lastSent) {
+
+      const elapsed =
+        Math.floor(
+
+          (
+            Date.now() -
+            lastSent.getTime()
+
+          ) / 1000
+
+        );
+
+
+      if (
+        elapsed <
+        RESEND_COOLDOWN_SECONDS
+      ) {
+
+        return response({
+
+          success: false,
+
+          cooldown: true,
+
+          remainingSeconds:
+
+            RESEND_COOLDOWN_SECONDS -
+            elapsed,
+
+          message:
+
+            "Please wait " +
+
+            (
+              RESEND_COOLDOWN_SECONDS -
+              elapsed
+            ) +
+
+            " seconds before requesting another OTP."
+
+        });
+
+      }
+
+    }
+
+
+    // --------------------------------------------------------
+    // GENERATE NEW OTP
+    // --------------------------------------------------------
+
+    const newOTP =
+      generateOTP_();
+
+
+    const newExpires =
+      new Date(
+
+        Date.now() +
+        OTP_EXPIRATION_MINUTES *
+        60 *
+        1000
+
+      );
+
+
+    const now =
+      new Date();
+
+
+    // --------------------------------------------------------
+    // UPDATE SHEET
+    // --------------------------------------------------------
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        6
+      )
+      .setValue(
+        STATUS_PENDING
+      );
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        10,
+        1,
+        5
+      )
+      .setValues([
+
+        [
+          newOTP,
+          newExpires,
+          0,
+          "",
+          now
+        ]
+
+      ]);
+
+
+    // --------------------------------------------------------
+    // SEND NEW REAL OTP
+    // --------------------------------------------------------
+
+    try {
+
+      sendOTPEmail_(
+        normalize_(row[6]),
+        normalize_(row[1]),
+        newOTP,
+        true
+      );
+
+    } catch (mailError) {
+
+      // Do not leave a newly generated unusable OTP.
+
+      found.sheet
+        .getRange(
+          found.rowNumber,
+          10,
+          1,
+          5
+        )
+        .setValues([
+
+          [
+            row[9],
+            row[10],
+            row[11],
+            row[12],
+            row[13]
+          ]
+
+        ]);
+
+
+      throw new Error(
+
+        "Unable to send the new verification email. " +
+
+        mailError.message
+
+      );
+
+    }
+
+
+    return response({
+
+      success: true,
+
+      otpSent: true,
+
+      expiresInMinutes:
+        OTP_EXPIRATION_MINUTES,
+
+      message:
+        "A new verification code was sent to your registered Gmail."
+
+    });
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+
+}
+
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+function loginUser_(data) {
+
+  const identity =
+    normalize_(data.identity)
+      .toLowerCase();
+
+
+  const password =
+    String(
+      data.password || ""
+    );
+
+
+  if (
+    !identity ||
+    !password
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username/email and password are required."
+
+    });
+
+  }
+
+
+  const found =
+    findUser_(identity);
+
+
+  if (!found) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Invalid username/email or password."
+
+    });
+
+  }
+
+
+  const row =
+    found.values;
+
+
+  const storedPasswordHash =
+    normalize_(row[3]);
+
+
+  const passwordHash =
+    hashPassword_(
+      password
+    );
+
+
+  // ----------------------------------------------------------
+  // PASSWORD CHECK
+  // ----------------------------------------------------------
+
+  if (
+    passwordHash !==
+    storedPasswordHash
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Invalid username/email or password."
+
+    });
+
+  }
+
+
+  // ----------------------------------------------------------
+  // ACCOUNT STATUS
+  // ----------------------------------------------------------
+
+  const status =
+    normalize_(row[5])
+      .toUpperCase();
+
+
+  if (
+    status === STATUS_SUSPENDED
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "This account has been suspended."
+
+    });
+
+  }
+
+
+  if (
+    status === STATUS_DISABLED
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "This account has been disabled."
+
+    });
+
+  }
+
+
+  if (
+    status !== STATUS_VERIFIED
+  ) {
+
+    return response({
+
+      success: false,
+
+      verified: false,
+
+      message:
+        "Account is not verified. Please verify the OTP sent to your Gmail."
+
+    });
+
+  }
+
+
+  // ----------------------------------------------------------
+  // SUCCESS
+  // ----------------------------------------------------------
+
+  return response({
+
+    success: true,
+
+    verified: true,
+
+    message:
+      "Login successful.",
+
+    user: {
+
+      uid:
+        normalize_(row[0]),
+
+      name:
+        normalize_(row[1]),
+
+      username:
+        normalize_(row[2]),
+
+      age:
+        row[4],
+
+      accountStatus:
+        normalize_(row[5]),
+
+      gmail:
+        normalize_(row[6]),
+
+      phone:
+        normalize_(row[7]),
+
+      role:
+        normalize_(row[8]) ||
+        ROLE_EMPLOYEE
+
+    }
+
+  });
+
+}
+
+
+// ============================================================
+// GET USER
+// ============================================================
+
+function getUser_(data) {
+
+  const identity =
+    normalize_(data.identity);
+
+
+  if (!identity) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username, Gmail or phone number is required."
+
+    });
+
+  }
+
+
+  const found =
+    findUser_(identity);
+
+
+  if (!found) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "User not found."
+
+    });
+
+  }
+
+
+  const row =
+    found.values;
+
+
+  return response({
+
+    success: true,
+
+    user: {
+
+      uid:
+        normalize_(row[0]),
+
+      name:
+        normalize_(row[1]),
+
+      username:
+        normalize_(row[2]),
+
+      age:
+        row[4],
+
+      accountStatus:
+        normalize_(row[5]),
+
+      gmail:
+        normalize_(row[6]),
+
+      phone:
+        normalize_(row[7]),
+
+      role:
+        normalize_(row[8]) ||
+        ROLE_EMPLOYEE
+
+    }
+
+  });
+
+}
+
+
+// ============================================================
+// UPDATE ACCOUNT STATUS
+// ============================================================
+//
+// Intended for your admin dashboard.
+//
+// NOTE:
+// This endpoint should eventually require an authenticated
+// admin session/token before allowing status changes.
+// ============================================================
+
+function updateAccountStatus_(data) {
+
+  const username =
+    normalize_(data.username)
+      .toLowerCase();
+
+
+  const status =
+    normalize_(data.status)
+      .toUpperCase();
+
+
+  const allowedStatuses = [
+
+    STATUS_PENDING,
+
+    STATUS_VERIFIED,
+
+    STATUS_SUSPENDED,
+
+    STATUS_DISABLED
+
+  ];
+
+
+  if (
+    !username
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username is required."
+
+    });
+
+  }
+
+
+  if (
+    !allowedStatuses.includes(status)
+  ) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Invalid account status."
+
+    });
+
+  }
+
+
+  const found =
+    findUser_(username);
+
+
+  if (!found) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Username not found."
+
+    });
+
+  }
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      6
+    )
+    .setValue(status);
+
+
+  return response({
+
+    success: true,
+
+    message:
+      "Account status updated successfully."
+
+  });
+
+}
+
+
+// ============================================================
+// FORGOT PASSWORD
+// ============================================================
+//
+// Does not expose whether an account exists.
+// ============================================================
+
+function forgotPassword_(data) {
+
+  const identity =
+    normalize_(data.identity);
+
+
+  if (!identity) {
+
+    return response({
+
+      success: false,
+
+      message:
+        "Email, username or phone number is required."
+
+    });
+
+  }
+
+
+  const found =
+    findUser_(identity);
+
+
+  // Always return a generic message.
+
+  if (!found) {
+
+    return response({
+
+      success: true,
+
+      message:
+        "If the account exists, password recovery instructions will be sent."
+
+    });
+
+  }
+
+
+  // ----------------------------------------------------------
+  // PASSWORD RESET CAN BE CONNECTED HERE.
+  //
+  // For the current system, we don't change the password
+  // automatically.
+  // ----------------------------------------------------------
+
+  return response({
+
+    success: true,
+
+    message:
+      "If the account exists, password recovery instructions will be sent."
+
+  });
+
+}
+
+
+// ============================================================
+// ADMIN SECURITY TEST
+// ============================================================
+//
+// Run this manually from Apps Script to verify that the
+// ADMIN_REGISTRATION_KEY exists.
+// ============================================================
+
+function testAdminConfiguration() {
+
+  const key =
+    getAdminRegistrationKey_();
+
+
+  console.log(
+    "ADMIN_REGISTRATION_KEY is configured."
+  );
+
+
+  const adminEmails =
+    getAdminEmails_();
+
+
+  console.log(
+    "Authorized admin emails:",
+    adminEmails
+  );
+
+}
+
+
+// ============================================================
+// TEST GMAIL
+// ============================================================
+//
+// Run this manually once from Apps Script.
+//
+// Replace the email with your own Gmail.
+// ============================================================
+
+function testGmailOTP() {
+
+  const email =
+    "YOUR_GMAIL@gmail.com";
+
+
+  const otp =
+    generateOTP_();
+
+
+  sendOTPEmail_(
+    email,
+    "StockFlow Admin",
+    otp,
+    false
+  );
+
+
+  console.log(
+    "Test OTP sent to:",
+    email
+  );
+
+
+  console.log(
+    "OTP:",
+    otp
+  );
 
 }
