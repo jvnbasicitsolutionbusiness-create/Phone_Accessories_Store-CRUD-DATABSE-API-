@@ -1,0 +1,4 @@
+const $=id=>document.getElementById(id), alertBox=(m,ok=false)=>{const a=$("alert");a.textContent=m;a.className="sf-alert show "+(ok?"ok":"err")};
+async function load(){const r=await StockFlowInventoryAPI.products.list();if(!r.success)return alertBox(r.message);$("productId").innerHTML='<option value="">Select product</option>'+r.products.filter(p=>p.status==="ACTIVE").map(p=>`<option value="${p.id}">${p.sku} — ${p.name} (stock: ${p.stock})</option>`).join("")}
+$("form").onsubmit=async e=>{e.preventDefault();const r=await StockFlowInventoryAPI.stockOut({productId:$("productId").value,qty:$("qty").value,reason:$("reason").value,reference:$("reference").value,date:$("date").value,remarks:$("remarks").value,username:sessionStorage.getItem("stockflow_username")||"user"});r.success?(alertBox(r.message+" New stock: "+r.newStock,true),$("form").reset(),load()):alertBox(r.message)};
+document.addEventListener("DOMContentLoaded",load);
