@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+        content="Recover your StockFlow account">
+
+    <title>Recover Account | StockFlow</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="auth.css">
+
+</head>
+
+
+<body class="auth-page">
+
+    <div class="auth-shell compact-shell">
+
+
+        <!-- ==================================================
+             BRAND
+        ================================================== -->
+
+        <div class="auth-brand">
+
+            <a class="brand" href="index.html">
+
+                <span class="brand-mark">
+                    S
+                </span>
+
+                <span>
+                    Stock<span>Flow</span>
+                </span>
+
+            </a>
+
+        </div>
+
+
+        <!-- ==================================================
+             RECOVERY CARD
+        ================================================== -->
+
+        <section class="auth-card verification-card">
+
+
+            <!-- ==================================================
+                 OTP STEP
+            ================================================== -->
+
+            <div id="recoveryOtpStep">
+
+
+                <div class="verify-icon">
+                    ✓
+                </div>
+
+
+                <div class="auth-card-head">
+
+                    <h2>
+                        Verify recovery request
+                    </h2>
+
+                    <p>
+                        Enter the 6-digit recovery code
+                        sent to your registered contact.
+                    </p>
+
+                </div>
+
+
+                <!-- DESTINATION -->
+
+                <div
+                    id="recoveryDestination"
+                    class="destination">
+
+                    your registered contact
+
+                </div>
+
+
+                <!-- MESSAGE -->
+
+                <div
+                    id="recoveryMessage"
+                    class="form-message"
+                    role="alert">
+                </div>
+
+
+                <!-- OTP FORM -->
+
+                <form
+                    id="recoveryOtpForm"
+                    novalidate>
+
+
+                    <div
+                        class="otp-inputs"
+                        id="recoveryOtpInputs">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            aria-label="Recovery OTP digit 1">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="Recovery OTP digit 2">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="Recovery OTP digit 3">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="Recovery OTP digit 4">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="Recovery OTP digit 5">
+
+
+                        <input
+                            type="text"
+                            maxlength="1"
+                            inputmode="numeric"
+                            aria-label="Recovery OTP digit 6">
+
+                    </div>
+
+
+                    <button
+                        id="verifyRecoveryButton"
+                        class="btn btn-primary btn-full"
+                        type="submit">
+
+                        <span>
+                            Verify recovery code
+                        </span>
+
+                        <span>
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <!-- RESEND -->
+
+                <div class="resend-row">
+
+                    <span>
+                        Didn't receive a code?
+                    </span>
+
+                    <button
+                        id="resendRecoveryOtp"
+                        type="button"
+                        disabled>
+
+                        Resend in
+                        <b id="recoveryCountdown">
+                            60
+                        </b>s
+
+                    </button>
+
+                </div>
+
+
+                <!-- SECURITY -->
+
+                <div
+                    class="demo-hint"
+                    style="margin-top:20px;">
+
+                    <strong>
+                        SECURITY NOTICE
+                    </strong>
+
+                    <br>
+
+                    Recovery codes expire automatically.
+                    Never share your recovery code with anyone.
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ==================================================
+                 NEW PASSWORD STEP
+            ================================================== -->
+
+            <div
+                id="newPasswordStep"
+                style="display:none;">
+
+
+                <div class="verify-icon">
+                    ✓
+                </div>
+
+
+                <div class="auth-card-head">
+
+                    <h2>
+                        Create a new password
+                    </h2>
+
+                    <p>
+                        Your recovery request has been verified.
+                        Create a strong new password for your account.
+                    </p>
+
+                </div>
+
+
+                <!-- MESSAGE -->
+
+                <div
+                    id="passwordMessage"
+                    class="form-message"
+                    role="alert">
+                </div>
+
+
+                <!-- PASSWORD FORM -->
+
+                <form
+                    id="newPasswordForm"
+                    novalidate>
+
+
+                    <!-- NEW PASSWORD -->
+
+                    <div class="field">
+
+                        <label for="newPassword">
+                            New password
+                        </label>
+
+
+                        <div class="password-wrap">
+
+                            <input
+                                id="newPassword"
+                                name="newPassword"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="Enter your new password"
+                                required>
+
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                data-target="newPassword">
+
+                                Show
+
+                            </button>
+
+                        </div>
+
+
+                        <div class="password-meter">
+
+                            <span
+                                id="recoveryPasswordBar">
+                            </span>
+
+                        </div>
+
+
+                        <small
+                            id="recoveryPasswordHint"
+                            class="password-hint">
+
+                            Use 8+ characters with uppercase,
+                            lowercase, number and symbol.
+
+                        </small>
+
+
+                        <small class="field-error"></small>
+
+                    </div>
+
+
+                    <!-- CONFIRM PASSWORD -->
+
+                    <div class="field">
+
+                        <label for="confirmNewPassword">
+                            Confirm new password
+                        </label>
+
+
+                        <div class="password-wrap">
+
+                            <input
+                                id="confirmNewPassword"
+                                name="confirmNewPassword"
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="Re-enter your new password"
+                                required>
+
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                data-target="confirmNewPassword">
+
+                                Show
+
+                            </button>
+
+                        </div>
+
+
+                        <small class="field-error"></small>
+
+                    </div>
+
+
+                    <!-- SUBMIT -->
+
+                    <button
+                        id="resetPasswordButton"
+                        class="btn btn-primary btn-full"
+                        type="submit">
+
+                        <span>
+                            Reset password
+                        </span>
+
+                        <span>
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <!-- SECURITY NOTE -->
+
+                <div class="security-note">
+
+                    <span>
+                        🔒
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Secure password recovery
+                        </strong>
+
+                        <small>
+                            Your new password will replace
+                            the old password after successful
+                            verification.
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ==================================================
+                 SUCCESS STEP
+            ================================================== -->
+
+            <div
+                id="recoverySuccessStep"
+                style="display:none;">
+
+
+                <div class="verify-icon">
+                    ✓
+                </div>
+
+
+                <div class="auth-card-head">
+
+                    <h2>
+                        Password reset successful
+                    </h2>
+
+                    <p>
+                        Your StockFlow password has been
+                        successfully updated.
+                    </p>
+
+                </div>
+
+
+                <div
+                    class="form-message show success">
+
+                    You can now sign in using your new password.
+
+                </div>
+
+
+                <button
+                    id="recoveryLoginButton"
+                    class="btn btn-primary btn-full"
+                    type="button">
+
+                    Continue to login
+
+                    <span>
+                        →
+                    </span>
+
+                </button>
+
+            </div>
+
+
+        </section>
+
+
+    </div>
+
+
+    <script src="config.js" defer></script>
+    <script src="auth.js" defer></script>
+
+</body>
+
+</html>
