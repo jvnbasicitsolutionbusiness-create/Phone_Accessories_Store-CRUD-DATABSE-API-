@@ -1,82 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Verify your StockFlow account">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Verify your StockFlow account"
+    >
+
     <title>Verify Account | StockFlow</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="stylesheet" href="auth.css">
+
+    <!-- =====================================================
+         STYLES
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="dashboard.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="auth.css"
+    >
+
 </head>
+
 
 <body class="auth-page">
 
+
+    <!-- =====================================================
+         AUTH SHELL
+    ====================================================== -->
+
     <div class="auth-shell compact-shell">
 
+
+        <!-- =================================================
+             BRAND
+        ================================================== -->
+
         <div class="auth-brand">
-            <a class="brand" href="index.html">
-                <span class="brand-mark">S</span>
-                <span>Stock<span>Flow</span></span>
+
+            <a
+                class="brand"
+                href="index.html"
+            >
+
+                <span class="brand-mark">
+                    S
+                </span>
+
+                <span>
+                    Stock<span>Flow</span>
+                </span>
+
             </a>
+
         </div>
 
-        <section class="auth-card verification-card">
 
-            <div class="verify-icon">✓</div>
+
+        <!-- =================================================
+             VERIFICATION CARD
+        ================================================== -->
+
+        <section
+            class="auth-card verification-card"
+        >
+
+
+            <!-- =============================================
+                 ICON
+            ============================================== -->
+
+            <div class="verify-icon">
+                ✓
+            </div>
+
+
+
+            <!-- =============================================
+                 HEADER
+            ============================================== -->
 
             <div class="auth-card-head">
-                <h2>Verify your account</h2>
+
+                <h2>
+                    Verify your account
+                </h2>
+
                 <p>
-                    Enter the 6-digit verification code sent to your registered Gmail.
+                    Enter the 6-digit verification code
+                    sent to your registered Gmail or phone.
                 </p>
+
             </div>
 
-            <div id="verifyDestination" class="destination">
-                your registered email
+
+
+            <!-- =============================================
+                 DESTINATION
+            ============================================== -->
+
+            <div
+                id="verifyDestination"
+                class="destination"
+            >
+                your registered contact
             </div>
 
-            <div id="verifyMessage" class="form-message" role="alert"></div>
 
-            <form id="verifyForm" novalidate>
 
-                <div class="otp-inputs" id="otpInputs">
-                    <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="OTP digit 1">
-                    <input type="text" maxlength="1" inputmode="numeric" aria-label="OTP digit 2">
-                    <input type="text" maxlength="1" inputmode="numeric" aria-label="OTP digit 3">
-                    <input type="text" maxlength="1" inputmode="numeric" aria-label="OTP digit 4">
-                    <input type="text" maxlength="1" inputmode="numeric" aria-label="OTP digit 5">
-                    <input type="text" maxlength="1" inputmode="numeric" aria-label="OTP digit 6">
+            <!-- =============================================
+                 MESSAGE
+            ============================================== -->
+
+            <div
+                id="verifyMessage"
+                class="form-message"
+                role="alert"
+                aria-live="polite"
+            ></div>
+
+
+
+            <!-- =============================================
+                 OTP FORM
+            ============================================== -->
+
+            <form
+                id="verifyForm"
+                novalidate
+            >
+
+
+                <!-- =========================================
+                     OTP INPUTS
+                ========================================== -->
+
+                <div
+                    class="otp-inputs"
+                    id="otpInputs"
+                >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        aria-label="OTP digit 1"
+                    >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 2"
+                    >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 3"
+                    >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 4"
+                    >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 5"
+                    >
+
+                    <input
+                        type="text"
+                        maxlength="1"
+                        inputmode="numeric"
+                        aria-label="OTP digit 6"
+                    >
+
                 </div>
 
-                <button class="btn btn-primary btn-full" type="submit">
+
+
+                <!-- =========================================
+                     VERIFY BUTTON
+                ========================================== -->
+
+                <button
+                    class="btn btn-primary btn-full"
+                    type="submit"
+                    id="verifyButton"
+                >
                     Verify account
                 </button>
+
             </form>
 
-            <div class="resend-row">
-                <span>Didn't receive a code?</span>
 
-                <button id="resendOtp" type="button" disabled>
-                    Resend in <b id="countdown">60</b>s
+
+            <!-- =============================================
+                 RESEND OTP
+            ============================================== -->
+
+            <div class="resend-row">
+
+                <span>
+                    Didn't receive a code?
+                </span>
+
+                <button
+                    id="resendOtp"
+                    type="button"
+                    disabled
+                >
+
+                    Resend in
+                    <b id="countdown">60</b>s
+
                 </button>
+
             </div>
 
-            <div class="demo-hint">
-                <strong>DEMO OPTION</strong><br>
-                Use <b>123456</b> to enter DEMO mode only.
+
+
+            <!-- =================================================
+                 DEMO OTP
+                 IMPORTANT:
+                 Keep this above "USE ANOTHER VERIFICATION METHOD"
+            ================================================== -->
+
+            <div
+                class="demo-hint"
+                style="
+                    margin-top:18px;
+                    border:1px solid #dbe7f5;
+                    background:#f7faff;
+                "
+            >
+
+                <strong>
+                    DEMO OPTION
+                </strong>
+
                 <br>
+
+                Use
+                <b>123456</b>
+                to enter DEMO mode only.
+
+                <br>
+
                 <small>
-                    123456 will NOT fully verify the account.
-                    Use the real OTP from Gmail to activate the account.
+                    The demo code does NOT fully verify
+                    the account. Use the real OTP sent to
+                    your registered Gmail or phone to
+                    activate the account.
                 </small>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 USE ANOTHER VERIFICATION METHOD
+            ================================================== -->
+
+            <div
+                style="
+                    margin-top:18px;
+                    padding-top:18px;
+                    border-top:1px solid var(--border);
+                    text-align:center;
+                "
+            >
+
+                <div
+                    style="
+                        font-size:10px;
+                        font-weight:800;
+                        color:#64748b;
+                        letter-spacing:.5px;
+                        margin-bottom:9px;
+                    "
+                >
+
+                    USE ANOTHER VERIFICATION METHOD
+
+                </div>
+
+
+                <div
+                    style="
+                        display:flex;
+                        justify-content:center;
+                        gap:8px;
+                        flex-wrap:wrap;
+                    "
+                >
+
+                    <button
+                        type="button"
+                        id="useGmailVerification"
+                        class="btn"
+                        style="
+                            font-size:10px;
+                            padding:9px 13px;
+                        "
+                    >
+                        Use Gmail
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="usePhoneVerification"
+                        class="btn"
+                        style="
+                            font-size:10px;
+                            padding:9px 13px;
+                        "
+                    >
+                        Use Phone SMS
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SECURITY NOTE
+            ================================================== -->
+
+            <div
+                style="
+                    margin-top:18px;
+                    font-size:9px;
+                    line-height:1.5;
+                    color:#94a3b8;
+                    text-align:center;
+                "
+            >
+
+                Verification codes expire automatically.
+                Never share your OTP with anyone.
+
+            </div>
+
+
+
+            <!-- =================================================
+                 BACK TO LOGIN
+            ================================================== -->
+
+            <div
+                class="back-link"
+                style="
+                    margin-top:22px;
+                    margin-bottom:0;
+                "
+            >
+
+                <a href="login.html">
+                    ← Back to login
+                </a>
+
             </div>
 
         </section>
+
     </div>
 
-    <script src="config.js" defer></script>
-    <script src="auth.js" defer></script>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script
+        src="config.js"
+        defer
+    ></script>
+
+    <script
+        src="auth.js"
+        defer
+    ></script>
+
+
 </body>
+
 </html>
