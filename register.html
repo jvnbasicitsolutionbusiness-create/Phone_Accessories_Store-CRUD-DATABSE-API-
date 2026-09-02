@@ -1,1 +1,79 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow | Register</title><meta http-equiv="refresh" content="0;url=auth.html#register"></head><body><p>Opening StockFlow registration…</p><script>location.replace("auth.html#register")</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>StockFlow | Register</title>
+
+    <meta
+        http-equiv="refresh"
+        content="0; url=auth.html#register"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            background: #f5f7fa;
+            color: #17202a;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .redirect-message {
+            text-align: center;
+        }
+
+        .redirect-message h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .redirect-message p {
+            margin: 0;
+            color: #687078;
+            font-size: 14px;
+        }
+
+        .redirect-message a {
+            color: #111;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .redirect-message a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="redirect-message">
+        <h1>StockFlow</h1>
+        <p>
+            Opening registration...
+            <br>
+            <a href="auth.html#register">Continue to registration</a>
+        </p>
+    </main>
+
+    <script>
+        window.location.replace("auth.html#register");
+    </script>
+
+</body>
+</html>
