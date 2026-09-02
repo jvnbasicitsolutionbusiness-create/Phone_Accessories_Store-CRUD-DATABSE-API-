@@ -1,1 +1,32 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow | Inventory Dashboard</title><link rel="stylesheet" href="modules.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><div class="sf-nav"><a href="dashboard.html">Main Dashboard</a><a class="active" href="inventory-dashboard.html">Inventory Dashboard</a><a href="products.html">Products</a><a href="inventory.html">Inventory</a><a href="stock-in.html">Stock In</a><a href="stock-out.html">Stock Out</a><a href="transactions.html">Transactions</a><a href="suppliers.html">Suppliers</a><a href="categories.html">Categories</a></div></aside><main class="sf-main"><div class="sf-top"><div><div class="sf-title">Inventory Dashboard</div><div class="sf-muted">Operational inventory overview.</div></div></div><div id="cards" class="stat-strip"></div><div class="sf-card"><h3>Inventory Health</h3><div id="health">Loading...</div></div></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="inventory-dashboard.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>StockFlow | Inventory Dashboard</title>
+<link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css">
+</head>
+<body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
+<a href="dashboard.html">Dashboard</a>
+<a href="inventory-dashboard.html">Inventory Dashboard</a>
+<a href="products.html">Products</a>
+<a href="inventory.html">Inventory</a>
+<a href="categories.html">Categories</a>
+<a href="suppliers.html">Suppliers</a>
+<a href="stock-in.html">Stock In</a>
+<a href="stock-out.html">Stock Out</a>
+<a href="transactions.html">Transactions</a>
+<a href="activity.html">Activity Log</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a>
+</nav></aside>
+<main class="sf-main"><header class="sf-top"><div><div class="sf-title">Inventory Dashboard</div><div class="sf-muted">Real-time overview of your phone accessories inventory.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header>
+<section class="stat-strip" id="dashboardCards">
+<div class="mini-stat"><small>PRODUCTS</small><strong>—</strong></div><div class="mini-stat"><small>TOTAL UNITS</small><strong>—</strong></div>
+<div class="mini-stat"><small>LOW STOCK</small><strong>—</strong></div><div class="mini-stat"><small>OUT OF STOCK</small><strong>—</strong></div></section>
+<div id="alert" class="sf-alert"></div>
+<section class="sf-card"><div class="sf-card-head"><div><h3>Inventory Health</h3><p class="sf-muted">Current stock condition and recommended actions.</p></div><a class="sf-btn secondary" href="inventory.html">View Inventory</a></div><div id="health" class="sf-health">Loading inventory health...</div></section>
+<section class="sf-card"><div class="sf-card-head"><div><h3>Quick Actions</h3><p class="sf-muted">Common inventory operations.</p></div></div>
+<div class="sf-row"><a class="sf-btn" href="products.html">Manage Products</a><a class="sf-btn" href="stock-in.html">Record Stock In</a><a class="sf-btn" href="stock-out.html">Record Stock Out</a><a class="sf-btn secondary" href="transactions.html">View Transactions</a></div></section>
+</main></div>
+<script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="inventory-dashboard.js"></script>
+</body></html>

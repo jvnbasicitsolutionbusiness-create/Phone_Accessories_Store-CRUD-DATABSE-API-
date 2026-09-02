@@ -1,0 +1,1 @@
+/* Compatibility file. Product management is implemented by products.html + products.js. */

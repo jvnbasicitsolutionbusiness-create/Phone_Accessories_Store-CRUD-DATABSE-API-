@@ -1,2 +1,31 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Categories | StockFlow</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><div class="sf-nav">
-<a href="dashboard.html">Dashboard</a><a href="products.html">Products</a><a href="inventory.html">Inventory</a><a href="categories.html">Categories</a><a href="suppliers.html">Suppliers</a><a href="stock-in.html">Stock In</a><a href="stock-out.html">Stock Out</a><a href="transactions.html">Transactions</a><a href="activity.html">Activity Log</a><a href="profile.html">Profile</a><a href="settings.html">Settings</a></div></aside><main class="sf-main"><div class="sf-top"><div><div class="sf-title">Categories</div><div class="sf-muted">Organize products by accessory type.</div></div><button class="sf-btn secondary" data-menu>☰</button></div><div id="alert" class="sf-alert"></div><div class="sf-card"><form id="form" class="sf-form"><input type="hidden" id="id"><input id="name" placeholder="Category name" required><input id="description" placeholder="Description"><select id="status"><option>ACTIVE</option><option>INACTIVE</option></select><div class="full sf-row"><button class="sf-btn">Save Category</button><button type="button" class="sf-btn secondary" id="clear">Clear</button></div></form></div><div class="sf-card"><table><thead><tr><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script>(async()=>{const u=await StockFlowAuth.requireAuth();if(!u)return;const q=id=>document.getElementById(id),msg=(t,o)=>{q("alert").textContent=t;q("alert").className="sf-alert show "+(o?"success":"error")};async function load(){const r=await StockFlowAPI.listCategories();q("rows").innerHTML=(r.categories||[]).map(x=>`<tr><td>${x.NAME}</td><td>${x.DESCRIPTION||"-"}</td><td>${x.STATUS}</td><td><button onclick='edit(${JSON.stringify(x)})'>Edit</button> <button onclick="del('${x.ID}')">Delete</button></td></tr>`).join("")}window.edit=x=>{q("id").value=x.ID;q("name").value=x.NAME;q("description").value=x.DESCRIPTION;q("status").value=x.STATUS};window.del=async id=>{if(confirm("Delete category?")){const r=await StockFlowAPI.deleteCategory(id);msg(r.message,r.success);load()}};q("form").onsubmit=async e=>{e.preventDefault();const r=await StockFlowAPI.saveCategory({id:q("id").value,name:q("name").value,description:q("description").value,status:q("status").value});msg(r.message,r.success);if(r.success){e.target.reset();q("id").value="";load()}};load()})();</script></body></html>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>StockFlow | Categories</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head>
+<body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
+<a href="dashboard.html">Dashboard</a>
+<a href="inventory-dashboard.html">Inventory Dashboard</a>
+<a href="products.html">Products</a>
+<a href="inventory.html">Inventory</a>
+<a href="categories.html">Categories</a>
+<a href="suppliers.html">Suppliers</a>
+<a href="stock-in.html">Stock In</a>
+<a href="stock-out.html">Stock Out</a>
+<a href="transactions.html">Transactions</a>
+<a href="activity.html">Activity Log</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a>
+</nav></aside>
+<main class="sf-main"><header class="sf-top"><div><div class="sf-title">Categories</div><div class="sf-muted">Organize products by phone accessory type.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header>
+<div id="alert" class="sf-alert"></div>
+<section class="sf-card"><div class="sf-card-head"><div><h3>Categories Details</h3><p class="sf-muted">Create or update categories records.</p></div></div>
+<form id="categorieForm" class="sf-form"><input type="hidden" id="id">
+
+<input id="name" placeholder="Category name" required><input id="description" placeholder="Description"><select id="status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select>
+
+
+<div class="full sf-row"><button class="sf-btn" id="saveButton" type="submit">Save Category</button><button class="sf-btn secondary" id="clearButton" type="button">Clear</button></div></form></section>
+<section class="sf-card"><div class="sf-card-head"><div><h3>Categories</h3><p class="sf-muted">Registered categories in STOCKFLOW.</p></div></div>
+<div class="sf-table-wrap"><table><thead>
+<tr><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr>
+</thead><tbody id="rows"><tr><td colspan="4" class="sf-empty">Loading...</td></tr></tbody></table></div></section>
+</main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="categories.js"></script></body></html>

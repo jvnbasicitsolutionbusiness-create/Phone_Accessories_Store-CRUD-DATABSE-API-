@@ -1,2 +1,22 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Inventory | StockFlow</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><div class="sf-nav">
-<a href="dashboard.html">Dashboard</a><a href="products.html">Products</a><a href="inventory.html">Inventory</a><a href="categories.html">Categories</a><a href="suppliers.html">Suppliers</a><a href="stock-in.html">Stock In</a><a href="stock-out.html">Stock Out</a><a href="transactions.html">Transactions</a><a href="activity.html">Activity Log</a><a href="profile.html">Profile</a><a href="settings.html">Settings</a></div></aside><main class="sf-main"><div class="sf-top"><div><div class="sf-title">Inventory</div><div class="sf-muted">Live stock position for every phone accessory.</div></div><button class="sf-btn secondary" data-menu>☰</button></div><div class="stat-strip"><div class="mini-stat"><small>PRODUCTS</small><strong id="pc">—</strong></div><div class="mini-stat"><small>TOTAL UNITS</small><strong id="ts">—</strong></div><div class="mini-stat"><small>LOW STOCK</small><strong id="ls">—</strong></div><div class="mini-stat"><small>OUT OF STOCK</small><strong id="os">—</strong></div></div><div id="alert" class="sf-alert"></div><div class="sf-card"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Supplier</th><th>Stock</th><th>Reorder</th><th>State</th></tr></thead><tbody id="rows"></tbody></table></div></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script>(async()=>{await StockFlowAuth.requireAuth();const q=id=>document.getElementById(id);const r=await StockFlowAPI.listProducts();if(!r.success){q("alert").textContent=r.message;q("alert").className="sf-alert show error";return}let total=0,low=0,out=0;q("rows").innerHTML=(r.products||[]).map(p=>{let s=Number(p.STOCK)||0,re=Number(p.REORDER_LEVEL)||5;total+=s;if(!s)out++;else if(s<=re)low++;return`<tr><td>${p.SKU}</td><td><b>${p.NAME}</b></td><td>${p.CATEGORY||"-"}</td><td>${p.SUPPLIER||"-"}</td><td>${s}</td><td>${re}</td><td><span class="badge ${!s?"out":s<=re?"low":"active"}">${!s?"OUT OF STOCK":s<=re?"LOW STOCK":"IN STOCK"}</span></td></tr>`}).join("");q("pc").textContent=r.products.length;q("ts").textContent=total;q("ls").textContent=low;q("os").textContent=out})()</script></body></html>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>StockFlow | Inventory</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head>
+<body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
+<a href="dashboard.html">Dashboard</a>
+<a href="inventory-dashboard.html">Inventory Dashboard</a>
+<a href="products.html">Products</a>
+<a href="inventory.html">Inventory</a>
+<a href="categories.html">Categories</a>
+<a href="suppliers.html">Suppliers</a>
+<a href="stock-in.html">Stock In</a>
+<a href="stock-out.html">Stock Out</a>
+<a href="transactions.html">Transactions</a>
+<a href="activity.html">Activity Log</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a>
+</nav></aside>
+<main class="sf-main"><header class="sf-top"><div><div class="sf-title">Inventory</div><div class="sf-muted">Live stock position for every phone accessory.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header>
+<section class="stat-strip"><div class="mini-stat"><small>PRODUCTS</small><strong id="pc">—</strong></div><div class="mini-stat"><small>TOTAL UNITS</small><strong id="ts">—</strong></div><div class="mini-stat"><small>LOW STOCK</small><strong id="ls">—</strong></div><div class="mini-stat"><small>OUT OF STOCK</small><strong id="os">—</strong></div></section>
+<div id="alert" class="sf-alert"></div><section class="sf-card"><div class="sf-card-head"><div><h3>Current Stock</h3><p class="sf-muted">Monitor quantities against each product's reorder level.</p></div><div class="sf-row"><a href="stock-in.html" class="sf-btn">Stock In</a><a href="stock-out.html" class="sf-btn secondary">Stock Out</a></div></div>
+<div class="sf-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Supplier</th><th>Stock</th><th>Reorder</th><th>State</th></tr></thead><tbody id="rows"><tr><td colspan="7" class="sf-empty">Loading inventory...</td></tr></tbody></table></div></section>
+</main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="inventory.js"></script></body></html>

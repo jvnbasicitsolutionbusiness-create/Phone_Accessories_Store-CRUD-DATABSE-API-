@@ -1,10 +1,12 @@
+document.addEventListener("DOMContentLoaded",async()=>{
+"use strict";const $=id=>document.getElementById(id),form=$("categorieForm"),rows=$("rows"),a=$("alert"),btn=$("saveButton");
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const alert=(m,t="error")=>{a.textContent=m||"";a.className="sf-alert show "+t;};
+const clear=()=>{form.reset();$("id").value="";$("status").value="ACTIVE";};
 let data=[];
-const $=id=>document.getElementById(id), alertBox=(m,ok=false)=>{const a=$("alert");a.textContent=m;a.className="sf-alert show "+(ok?"ok":"err");setTimeout(()=>a.className="sf-alert",3000)};
-const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-async function load(){const r=await StockFlowInventoryAPI.categories.list();if(!r.success)return alertBox(r.message);data=r.categories;render()}
-function render(){$("rows").innerHTML=data.length?data.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.description)}</td><td>${esc(x.status)}</td><td><button class="sf-btn secondary" onclick='edit(${JSON.stringify(x)})'>Edit</button> <button class="sf-btn danger" onclick="del('${x.id}')">Delete</button></td></tr>`).join(""):'<tr><td colspan="4" class="sf-empty">No categories.</td></tr>'}
-window.edit=x=>{["id","name","description","status"].forEach(k=>$(k).value=x[k]??"");$("formCard").style.display="block"};
-window.del=async id=>{if(!confirm("Delete category?"))return;const r=await StockFlowInventoryAPI.categories.delete(id);r.success?(alertBox(r.message,true),load()):alertBox(r.message)};
-$("newBtn").onclick=()=>{$("form").reset();$("id").value="";$("formCard").style.display="block"};$("cancel").onclick=()=>$("formCard").style.display="none";
-$("form").onsubmit=async e=>{e.preventDefault();const d={};["id","name","description","status"].forEach(k=>d[k]=$(k).value);const r=await StockFlowInventoryAPI.categories.save(d);r.success?(alertBox("Category saved.",true),$("formCard").style.display="none",load()):alertBox(r.message)};
-document.addEventListener("DOMContentLoaded",load);
+const load=async()=>{const r=await StockFlowAPI.listCategories();if(!r?.success)throw new Error(r?.message||"Unable to load categories.");data=r.categories||[];
+rows.innerHTML=data.length?data.map(x=>`<tr><td><strong>${esc(x.NAME)}</strong></td><td>${esc(x.DESCRIPTION||"-")}</td><td><span class="badge ${String(x.STATUS).toUpperCase()==="ACTIVE"?"active":"out"}">${esc(x.STATUS)}</span></td><td><div class="sf-actions"><button class="sf-btn secondary edit" data-id="${esc(x.ID)}">Edit</button><button class="sf-btn danger del" data-id="${esc(x.ID)}">Delete</button></div></td></tr>`).join(""):`<tr><td colspan="4" class="sf-empty">No categories found.</td></tr>`;
+rows.querySelectorAll(".edit").forEach(b=>b.onclick=()=>{const x=data.find(v=>String(v.ID)===String(b.dataset.id));if(!x)return;$("id").value=x.ID||"";$("name").value=x.NAME||"";$("description").value=x.DESCRIPTION||"";$("status").value=x.STATUS||"ACTIVE";window.scrollTo({top:0,behavior:"smooth"});});
+rows.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{if(!confirm("Delete this category?"))return;const r=await StockFlowAPI.deleteCategory(b.dataset.id);if(!r?.success)return alert(r?.message||"Unable to delete category.");alert(r.message||"Category deleted.","success");clear();load();});};
+try{const u=await StockFlowAuth.requireAuth();if(!u)return;$("clearButton").onclick=clear;form.onsubmit=async e=>{e.preventDefault();btn.disabled=true;try{const r=await StockFlowAPI.saveCategory({id:$("id").value,name:$("name").value.trim(),description:$("description").value.trim(),status:$("status").value});if(!r?.success)return alert(r?.message||"Unable to save category.");alert(r.message||"Category saved.","success");clear();await load();}finally{btn.disabled=false;}};await load();}catch(e){alert(e.message||"Unable to load categories.");}
+});
