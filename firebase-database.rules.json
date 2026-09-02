@@ -2,7 +2,11 @@
   "rules": {
     ".read": false,
     ".write": false,
+
     "stockflow": {
+      ".read": false,
+      ".write": false,
+
       "$uid": {
         ".read": false,
         ".write": false
