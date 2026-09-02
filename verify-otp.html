@@ -1,1 +1,82 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow | Verify</title><link rel="stylesheet" href="auth.css"><link rel="stylesheet" href="styles.css"></head><body><div class="auth-box" style="min-height:100vh"><div class="auth-card"><div class="brand">STOCKFLOW</div><h1>Verify your account</h1><p class="muted">Enter the 6-digit code sent to your registered email and/or phone.</p><form id="otpForm" class="auth-form"><label>Username / Email / Phone</label><input id="identity" name="identity" required><label>Verification Code</label><input name="otp" inputmode="numeric" maxlength="6" pattern="\d{6}" required><button>Verify Account</button></form><p id="message"></p><button id="resendOtp" class="secondary-btn">Resend Code</button><p><a class="link" href="auth.html">Back to login</a></p></div></div><script src="config.js"></script><script src="api.js"></script><script src="otp.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>STOCKFLOW | Verification</title>
+
+    <meta
+        http-equiv="refresh"
+        content="0;url=verify.html"
+    >
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: #f8fafc;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family:
+                Inter,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        .redirect-message {
+            text-align: center;
+            padding: 24px;
+            color: #64748b;
+        }
+
+        .redirect-message strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #0f172a;
+            font-size: 18px;
+        }
+
+        .redirect-message a {
+            color: #2563eb;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="redirect-message">
+
+        <strong>
+            STOCKFLOW
+        </strong>
+
+        <span>
+            Redirecting to account verification...
+        </span>
+
+        <br><br>
+
+        <a href="verify.html">
+            Continue to verification
+        </a>
+
+    </div>
+
+</body>
+
+</html>
