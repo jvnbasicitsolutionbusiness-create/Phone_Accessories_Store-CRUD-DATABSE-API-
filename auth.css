@@ -1,42 +1,1860 @@
-.auth-page
-.auth-visual
-.auth-visual-overlay
-.auth-visual-content
-.auth-brand
-.brand-mark
-.brand-copy
-.visual-copy
-.visual-features
-.visual-feature
-.feature-icon
-.feature-content
-.visual-footer
+/* ============================================================
+   STOCKFLOW — AUTHENTICATION UI
+   Phone Accessories Inventory Management System
 
-.auth-box
-.auth-card
-.auth-mobile-brand
-.auth-header
-.auth-kicker
-.auth-tabs
-.auth-tab
+   MATCHES:
+   auth.html
 
-.auth-panel
-.auth-heading
-.section-label
-.muted
+   This stylesheet is intentionally scoped to:
+   .auth-page
 
-.auth-form
-.auth-form-section
-.auth-form-section-title
-.form-field
-.field-label-row
-.password-field
-.password-toggle
-.field-help
+   Global application styles remain in:
+   style.css
+   ============================================================ */
 
-.verification-notice
-.auth-message
-.auth-submit
-.auth-switch
-.link-button
-.auth-footer
+
+/* ============================================================
+   1. AUTH DESIGN TOKENS
+   ============================================================ */
+
+:root {
+    --auth-bg: #f4f6f9;
+    --auth-surface: #ffffff;
+    --auth-border: #e3e7ed;
+
+    --auth-text: #172033;
+    --auth-text-soft: #667085;
+    --auth-text-muted: #98a2b3;
+
+    --auth-primary: #2563eb;
+    --auth-primary-hover: #1d4ed8;
+    --auth-primary-soft: #eff6ff;
+
+    --auth-success: #16a34a;
+    --auth-danger: #dc2626;
+    --auth-warning: #d97706;
+
+    --auth-dark: #0f172a;
+    --auth-dark-soft: #172554;
+    --auth-dark-blue: #1e3a8a;
+
+    --auth-radius-sm: 8px;
+    --auth-radius-md: 10px;
+    --auth-radius-lg: 14px;
+    --auth-radius-xl: 18px;
+
+    --auth-shadow:
+        0 20px 60px rgba(15, 23, 42, 0.10),
+        0 4px 14px rgba(15, 23, 42, 0.05);
+
+    --auth-transition: 0.18s ease;
+}
+
+
+/* ============================================================
+   2. AUTH PAGE
+   ============================================================ */
+
+.auth-body {
+    margin: 0;
+    min-height: 100vh;
+
+    background: var(--auth-bg);
+}
+
+
+.auth-page {
+    width: 100%;
+    min-height: 100vh;
+
+    padding: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f8fafc 0%,
+            var(--auth-bg) 100%
+        );
+
+    color: var(--auth-text);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+
+/* ============================================================
+   3. AUTH PAGE BOX SIZING
+   ============================================================ */
+
+.auth-page *,
+.auth-page *::before,
+.auth-page *::after {
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   4. MAIN TWO-COLUMN LAYOUT
+   ============================================================ */
+
+.auth-page > .auth-visual,
+.auth-page > .auth-box {
+    min-width: 0;
+}
+
+
+/*
+   The two sections together form the authentication card.
+   The visual side and auth side are kept at a controlled width.
+*/
+
+.auth-page {
+    --auth-container-width: 1080px;
+}
+
+
+/* ============================================================
+   5. LEFT VISUAL PANEL
+   ============================================================ */
+
+.auth-page .auth-visual {
+    position: relative;
+
+    width: min(
+        475px,
+        calc(44vw)
+    );
+
+    min-height: 650px;
+
+    overflow: hidden;
+
+    flex: 0 1 44%;
+
+    background:
+        linear-gradient(
+            145deg,
+            var(--auth-dark) 0%,
+            var(--auth-dark-soft) 55%,
+            var(--auth-dark-blue) 100%
+        );
+
+    color: #ffffff;
+
+    border-radius:
+        var(--auth-radius-xl)
+        0
+        0
+        var(--auth-radius-xl);
+}
+
+
+/* ============================================================
+   6. VISUAL OVERLAY
+   ============================================================ */
+
+.auth-page .auth-visual-overlay {
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at 85% 10%,
+            rgba(255,255,255,0.08),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 10% 90%,
+            rgba(37,99,235,0.12),
+            transparent 30%
+        );
+}
+
+
+/* Decorative circles */
+
+.auth-page .auth-visual::before {
+    content: "";
+
+    position: absolute;
+
+    width: 430px;
+    height: 430px;
+
+    top: -235px;
+    right: -185px;
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,0.025);
+
+    pointer-events: none;
+}
+
+
+.auth-page .auth-visual::after {
+    content: "";
+
+    position: absolute;
+
+    width: 340px;
+    height: 340px;
+
+    bottom: -220px;
+    left: -175px;
+
+    border:
+        1px solid rgba(255,255,255,0.06);
+
+    border-radius: 50%;
+
+    background:
+        rgba(37,99,235,0.10);
+
+    pointer-events: none;
+}
+
+
+/* ============================================================
+   7. VISUAL CONTENT
+   ============================================================ */
+
+.auth-page .auth-visual-content {
+    position: relative;
+
+    z-index: 2;
+
+    min-height: 650px;
+
+    padding: 48px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ============================================================
+   8. BRAND HEADER
+   ============================================================ */
+
+.auth-page .auth-brand {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    flex-shrink: 0;
+}
+
+
+/* ============================================================
+   9. BRAND MARK
+   ============================================================ */
+
+.auth-page .brand-mark {
+    width: 46px;
+    height: 46px;
+
+    flex: 0 0 46px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #ffffff;
+    color: #111827;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    letter-spacing: -0.03em;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.12);
+}
+
+
+/* ============================================================
+   10. BRAND COPY
+   ============================================================ */
+
+.auth-page .brand-copy {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+.auth-page .brand-copy strong {
+    color: #ffffff;
+
+    font-size: 14px;
+    line-height: 1.2;
+
+    font-weight: 800;
+
+    letter-spacing: 0.01em;
+}
+
+
+.auth-page .brand-copy span {
+    margin-top: 3px;
+
+    color:
+        rgba(255,255,255,0.58);
+
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+
+/* ============================================================
+   11. VISUAL COPY
+   ============================================================ */
+
+.auth-page .visual-copy {
+    max-width: 400px;
+
+    margin-top: auto;
+    margin-bottom: 40px;
+}
+
+
+.auth-page .visual-eyebrow {
+    margin-bottom: 13px;
+
+    color:
+        rgba(255,255,255,0.48);
+
+    font-size: 9px;
+    line-height: 1.4;
+
+    font-weight: 700;
+
+    letter-spacing: 0.13em;
+}
+
+
+.auth-page .visual-copy h1 {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: clamp(
+        32px,
+        3.2vw,
+        43px
+    );
+
+    line-height: 1.07;
+
+    font-weight: 800;
+
+    letter-spacing: -0.045em;
+}
+
+
+.auth-page .visual-copy h1 span {
+    color: #60a5fa;
+}
+
+
+.auth-page .visual-copy p {
+    max-width: 390px;
+
+    margin: 18px 0 0;
+
+    color:
+        rgba(255,255,255,0.68);
+
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+
+/* ============================================================
+   12. VISUAL FEATURES
+   ============================================================ */
+
+.auth-page .visual-features {
+    display: grid;
+
+    gap: 9px;
+
+    margin-bottom: 30px;
+}
+
+
+.auth-page .visual-feature {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    border-radius: 9px;
+
+    background:
+        rgba(255,255,255,0.045);
+}
+
+
+/* ============================================================
+   13. FEATURE ICON
+   ============================================================ */
+
+.auth-page .feature-icon {
+    width: 31px;
+    height: 31px;
+
+    flex: 0 0 31px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   14. FEATURE CONTENT
+   ============================================================ */
+
+.auth-page .feature-content {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+.auth-page .feature-content strong {
+    color: #ffffff;
+
+    font-size: 11px;
+    line-height: 1.3;
+
+    font-weight: 650;
+}
+
+
+.auth-page .feature-content span {
+    margin-top: 2px;
+
+    color:
+        rgba(255,255,255,0.52);
+
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+
+/* ============================================================
+   15. VISUAL FOOTER
+   ============================================================ */
+
+.auth-page .visual-footer {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    color:
+        rgba(255,255,255,0.38);
+
+    font-size: 9px;
+}
+
+
+.auth-page .visual-footer .footer-divider {
+    color:
+        rgba(255,255,255,0.22);
+}
+
+
+/* ============================================================
+   16. RIGHT AUTH BOX
+   ============================================================ */
+
+.auth-page .auth-box {
+    width: min(
+        605px,
+        calc(56vw)
+    );
+
+    min-height: 650px;
+
+    flex: 1 1 56%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 42px 52px;
+
+    background: #ffffff;
+
+    border:
+        1px solid var(--auth-border);
+
+    border-left: 0;
+
+    border-radius:
+        0
+        var(--auth-radius-xl)
+        var(--auth-radius-xl)
+        0;
+
+    box-shadow: var(--auth-shadow);
+
+    overflow: hidden;
+}
+
+
+/* ============================================================
+   17. AUTH CARD
+   ============================================================ */
+
+.auth-page .auth-card {
+    width: 100%;
+    max-width: 445px;
+
+    min-width: 0;
+}
+
+
+/* ============================================================
+   18. MOBILE BRAND
+   ============================================================ */
+
+.auth-page .auth-mobile-brand {
+    display: none;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 25px;
+}
+
+
+.auth-page .auth-mobile-brand .brand-mark {
+    width: 40px;
+    height: 40px;
+
+    flex-basis: 40px;
+
+    font-size: 12px;
+}
+
+
+.auth-page .auth-mobile-brand .brand-copy strong {
+    color: #111827;
+}
+
+
+.auth-page .auth-mobile-brand .brand-copy span {
+    color: var(--auth-text-soft);
+}
+
+
+/* ============================================================
+   19. AUTH HEADER
+   ============================================================ */
+
+.auth-page .auth-header {
+    margin-bottom: 21px;
+}
+
+
+.auth-page .auth-kicker {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    color: var(--auth-primary);
+
+    font-size: 9px;
+    line-height: 1.4;
+
+    font-weight: 750;
+
+    letter-spacing: 0.12em;
+}
+
+
+.auth-page .auth-header h2 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 27px;
+    line-height: 1.2;
+
+    font-weight: 750;
+
+    letter-spacing: -0.035em;
+}
+
+
+.auth-page .auth-header p {
+    margin: 7px 0 0;
+
+    color: var(--auth-text-soft);
+
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* ============================================================
+   20. AUTH TABS
+   ============================================================ */
+
+.auth-page .auth-tabs {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 3px;
+
+    padding: 4px;
+
+    margin-bottom: 25px;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    background: #f3f5f8;
+}
+
+
+.auth-page .auth-tab {
+    width: 100%;
+    min-height: 39px;
+
+    padding: 0 12px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: transparent;
+    color: #667085;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        background var(--auth-transition),
+        color var(--auth-transition),
+        box-shadow var(--auth-transition);
+}
+
+
+.auth-page .auth-tab:hover {
+    color: #344054;
+}
+
+
+.auth-page .auth-tab.active {
+    background: #ffffff;
+
+    color: var(--auth-primary);
+
+    box-shadow:
+        0 1px 4px rgba(15,23,42,0.08);
+}
+
+
+.auth-page .auth-tab:active {
+    transform: translateY(1px);
+}
+
+
+/* ============================================================
+   21. AUTH PANELS
+   ============================================================ */
+
+.auth-page .auth-panel {
+    width: 100%;
+
+    min-width: 0;
+}
+
+
+.auth-page .auth-panel.hidden,
+.auth-page .hidden {
+    display: none !important;
+}
+
+
+/* ============================================================
+   22. AUTH HEADING
+   ============================================================ */
+
+.auth-page .auth-heading {
+    margin-bottom: 21px;
+}
+
+
+.auth-page .section-label {
+    display: inline-block;
+
+    margin-bottom: 5px;
+
+    color: #667085;
+
+    font-size: 9px;
+    line-height: 1.4;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+}
+
+
+.auth-page .auth-heading h3 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 21px;
+    line-height: 1.25;
+
+    font-weight: 750;
+
+    letter-spacing: -0.025em;
+}
+
+
+.auth-page .auth-heading .muted {
+    margin: 6px 0 0;
+
+    color: var(--auth-text-soft);
+
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+
+/* ============================================================
+   23. AUTH FORM
+   ============================================================ */
+
+.auth-page .auth-form {
+    width: 100%;
+}
+
+
+.auth-page .form-field {
+    width: 100%;
+
+    margin-bottom: 16px;
+}
+
+
+.auth-page .form-field:last-child {
+    margin-bottom: 0;
+}
+
+
+/* ============================================================
+   24. FORM LABEL
+   ============================================================ */
+
+.auth-page .form-field > label,
+.auth-page .field-label-row > label {
+    display: block;
+
+    margin: 0 0 6px;
+
+    color: #344054;
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    font-weight: 650;
+}
+
+
+/* ============================================================
+   25. FIELD LABEL ROW
+   ============================================================ */
+
+.auth-page .field-label-row {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 6px;
+}
+
+
+.auth-page .field-label-row > label {
+    margin: 0;
+}
+
+
+/* ============================================================
+   26. FORGOT PASSWORD LINK
+   ============================================================ */
+
+.auth-page .forgot-link {
+    flex-shrink: 0;
+
+    color: var(--auth-primary);
+
+    font-size: 10px;
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+
+.auth-page .forgot-link:hover {
+    color: var(--auth-primary-hover);
+
+    text-decoration: underline;
+}
+
+
+/* ============================================================
+   27. FORM CONTROLS
+   ============================================================ */
+
+.auth-page .form-control {
+    width: 100%;
+
+    min-height: 43px;
+
+    padding:
+        10px
+        12px;
+
+    border:
+        1px solid #d0d5dd;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+    color: #101828;
+
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+
+    transition:
+        border-color var(--auth-transition),
+        box-shadow var(--auth-transition),
+        background var(--auth-transition);
+}
+
+
+.auth-page .form-control:hover {
+    border-color: #b8c0cc;
+}
+
+
+.auth-page .form-control:focus {
+    border-color: var(--auth-primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37,99,235,0.09);
+}
+
+
+.auth-page .form-control::placeholder {
+    color: #98a2b3;
+}
+
+
+.auth-page .form-control:disabled {
+    background: #f8fafc;
+    color: #98a2b3;
+
+    cursor: not-allowed;
+}
+
+
+/* ============================================================
+   28. PASSWORD FIELD
+   ============================================================ */
+
+.auth-page .password-field {
+    position: relative;
+
+    width: 100%;
+}
+
+
+/*
+   The input gets extra right-side space so that
+   "Show / Hide" never overlaps the password text.
+*/
+
+.auth-page .password-field .form-control {
+    padding-right: 60px;
+}
+
+
+/* ============================================================
+   29. PASSWORD TOGGLE
+   ============================================================ */
+
+.auth-page .password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 7px;
+
+    width: 44px;
+    height: 32px;
+
+    transform: translateY(-50%);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: transparent;
+
+    color: #667085;
+
+    font-family: inherit;
+    font-size: 10px;
+    line-height: 1;
+
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        background var(--auth-transition),
+        color var(--auth-transition);
+}
+
+
+.auth-page .password-toggle:hover {
+    background: #f2f4f7;
+
+    color: #344054;
+}
+
+
+.auth-page .password-toggle:active {
+    background: #eaecf0;
+}
+
+
+.auth-page .password-toggle:focus-visible {
+    outline:
+        2px solid rgba(37,99,235,0.30);
+
+    outline-offset: 1px;
+}
+
+
+/* ============================================================
+   30. FIELD HELP
+   ============================================================ */
+
+.auth-page .field-help {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #98a2b3;
+
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   31. AUTH FORM SECTIONS
+   ============================================================ */
+
+.auth-page .auth-form-section {
+    margin-bottom: 22px;
+
+    padding-bottom: 20px;
+
+    border-bottom:
+        1px solid #eaecf0;
+}
+
+
+.auth-page .auth-form-section:last-of-type {
+    margin-bottom: 20px;
+
+    padding-bottom: 0;
+
+    border-bottom: 0;
+}
+
+
+.auth-page .auth-form-section-title {
+    margin-bottom: 13px;
+
+    color: #344054;
+
+    font-size: 10px;
+    line-height: 1.4;
+
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+
+/* ============================================================
+   32. VERIFICATION NOTICE
+   ============================================================ */
+
+.auth-page .verification-notice {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin: 3px 0 17px;
+
+    padding: 11px 12px;
+
+    border:
+        1px solid #bfdbfe;
+
+    border-radius: 9px;
+
+    background:
+        #eff6ff;
+}
+
+
+.auth-page .verification-icon {
+    width: 24px;
+    height: 24px;
+
+    flex: 0 0 24px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    background: #dbeafe;
+
+    color: var(--auth-primary);
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+.auth-page .verification-notice > div:last-child {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+.auth-page .verification-notice strong {
+    color: #1e3a8a;
+
+    font-size: 10px;
+    line-height: 1.4;
+
+    font-weight: 700;
+}
+
+
+.auth-page .verification-notice span {
+    margin-top: 3px;
+
+    color: #1e40af;
+
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+
+/* ============================================================
+   33. AUTH MESSAGE
+   ============================================================ */
+
+.auth-page .auth-message {
+    min-height: 0;
+
+    margin:
+        0
+        0
+        14px;
+
+    padding: 0;
+
+    color: #667085;
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+
+.auth-page .auth-message.error {
+    padding: 9px 11px;
+
+    border:
+        1px solid #fecaca;
+
+    border-radius: 8px;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+}
+
+
+.auth-page .auth-message.success {
+    padding: 9px 11px;
+
+    border:
+        1px solid #bbf7d0;
+
+    border-radius: 8px;
+
+    background: #f0fdf4;
+
+    color: #166534;
+}
+
+
+.auth-page .auth-message.warning {
+    padding: 9px 11px;
+
+    border:
+        1px solid #fde68a;
+
+    border-radius: 8px;
+
+    background: #fffbeb;
+
+    color: #92400e;
+}
+
+
+/* ============================================================
+   34. SUBMIT BUTTON
+   ============================================================ */
+
+.auth-page .auth-submit {
+    position: relative;
+
+    width: 100%;
+    min-height: 44px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding:
+        0
+        16px;
+
+    border:
+        1px solid var(--auth-primary);
+
+    border-radius: 8px;
+
+    background: var(--auth-primary);
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 10px rgba(37,99,235,0.15);
+
+    transition:
+        background var(--auth-transition),
+        border-color var(--auth-transition),
+        box-shadow var(--auth-transition),
+        transform 0.12s ease,
+        opacity var(--auth-transition);
+}
+
+
+.auth-page .auth-submit:hover {
+    background: var(--auth-primary-hover);
+
+    border-color: var(--auth-primary-hover);
+
+    box-shadow:
+        0 6px 14px rgba(37,99,235,0.20);
+}
+
+
+.auth-page .auth-submit:active {
+    transform: translateY(1px);
+}
+
+
+.auth-page .auth-submit:disabled {
+    opacity: 0.65;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+
+.auth-page .auth-submit .button-text,
+.auth-page .auth-submit .button-loader {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* ============================================================
+   35. BUTTON LOADER
+   ============================================================ */
+
+.auth-page .button-loader {
+    gap: 8px;
+}
+
+
+.auth-page .button-loader::before {
+    content: "";
+
+    width: 14px;
+    height: 14px;
+
+    border:
+        2px solid rgba(255,255,255,0.35);
+
+    border-top-color: #ffffff;
+
+    border-radius: 50%;
+
+    animation:
+        authSpin 0.7s linear infinite;
+}
+
+
+@keyframes authSpin {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* ============================================================
+   36. AUTH SWITCH
+   ============================================================ */
+
+.auth-page .auth-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 4px;
+
+    margin-top: 17px;
+
+    color: #667085;
+
+    font-size: 10px;
+    line-height: 1.5;
+
+    text-align: center;
+}
+
+
+.auth-page .link-button {
+    display: inline;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: var(--auth-primary);
+
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 650;
+
+    cursor: pointer;
+}
+
+
+.auth-page .link-button:hover {
+    color: var(--auth-primary-hover);
+
+    text-decoration: underline;
+}
+
+
+/* ============================================================
+   37. AUTH FOOTER
+   ============================================================ */
+
+.auth-page .auth-footer {
+    margin-top: 24px;
+
+    padding-top: 17px;
+
+    border-top:
+        1px solid #eaecf0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    color: #98a2b3;
+
+    font-size: 9px;
+    line-height: 1.5;
+
+    text-align: center;
+}
+
+
+.auth-page .auth-footer .footer-divider {
+    color: #d0d5dd;
+}
+
+
+/* ============================================================
+   38. GENERIC AUTH ALERTS
+   ============================================================ */
+
+.auth-page .alert {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin-bottom: 15px;
+
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+
+.auth-page .alert-error {
+    border: 1px solid #fecaca;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+}
+
+
+.auth-page .alert-success {
+    border: 1px solid #bbf7d0;
+
+    background: #f0fdf4;
+
+    color: #166534;
+}
+
+
+.auth-page .alert-warning {
+    border: 1px solid #fde68a;
+
+    background: #fffbeb;
+
+    color: #92400e;
+}
+
+
+.auth-page .alert-info {
+    border: 1px solid #bfdbfe;
+
+    background: #eff6ff;
+
+    color: #1e40af;
+}
+
+
+/* ============================================================
+   39. VALIDATION
+   ============================================================ */
+
+.auth-page .is-invalid {
+    border-color:
+        var(--auth-danger) !important;
+}
+
+
+.auth-page .is-invalid:focus {
+    box-shadow:
+        0 0 0 3px rgba(220,38,38,0.09) !important;
+}
+
+
+.auth-page .is-valid {
+    border-color:
+        var(--auth-success) !important;
+}
+
+
+.auth-page .field-error {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--auth-danger);
+
+    font-size: 9px;
+    line-height: 1.4;
+}
+
+
+/* ============================================================
+   40. ACCESSIBILITY
+   ============================================================ */
+
+.auth-page button:focus-visible,
+.auth-page a:focus-visible,
+.auth-page input:focus-visible,
+.auth-page select:focus-visible,
+.auth-page textarea:focus-visible {
+    outline:
+        2px solid rgba(37,99,235,0.30);
+
+    outline-offset: 2px;
+}
+
+
+/* ============================================================
+   41. TABLET
+   ============================================================ */
+
+@media (max-width: 1000px) {
+
+    .auth-page {
+        padding: 24px;
+    }
+
+    .auth-page .auth-visual {
+        width: 42%;
+        flex-basis: 42%;
+
+        min-height: 620px;
+    }
+
+    .auth-page .auth-visual-content {
+        min-height: 620px;
+
+        padding: 40px;
+    }
+
+    .auth-page .auth-box {
+        width: 58%;
+
+        min-height: 620px;
+
+        padding:
+            38px
+            40px;
+    }
+
+    .auth-page .visual-copy {
+        margin-bottom: 30px;
+    }
+
+    .auth-page .visual-copy h1 {
+        font-size: 35px;
+    }
+
+}
+
+
+/* ============================================================
+   42. TABLET / SMALL LAPTOP
+   ============================================================ */
+
+@media (max-width: 850px) {
+
+    .auth-page {
+        align-items: flex-start;
+
+        padding: 20px;
+    }
+
+    /*
+       Turn the visual and auth sections into a vertical
+       card when the viewport becomes too narrow for the
+       two-column design.
+    */
+
+    .auth-page > .auth-visual,
+    .auth-page > .auth-box {
+        width: 100%;
+
+        flex: none;
+    }
+
+    .auth-page .auth-visual {
+        min-height: auto;
+
+        border-radius:
+            var(--auth-radius-xl)
+            var(--auth-radius-xl)
+            0
+            0;
+    }
+
+    .auth-page .auth-visual-content {
+        min-height: auto;
+
+        padding: 35px 40px;
+    }
+
+    .auth-page .visual-copy {
+        margin-top: 35px;
+        margin-bottom: 28px;
+    }
+
+    .auth-page .visual-copy h1 {
+        font-size: 34px;
+    }
+
+    .auth-page .visual-features {
+        grid-template-columns:
+            repeat(
+                3,
+                minmax(0, 1fr)
+            );
+
+        margin-bottom: 25px;
+    }
+
+    .auth-page .auth-box {
+        min-height: auto;
+
+        border:
+            1px solid var(--auth-border);
+
+        border-top: 0;
+
+        border-radius:
+            0
+            0
+            var(--auth-radius-xl)
+            var(--auth-radius-xl);
+
+        padding:
+            38px
+            40px;
+    }
+
+    .auth-page .auth-card {
+        max-width: 520px;
+    }
+
+}
+
+
+/* ============================================================
+   43. MOBILE
+   ============================================================ */
+
+@media (max-width: 620px) {
+
+    .auth-page {
+        min-height: 100vh;
+
+        padding: 12px;
+
+        align-items: flex-start;
+    }
+
+    /*
+       Hide the desktop visual section on phones.
+       The compact mobile brand appears in its place.
+    */
+
+    .auth-page .auth-visual {
+        display: none;
+    }
+
+    .auth-page .auth-box {
+        width: 100%;
+        min-height: auto;
+
+        padding:
+            28px
+            22px;
+
+        border:
+            1px solid var(--auth-border);
+
+        border-radius:
+            var(--auth-radius-lg);
+
+        box-shadow:
+            0 12px 32px rgba(15,23,42,0.08);
+
+        overflow: visible;
+    }
+
+    .auth-page .auth-mobile-brand {
+        display: flex;
+    }
+
+    .auth-page .auth-header {
+        margin-bottom: 20px;
+    }
+
+    .auth-page .auth-header h2 {
+        font-size: 24px;
+    }
+
+    .auth-page .auth-tabs {
+        margin-bottom: 22px;
+    }
+
+    .auth-page .auth-heading h3 {
+        font-size: 20px;
+    }
+
+    .auth-page .auth-form-section {
+        margin-bottom: 20px;
+
+        padding-bottom: 18px;
+    }
+
+    .auth-page .verification-notice {
+        padding: 10px;
+    }
+
+    .auth-page .auth-footer {
+        margin-top: 21px;
+    }
+
+}
+
+
+/* ============================================================
+   44. SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 450px) {
+
+    .auth-page {
+        padding: 8px;
+    }
+
+    .auth-page .auth-box {
+        padding:
+            25px
+            18px;
+
+        border-radius: 12px;
+    }
+
+    .auth-page .auth-mobile-brand {
+        margin-bottom: 22px;
+    }
+
+    .auth-page .auth-mobile-brand .brand-mark {
+        width: 38px;
+        height: 38px;
+
+        flex-basis: 38px;
+    }
+
+    .auth-page .auth-mobile-brand .brand-copy strong {
+        font-size: 13px;
+    }
+
+    .auth-page .auth-mobile-brand .brand-copy span {
+        font-size: 9px;
+    }
+
+    .auth-page .auth-header h2 {
+        font-size: 22px;
+    }
+
+    .auth-page .auth-header p {
+        font-size: 11px;
+    }
+
+    .auth-page .auth-heading h3 {
+        font-size: 19px;
+    }
+
+    .auth-page .auth-tabs {
+        margin-bottom: 20px;
+    }
+
+    .auth-page .auth-tab {
+        min-height: 38px;
+
+        padding:
+            0
+            8px;
+
+        font-size: 11px;
+    }
+
+    .auth-page .form-control {
+        min-height: 42px;
+
+        font-size: 11px;
+    }
+
+    .auth-page .password-toggle {
+        right: 5px;
+
+        width: 42px;
+    }
+
+    .auth-page .password-field .form-control {
+        padding-right: 56px;
+    }
+
+    .auth-page .verification-notice span {
+        font-size: 8.5px;
+    }
+
+    .auth-page .auth-submit {
+        min-height: 43px;
+
+        font-size: 11px;
+    }
+
+}
+
+
+/* ============================================================
+   45. VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+
+    .auth-page .auth-box {
+        padding:
+            22px
+            15px;
+    }
+
+    .auth-page .auth-header h2 {
+        font-size: 21px;
+    }
+
+    .auth-page .auth-heading h3 {
+        font-size: 18px;
+    }
+
+    .auth-page .auth-switch {
+        flex-direction: column;
+
+        gap: 2px;
+    }
+
+    .auth-page .auth-footer {
+        font-size: 8px;
+    }
+
+}
+
+
+/* ============================================================
+   46. REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .auth-page *,
+    .auth-page *::before,
+    .auth-page *::after {
+        animation-duration:
+            0.01ms !important;
+
+        animation-iteration-count:
+            1 !important;
+
+        transition-duration:
+            0.01ms !important;
+    }
+
+}
