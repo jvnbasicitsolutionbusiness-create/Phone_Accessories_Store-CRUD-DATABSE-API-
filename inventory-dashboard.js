@@ -1,3 +1,1 @@
-const $=id=>document.getElementById(id);
-async function load(){const r=await StockFlowInventoryAPI.stats();if(!r.success)return;Object.entries(r.stats).forEach(([k,v])=>{if($(k))$(k).textContent=v})}
-$("refresh").onclick=load;document.addEventListener("DOMContentLoaded",load);
+document.addEventListener("DOMContentLoaded",async()=>{const u=await StockFlowAuth.requireAuth();if(!u)return;try{const r=await StockFlowAPI.dashboardStats(),s=r.stats||{};document.querySelector("#cards").innerHTML=[["Products",s.products],["Units",s.totalStock],["Low Stock",s.lowStock],["Out of Stock",s.outOfStock]].map(x=>`<div class="mini-stat"><small>${x[0]}</small><strong>${x[1]??0}</strong></div>`).join("");document.querySelector("#health").textContent=s.outOfStock?"Attention required: some products are out of stock.":s.lowStock?"Inventory is healthy but some products are low.":"Inventory is currently healthy."}catch(e){document.querySelector("#health").textContent=e.message}});

@@ -1,18 +1,1 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard | StockFlow</title><link rel="stylesheet" href="modules.css"></head><body><div class="sf-layout">
-<aside class="sf-side">
-  <div class="sf-brand">StockFlow</div>
-  <div class="sf-nav">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="products.html">Products</a>
-    <a href="categories.html">Categories</a>
-    <a href="suppliers.html">Suppliers</a>
-    <a href="stock-in.html">Stock In</a>
-    <a href="stock-out.html">Stock Out</a>
-    <a href="transactions.html">Transactions</a>
-    <a href="activity.html">Activity Log</a>
-  </div>
-</aside>
-<main class="sf-main">
-<div class="sf-top"><div><div class="sf-title">Inventory Dashboard</div><div class="sf-muted">Real-time summary from Google Sheets.</div></div><button class="sf-btn secondary" id="refresh">Refresh</button></div>
-<div class="sf-grid"><div class="sf-card sf-stat"><span class="sf-muted">Products</span><b id="products">0</b></div><div class="sf-card sf-stat"><span class="sf-muted">Categories</span><b id="categories">0</b></div><div class="sf-card sf-stat"><span class="sf-muted">Total Stock</span><b id="totalStock">0</b></div><div class="sf-card sf-stat"><span class="sf-muted">Low / Out</span><b><span id="lowStock">0</span> / <span id="outOfStock">0</span></b></div></div>
-</main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="inventory-api.js"></script><script src="inventory-dashboard.js"></script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow | Inventory Dashboard</title><link rel="stylesheet" href="modules.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><div class="sf-nav"><a href="dashboard.html">Main Dashboard</a><a class="active" href="inventory-dashboard.html">Inventory Dashboard</a><a href="products.html">Products</a><a href="inventory.html">Inventory</a><a href="stock-in.html">Stock In</a><a href="stock-out.html">Stock Out</a><a href="transactions.html">Transactions</a><a href="suppliers.html">Suppliers</a><a href="categories.html">Categories</a></div></aside><main class="sf-main"><div class="sf-top"><div><div class="sf-title">Inventory Dashboard</div><div class="sf-muted">Operational inventory overview.</div></div></div><div id="cards" class="stat-strip"></div><div class="sf-card"><h3>Inventory Health</h3><div id="health">Loading...</div></div></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="inventory-dashboard.js"></script></body></html>
