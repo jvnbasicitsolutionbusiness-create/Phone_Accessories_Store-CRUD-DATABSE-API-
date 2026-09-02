@@ -51,18 +51,6 @@
 }
 
 
-/* ============================================================
-   2. AUTH PAGE
-   ============================================================ */
-
-.auth-body {
-    margin: 0;
-    min-height: 100vh;
-
-    background: var(--auth-bg);
-}
-
-
 .auth-page {
     width: 100%;
     min-height: 100vh;
@@ -93,6 +81,75 @@
     text-rendering: optimizeLegibility;
 }
 
+
+/* ============================================================
+   AUTH SHELL
+   ============================================================ */
+
+.auth-page .auth-shell {
+    width: 100%;
+    max-width: 1080px;
+
+    min-height: 650px;
+
+    display: grid;
+
+    grid-template-columns:
+        44% 56%;
+
+    overflow: hidden;
+
+    border-radius:
+        var(--auth-radius-xl);
+
+    background: #ffffff;
+
+    box-shadow:
+        0 20px 60px rgba(15, 23, 42, 0.10),
+        0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+
+/* ============================================================
+   SHELL CHILDREN
+   ============================================================ */
+
+.auth-page .auth-shell > .auth-visual,
+.auth-page .auth-shell > .auth-box {
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* ============================================================
+   VISUAL SIDE
+   ============================================================ */
+
+.auth-page .auth-visual {
+    min-height: 650px;
+
+    border-radius: 0;
+
+    box-shadow: none;
+}
+
+
+/* ============================================================
+   AUTH SIDE
+   ============================================================ */
+
+.auth-page .auth-box {
+    min-height: 650px;
+
+    border: 0;
+
+    border-left:
+        1px solid var(--auth-border);
+
+    border-radius: 0;
+
+    box-shadow: none;
+}
 
 /* ============================================================
    3. AUTH PAGE BOX SIZING
