@@ -1,15 +1,1431 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>StockFlow | Login & Registration</title><link rel="stylesheet" href="auth.css"><link rel="stylesheet" href="styles.css">
-</head><body><div class="auth-page"><section class="auth-visual"><div class="brand">STOCKFLOW</div><h1>Inventory, in flow.</h1><p>A centralized phone accessories inventory management system for products, stock movement, suppliers, categories and transaction records.</p></section>
-<section class="auth-box"><div class="auth-card"><div class="brand">STOCKFLOW</div><div class="auth-tabs"><button id="loginTab" class="active">Sign In</button><button id="registerTab">Create Account</button></div>
-<div id="loginPanel"><h2>Welcome back</h2><p class="muted">Sign in to continue managing inventory.</p><form id="loginForm" class="auth-form"><label>Username / Email / Phone</label><input name="identity" required autocomplete="username"><label>Password</label><input name="password" type="password" required autocomplete="current-password"><button>Sign In</button></form><p><a class="link" href="forgotpassword.html">Forgot password?</a></p><p id="loginMessage"></p></div>
-<div id="registerPanel" class="hidden"><h2>Create employee account</h2><p class="muted">Your account must be verified before access is granted.</p><form id="registerForm" class="auth-form"><label>Full Name</label><input name="name" required><label>Username</label><input name="username" required minlength="4"><label>Age</label><input name="age" type="number" min="18" max="100" required><label>Gmail / Email</label><input name="gmail" type="email" required><label>Philippine Phone Number</label><input name="phone" placeholder="09XXXXXXXXX" required><label>Password</label><input name="password" type="password" minlength="8" required><button>Create Account</button></form><p id="registerMessage"></p></div>
-</div></section></div>
-<script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script>
-const lt=document.querySelector("#loginTab"),rt=document.querySelector("#registerTab"),lp=document.querySelector("#loginPanel"),rp=document.querySelector("#registerPanel");
-function tab(login){lt.classList.toggle("active",login);rt.classList.toggle("active",!login);lp.classList.toggle("hidden",!login);rp.classList.toggle("hidden",login)}
-lt.onclick=()=>tab(true);rt.onclick=()=>tab(false);
-document.querySelector("#loginForm").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));const m=document.querySelector("#loginMessage"),b=e.target.querySelector("button");b.disabled=true;try{const r=await StockFlowAPI.login(d);if(!r.success){m.textContent=r.message;if(r.verified===false){sessionStorage.setItem(STOCKFLOW_CONFIG.OTP_KEY,r.identity||d.identity);setTimeout(()=>location.href="verify-otp.html",500)}return}StockFlowAuth.saveLogin(r);location.href=STOCKFLOW_CONFIG.ROUTES.dashboard}catch(x){m.textContent=x.message}finally{b.disabled=false}};
-document.querySelector("#registerForm").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));const m=document.querySelector("#registerMessage"),b=e.target.querySelector("button");b.disabled=true;try{const r=await StockFlowAPI.register(d);m.textContent=r.message;if(r.success){sessionStorage.setItem(STOCKFLOW_CONFIG.OTP_KEY,d.username);setTimeout(()=>location.href="verify-otp.html",700)}}catch(x){m.textContent=x.message}finally{b.disabled=false}};
-</script></body></html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>StockFlow | Authentication</title>
+
+    <!-- Authentication-specific styling first -->
+    <link rel="stylesheet" href="auth.css">
+
+    <!-- Global STOCKFLOW styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="auth-body">
+
+    <main class="auth-page">
+
+        <!-- =====================================================
+             LEFT VISUAL PANEL
+             ===================================================== -->
+        <section class="auth-visual" aria-label="StockFlow information">
+
+            <div class="auth-visual-content">
+
+                <div class="brand">
+                    STOCKFLOW
+                </div>
+
+                <div class="visual-copy">
+                    <span class="visual-eyebrow">
+                        PHONE ACCESSORIES INVENTORY
+                    </span>
+
+                    <h1>
+                        Inventory,<br>
+                        <span>in flow.</span>
+                    </h1>
+
+                    <p>
+                        A centralized inventory management system for
+                        products, stock movement, suppliers, categories,
+                        and transaction records.
+                    </p>
+                </div>
+
+                <div class="visual-features">
+
+                    <div class="visual-feature">
+                        <span class="feature-icon">✓</span>
+                        <div>
+                            <strong>Inventory Control</strong>
+                            <small>Monitor product stock in real time.</small>
+                        </div>
+                    </div>
+
+                    <div class="visual-feature">
+                        <span class="feature-icon">↕</span>
+                        <div>
+                            <strong>Stock Movement</strong>
+                            <small>Track stock-in and stock-out activity.</small>
+                        </div>
+                    </div>
+
+                    <div class="visual-feature">
+                        <span class="feature-icon">▣</span>
+                        <div>
+                            <strong>Transaction Records</strong>
+                            <small>Maintain organized inventory history.</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="visual-footer">
+                    STOCKFLOW Inventory Management System
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             AUTHENTICATION PANEL
+             ===================================================== -->
+        <section class="auth-box">
+
+            <div class="auth-card">
+
+                <!-- Mobile / compact branding -->
+                <div class="auth-mobile-brand">
+                    <div class="brand">
+                        STOCKFLOW
+                    </div>
+                </div>
+
+
+                <!-- =================================================
+                     TABS
+                     ================================================= -->
+                <div class="auth-tabs" role="tablist" aria-label="Authentication">
+
+                    <button
+                        type="button"
+                        id="loginTab"
+                        class="auth-tab active"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="loginPanel"
+                    >
+                        Sign In
+                    </button>
+
+                    <button
+                        type="button"
+                        id="registerTab"
+                        class="auth-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="registerPanel"
+                    >
+                        Create Account
+                    </button>
+
+                </div>
+
+
+                <!-- =================================================
+                     LOGIN PANEL
+                     ================================================= -->
+                <div
+                    id="loginPanel"
+                    class="auth-panel"
+                    role="tabpanel"
+                    aria-labelledby="loginTab"
+                >
+
+                    <div class="auth-heading">
+
+                        <h2>
+                            Welcome back
+                        </h2>
+
+                        <p class="muted">
+                            Sign in to continue managing your inventory.
+                        </p>
+
+                    </div>
+
+
+                    <form
+                        id="loginForm"
+                        class="auth-form"
+                        novalidate
+                    >
+
+                        <div class="form-field">
+
+                            <label for="loginIdentity">
+                                Username, Email or Phone
+                            </label>
+
+                            <input
+                                id="loginIdentity"
+                                name="identity"
+                                type="text"
+                                placeholder="Enter your username, email or phone"
+                                autocomplete="username"
+                                required
+                                spellcheck="false"
+                            >
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <div class="field-label-row">
+
+                                <label for="loginPassword">
+                                    Password
+                                </label>
+
+                                <a
+                                    href="forgotpassword.html"
+                                    class="link forgot-link"
+                                >
+                                    Forgot password?
+                                </a>
+
+                            </div>
+
+                            <div class="password-field">
+
+                                <input
+                                    id="loginPassword"
+                                    name="password"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    autocomplete="current-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    data-target="loginPassword"
+                                    aria-label="Show password"
+                                >
+                                    Show
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            id="loginButton"
+                            class="auth-submit"
+                        >
+                            <span class="button-text">
+                                Sign In
+                            </span>
+
+                            <span
+                                class="button-loader"
+                                aria-hidden="true"
+                            >
+                                Signing in...
+                            </span>
+                        </button>
+
+
+                        <div
+                            id="loginMessage"
+                            class="auth-message"
+                            role="alert"
+                            aria-live="polite"
+                        ></div>
+
+                    </form>
+
+
+                    <div class="auth-switch">
+
+                        <span>
+                            Don't have an account?
+                        </span>
+
+                        <button
+                            type="button"
+                            id="loginToRegister"
+                            class="link-button"
+                        >
+                            Create an account
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     REGISTER PANEL
+                     ================================================= -->
+                <div
+                    id="registerPanel"
+                    class="auth-panel hidden"
+                    role="tabpanel"
+                    aria-labelledby="registerTab"
+                    aria-hidden="true"
+                >
+
+                    <div class="auth-heading">
+
+                        <h2>
+                            Create employee account
+                        </h2>
+
+                        <p class="muted">
+                            Register your account and verify your email
+                            or phone before accessing StockFlow.
+                        </p>
+
+                    </div>
+
+
+                    <form
+                        id="registerForm"
+                        class="auth-form"
+                        novalidate
+                    >
+
+                        <!-- Full Name -->
+                        <div class="form-field">
+
+                            <label for="registerName">
+                                Full Name
+                            </label>
+
+                            <input
+                                id="registerName"
+                                name="name"
+                                type="text"
+                                placeholder="Enter your full name"
+                                autocomplete="name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Username -->
+                        <div class="form-field">
+
+                            <label for="registerUsername">
+                                Username
+                            </label>
+
+                            <input
+                                id="registerUsername"
+                                name="username"
+                                type="text"
+                                placeholder="Create a username"
+                                autocomplete="username"
+                                minlength="4"
+                                maxlength="30"
+                                required
+                                spellcheck="false"
+                            >
+
+                            <small class="field-help">
+                                At least 4 characters.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Age -->
+                        <div class="form-field">
+
+                            <label for="registerAge">
+                                Age
+                            </label>
+
+                            <input
+                                id="registerAge"
+                                name="age"
+                                type="number"
+                                min="18"
+                                max="100"
+                                placeholder="Enter your age"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- Email -->
+                        <div class="form-field">
+
+                            <label for="registerEmail">
+                                Gmail / Email
+                            </label>
+
+                            <input
+                                id="registerEmail"
+                                name="gmail"
+                                type="email"
+                                placeholder="example@gmail.com"
+                                autocomplete="email"
+                                required
+                            >
+
+                            <small class="field-help">
+                                An OTP will be sent to this email.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Philippine Phone -->
+                        <div class="form-field">
+
+                            <label for="registerPhone">
+                                Philippine Phone Number
+                            </label>
+
+                            <input
+                                id="registerPhone"
+                                name="phone"
+                                type="tel"
+                                inputmode="numeric"
+                                placeholder="09XXXXXXXXX"
+                                autocomplete="tel"
+                                maxlength="11"
+                                required
+                            >
+
+                            <small class="field-help">
+                                Format: 09XXXXXXXXX
+                            </small>
+
+                        </div>
+
+
+                        <!-- Password -->
+                        <div class="form-field">
+
+                            <label for="registerPassword">
+                                Password
+                            </label>
+
+                            <div class="password-field">
+
+                                <input
+                                    id="registerPassword"
+                                    name="password"
+                                    type="password"
+                                    placeholder="Create a password"
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    data-target="registerPassword"
+                                    aria-label="Show password"
+                                >
+                                    Show
+                                </button>
+
+                            </div>
+
+                            <small class="field-help">
+                                Minimum 8 characters.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Confirm Password -->
+                        <div class="form-field">
+
+                            <label for="registerConfirmPassword">
+                                Confirm Password
+                            </label>
+
+                            <div class="password-field">
+
+                                <input
+                                    id="registerConfirmPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    placeholder="Re-enter your password"
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    data-target="registerConfirmPassword"
+                                    aria-label="Show password"
+                                >
+                                    Show
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Verification Notice -->
+                        <div class="verification-notice">
+
+                            <strong>
+                                Account verification required
+                            </strong>
+
+                            <span>
+                                After registration, StockFlow will send
+                                a verification OTP to your registered
+                                email and/or phone number.
+                            </span>
+
+                        </div>
+
+
+                        <!-- Submit -->
+                        <button
+                            type="submit"
+                            id="registerButton"
+                            class="auth-submit"
+                        >
+                            <span class="button-text">
+                                Create Account
+                            </span>
+
+                            <span
+                                class="button-loader"
+                                aria-hidden="true"
+                            >
+                                Creating account...
+                            </span>
+                        </button>
+
+
+                        <div
+                            id="registerMessage"
+                            class="auth-message"
+                            role="alert"
+                            aria-live="polite"
+                        ></div>
+
+                    </form>
+
+
+                    <div class="auth-switch">
+
+                        <span>
+                            Already have an account?
+                        </span>
+
+                        <button
+                            type="button"
+                            id="registerToLogin"
+                            class="link-button"
+                        >
+                            Sign in
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     FOOTER
+                     ================================================= -->
+                <div class="auth-footer">
+
+                    <span>
+                        StockFlow Inventory Management System
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         STOCKFLOW SCRIPTS
+         ========================================================= -->
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+
+
+    <!-- =========================================================
+         AUTHENTICATION PAGE LOGIC
+         ========================================================= -->
+
+    <script>
+        (() => {
+
+            "use strict";
+
+
+            /* =====================================================
+               ELEMENTS
+               ===================================================== */
+
+            const loginTab =
+                document.getElementById("loginTab");
+
+            const registerTab =
+                document.getElementById("registerTab");
+
+            const loginPanel =
+                document.getElementById("loginPanel");
+
+            const registerPanel =
+                document.getElementById("registerPanel");
+
+            const loginForm =
+                document.getElementById("loginForm");
+
+            const registerForm =
+                document.getElementById("registerForm");
+
+            const loginMessage =
+                document.getElementById("loginMessage");
+
+            const registerMessage =
+                document.getElementById("registerMessage");
+
+            const loginButton =
+                document.getElementById("loginButton");
+
+            const registerButton =
+                document.getElementById("registerButton");
+
+            const loginToRegister =
+                document.getElementById("loginToRegister");
+
+            const registerToLogin =
+                document.getElementById("registerToLogin");
+
+
+            /* =====================================================
+               SESSION CHECK
+               ===================================================== */
+
+            try {
+
+                if (
+                    window.StockFlowAuth &&
+                    typeof StockFlowAuth.getCurrentUser === "function"
+                ) {
+
+                    const currentUser =
+                        StockFlowAuth.getCurrentUser();
+
+                    if (currentUser) {
+
+                        window.location.replace(
+                            STOCKFLOW_CONFIG.ROUTES.dashboard
+                        );
+
+                        return;
+                    }
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "StockFlow session check failed:",
+                    error
+                );
+
+            }
+
+
+            /* =====================================================
+               TAB MANAGEMENT
+               ===================================================== */
+
+            function showLogin() {
+
+                loginTab.classList.add("active");
+                registerTab.classList.remove("active");
+
+                loginTab.setAttribute(
+                    "aria-selected",
+                    "true"
+                );
+
+                registerTab.setAttribute(
+                    "aria-selected",
+                    "false"
+                );
+
+                loginPanel.classList.remove("hidden");
+                registerPanel.classList.add("hidden");
+
+                loginPanel.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                registerPanel.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                clearMessage(registerMessage);
+
+                history.replaceState(
+                    null,
+                    "",
+                    "auth.html"
+                );
+            }
+
+
+            function showRegister() {
+
+                loginTab.classList.remove("active");
+                registerTab.classList.add("active");
+
+                loginTab.setAttribute(
+                    "aria-selected",
+                    "false"
+                );
+
+                registerTab.setAttribute(
+                    "aria-selected",
+                    "true"
+                );
+
+                loginPanel.classList.add("hidden");
+                registerPanel.classList.remove("hidden");
+
+                loginPanel.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                registerPanel.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                clearMessage(loginMessage);
+
+                history.replaceState(
+                    null,
+                    "",
+                    "auth.html#register"
+                );
+
+                document.getElementById(
+                    "registerName"
+                ).focus();
+            }
+
+
+            loginTab.addEventListener(
+                "click",
+                showLogin
+            );
+
+            registerTab.addEventListener(
+                "click",
+                showRegister
+            );
+
+            loginToRegister.addEventListener(
+                "click",
+                showRegister
+            );
+
+            registerToLogin.addEventListener(
+                "click",
+                showLogin
+            );
+
+
+            /* =====================================================
+               INITIAL TAB
+               ===================================================== */
+
+            if (
+                window.location.hash.toLowerCase() === "#register"
+            ) {
+
+                showRegister();
+
+            } else {
+
+                showLogin();
+
+            }
+
+
+            /* =====================================================
+               MESSAGE HANDLING
+               ===================================================== */
+
+            function clearMessage(element) {
+
+                element.textContent = "";
+                element.className = "auth-message";
+
+            }
+
+
+            function showMessage(
+                element,
+                message,
+                type = "error"
+            ) {
+
+                element.textContent =
+                    message || "";
+
+                element.className =
+                    "auth-message " + type;
+
+            }
+
+
+            /* =====================================================
+               BUTTON LOADING
+               ===================================================== */
+
+            function setButtonLoading(
+                button,
+                loading
+            ) {
+
+                button.disabled = loading;
+
+                button.classList.toggle(
+                    "loading",
+                    loading
+                );
+
+                const text =
+                    button.querySelector(".button-text");
+
+                const loader =
+                    button.querySelector(".button-loader");
+
+                if (text) {
+                    text.hidden = loading;
+                }
+
+                if (loader) {
+                    loader.hidden = !loading;
+                }
+
+            }
+
+
+            /* =====================================================
+               PASSWORD VISIBILITY
+               ===================================================== */
+
+            document
+                .querySelectorAll(".password-toggle")
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            const targetId =
+                                button.dataset.target;
+
+                            const input =
+                                document.getElementById(
+                                    targetId
+                                );
+
+                            if (!input) {
+                                return;
+                            }
+
+                            const isPassword =
+                                input.type === "password";
+
+                            input.type =
+                                isPassword
+                                    ? "text"
+                                    : "password";
+
+                            button.textContent =
+                                isPassword
+                                    ? "Hide"
+                                    : "Show";
+
+                            button.setAttribute(
+                                "aria-label",
+                                isPassword
+                                    ? "Hide password"
+                                    : "Show password"
+                            );
+
+                        }
+                    );
+
+                });
+
+
+            /* =====================================================
+               PHONE VALIDATION
+               ===================================================== */
+
+            function isValidPhilippinePhone(phone) {
+
+                return /^09\d{9}$/.test(
+                    String(phone).trim()
+                );
+
+            }
+
+
+            /* =====================================================
+               USERNAME VALIDATION
+               ===================================================== */
+
+            function isValidUsername(username) {
+
+                return /^[A-Za-z0-9._-]{4,30}$/.test(
+                    String(username).trim()
+                );
+
+            }
+
+
+            /* =====================================================
+               PASSWORD VALIDATION
+               ===================================================== */
+
+            function isValidPassword(password) {
+
+                return (
+                    typeof password === "string" &&
+                    password.length >= 8
+                );
+
+            }
+
+
+            /* =====================================================
+               LOGIN
+               ===================================================== */
+
+            loginForm.addEventListener(
+                "submit",
+                async event => {
+
+                    event.preventDefault();
+
+                    clearMessage(loginMessage);
+
+                    const formData =
+                        new FormData(loginForm);
+
+                    const identity =
+                        String(
+                            formData.get("identity") || ""
+                        ).trim();
+
+                    const password =
+                        String(
+                            formData.get("password") || ""
+                        );
+
+                    if (!identity) {
+
+                        showMessage(
+                            loginMessage,
+                            "Please enter your username, email or phone number."
+                        );
+
+                        return;
+                    }
+
+                    if (!password) {
+
+                        showMessage(
+                            loginMessage,
+                            "Please enter your password."
+                        );
+
+                        return;
+                    }
+
+                    setButtonLoading(
+                        loginButton,
+                        true
+                    );
+
+                    try {
+
+                        const response =
+                            await StockFlowAPI.login({
+                                identity,
+                                password
+                            });
+
+                        if (!response) {
+
+                            throw new Error(
+                                "No response was received from the server."
+                            );
+                        }
+
+
+                        /* =========================================
+                           LOGIN FAILED
+                           ========================================= */
+
+                        if (!response.success) {
+
+                            /*
+                             * If the backend reports that the account
+                             * is not verified, continue to OTP.
+                             */
+
+                            if (
+                                response.verified === false ||
+                                response.requiresVerification === true
+                            ) {
+
+                                const otpIdentity =
+                                    response.identity ||
+                                    response.username ||
+                                    response.gmail ||
+                                    identity;
+
+                                sessionStorage.setItem(
+                                    STOCKFLOW_CONFIG.OTP_KEY,
+                                    otpIdentity
+                                );
+
+                                showMessage(
+                                    loginMessage,
+                                    response.message ||
+                                    "Your account requires verification. Redirecting to OTP verification.",
+                                    "warning"
+                                );
+
+                                setTimeout(
+                                    () => {
+
+                                        window.location.href =
+                                            "verify-otp.html";
+
+                                    },
+                                    700
+                                );
+
+                                return;
+                            }
+
+
+                            showMessage(
+                                loginMessage,
+                                response.message ||
+                                "Invalid credentials. Please check your login information.",
+                                "error"
+                            );
+
+                            return;
+                        }
+
+
+                        /* =========================================
+                           SUCCESSFUL LOGIN
+                           ========================================= */
+
+                        if (
+                            typeof StockFlowAuth.saveLogin ===
+                            "function"
+                        ) {
+
+                            StockFlowAuth.saveLogin(
+                                response
+                            );
+
+                        } else {
+
+                            /*
+                             * Compatibility fallback in case the
+                             * current auth.js does not expose saveLogin.
+                             */
+
+                            sessionStorage.setItem(
+                                "STOCKFLOW_SESSION",
+                                JSON.stringify(response)
+                            );
+
+                        }
+
+
+                        showMessage(
+                            loginMessage,
+                            "Sign in successful. Redirecting...",
+                            "success"
+                        );
+
+
+                        setTimeout(
+                            () => {
+
+                                window.location.replace(
+                                    STOCKFLOW_CONFIG.ROUTES.dashboard
+                                );
+
+                            },
+                            250
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "StockFlow login error:",
+                            error
+                        );
+
+                        showMessage(
+                            loginMessage,
+                            error.message ||
+                            "Unable to sign in. Please try again.",
+                            "error"
+                        );
+
+                    } finally {
+
+                        setButtonLoading(
+                            loginButton,
+                            false
+                        );
+
+                    }
+
+                }
+            );
+
+
+            /* =====================================================
+               REGISTRATION
+               ===================================================== */
+
+            registerForm.addEventListener(
+                "submit",
+                async event => {
+
+                    event.preventDefault();
+
+                    clearMessage(registerMessage);
+
+                    const formData =
+                        new FormData(registerForm);
+
+                    const name =
+                        String(
+                            formData.get("name") || ""
+                        ).trim();
+
+                    const username =
+                        String(
+                            formData.get("username") || ""
+                        ).trim();
+
+                    const age =
+                        Number(
+                            formData.get("age")
+                        );
+
+                    const gmail =
+                        String(
+                            formData.get("gmail") || ""
+                        ).trim();
+
+                    const phone =
+                        String(
+                            formData.get("phone") || ""
+                        ).trim();
+
+                    const password =
+                        String(
+                            formData.get("password") || ""
+                        );
+
+                    const confirmPassword =
+                        String(
+                            formData.get(
+                                "confirmPassword"
+                            ) || ""
+                        );
+
+
+                    /* =========================================
+                       VALIDATION
+                       ========================================= */
+
+                    if (!name) {
+
+                        showMessage(
+                            registerMessage,
+                            "Please enter your full name."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!isValidUsername(username)) {
+
+                        showMessage(
+                            registerMessage,
+                            "Username must be 4–30 characters and may contain letters, numbers, dots, underscores or hyphens."
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        !Number.isFinite(age) ||
+                        age < 18 ||
+                        age > 100
+                    ) {
+
+                        showMessage(
+                            registerMessage,
+                            "Employee accounts require a valid age between 18 and 100."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!gmail) {
+
+                        showMessage(
+                            registerMessage,
+                            "Please enter a valid Gmail or email address."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!isValidPhilippinePhone(phone)) {
+
+                        showMessage(
+                            registerMessage,
+                            "Please enter a valid Philippine phone number using the format 09XXXXXXXXX."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!isValidPassword(password)) {
+
+                        showMessage(
+                            registerMessage,
+                            "Password must contain at least 8 characters."
+                        );
+
+                        return;
+                    }
+
+
+                    if (password !== confirmPassword) {
+
+                        showMessage(
+                            registerMessage,
+                            "Passwords do not match."
+                        );
+
+                        return;
+                    }
+
+
+                    /* =========================================
+                       SUBMIT REGISTRATION
+                       ========================================= */
+
+                    setButtonLoading(
+                        registerButton,
+                        true
+                    );
+
+                    try {
+
+                        const response =
+                            await StockFlowAPI.register({
+
+                                name,
+                                username,
+                                age,
+                                gmail,
+                                phone,
+                                password
+
+                            });
+
+
+                        if (!response) {
+
+                            throw new Error(
+                                "No response was received from the server."
+                            );
+
+                        }
+
+
+                        if (!response.success) {
+
+                            showMessage(
+                                registerMessage,
+                                response.message ||
+                                "Registration failed. Please try again.",
+                                "error"
+                            );
+
+                            return;
+                        }
+
+
+                        /* =========================================
+                           SAVE OTP IDENTITY
+                           ========================================= */
+
+                        const otpIdentity =
+                            response.identity ||
+                            response.username ||
+                            username;
+
+                        sessionStorage.setItem(
+                            STOCKFLOW_CONFIG.OTP_KEY,
+                            otpIdentity
+                        );
+
+
+                        /* =========================================
+                           SUCCESS
+                           ========================================= */
+
+                        showMessage(
+                            registerMessage,
+                            response.message ||
+                            "Account created successfully. Redirecting to OTP verification...",
+                            "success"
+                        );
+
+
+                        registerForm.reset();
+
+
+                        setTimeout(
+                            () => {
+
+                                window.location.href =
+                                    "verify-otp.html";
+
+                            },
+                            700
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "StockFlow registration error:",
+                            error
+                        );
+
+                        showMessage(
+                            registerMessage,
+                            error.message ||
+                            "Unable to create your account. Please try again.",
+                            "error"
+                        );
+
+                    } finally {
+
+                        setButtonLoading(
+                            registerButton,
+                            false
+                        );
+
+                    }
+
+                }
+            );
+
+
+            /* =====================================================
+               PHONE INPUT CLEANUP
+               ===================================================== */
+
+            const phoneInput =
+                document.getElementById(
+                    "registerPhone"
+                );
+
+            phoneInput.addEventListener(
+                "input",
+                () => {
+
+                    phoneInput.value =
+                        phoneInput.value
+                            .replace(/\D/g, "")
+                            .slice(0, 11);
+
+                }
+            );
+
+
+            /* =====================================================
+               USERNAME CLEANUP
+               ===================================================== */
+
+            const usernameInput =
+                document.getElementById(
+                    "registerUsername"
+                );
+
+            usernameInput.addEventListener(
+                "input",
+                () => {
+
+                    usernameInput.value =
+                        usernameInput.value
+                            .replace(
+                                /[^A-Za-z0-9._-]/g,
+                                ""
+                            )
+                            .slice(0, 30);
+
+                }
+            );
+
+
+        })();
+    </script>
+
+</body>
+</html>
