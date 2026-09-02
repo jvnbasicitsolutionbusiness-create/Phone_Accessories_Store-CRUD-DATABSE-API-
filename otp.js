@@ -2,1960 +2,616 @@
    STOCKFLOW — OTP VERIFICATION CONTROLLER
    File: otp.js
 
-   Purpose:
-   - 6-digit OTP verification
-   - Real backend verification
-   - Resend OTP
-   - Countdown timer
-   - OTP input handling
-   - Verification state
-   - Prevent duplicate submissions
+   Canonical page: verify.html
 
-   Canonical verification page:
-   - verify.html
-
-   Legacy compatibility:
-   - verify-otp.html redirects to verify.html
+   Responsibilities:
+   - Verify one 6-digit OTP
+   - Email is the primary delivery method
+   - Phone is an optional fallback
+   - 2-minute resend cooldown per delivery method
+   - Persist OTP state across refreshes
+   - Clean verification messages
    ========================================================= */
 
 (function () {
-
     "use strict";
 
+    const API = window.StockFlowAPI || window.API;
+    const Auth = window.StockFlowAuth || window.Auth;
+    const CONFIG = window.STOCKFLOW_CONFIG || window.CONFIG || {};
 
-    /* =========================================================
-       DEPENDENCIES
-       ========================================================= */
-
-    const API =
-        window.StockFlowAPI ||
-        window.API;
-
-    const Auth =
-        window.StockFlowAuth ||
-        window.Auth;
-
-    const CONFIG =
-        window.STOCKFLOW_CONFIG ||
-        window.CONFIG ||
-        {};
-
-
-    /* =========================================================
-       CONFIGURATION
-       ========================================================= */
-
-    const OTP_LENGTH =
-        Number(
-            CONFIG.AUTH?.OTP_LENGTH || 6
-        );
-
-    const DEFAULT_COOLDOWN =
-        Number(
-            CONFIG.AUTH?.OTP_RESEND_COOLDOWN_SECONDS ||
-            60
-        );
-
-    /*
-     * verify.html is now the canonical verification page.
-     */
-    const OTP_PAGE =
-        "verify.html";
+    const OTP_LENGTH = Number(CONFIG.AUTH?.OTP_LENGTH || 6);
+    const COOLDOWN_SECONDS = Math.max(
+        120,
+        Number(CONFIG.AUTH?.OTP_RESEND_COOLDOWN_SECONDS || 120)
+    );
 
     const LOGIN_PAGE =
-        CONFIG.ROUTES?.LOGIN ||
-        "auth.html#login";
+        CONFIG.ROUTES?.LOGIN || "auth.html#login";
 
+    const STORAGE = {
+        UID: "STOCKFLOW_OTP_UID",
+        EMAIL: "STOCKFLOW_OTP_EMAIL",
+        PHONE: "STOCKFLOW_OTP_PHONE",
+        USERNAME: "STOCKFLOW_OTP_USERNAME",
+        CHANNEL: "STOCKFLOW_OTP_CHANNEL",
+        EMAIL_SENT: "STOCKFLOW_OTP_EMAIL_SENT",
+        PHONE_SENT: "STOCKFLOW_OTP_PHONE_SENT"
+    };
 
-    /* =========================================================
-       STATE
-       ========================================================= */
-
-    let verificationInProgress =
-        false;
-
-    let resendInProgress =
-        false;
-
-    let countdownTimer =
-        null;
-
-    let remainingSeconds =
-        DEFAULT_COOLDOWN;
-
-
-    /* =========================================================
-       DOM HELPERS
-       ========================================================= */
+    let verificationInProgress = false;
+    let emailResendInProgress = false;
+    let phoneResendInProgress = false;
+    let timer = null;
 
     function getElement(...selectors) {
-
-        for (
-            const selector of selectors
-        ) {
-
-            const element =
-                document.querySelector(
-                    selector
-                );
-
-            if (element) {
-                return element;
-            }
+        for (const selector of selectors) {
+            const element = document.querySelector(selector);
+            if (element) return element;
         }
-
         return null;
     }
 
-
     function getOtpInput() {
-
-        return getElement(
-            "#otp",
-            "#otpCode",
-            "#verificationCode",
-            "[name='otp']",
-            "[name='code']"
-        );
-
+        return getElement("#otp", "#otpCode", "#verificationCode", "[name='otp']");
     }
-
 
     function getVerifyButton() {
-
-        return getElement(
-            "#verifyOtpBtn",
-            "#verifyButton",
-            "#verifyBtn",
-            "[data-verify-otp]"
-        );
-
+        return getElement("#verifyOtpBtn", "#verifyButton", "#verifyBtn", "[data-verify-otp]");
     }
 
-
-    function getResendButton() {
-
-        return getElement(
-            "#resendOtpBtn",
-            "#resendButton",
-            "#resendBtn",
-            "[data-resend-otp]"
-        );
-
+    function getEmailButton() {
+        return getElement("#resendEmailOtpBtn", "[data-resend-email-otp]");
     }
 
-
-    function getTimerElement() {
-
-        return getElement(
-            "#otpTimer",
-            "#countdown",
-            "#timer",
-            "[data-otp-timer]"
-        );
-
+    function getPhoneButton() {
+        return getElement("#resendPhoneOtpBtn", "[data-resend-phone-otp]");
     }
-
 
     function getMessageElement() {
-
-        return getElement(
-            "#otpMessage",
-            "#authAlert",
-            "#message",
-            "#alert",
-            ".otp-message",
-            ".auth-alert"
-        );
-
+        return getElement("#otpMessage", "#message", "#authAlert", ".otp-message");
     }
 
-
-    /* =========================================================
-       PAGE DETECTION
-       ========================================================= */
-
-    function isVerificationPage() {
-
-        const path =
-            window.location.pathname
-                .split("/")
-                .pop()
-                .toLowerCase();
-
-        return (
-            path === "verify.html" ||
-            path === "verify-otp.html"
-        );
-
-    }
-
-
-    /* =========================================================
-       MESSAGE HANDLING
-       ========================================================= */
-
-    function showMessage(
-        message,
-        type = "info"
-    ) {
-
-        const element =
-            getMessageElement();
-
-        if (!element) {
-
-            console.log(
-                `[STOCKFLOW OTP ${type}]`,
-                message
-            );
-
-            return;
-        }
-
-        element.textContent =
-            message;
-
-        element.className =
-            `otp-message ${type}`;
-
-        element.style.display =
-            "block";
-
-    }
-
-
-    function clearMessage() {
-
-        const element =
-            getMessageElement();
-
-        if (!element) {
-            return;
-        }
-
-        element.textContent =
-            "";
-
-        element.style.display =
-            "none";
-
-        element.classList.remove(
-            "success",
-            "error",
-            "info"
-        );
-
-    }
-
-
-    /* =========================================================
-       OTP STATE
-       ========================================================= */
-
-    function getOtpState() {
-
-        if (
-            Auth &&
-            typeof Auth.getOtpState ===
-                "function"
-        ) {
-
+    function getState() {
+        if (Auth && typeof Auth.getOtpState === "function") {
             return Auth.getOtpState();
-
         }
 
         return {
-
-            uid:
-                sessionStorage.getItem(
-                    "STOCKFLOW_OTP_UID"
-                ) || "",
-
-            email:
-                sessionStorage.getItem(
-                    "STOCKFLOW_OTP_EMAIL"
-                ) || "",
-
-            phone:
-                sessionStorage.getItem(
-                    "STOCKFLOW_OTP_PHONE"
-                ) || "",
-
-            channel:
-                sessionStorage.getItem(
-                    "STOCKFLOW_OTP_CHANNEL"
-                ) || ""
-
+            uid: sessionStorage.getItem(STORAGE.UID) || "",
+            email: sessionStorage.getItem(STORAGE.EMAIL) || "",
+            phone: sessionStorage.getItem(STORAGE.PHONE) || "",
+            username: sessionStorage.getItem(STORAGE.USERNAME) || "",
+            channel: sessionStorage.getItem(STORAGE.CHANNEL) || "EMAIL"
         };
-
     }
 
-
-    function hasVerificationState() {
-
-        const state =
-            getOtpState();
-
-        return Boolean(
-            state.uid ||
-            state.email ||
-            state.phone
-        );
-
+    function hasState() {
+        const state = getState();
+        return Boolean(state.uid || state.email || state.phone || state.username);
     }
 
+    function maskEmail(email) {
+        if (!email) return "your registered email";
 
-    /* =========================================================
-       INPUT SANITIZATION
-       ========================================================= */
+        const parts = String(email).split("@");
+        if (parts.length !== 2) return email;
+
+        const local = parts[0];
+        const domain = parts[1];
+
+        if (local.length <= 2) {
+            return `${local.charAt(0)}${"*".repeat(Math.max(1, local.length - 1))}@${domain}`;
+        }
+
+        return `${local.substring(0, 2)}${"*".repeat(Math.max(2, local.length - 2))}@${domain}`;
+    }
+
+    function maskPhone(phone) {
+        if (!phone) return "your registered phone";
+
+        const value = String(phone);
+        if (value.length <= 4) return "*".repeat(value.length);
+
+        return `${"*".repeat(value.length - 4)}${value.slice(-4)}`;
+    }
+
+    function showMessage(message, type) {
+        const element = getMessageElement();
+        if (!element) {
+            console.log(`[STOCKFLOW OTP ${type || "info"}]`, message);
+            return;
+        }
+
+        element.textContent = message;
+        element.className = `otp-message ${type || "info"}`;
+        element.hidden = false;
+        element.style.display = "block";
+    }
+
+    function clearMessage() {
+        const element = getMessageElement();
+        if (!element) return;
+
+        element.textContent = "";
+        element.hidden = true;
+        element.style.display = "none";
+        element.className = "otp-message";
+    }
 
     function sanitizeOtp(value) {
-
-        return String(
-            value || ""
-        )
+        return String(value || "")
             .replace(/\D/g, "")
-            .substring(
-                0,
-                OTP_LENGTH
-            );
-
+            .slice(0, OTP_LENGTH);
     }
 
+    function getSentKey(channel) {
+        return channel === "SMS" ? STORAGE.PHONE_SENT : STORAGE.EMAIL_SENT;
+    }
 
-    /* =========================================================
-       OTP INPUT
-       ========================================================= */
+    function getLastSent(channel) {
+        return Number(sessionStorage.getItem(getSentKey(channel)) || 0);
+    }
 
-    function setupOtpInput() {
+    function setLastSent(channel, timestamp) {
+        sessionStorage.setItem(getSentKey(channel), String(timestamp || Date.now()));
+    }
 
-        const input =
-            getOtpInput();
+    function remainingCooldown(channel) {
+        const lastSent = getLastSent(channel);
+        if (!lastSent) return 0;
 
-        if (!input) {
-            return;
+        return Math.max(
+            0,
+            COOLDOWN_SECONDS - Math.floor((Date.now() - lastSent) / 1000)
+        );
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainder = String(seconds % 60).padStart(2, "0");
+        return `${minutes}:${remainder}`;
+    }
+
+    function updateMethodButton(channel) {
+        const button = channel === "SMS" ? getPhoneButton() : getEmailButton();
+        if (!button) return;
+
+        const remaining = remainingCooldown(channel);
+        const isBusy = channel === "SMS" ? phoneResendInProgress : emailResendInProgress;
+
+        button.disabled = remaining > 0 || isBusy;
+
+        const timerElement = channel === "SMS"
+            ? getElement("#phoneOtpTimer")
+            : getElement("#emailOtpTimer");
+
+        if (timerElement) {
+            if (remaining > 0) {
+                timerElement.textContent = `Resend available in ${formatTime(remaining)}`;
+                timerElement.classList.remove("ready");
+            } else {
+                timerElement.textContent = "Ready to send a new code.";
+                timerElement.classList.add("ready");
+            }
         }
-
-
-        input.setAttribute(
-            "maxlength",
-            OTP_LENGTH
-        );
-
-        input.setAttribute(
-            "inputmode",
-            "numeric"
-        );
-
-        input.setAttribute(
-            "autocomplete",
-            "one-time-code"
-        );
-
-
-        input.addEventListener(
-            "input",
-            function () {
-
-                input.value =
-                    sanitizeOtp(
-                        input.value
-                    );
-
-                clearMessage();
-
-                updateVerifyButton();
-
-            }
-        );
-
-
-        input.addEventListener(
-            "keydown",
-            function (event) {
-
-                const allowedKeys = [
-                    "Backspace",
-                    "Delete",
-                    "ArrowLeft",
-                    "ArrowRight",
-                    "ArrowUp",
-                    "ArrowDown",
-                    "Tab",
-                    "Home",
-                    "End"
-                ];
-
-
-                if (
-                    allowedKeys.includes(
-                        event.key
-                    )
-                ) {
-                    return;
-                }
-
-
-                if (
-                    (
-                        event.ctrlKey ||
-                        event.metaKey
-                    ) &&
-                    [
-                        "a",
-                        "c",
-                        "v",
-                        "x"
-                    ].includes(
-                        event.key.toLowerCase()
-                    )
-                ) {
-                    return;
-                }
-
-
-                if (
-                    !/^\d$/.test(
-                        event.key
-                    )
-                ) {
-
-                    event.preventDefault();
-
-                }
-
-            }
-        );
-
-
-        input.addEventListener(
-            "paste",
-            function (event) {
-
-                event.preventDefault();
-
-                const text =
-                    event.clipboardData
-                        ?.getData("text") ||
-                    "";
-
-                input.value =
-                    sanitizeOtp(
-                        text
-                    );
-
-                clearMessage();
-
-                updateVerifyButton();
-
-            }
-        );
-
     }
 
+    function updateCooldownUI() {
+        updateMethodButton("EMAIL");
+        updateMethodButton("SMS");
 
-    /* =========================================================
-       VERIFY BUTTON
-       ========================================================= */
+        const emailRemaining = remainingCooldown("EMAIL");
+        const phoneRemaining = remainingCooldown("SMS");
+
+        if (emailRemaining <= 0 && phoneRemaining <= 0) {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        }
+    }
+
+    function startCooldownTicker() {
+        if (timer) clearInterval(timer);
+
+        updateCooldownUI();
+
+        timer = setInterval(updateCooldownUI, 1000);
+    }
+
+    function setVerifyLoading(loading) {
+        const button = getVerifyButton();
+        if (!button) return;
+
+        const text = button.querySelector(".button-text");
+        const loader = button.querySelector(".button-loader");
+
+        button.disabled = loading || sanitizeOtp(getOtpInput()?.value).length !== OTP_LENGTH;
+        button.classList.toggle("loading", loading);
+
+        if (text) text.hidden = loading;
+
+        if (loader) {
+            loader.hidden = !loading;
+            if (loading) loader.textContent = "Verifying...";
+        }
+    }
 
     function updateVerifyButton() {
-
-        const input =
-            getOtpInput();
-
-        const button =
-            getVerifyButton();
-
-        if (
-            !input ||
-            !button
-        ) {
-            return;
-        }
-
-
-        const valid =
-            sanitizeOtp(
-                input.value
-            ).length === OTP_LENGTH;
-
+        const button = getVerifyButton();
+        const input = getOtpInput();
+        if (!button || !input) return;
 
         button.disabled =
-            !valid ||
-            verificationInProgress;
-
+            verificationInProgress ||
+            sanitizeOtp(input.value).length !== OTP_LENGTH;
     }
 
+    function normalizeVerificationError(error) {
+        const message = String(error?.message || "");
 
-    /* =========================================================
-       BUTTON LOADING
-       ========================================================= */
-
-    function setButtonLoading(
-        button,
-        loading,
-        loadingText,
-        normalText
-    ) {
-
-        if (!button) {
-            return;
+        if (/username\s*\/\s*email.*otp/i.test(message) || /email.*otp.*required/i.test(message)) {
+            return "The verification code is incorrect or has expired.";
         }
 
-
-        if (loading) {
-
-            button.disabled =
-                true;
-
-            button.classList.add(
-                "loading"
-            );
-
-            button.textContent =
-                loadingText ||
-                "Verifying...";
-
-        } else {
-
-            button.disabled =
-                false;
-
-            button.classList.remove(
-                "loading"
-            );
-
-            button.textContent =
-                normalText ||
-                "Verify Account";
-
+        if (/invalid|incorrect|expired|wrong/i.test(message) && /otp|code|verification/i.test(message)) {
+            return "The verification code is incorrect or has expired.";
         }
 
+        return message || "We couldn't verify that code. Please try again.";
     }
-
-
-    /* =========================================================
-       VERIFY OTP
-       ========================================================= */
 
     async function verifyOtp() {
+        if (verificationInProgress) return;
 
-        if (
-            verificationInProgress
-        ) {
-            return;
-        }
-
-
-        const input =
-            getOtpInput();
-
+        const input = getOtpInput();
         if (!input) {
-
-            showMessage(
-                "Verification input could not be found.",
-                "error"
-            );
-
+            showMessage("Verification code field could not be found.", "error");
             return;
         }
 
+        const code = sanitizeOtp(input.value);
 
-        const code =
-            sanitizeOtp(
-                input.value
-            );
-
-
-        if (
-            code.length !==
-            OTP_LENGTH
-        ) {
-
-            showMessage(
-                `Please enter the ${OTP_LENGTH}-digit verification code.`,
-                "error"
-            );
-
+        if (code.length !== OTP_LENGTH) {
+            showMessage(`Please enter the ${OTP_LENGTH}-digit verification code.`, "error");
             input.focus();
-
             return;
         }
-
 
         if (!API) {
-
-            showMessage(
-                "STOCKFLOW API is not available. Please reload the page.",
-                "error"
-            );
-
+            showMessage("STOCKFLOW API is unavailable. Please reload the page.", "error");
             return;
         }
 
-
-        if (
-            !hasVerificationState()
-        ) {
-
-            showMessage(
-                "Your verification session has expired. Please register or sign in again.",
-                "error"
-            );
-
+        if (!hasState()) {
+            showMessage("Your verification session has expired. Please register again.", "error");
             return;
         }
 
-
-        verificationInProgress =
-            true;
-
-
-        const button =
-            getVerifyButton();
-
-
-        setButtonLoading(
-            button,
-            true,
-            "Verifying...",
-            "Verify Account"
-        );
-
-
+        verificationInProgress = true;
         clearMessage();
-
+        setVerifyLoading(true);
 
         try {
-
+            const state = getState();
             let result;
 
-
-            /*
-             * Prefer StockFlowAuth.
-             *
-             * Auth.verifyOtp() handles:
-             * - OTP state
-             * - backend verification
-             * - session creation
-             * - dashboard redirect
-             */
-
-            if (
-                Auth &&
-                typeof Auth.verifyOtp ===
-                    "function"
-            ) {
-
-                result =
-                    await Auth.verifyOtp(
-                        code
-                    );
-
+            if (Auth && typeof Auth.verifyOtp === "function") {
+                result = await Auth.verifyOtp(code, state.channel || "EMAIL");
             } else {
-
-                const state =
-                    getOtpState();
-
-                result =
-                    await API.verifyOtp({
-
-                        uid:
-                            state.uid,
-
-                        email:
-                            state.email,
-
-                        phone:
-                            state.phone,
-
-                        otp:
-                            code
-
-                    });
-
+                result = await API.verifyOtp({
+                    uid: state.uid,
+                    username: state.username || "",
+                    email: state.email,
+                    phone: state.phone,
+                    channel: state.channel || "EMAIL",
+                    otpChannel: state.channel || "EMAIL",
+                    otp: code
+                });
             }
 
-
-            if (
-                !result ||
-                result.success === false
-            ) {
-
+            if (!result || result.success === false) {
                 throw new Error(
                     result?.message ||
-                    "Invalid or expired verification code."
+                    "The verification code is incorrect or has expired."
                 );
-
             }
 
-
-            /*
-             * Auth.verifyOtp normally redirects
-             * after successful verification.
-             *
-             * This message is only displayed if the
-             * backend returned successfully without
-             * immediately navigating away.
-             */
-
-            showMessage(
-                "Verification successful. Redirecting...",
-                "success"
-            );
-
+            showMessage("Verification successful. Signing you in...", "success");
 
         } catch (error) {
-
-            console.error(
-                "STOCKFLOW OTP verification error:",
-                error
-            );
-
-
-            showMessage(
-                error.message ||
-                "Verification failed. Please check your code and try again.",
-                "error"
-            );
-
-
-            /*
-             * Clear incorrect code.
-             */
-
-            input.value =
-                "";
-
+            console.error("STOCKFLOW OTP verification error:", error);
+            showMessage(normalizeVerificationError(error), "error");
+            input.value = "";
             updateVerifyButton();
-
             input.focus();
-
-
         } finally {
+            verificationInProgress = false;
 
-            verificationInProgress =
-                false;
-
-
-            /*
-             * Only restore the button if the page
-             * is still active.
-             */
-
-            if (
-                button &&
-                document.body.contains(
-                    button
-                )
-            ) {
-
-                setButtonLoading(
-                    button,
-                    false,
-                    "",
-                    "Verify Account"
-                );
-
+            if (document.body.contains(getVerifyButton())) {
+                setVerifyLoading(false);
             }
 
-
             updateVerifyButton();
-
         }
-
     }
 
+    async function sendCode(channel) {
+        const normalizedChannel = channel === "SMS" ? "SMS" : "EMAIL";
+        const isPhone = normalizedChannel === "SMS";
 
-    /* =========================================================
-       RESEND OTP
-       ========================================================= */
+        if (isPhone ? phoneResendInProgress : emailResendInProgress) return;
 
-    async function resendOtp() {
-
-        if (
-            resendInProgress
-        ) {
+        const remaining = remainingCooldown(normalizedChannel);
+        if (remaining > 0) {
+            updateCooldownUI();
             return;
         }
-
-
-        const button =
-            getResendButton();
-
-
-        if (
-            button &&
-            button.disabled
-        ) {
-            return;
-        }
-
 
         if (!API) {
-
-            showMessage(
-                "STOCKFLOW API is not available.",
-                "error"
-            );
-
+            showMessage("STOCKFLOW API is unavailable. Please reload the page.", "error");
             return;
         }
 
-
-        if (
-            !hasVerificationState()
-        ) {
-
-            showMessage(
-                "Your verification session is missing. Please register or sign in again.",
-                "error"
-            );
-
+        const state = getState();
+        if (!state.uid && !state.email && !state.phone && !state.username) {
+            showMessage("Your verification session has expired. Please register again.", "error");
             return;
         }
 
+        if (isPhone && !state.phone) {
+            showMessage("No registered phone number is available for this account.", "error");
+            return;
+        }
 
-        resendInProgress =
-            true;
+        if (!isPhone && !state.email) {
+            showMessage("No registered email address is available for this account.", "error");
+            return;
+        }
 
+        if (isPhone) phoneResendInProgress = true;
+        else emailResendInProgress = true;
+
+        const button = isPhone ? getPhoneButton() : getEmailButton();
+        const originalText = button?.textContent || "";
 
         if (button) {
-
-            button.disabled =
-                true;
-
-            button.classList.add(
-                "loading"
-            );
-
-            button.textContent =
-                "Sending...";
-
+            button.disabled = true;
+            button.textContent = "Sending...";
         }
-
 
         clearMessage();
 
-
         try {
-
             let result;
 
-
-            if (
-                Auth &&
-                typeof Auth.resendOtp ===
-                    "function"
-            ) {
-
-                result =
-                    await Auth.resendOtp();
-
+            if (Auth && typeof Auth.resendOtp === "function") {
+                result = await Auth.resendOtp(normalizedChannel);
             } else {
-
-                const state =
-                    getOtpState();
-
-                result =
-                    await API.resendOtp({
-
-                        uid:
-                            state.uid,
-
-                        email:
-                            state.email,
-
-                        phone:
-                            state.phone
-
-                    });
-
+                result = await API.resendOtp({
+                    uid: state.uid,
+                    username: state.username || "",
+                    email: state.email,
+                    phone: state.phone,
+                    channel: normalizedChannel,
+                    otpChannel: normalizedChannel
+                });
             }
 
-
-            if (
-                !result ||
-                result.success === false
-            ) {
-
+            if (!result || result.success === false) {
                 throw new Error(
                     result?.message ||
-                    "Unable to resend verification code."
+                    `Unable to send a new verification code to your ${isPhone ? "phone" : "email"}.`
                 );
-
             }
 
-
-            /*
-             * IMPORTANT:
-             *
-             * Record when the server request succeeded.
-             * This allows the countdown to survive refreshes.
-             */
-
-            saveLastSentTime();
-
-
-            /*
-             * Update saved OTP information in case
-             * the backend returns refreshed values.
-             */
-
-            if (
-                Auth &&
-                typeof Auth.getOtpState ===
-                    "function"
-            ) {
-
-                /*
-                 * Auth.resendOtp() already updates its
-                 * own OTP state.
-                 */
-
-            } else {
-
-                saveFallbackOtpState(
-                    result
-                );
-
+            if (result.uid || result.email || result.phone || result.channel) {
+                saveReturnedState(result);
             }
 
+            setLastSent(normalizedChannel, Date.now());
+
+            const destination = isPhone
+                ? maskPhone(getState().phone)
+                : maskEmail(getState().email);
 
             showMessage(
-                getDeliveryMessage(
-                    result
-                ),
+                `A new 6-digit verification code has been sent to ${destination}.`,
                 "success"
             );
 
-
-            startCountdown(
-                result.cooldown ||
-                DEFAULT_COOLDOWN
-            );
-
-
-            const input =
-                getOtpInput();
-
-
+            const input = getOtpInput();
             if (input) {
-
-                input.value =
-                    "";
-
+                input.value = "";
                 updateVerifyButton();
-
                 input.focus();
-
             }
 
+            updateCooldownUI();
+            startCooldownTicker();
 
         } catch (error) {
-
-            console.error(
-                "STOCKFLOW resend OTP error:",
-                error
-            );
-
-
+            console.error("STOCKFLOW OTP delivery error:", error);
             showMessage(
-                error.message ||
-                "Unable to resend the verification code.",
+                String(error?.message || "We couldn't send a new verification code. Please try again."),
                 "error"
             );
 
-
-            enableResendButton();
-
         } finally {
+            if (isPhone) phoneResendInProgress = false;
+            else emailResendInProgress = false;
 
-            resendInProgress =
-                false;
-
+            if (button) button.textContent = originalText;
+            updateCooldownUI();
         }
-
     }
 
+    function saveReturnedState(result) {
+        const current = getState();
 
-    /* =========================================================
-       FALLBACK OTP STATE
-       ========================================================= */
-
-    function saveFallbackOtpState(
-        result
-    ) {
-
-        if (!result) {
+        if (Auth && typeof Auth.getOtpState === "function") {
             return;
         }
 
+        if (result.uid) sessionStorage.setItem(STORAGE.UID, result.uid);
+        if (result.email) sessionStorage.setItem(STORAGE.EMAIL, result.email);
+        if (result.phone) sessionStorage.setItem(STORAGE.PHONE, result.phone);
+        if (result.channel) sessionStorage.setItem(STORAGE.CHANNEL, result.channel);
 
-        const state =
-            getOtpState();
-
-
-        if (result.uid) {
-
-            sessionStorage.setItem(
-                "STOCKFLOW_OTP_UID",
-                result.uid
-            );
-
+        if (current.username) {
+            sessionStorage.setItem(STORAGE.USERNAME, current.username);
         }
-
-
-        if (
-            result.email ||
-            state.email
-        ) {
-
-            sessionStorage.setItem(
-                "STOCKFLOW_OTP_EMAIL",
-                result.email ||
-                state.email
-            );
-
-        }
-
-
-        if (
-            result.phone ||
-            state.phone
-        ) {
-
-            sessionStorage.setItem(
-                "STOCKFLOW_OTP_PHONE",
-                result.phone ||
-                state.phone
-            );
-
-        }
-
-
-        if (
-            result.channel ||
-            state.channel
-        ) {
-
-            sessionStorage.setItem(
-                "STOCKFLOW_OTP_CHANNEL",
-                result.channel ||
-                state.channel
-            );
-
-        }
-
     }
 
+    function displayDestinations() {
+        const state = getState();
+        const email = maskEmail(state.email);
+        const phone = maskPhone(state.phone);
 
-    /* =========================================================
-       DELIVERY MESSAGE
-       ========================================================= */
+        document.querySelectorAll("[data-otp-email]").forEach((element) => {
+            element.textContent = email;
+        });
 
-    function getDeliveryMessage(
-        result
-    ) {
+        document.querySelectorAll("[data-otp-phone]").forEach((element) => {
+            element.textContent = phone;
+        });
 
-        const state =
-            getOtpState();
+        const destination = getElement("[data-otp-destination]");
+        if (destination) destination.textContent = email;
 
-
-        const channel =
-            String(
-                result?.channel ||
-                state.channel ||
-                "BOTH"
-            ).toUpperCase();
-
-
-        if (
-            channel ===
-            "SMS"
-        ) {
-
-            return (
-                "A new verification code has been sent to your phone."
-            );
-
+        const primaryStatus = getElement("#emailDeliveryStatus");
+        if (primaryStatus) {
+            primaryStatus.textContent = `Code sent to ${email}`;
         }
 
-
-        if (
-            channel === "EMAIL" ||
-            channel === "GMAIL"
-        ) {
-
-            return (
-                "A new verification code has been sent to your email."
-            );
-
+        const phoneStatus = getElement("#phoneDeliveryStatus");
+        if (phoneStatus) {
+            phoneStatus.textContent = state.phone
+                ? `Use ${phone} if you cannot access your email.`
+                : "No phone number is available for this account.";
         }
-
-
-        if (
-            channel ===
-            "BOTH"
-        ) {
-
-            return (
-                "A new verification code has been sent to your email and phone."
-            );
-
-        }
-
-
-        return (
-            "A new verification code has been sent."
-        );
-
     }
 
-
-    /* =========================================================
-       COUNTDOWN
-       ========================================================= */
-
-    function startCountdown(
-        seconds
-    ) {
-
-        stopCountdown();
-
-
-        remainingSeconds =
-            Math.max(
-                0,
-                Number(seconds) ||
-                    DEFAULT_COOLDOWN
-            );
-
-
-        updateCountdownUI();
-
-
-        const resendButton =
-            getResendButton();
-
-
-        if (resendButton) {
-
-            resendButton.disabled =
-                true;
-
+    function initializeSentTimes() {
+        /* Registration/login already sent the primary email code. */
+        if (getState().email && !getLastSent("EMAIL")) {
+            setLastSent("EMAIL", Date.now());
         }
-
-
-        countdownTimer =
-            setInterval(
-                function () {
-
-                    remainingSeconds--;
-
-                    updateCountdownUI();
-
-
-                    if (
-                        remainingSeconds <=
-                        0
-                    ) {
-
-                        stopCountdown();
-
-                        enableResendButton();
-
-                    }
-
-                },
-                1000
-            );
-
     }
 
-
-    function stopCountdown() {
-
-        if (
-            countdownTimer
-        ) {
-
-            clearInterval(
-                countdownTimer
-            );
-
-            countdownTimer =
-                null;
-
-        }
-
-    }
-
-
-    function updateCountdownUI() {
-
-        const timer =
-            getTimerElement();
-
-
-        if (!timer) {
-            return;
-        }
-
-
-        if (
-            remainingSeconds <=
-            0
-        ) {
-
-            timer.textContent =
-                "You can request another code now.";
-
-            return;
-
-        }
-
-
-        const minutes =
-            Math.floor(
-                remainingSeconds /
-                    60
-            );
-
-
-        const seconds =
-            remainingSeconds %
-            60;
-
-
-        const formattedSeconds =
-            String(seconds)
-                .padStart(
-                    2,
-                    "0"
-                );
-
-
-        timer.textContent =
-            `You can request another code in ${minutes}:${formattedSeconds}`;
-
-    }
-
-
-    function enableResendButton() {
-
-        const button =
-            getResendButton();
-
-
-        if (!button) {
-            return;
-        }
-
-
-        button.disabled =
-            false;
-
-        button.classList.remove(
-            "loading"
-        );
-
-        button.textContent =
-            "Resend Code";
-
-
-        updateCountdownUI();
-
-    }
-
-
-    /* =========================================================
-       LAST OTP SENT
-       ========================================================= */
-
-    function saveLastSentTime() {
-
-        sessionStorage.setItem(
-            "STOCKFLOW_OTP_LAST_SENT",
-            String(
-                Date.now()
-            )
-        );
-
-    }
-
-
-    /* =========================================================
-       INITIALIZE COUNTDOWN
-       ========================================================= */
-
-    function initializeCountdown() {
-
-        const lastSent =
-            sessionStorage.getItem(
-                "STOCKFLOW_OTP_LAST_SENT"
-            );
-
-
-        /*
-         * If there is no recorded send time,
-         * start a fresh cooldown.
-         */
-
-        if (!lastSent) {
-
-            startCountdown(
-                DEFAULT_COOLDOWN
-            );
-
-            return;
-
-        }
-
-
-        const elapsed =
-            Math.floor(
-                (
-                    Date.now() -
-                    Number(lastSent)
-                ) / 1000
-            );
-
-
-        const remaining =
-            DEFAULT_COOLDOWN -
-            elapsed;
-
-
-        if (
-            remaining > 0
-        ) {
-
-            startCountdown(
-                remaining
-            );
-
-        } else {
-
-            enableResendButton();
-
-        }
-
-    }
-
-
-    /* =========================================================
-       DISPLAY DESTINATION
-       ========================================================= */
-
-    function displayDestination() {
-
-        const state =
-            getOtpState();
-
-
-        document
-            .querySelectorAll(
-                "[data-otp-email]"
-            )
-            .forEach(
-                function (element) {
-
-                    element.textContent =
-                        maskEmail(
-                            state.email
-                        );
-
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                "[data-otp-phone]"
-            )
-            .forEach(
-                function (element) {
-
-                    element.textContent =
-                        maskPhone(
-                            state.phone
-                        );
-
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                "[data-otp-destination]"
-            )
-            .forEach(
-                function (element) {
-
-                    const channel =
-                        String(
-                            state.channel ||
-                            "BOTH"
-                        ).toUpperCase();
-
-
-                    if (
-                        channel ===
-                        "SMS"
-                    ) {
-
-                        element.textContent =
-                            maskPhone(
-                                state.phone
-                            );
-
-                    } else if (
-                        channel === "EMAIL" ||
-                        channel === "GMAIL"
-                    ) {
-
-                        element.textContent =
-                            maskEmail(
-                                state.email
-                            );
-
-                    } else {
-
-                        const email =
-                            maskEmail(
-                                state.email
-                            );
-
-                        const phone =
-                            maskPhone(
-                                state.phone
-                            );
-
-
-                        if (
-                            state.email &&
-                            state.phone
-                        ) {
-
-                            element.textContent =
-                                `${email} and ${phone}`;
-
-                        } else if (
-                            state.email
-                        ) {
-
-                            element.textContent =
-                                email;
-
-                        } else if (
-                            state.phone
-                        ) {
-
-                            element.textContent =
-                                phone;
-
-                        } else {
-
-                            element.textContent =
-                                "your registered contact information";
-
-                        }
-
-                    }
-
-                }
-            );
-
-    }
-
-
-    /* =========================================================
-       MASK EMAIL
-       ========================================================= */
-
-    function maskEmail(
-        email
-    ) {
-
-        if (!email) {
-
-            return "your email";
-
-        }
-
-
-        const parts =
-            String(email)
-                .split("@");
-
-
-        if (
-            parts.length !==
-            2
-        ) {
-
-            return email;
-
-        }
-
-
-        const name =
-            parts[0];
-
-        const domain =
-            parts[1];
-
-
-        if (
-            name.length <=
-            2
-        ) {
-
-            return (
-                name.charAt(0) +
-                "*".repeat(
-                    Math.max(
-                        1,
-                        name.length - 1
-                    )
-                ) +
-                "@" +
-                domain
-            );
-
-        }
-
-
-        return (
-            name.substring(
-                0,
-                2
-            ) +
-            "*".repeat(
-                Math.max(
-                    2,
-                    name.length - 2
-                )
-            ) +
-            "@" +
-            domain
-        );
-
-    }
-
-
-    /* =========================================================
-       MASK PHONE
-       ========================================================= */
-
-    function maskPhone(
-        phone
-    ) {
-
-        if (!phone) {
-
-            return "your phone";
-
-        }
-
-
-        const value =
-            String(phone);
-
-
-        if (
-            value.length <=
-            4
-        ) {
-
-            return "*".repeat(
-                value.length
-            );
-
-        }
-
-
-        return (
-            "*".repeat(
-                value.length - 4
-            ) +
-            value.slice(-4)
-        );
-
-    }
-
-
-    /* =========================================================
-       ENTER KEY
-       ========================================================= */
-
-    function setupEnterKey() {
-
-        const input =
-            getOtpInput();
-
-
-        if (!input) {
-            return;
-        }
-
-
-        input.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
-
-                    event.preventDefault();
-
-                    verifyOtp();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       RESEND BUTTON
-       ========================================================= */
-
-    function setupResendButton() {
-
-        const button =
-            getResendButton();
-
-
-        if (!button) {
-            return;
-        }
-
-
-        button.addEventListener(
-            "click",
-            function (event) {
-
+    function setupInput() {
+        const input = getOtpInput();
+        if (!input) return;
+
+        input.maxLength = OTP_LENGTH;
+        input.inputMode = "numeric";
+        input.autocomplete = "one-time-code";
+
+        input.addEventListener("input", () => {
+            input.value = sanitizeOtp(input.value);
+            clearMessage();
+            updateVerifyButton();
+        });
+
+        input.addEventListener("paste", (event) => {
+            event.preventDefault();
+            const text = event.clipboardData?.getData("text") || "";
+            input.value = sanitizeOtp(text);
+            updateVerifyButton();
+        });
+
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
                 event.preventDefault();
-
-                resendOtp();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       VERIFY BUTTON
-       ========================================================= */
-
-    function setupVerifyButton() {
-
-        const button =
-            getVerifyButton();
-
-
-        if (!button) {
-            return;
-        }
-
-
-        /*
-         * The form submit handler is the primary handler.
-         * We don't attach another click verification handler.
-         *
-         * This prevents duplicate API requests.
-         */
-
-    }
-
-
-    /* =========================================================
-       OTP FORM
-       ========================================================= */
-
-    function setupOtpForm() {
-
-        const form =
-            getElement(
-                "#otpForm",
-                "#verifyOtpForm",
-                "form[data-otp-form]"
-            );
-
-
-        if (!form) {
-            return;
-        }
-
-
-        form.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
                 verifyOtp();
-
             }
-        );
-
+        });
     }
 
-
-    /* =========================================================
-       BACK TO LOGIN
-       ========================================================= */
-
-    function setupBackToLogin() {
-
-        document.addEventListener(
-            "click",
-            function (event) {
-
-                const button =
-                    event.target.closest(
-                        "[data-back-login]"
-                    );
-
-
-                if (!button) {
-                    return;
-                }
-
-
+    function setupButtons() {
+        const form = getElement("#otpForm", "#verifyOtpForm");
+        if (form) {
+            form.addEventListener("submit", (event) => {
                 event.preventDefault();
+                verifyOtp();
+            });
+        }
 
+        const emailButton = getEmailButton();
+        if (emailButton) {
+            emailButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                sendCode("EMAIL");
+            });
+        }
 
-                if (
-                    Auth &&
-                    typeof Auth.clearOtpState ===
-                        "function"
-                ) {
+        const phoneButton = getPhoneButton();
+        if (phoneButton) {
+            phoneButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                sendCode("SMS");
+            });
+        }
 
+        const backButton = getElement("[data-back-login]");
+        if (backButton) {
+            backButton.addEventListener("click", () => {
+                if (Auth && typeof Auth.clearOtpState === "function") {
                     Auth.clearOtpState();
-
                 } else {
-
-                    sessionStorage.removeItem(
-                        "STOCKFLOW_OTP_UID"
-                    );
-
-                    sessionStorage.removeItem(
-                        "STOCKFLOW_OTP_EMAIL"
-                    );
-
-                    sessionStorage.removeItem(
-                        "STOCKFLOW_OTP_PHONE"
-                    );
-
-                    sessionStorage.removeItem(
-                        "STOCKFLOW_OTP_CHANNEL"
-                    );
-
+                    Object.values(STORAGE).forEach((key) => sessionStorage.removeItem(key));
                 }
-
-
-                sessionStorage.removeItem(
-                    "STOCKFLOW_OTP_LAST_SENT"
-                );
-
-
-                window.location.replace(
-                    LOGIN_PAGE
-                );
-
-            }
-        );
-
+            });
+        }
     }
 
+    function validatePage() {
+        const path = window.location.pathname.split("/").pop().toLowerCase();
+        if (path !== "verify.html" && path !== "verify-otp.html") return;
 
-    /* =========================================================
-       PAGE VALIDATION
-       ========================================================= */
-
-    function validateOtpPage() {
-
-        if (
-            !isVerificationPage()
-        ) {
-            return;
-        }
-
-
-        /*
-         * verify-otp.html should normally redirect
-         * before this script gets a chance to initialize.
-         *
-         * verify.html is the canonical page.
-         */
-
-        const path =
-            window.location.pathname
-                .split("/")
-                .pop()
-                .toLowerCase();
-
-
-        if (
-            path ===
-            "verify-otp.html"
-        ) {
-
-            window.location.replace(
-                OTP_PAGE
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !hasVerificationState()
-        ) {
-
+        if (!hasState()) {
             showMessage(
                 "No active verification request was found. Please register or sign in again.",
                 "error"
             );
 
-
-            setTimeout(
-                function () {
-
-                    window.location.replace(
-                        LOGIN_PAGE
-                    );
-
-                },
-                2500
-            );
-
+            setTimeout(() => {
+                window.location.replace(LOGIN_PAGE);
+            }, 2500);
         }
-
     }
-
-
-    /* =========================================================
-       INITIALIZATION
-       ========================================================= */
 
     function initialize() {
+        const path = window.location.pathname.split("/").pop().toLowerCase();
 
-        if (
-            !isVerificationPage()
-        ) {
+        if (path === "verify-otp.html") {
+            window.location.replace("verify.html");
             return;
         }
 
+        if (path !== "verify.html") return;
 
-        /*
-         * Legacy page → canonical page.
-         */
-
-        const path =
-            window.location.pathname
-                .split("/")
-                .pop()
-                .toLowerCase();
-
-
-        if (
-            path ===
-            "verify-otp.html"
-        ) {
-
-            window.location.replace(
-                OTP_PAGE
-            );
-
-            return;
-
-        }
-
-
-        setupOtpInput();
-
-        setupVerifyButton();
-
-        setupResendButton();
-
-        setupOtpForm();
-
-        setupEnterKey();
-
-        setupBackToLogin();
-
-
-        displayDestination();
-
-        validateOtpPage();
-
-
-        if (
-            hasVerificationState()
-        ) {
-
-            initializeCountdown();
-
-        }
-
+        setupInput();
+        setupButtons();
+        displayDestinations();
+        initializeSentTimes();
+        updateCooldownUI();
+        startCooldownTicker();
+        validatePage();
+        updateVerifyButton();
     }
 
-
-    /* =========================================================
-       PUBLIC API
-       ========================================================= */
-
     window.StockFlowOTP = {
-
-        verify:
-            verifyOtp,
-
-        resend:
-            resendOtp,
-
-        startCountdown:
-            startCountdown,
-
-        stopCountdown:
-            stopCountdown,
-
-        getState:
-            getOtpState,
-
-        sanitize:
-            sanitizeOtp,
-
-        maskEmail:
-            maskEmail,
-
-        maskPhone:
-            maskPhone
-
+        verify: verifyOtp,
+        resend: (channel = "EMAIL") => sendCode(channel),
+        sanitize: sanitizeOtp,
+        getState,
+        maskEmail,
+        maskPhone
     };
 
+    window.OTP = window.StockFlowOTP;
 
-    window.OTP =
-        window.StockFlowOTP;
-
-
-    /* =========================================================
-       DOM READY
-       ========================================================= */
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        initialize
-    );
-
+    document.addEventListener("DOMContentLoaded", initialize);
 })();

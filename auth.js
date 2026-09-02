@@ -28,7 +28,8 @@
         OTP_EMAIL: "STOCKFLOW_OTP_EMAIL",
         OTP_PHONE: "STOCKFLOW_OTP_PHONE",
         OTP_UID: "STOCKFLOW_OTP_UID",
-        OTP_CHANNEL: "STOCKFLOW_OTP_CHANNEL"
+        OTP_CHANNEL: "STOCKFLOW_OTP_CHANNEL",
+        OTP_USERNAME: "STOCKFLOW_OTP_USERNAME"
     };
 
     /* =========================================================
@@ -109,6 +110,13 @@
                 data.channel
             );
         }
+
+        if (data.username) {
+            sessionStorage.setItem(
+                STORAGE.OTP_USERNAME,
+                data.username
+            );
+        }
     }
 
     function getOtpState() {
@@ -131,6 +139,11 @@
             channel:
                 sessionStorage.getItem(
                     STORAGE.OTP_CHANNEL
+                ) || "",
+
+            username:
+                sessionStorage.getItem(
+                    STORAGE.OTP_USERNAME
                 ) || ""
         };
     }
@@ -140,6 +153,9 @@
         sessionStorage.removeItem(STORAGE.OTP_PHONE);
         sessionStorage.removeItem(STORAGE.OTP_UID);
         sessionStorage.removeItem(STORAGE.OTP_CHANNEL);
+        sessionStorage.removeItem(STORAGE.OTP_USERNAME);
+        sessionStorage.removeItem("STOCKFLOW_OTP_EMAIL_SENT");
+        sessionStorage.removeItem("STOCKFLOW_OTP_PHONE_SENT");
     }
 
     /* =========================================================
@@ -298,35 +314,44 @@
     ) {
         if (!button) return;
 
+        const text =
+            button.querySelector(".button-text");
+
+        const loader =
+            button.querySelector(".button-loader");
+
         if (loading) {
             button.disabled = true;
-            button.classList.add(
-                "loading"
-            );
+            button.classList.add("loading");
 
-            /*
-             * textContent completely replaces the previous
-             * button contents. This prevents:
-             *
-             * Create Employee Account
-             * +
-             * Creating account...
-             *
-             * from appearing together.
-             */
+            if (text) {
+                text.hidden = true;
+            }
 
-            button.textContent =
-                loadingText ||
-                "Please wait...";
+            if (loader) {
+                loader.hidden = false;
+                loader.textContent =
+                    loadingText || "Please wait...";
+            } else {
+                button.textContent =
+                    loadingText || "Please wait...";
+            }
         } else {
             button.disabled = false;
-            button.classList.remove(
-                "loading"
-            );
+            button.classList.remove("loading");
 
-            button.textContent =
-                normalText ||
-                "Submit";
+            if (text) {
+                text.hidden = false;
+                text.textContent =
+                    normalText || text.textContent || "Submit";
+            }
+
+            if (loader) {
+                loader.hidden = true;
+            } else {
+                button.textContent =
+                    normalText || "Submit";
+            }
         }
     }
 
@@ -429,9 +454,18 @@
                         "",
 
                     channel:
-                        result.channel ||
-                        "EMAIL"
+                        "EMAIL",
+
+                    username:
+                        user?.username ||
+                        result.username ||
+                        identity
                 });
+
+                sessionStorage.setItem(
+                    "STOCKFLOW_OTP_EMAIL_SENT",
+                    String(Date.now())
+                );
 
                 window.location.href =
                     "verify.html";
@@ -931,6 +965,10 @@
 
                 role: role,
 
+                // Email is the primary verification channel.
+                channel: "EMAIL",
+                otpChannel: "EMAIL",
+
                 age:
                     formData.age ||
                     "",
@@ -981,9 +1019,17 @@
                     phone,
 
                 channel:
-                    result.channel ||
-                    "BOTH"
+                    "EMAIL",
+
+                username:
+                    formData.username ||
+                    ""
             });
+
+            sessionStorage.setItem(
+                "STOCKFLOW_OTP_EMAIL_SENT",
+                String(Date.now())
+            );
 
             /*
              * IMPORTANT:
@@ -1039,7 +1085,7 @@
        OTP VERIFICATION
        ========================================================= */
 
-    async function verifyOtp(code) {
+    async function verifyOtp(code, channel) {
         const otp =
             String(code || "")
                 .replace(/\D/g, "");
@@ -1064,6 +1110,20 @@
 
                     phone:
                         otpState.phone,
+
+                    username:
+                        otpState.username ||
+                        "",
+
+                    channel:
+                        channel ||
+                        otpState.channel ||
+                        "EMAIL",
+
+                    otpChannel:
+                        channel ||
+                        otpState.channel ||
+                        "EMAIL",
 
                     otp:
                         otp
@@ -1126,6 +1186,15 @@
                 error
             );
 
+            const message =
+                String(error?.message || "");
+
+            if (/username\s*\/\s*email.*otp|email.*otp.*required/i.test(message)) {
+                throw new Error(
+                    "The verification code is incorrect or has expired."
+                );
+            }
+
             throw error;
         }
     }
@@ -1134,7 +1203,7 @@
        RESEND OTP
        ========================================================= */
 
-    async function resendOtp() {
+    async function resendOtp(channel) {
         const otpState =
             getOtpState();
 
@@ -1158,7 +1227,21 @@
                         otpState.email,
 
                     phone:
-                        otpState.phone
+                        otpState.phone,
+
+                    username:
+                        otpState.username ||
+                        "",
+
+                    channel:
+                        channel ||
+                        otpState.channel ||
+                        "EMAIL",
+
+                    otpChannel:
+                        channel ||
+                        otpState.channel ||
+                        "EMAIL"
                 });
 
             if (
