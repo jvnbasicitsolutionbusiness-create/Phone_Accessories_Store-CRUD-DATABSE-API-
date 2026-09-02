@@ -1,1 +1,299 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StockFlow Login</title><link rel="stylesheet" href="styles.css"></head><body><main class="card"><h1>StockFlow</h1><form id="loginForm"><input name="identity" placeholder="Username / Email / Phone" required><input name="password" type="password" placeholder="Password" required><button>Login</button></form><p id="message"></p><a href="forgot-password.html">Forgot password?</a> · <a href="register.html">Register</a></main><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="login.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>StockFlow | Sign In</title>
+
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="auth-body">
+
+    <main class="auth-page">
+
+        <!-- =====================================================
+             LEFT INFORMATION PANEL
+             ===================================================== -->
+
+        <section class="auth-visual">
+
+            <div class="auth-visual-content">
+
+                <div class="brand">
+                    STOCKFLOW
+                </div>
+
+                <div class="visual-copy">
+
+                    <span class="visual-eyebrow">
+                        PHONE ACCESSORIES INVENTORY
+                    </span>
+
+                    <h1>
+                        Inventory,<br>
+                        <span>in flow.</span>
+                    </h1>
+
+                    <p>
+                        A centralized inventory management system
+                        for products, stock movement, suppliers,
+                        categories, and transaction records.
+                    </p>
+
+                </div>
+
+                <div class="visual-features">
+
+                    <div class="visual-feature">
+
+                        <span class="feature-icon">
+                            ✓
+                        </span>
+
+                        <div>
+                            <strong>
+                                Inventory Control
+                            </strong>
+
+                            <small>
+                                Monitor product stock and availability.
+                            </small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="visual-feature">
+
+                        <span class="feature-icon">
+                            ↕
+                        </span>
+
+                        <div>
+                            <strong>
+                                Stock Movement
+                            </strong>
+
+                            <small>
+                                Track stock-in and stock-out transactions.
+                            </small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="visual-feature">
+
+                        <span class="feature-icon">
+                            ▣
+                        </span>
+
+                        <div>
+                            <strong>
+                                Organized Records
+                            </strong>
+
+                            <small>
+                                Keep suppliers, products and transactions organized.
+                            </small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="visual-footer">
+                    STOCKFLOW Inventory Management System
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             LOGIN PANEL
+             ===================================================== -->
+
+        <section class="auth-box">
+
+            <div class="auth-card">
+
+                <div class="auth-mobile-brand">
+                    <div class="brand">
+                        STOCKFLOW
+                    </div>
+                </div>
+
+
+                <div class="auth-heading">
+
+                    <h2>
+                        Welcome back
+                    </h2>
+
+                    <p class="muted">
+                        Sign in to continue managing your inventory.
+                    </p>
+
+                </div>
+
+
+                <!-- =================================================
+                     LOGIN FORM
+                     ================================================= -->
+
+                <form
+                    id="loginForm"
+                    class="auth-form"
+                    novalidate
+                >
+
+                    <div class="form-field">
+
+                        <label for="loginIdentity">
+                            Username, Email or Phone
+                        </label>
+
+                        <input
+                            id="loginIdentity"
+                            name="identity"
+                            type="text"
+                            placeholder="Enter your username, email or phone"
+                            autocomplete="username"
+                            spellcheck="false"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <div class="field-label-row">
+
+                            <label for="loginPassword">
+                                Password
+                            </label>
+
+                            <a
+                                href="forgotpassword.html"
+                                class="link forgot-link"
+                            >
+                                Forgot password?
+                            </a>
+
+                        </div>
+
+
+                        <div class="password-field">
+
+                            <input
+                                id="loginPassword"
+                                name="password"
+                                type="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                data-target="loginPassword"
+                                aria-label="Show password"
+                            >
+                                Show
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="loginButton"
+                        class="auth-submit"
+                        type="submit"
+                    >
+
+                        <span class="button-text">
+                            Sign In
+                        </span>
+
+                        <span
+                            class="button-loader"
+                            hidden
+                        >
+                            Signing in...
+                        </span>
+
+                    </button>
+
+
+                    <div
+                        id="message"
+                        class="auth-message"
+                        role="alert"
+                        aria-live="polite"
+                    ></div>
+
+                </form>
+
+
+                <!-- =================================================
+                     REGISTER LINK
+                     ================================================= -->
+
+                <div class="auth-switch">
+
+                    <span>
+                        Don't have an account?
+                    </span>
+
+                    <a
+                        href="register.html"
+                        class="link-button"
+                    >
+                        Create an account
+                    </a>
+
+                </div>
+
+
+                <!-- =================================================
+                     FOOTER
+                     ================================================= -->
+
+                <div class="auth-footer">
+
+                    <span>
+                        StockFlow Inventory Management System
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         STOCKFLOW SCRIPTS
+         ========================================================= -->
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="login.js"></script>
+
+</body>
+</html>
