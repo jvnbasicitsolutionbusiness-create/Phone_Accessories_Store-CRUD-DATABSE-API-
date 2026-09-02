@@ -1,13 +1,15 @@
 /* =========================================================
    STOCKFLOW — AUTHENTICATION CONTROLLER
    File: auth.js
-   Purpose:
+
+   Handles:
    - Login
-   - Registration
+   - Employee registration
+   - Form validation
    - OTP verification
    - Session handling
    - Logout
-   - Protected-page authentication
+   - Protected pages
    ========================================================= */
 
 (function () {
@@ -30,7 +32,7 @@
     };
 
     /* =========================================================
-       STORAGE HELPERS
+       STORAGE
        ========================================================= */
 
     function saveSession(token, user) {
@@ -111,10 +113,25 @@
 
     function getOtpState() {
         return {
-            email: sessionStorage.getItem(STORAGE.OTP_EMAIL) || "",
-            phone: sessionStorage.getItem(STORAGE.OTP_PHONE) || "",
-            uid: sessionStorage.getItem(STORAGE.OTP_UID) || "",
-            channel: sessionStorage.getItem(STORAGE.OTP_CHANNEL) || ""
+            email:
+                sessionStorage.getItem(
+                    STORAGE.OTP_EMAIL
+                ) || "",
+
+            phone:
+                sessionStorage.getItem(
+                    STORAGE.OTP_PHONE
+                ) || "",
+
+            uid:
+                sessionStorage.getItem(
+                    STORAGE.OTP_UID
+                ) || "",
+
+            channel:
+                sessionStorage.getItem(
+                    STORAGE.OTP_CHANNEL
+                ) || ""
         };
     }
 
@@ -126,7 +143,7 @@
     }
 
     /* =========================================================
-       UTILITY
+       USER HELPERS
        ========================================================= */
 
     function normalizeUser(user) {
@@ -136,10 +153,23 @@
             uid: user.uid || user.UID || "",
             name: user.name || user.NAME || "",
             username: user.username || user.USERNAME || "",
-            email: user.email || user.gmail || user.GMAIL || "",
-            phone: user.phone || user["PHONE NO."] || "",
-            role: user.role || user.ROLE || "Employee",
-            status: user.status || user.ACCOUNT_S || "ACTIVE",
+            email:
+                user.email ||
+                user.gmail ||
+                user.GMAIL ||
+                "",
+            phone:
+                user.phone ||
+                user["PHONE NO."] ||
+                "",
+            role:
+                user.role ||
+                user.ROLE ||
+                "Employee",
+            status:
+                user.status ||
+                user.ACCOUNT_S ||
+                "ACTIVE",
             verified:
                 user.verified === true ||
                 user.verified === "TRUE" ||
@@ -151,20 +181,14 @@
     function getRedirectByRole(user) {
         const role = String(
             user?.role || ""
-        ).trim().toLowerCase();
+        )
+            .trim()
+            .toLowerCase();
 
-        /*
-         * STOCKFLOW currently uses the same dashboard
-         * for normal authenticated users.
-         *
-         * Role-based routing can be extended later.
-         */
-
-        if (role === "admin" || role === "administrator") {
-            return "dashboard.html";
-        }
-
-        if (role === "employee" || role === "staff") {
+        if (
+            role === "admin" ||
+            role === "administrator"
+        ) {
             return "dashboard.html";
         }
 
@@ -172,8 +196,20 @@
     }
 
     function redirectAfterLogin(user) {
-        window.location.href = getRedirectByRole(user);
+        window.location.href =
+            getRedirectByRole(user);
     }
+
+    function isAuthenticated() {
+        return Boolean(
+            getToken() &&
+            getUser()
+        );
+    }
+
+    /* =========================================================
+       MESSAGE HELPERS
+       ========================================================= */
 
     function showMessage(message, type) {
         const selectors = [
@@ -181,13 +217,16 @@
             "#loginAlert",
             "#registerAlert",
             "#message",
+            "#loginMessage",
+            "#registerMessage",
             ".auth-alert"
         ];
 
         let element = null;
 
         for (const selector of selectors) {
-            element = document.querySelector(selector);
+            element =
+                document.querySelector(selector);
 
             if (element) {
                 break;
@@ -202,12 +241,15 @@
             return;
         }
 
-        element.textContent = message;
+        element.textContent =
+            message;
+
         element.className =
-            "auth-alert " +
+            "auth-message " +
             (type || "info");
 
-        element.style.display = "block";
+        element.style.display =
+            "block";
     }
 
     function hideMessage() {
@@ -216,45 +258,76 @@
             "#loginAlert",
             "#registerAlert",
             "#message",
+            "#loginMessage",
+            "#registerMessage",
             ".auth-alert"
         ];
 
-        selectors.forEach(function (selector) {
-            const elements =
-                document.querySelectorAll(selector);
+        selectors.forEach(
+            function (selector) {
+                document
+                    .querySelectorAll(selector)
+                    .forEach(
+                        function (element) {
+                            element.style.display =
+                                "none";
 
-            elements.forEach(function (element) {
-                element.style.display = "none";
-                element.textContent = "";
-            });
-        });
+                            element.textContent =
+                                "";
+
+                            element.classList.remove(
+                                "error",
+                                "success",
+                                "info"
+                            );
+                        }
+                    );
+            }
+        );
     }
 
-    function setButtonLoading(button, loading, loadingText) {
+    /* =========================================================
+       BUTTON STATES
+       ========================================================= */
+
+    function setButtonLoading(
+        button,
+        loading,
+        loadingText,
+        normalText
+    ) {
         if (!button) return;
 
         if (loading) {
-            button.dataset.originalText =
-                button.textContent;
-
             button.disabled = true;
-            button.classList.add("loading");
+            button.classList.add(
+                "loading"
+            );
+
+            /*
+             * textContent completely replaces the previous
+             * button contents. This prevents:
+             *
+             * Create Employee Account
+             * +
+             * Creating account...
+             *
+             * from appearing together.
+             */
 
             button.textContent =
-                loadingText || "Please wait...";
+                loadingText ||
+                "Please wait...";
         } else {
             button.disabled = false;
-            button.classList.remove("loading");
+            button.classList.remove(
+                "loading"
+            );
 
-            if (button.dataset.originalText) {
-                button.textContent =
-                    button.dataset.originalText;
-            }
+            button.textContent =
+                normalText ||
+                "Submit";
         }
-    }
-
-    function isAuthenticated() {
-        return Boolean(getToken() && getUser());
     }
 
     /* =========================================================
@@ -294,28 +367,22 @@
         }
 
         try {
-            const result = await API.login({
-                email: identity,
-                username: identity,
-                password: password
-            });
+            const result =
+                await API.login({
+                    email: identity,
+                    username: identity,
+                    password: password
+                });
 
-            if (!result || result.success === false) {
+            if (
+                !result ||
+                result.success === false
+            ) {
                 throw new Error(
                     result?.message ||
                     "Unable to sign in."
                 );
             }
-
-            /*
-             * Some backend responses may return:
-             * {
-             *   token,
-             *   user
-             * }
-             *
-             * Others may return the user directly.
-             */
 
             const token =
                 result.token ||
@@ -329,48 +396,45 @@
                 result.data ||
                 null;
 
-            const user = normalizeUser(rawUser);
-
-            /*
-             * If account requires OTP verification,
-             * do NOT redirect to dashboard yet.
-             */
+            const user =
+                normalizeUser(rawUser);
 
             const requiresOtp =
                 result.requiresOtp === true ||
                 result.requireOtp === true ||
                 result.otpRequired === true ||
-                result.status === "OTP_REQUIRED" ||
-                result.status === "VERIFY_REQUIRED" ||
+                result.status ===
+                    "OTP_REQUIRED" ||
+                result.status ===
+                    "VERIFY_REQUIRED" ||
                 result.verified === false ||
-                (user && user.verified === false);
+                (user &&
+                    user.verified === false);
 
             if (requiresOtp) {
                 saveOtpState({
-                    uid: user?.uid || result.uid || "",
+                    uid:
+                        user?.uid ||
+                        result.uid ||
+                        "",
+
                     email:
                         user?.email ||
                         result.email ||
                         identity,
+
                     phone:
                         user?.phone ||
                         result.phone ||
                         "",
+
                     channel:
                         result.channel ||
                         "EMAIL"
                 });
 
-                /*
-                 * If the backend already created/sent the OTP,
-                 * go directly to verification.
-                 *
-                 * Do NOT send another OTP here because that
-                 * could overwrite the previous code.
-                 */
-
                 window.location.href =
-                    "verify-otp.html";
+                    "verify.html";
 
                 return result;
             }
@@ -387,10 +451,16 @@
                 );
             }
 
-            saveSession(token, user);
+            saveSession(
+                token,
+                user
+            );
+
             clearOtpState();
 
-            redirectAfterLogin(user);
+            redirectAfterLogin(
+                user
+            );
 
             return result;
 
@@ -402,12 +472,371 @@
 
             showMessage(
                 error.message ||
-                "Unable to sign in. Please try again.",
+                    "Unable to sign in. Please try again.",
                 "error"
             );
 
             throw error;
         }
+    }
+
+    /* =========================================================
+       REGISTRATION VALIDATION
+       ========================================================= */
+
+    const REGISTER_ERROR_TEXT =
+        "Please fill up the form.";
+
+    function getRegisterField(id) {
+        return document.getElementById(id);
+    }
+
+    function getFieldWrapper(input) {
+        if (!input) return null;
+
+        return (
+            input.closest(
+                ".form-field"
+            ) ||
+            input.closest(
+                ".password-field"
+            ) ||
+            input.parentElement
+        );
+    }
+
+    function removeFieldError(input) {
+        if (!input) return;
+
+        input.classList.remove(
+            "input-error",
+            "error"
+        );
+
+        input.removeAttribute(
+            "aria-invalid"
+        );
+
+        const wrapper =
+            getFieldWrapper(input);
+
+        if (!wrapper) return;
+
+        const error =
+            wrapper.querySelector(
+                ".field-error-message"
+            );
+
+        if (error) {
+            error.remove();
+        }
+    }
+
+    function showFieldError(input) {
+        if (!input) return;
+
+        input.classList.add(
+            "input-error",
+            "error"
+        );
+
+        input.setAttribute(
+            "aria-invalid",
+            "true"
+        );
+
+        const wrapper =
+            getFieldWrapper(input);
+
+        if (!wrapper) return;
+
+        let error =
+            wrapper.querySelector(
+                ".field-error-message"
+            );
+
+        if (!error) {
+            error =
+                document.createElement(
+                    "div"
+                );
+
+            error.className =
+                "field-error-message";
+
+            error.textContent =
+                REGISTER_ERROR_TEXT;
+
+            wrapper.appendChild(
+                error
+            );
+        }
+
+        /*
+         * Restart animation if the user clicks submit again.
+         */
+        input.classList.remove(
+            "validation-shake"
+        );
+
+        void input.offsetWidth;
+
+        input.classList.add(
+            "validation-shake"
+        );
+    }
+
+    function clearRegisterErrors() {
+        const form =
+            document.getElementById(
+                "registerForm"
+            );
+
+        if (!form) return;
+
+        form.querySelectorAll(
+            ".input-error, .error"
+        ).forEach(
+            function (input) {
+                input.classList.remove(
+                    "input-error",
+                    "error",
+                    "validation-shake"
+                );
+
+                input.removeAttribute(
+                    "aria-invalid"
+                );
+            }
+        );
+
+        form.querySelectorAll(
+            ".field-error-message"
+        ).forEach(
+            function (element) {
+                element.remove();
+            }
+        );
+    }
+
+    function validateRegistrationForm() {
+        const form =
+            document.getElementById(
+                "registerForm"
+            );
+
+        if (!form) {
+            return {
+                valid: false,
+                payload: {}
+            };
+        }
+
+        clearRegisterErrors();
+
+        const name =
+            getRegisterField(
+                "registerName"
+            );
+
+        const username =
+            getRegisterField(
+                "registerUsername"
+            );
+
+        const age =
+            getRegisterField(
+                "registerAge"
+            );
+
+        const email =
+            getRegisterField(
+                "registerEmail"
+            );
+
+        const phone =
+            getRegisterField(
+                "registerPhone"
+            );
+
+        const password =
+            getRegisterField(
+                "registerPassword"
+            );
+
+        const confirmPassword =
+            getRegisterField(
+                "registerConfirmPassword"
+            );
+
+        const fields = [
+            name,
+            username,
+            age,
+            email,
+            phone,
+            password,
+            confirmPassword
+        ];
+
+        let firstInvalid = null;
+
+        /*
+         * Required field validation.
+         */
+        fields.forEach(
+            function (field) {
+                if (
+                    !field ||
+                    String(
+                        field.value || ""
+                    ).trim() === ""
+                ) {
+                    showFieldError(
+                        field
+                    );
+
+                    if (
+                        !firstInvalid
+                    ) {
+                        firstInvalid =
+                            field;
+                    }
+                }
+            }
+        );
+
+        /*
+         * Stop here if anything is empty.
+         */
+        if (firstInvalid) {
+            firstInvalid.focus();
+
+            showMessage(
+                REGISTER_ERROR_TEXT,
+                "error"
+            );
+
+            return {
+                valid: false,
+                payload: {}
+            };
+        }
+
+        /*
+         * Email validation.
+         */
+        if (
+            !isValidEmail(
+                email.value.trim()
+            )
+        ) {
+            showFieldError(
+                email
+            );
+
+            email.focus();
+
+            showMessage(
+                "Please enter a valid Gmail/email address.",
+                "error"
+            );
+
+            return {
+                valid: false,
+                payload: {}
+            };
+        }
+
+        /*
+         * Password length.
+         */
+        if (
+            password.value.length <
+            6
+        ) {
+            showFieldError(
+                password
+            );
+
+            password.focus();
+
+            showMessage(
+                "Password must be at least 6 characters.",
+                "error"
+            );
+
+            return {
+                valid: false,
+                payload: {}
+            };
+        }
+
+        /*
+         * Password confirmation.
+         */
+        if (
+            password.value !==
+            confirmPassword.value
+        ) {
+            showFieldError(
+                confirmPassword
+            );
+
+            confirmPassword.focus();
+
+            showMessage(
+                "Passwords do not match.",
+                "error"
+            );
+
+            return {
+                valid: false,
+                payload: {}
+            };
+        }
+
+        /*
+         * Build payload directly from the actual inputs.
+         *
+         * This avoids depending entirely on FormData names.
+         */
+        const payload = {
+            name:
+                name.value.trim(),
+
+            fullName:
+                name.value.trim(),
+
+            username:
+                username.value.trim(),
+
+            age:
+                age.value.trim(),
+
+            email:
+                email.value.trim(),
+
+            gmail:
+                email.value.trim(),
+
+            phone:
+                phone.value.trim(),
+
+            phoneNo:
+                phone.value.trim(),
+
+            password:
+                password.value,
+
+            role:
+                "Employee"
+        };
+
+        return {
+            valid: true,
+            payload: payload
+        };
     }
 
     /* =========================================================
@@ -442,7 +871,8 @@
         ).trim();
 
         const password = String(
-            formData.password || ""
+            formData.password ||
+            ""
         );
 
         const role = String(
@@ -452,13 +882,13 @@
 
         if (!name) {
             throw new Error(
-                "Please enter your full name."
+                "Please fill up the form."
             );
         }
 
         if (!email) {
             throw new Error(
-                "Please enter your Gmail address."
+                "Please fill up the form."
             );
         }
 
@@ -470,13 +900,13 @@
 
         if (!phone) {
             throw new Error(
-                "Please enter your phone number."
+                "Please fill up the form."
             );
         }
 
         if (!password) {
             throw new Error(
-                "Please create a password."
+                "Please fill up the form."
             );
         }
 
@@ -490,19 +920,25 @@
             const payload = {
                 name: name,
                 fullName: name,
+
                 email: email,
                 gmail: email,
+
                 phone: phone,
                 phoneNo: phone,
+
                 password: password,
+
                 role: role,
 
-                /*
-                 * Optional fields supported by the backend.
-                 */
+                age:
+                    formData.age ||
+                    "",
 
-                age: formData.age || "",
-                username: formData.username || "",
+                username:
+                    formData.username ||
+                    "",
+
                 adminKey:
                     formData.adminKey ||
                     formData.registrationKey ||
@@ -510,9 +946,14 @@
             };
 
             const result =
-                await API.register(payload);
+                await API.register(
+                    payload
+                );
 
-            if (!result || result.success === false) {
+            if (
+                !result ||
+                result.success === false
+            ) {
                 throw new Error(
                     result?.message ||
                     "Registration failed."
@@ -520,13 +961,8 @@
             }
 
             /*
-             * IMPORTANT:
-             * Registration should NOT automatically create
-             * an authenticated dashboard session.
-             *
-             * The account must verify the OTP first.
+             * Save information needed by verify.html.
              */
-
             saveOtpState({
                 uid:
                     result.uid ||
@@ -550,11 +986,21 @@
             });
 
             /*
-             * Redirect to OTP verification.
+             * IMPORTANT:
+             *
+             * Registration does not create a dashboard
+             * session.
+             *
+             * The user must verify first.
+             *
+             * The 2.5 second delay is handled below.
              */
+            await delay(
+                2500
+            );
 
             window.location.href =
-                "verify-otp.html";
+                "verify.html";
 
             return result;
 
@@ -566,7 +1012,7 @@
 
             showMessage(
                 error.message ||
-                "Unable to create your account.",
+                    "Unable to create your account.",
                 "error"
             );
 
@@ -575,13 +1021,28 @@
     }
 
     /* =========================================================
+       DELAY
+       ========================================================= */
+
+    function delay(milliseconds) {
+        return new Promise(
+            function (resolve) {
+                setTimeout(
+                    resolve,
+                    milliseconds
+                );
+            }
+        );
+    }
+
+    /* =========================================================
        OTP VERIFICATION
        ========================================================= */
 
     async function verifyOtp(code) {
-        const otp = String(
-            code || ""
-        ).replace(/\D/g, "");
+        const otp =
+            String(code || "")
+                .replace(/\D/g, "");
 
         if (otp.length !== 6) {
             throw new Error(
@@ -589,28 +1050,34 @@
             );
         }
 
-        const otpState = getOtpState();
+        const otpState =
+            getOtpState();
 
         try {
             const result =
                 await API.verifyOtp({
-                    uid: otpState.uid,
-                    email: otpState.email,
-                    phone: otpState.phone,
-                    otp: otp
+                    uid:
+                        otpState.uid,
+
+                    email:
+                        otpState.email,
+
+                    phone:
+                        otpState.phone,
+
+                    otp:
+                        otp
                 });
 
-            if (!result || result.success === false) {
+            if (
+                !result ||
+                result.success === false
+            ) {
                 throw new Error(
                     result?.message ||
                     "Invalid or expired verification code."
                 );
             }
-
-            /*
-             * Successful OTP verification may return
-             * a newly authenticated session.
-             */
 
             const token =
                 result.token ||
@@ -623,22 +1090,28 @@
                 result.data?.user ||
                 null;
 
-            if (token && rawUser) {
+            if (
+                token &&
+                rawUser
+            ) {
                 const user =
-                    normalizeUser(rawUser);
+                    normalizeUser(
+                        rawUser
+                    );
 
-                saveSession(token, user);
+                saveSession(
+                    token,
+                    user
+                );
+
                 clearOtpState();
 
-                redirectAfterLogin(user);
+                redirectAfterLogin(
+                    user
+                );
 
                 return result;
             }
-
-            /*
-             * If verification succeeded but no token was
-             * returned, send the user back to sign-in.
-             */
 
             clearOtpState();
 
@@ -662,7 +1135,8 @@
        ========================================================= */
 
     async function resendOtp() {
-        const otpState = getOtpState();
+        const otpState =
+            getOtpState();
 
         if (
             !otpState.uid &&
@@ -677,12 +1151,20 @@
         try {
             const result =
                 await API.resendOtp({
-                    uid: otpState.uid,
-                    email: otpState.email,
-                    phone: otpState.phone
+                    uid:
+                        otpState.uid,
+
+                    email:
+                        otpState.email,
+
+                    phone:
+                        otpState.phone
                 });
 
-            if (!result || result.success === false) {
+            if (
+                !result ||
+                result.success === false
+            ) {
                 throw new Error(
                     result?.message ||
                     "Unable to resend verification code."
@@ -724,19 +1206,26 @@
        ========================================================= */
 
     async function logout() {
-        const token = getToken();
+        const token =
+            getToken();
 
         try {
-            if (token && API.logout) {
+            if (
+                token &&
+                API.logout
+            ) {
                 await API.logout({
-                    token: token
+                    token:
+                        token
                 });
             }
+
         } catch (error) {
             console.warn(
                 "STOCKFLOW logout request failed:",
                 error
             );
+
         } finally {
             clearSession();
 
@@ -751,16 +1240,23 @@
        ========================================================= */
 
     function requireAuth(options) {
-        options = options || {};
+        options =
+            options || {};
 
         const redirect =
             options.redirect ||
             "auth.html#login";
 
-        const token = getToken();
-        const user = getUser();
+        const token =
+            getToken();
 
-        if (!token || !user) {
+        const user =
+            getUser();
+
+        if (
+            !token ||
+            !user
+        ) {
             sessionStorage.setItem(
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
                 window.location.href
@@ -773,13 +1269,10 @@
             return false;
         }
 
-        /*
-         * Check account status locally.
-         */
-
         const status =
             String(
-                user.status || "ACTIVE"
+                user.status ||
+                "ACTIVE"
             ).toUpperCase();
 
         if (
@@ -797,13 +1290,11 @@
             return false;
         }
 
-        /*
-         * Optional role protection.
-         */
-
         if (options.roles) {
             const allowedRoles =
-                Array.isArray(options.roles)
+                Array.isArray(
+                    options.roles
+                )
                     ? options.roles
                     : [options.roles];
 
@@ -844,7 +1335,8 @@
        ========================================================= */
 
     async function validateSession() {
-        const token = getToken();
+        const token =
+            getToken();
 
         if (!token) {
             return false;
@@ -857,7 +1349,8 @@
 
             const result =
                 await API.session({
-                    token: token
+                    token:
+                        token
                 });
 
             if (
@@ -865,6 +1358,7 @@
                 result.success === false
             ) {
                 clearSession();
+
                 return false;
             }
 
@@ -875,11 +1369,15 @@
 
             if (rawUser) {
                 const user =
-                    normalizeUser(rawUser);
+                    normalizeUser(
+                        rawUser
+                    );
 
                 sessionStorage.setItem(
                     STORAGE.USER,
-                    JSON.stringify(user)
+                    JSON.stringify(
+                        user
+                    )
                 );
             }
 
@@ -890,11 +1388,6 @@
                 "STOCKFLOW session validation failed:",
                 error
             );
-
-            /*
-             * Do not immediately destroy a session because
-             * a temporary network error occurred.
-             */
 
             return Boolean(
                 getToken() &&
@@ -916,14 +1409,20 @@
        PASSWORD TOGGLE
        ========================================================= */
 
-    function togglePassword(inputId, button) {
+    function togglePassword(
+        inputId,
+        button
+    ) {
         const input =
-            document.getElementById(inputId);
+            document.getElementById(
+                inputId
+            );
 
         if (!input) return;
 
         const isPassword =
-            input.type === "password";
+            input.type ===
+            "password";
 
         input.type =
             isPassword
@@ -950,11 +1449,6 @@
        ========================================================= */
 
     function initializeAuthPage() {
-        /*
-         * Only execute auth-page logic when auth.html
-         * is actually open.
-         */
-
         const path =
             window.location.pathname
                 .split("/")
@@ -971,20 +1465,10 @@
             return;
         }
 
-        /*
-         * If a valid session already exists, don't leave the
-         * authenticated user sitting on the login page.
-         */
-
         if (isAuthenticated()) {
             const hash =
                 window.location.hash
                     .toLowerCase();
-
-            /*
-             * Allow the user to explicitly open login
-             * only when they are not authenticated.
-             */
 
             if (
                 hash !== "#login" &&
@@ -1009,14 +1493,18 @@
 
     function setupAuthForms() {
         const loginForm =
-            document.querySelector(
-                "#loginForm"
+            document.getElementById(
+                "loginForm"
             );
 
         const registerForm =
-            document.querySelector(
-                "#registerForm"
+            document.getElementById(
+                "registerForm"
             );
+
+        /* -----------------------------------------------------
+           LOGIN
+           ----------------------------------------------------- */
 
         if (loginForm) {
             loginForm.addEventListener(
@@ -1030,7 +1518,9 @@
                         );
 
                     const form =
-                        new FormData(loginForm);
+                        new FormData(
+                            loginForm
+                        );
 
                     const email =
                         form.get("email") ||
@@ -1046,25 +1536,48 @@
                         setButtonLoading(
                             submitButton,
                             true,
-                            "Signing in..."
+                            "Signing in...",
+                            "Sign in"
                         );
 
                         await login({
-                            email: email,
-                            password: password
+                            email:
+                                email,
+
+                            password:
+                                password
                         });
 
                     } catch (error) {
-                        console.error(error);
-                    } finally {
-                        setButtonLoading(
-                            submitButton,
-                            false
+                        console.error(
+                            error
                         );
+
+                    } finally {
+                        /*
+                         * Only restore the button if the
+                         * page has not already redirected.
+                         */
+                        if (
+                            document.body.contains(
+                                submitButton
+                            )
+                        ) {
+                            setButtonLoading(
+                                submitButton,
+                                false,
+                                "",
+                                "Sign in"
+                            );
+                        }
                     }
                 }
             );
         }
+
+        /* -----------------------------------------------------
+           REGISTER
+           ----------------------------------------------------- */
 
         if (registerForm) {
             registerForm.addEventListener(
@@ -1072,43 +1585,126 @@
                 async function (event) {
                     event.preventDefault();
 
+                    /*
+                     * Prevent accidental double submission.
+                     */
+                    if (
+                        registerForm.dataset.submitting ===
+                        "true"
+                    ) {
+                        return;
+                    }
+
+                    hideMessage();
+
+                    /*
+                     * Validate BEFORE changing the button
+                     * into "Creating account..."
+                     */
+                    const validation =
+                        validateRegistrationForm();
+
+                    if (
+                        !validation.valid
+                    ) {
+                        return;
+                    }
+
                     const submitButton =
                         registerForm.querySelector(
                             'button[type="submit"]'
                         );
 
-                    const form =
-                        new FormData(
-                            registerForm
-                        );
-
-                    const payload = {};
-
-                    form.forEach(
-                        function (value, key) {
-                            payload[key] =
-                                value;
-                        }
-                    );
+                    registerForm.dataset.submitting =
+                        "true";
 
                     try {
+                        /*
+                         * NOW the button changes.
+                         */
                         setButtonLoading(
                             submitButton,
                             true,
-                            "Creating account..."
+                            "Creating account...",
+                            "Create Employee Account"
                         );
 
+                        /*
+                         * API registration.
+                         */
                         await register(
-                            payload
+                            validation.payload
                         );
+
+                        /*
+                         * register() waits 2.5 seconds
+                         * and redirects to verify.html.
+                         */
 
                     } catch (error) {
-                        console.error(error);
-                    } finally {
+                        console.error(
+                            "STOCKFLOW registration submit error:",
+                            error
+                        );
+
+                        /*
+                         * If registration fails, allow
+                         * the user to try again.
+                         */
+                        registerForm.dataset.submitting =
+                            "false";
+
                         setButtonLoading(
                             submitButton,
-                            false
+                            false,
+                            "",
+                            "Create Employee Account"
                         );
+                    }
+                }
+            );
+        }
+
+        /* -----------------------------------------------------
+           CLEAR FIELD ERROR WHILE TYPING
+           ----------------------------------------------------- */
+
+        if (registerForm) {
+            registerForm.addEventListener(
+                "input",
+                function (event) {
+                    const target =
+                        event.target;
+
+                    if (
+                        target.matches(
+                            "input, select, textarea"
+                        )
+                    ) {
+                        removeFieldError(
+                            target
+                        );
+                    }
+
+                    /*
+                     * Clear global form error when the user
+                     * starts correcting the form.
+                     */
+                    const hasErrors =
+                        registerForm.querySelector(
+                            ".input-error, .error"
+                        );
+
+                    if (!hasErrors) {
+                        const message =
+                            document.getElementById(
+                                "registerMessage"
+                            );
+
+                        if (message) {
+                            message.style.display =
+                                "none";
+                        }
                     }
                 }
             );
@@ -1130,14 +1726,19 @@
                 '[data-auth-tab="register"]'
             );
 
+        /*
+         * IMPORTANT:
+         * Your HTML uses loginPanel/registerPanel,
+         * not loginView/registerView.
+         */
         const loginView =
-            document.querySelector(
-                "#loginView"
+            document.getElementById(
+                "loginPanel"
             );
 
         const registerView =
-            document.querySelector(
-                "#registerView"
+            document.getElementById(
+                "registerPanel"
             );
 
         function showLogin() {
@@ -1145,11 +1746,21 @@
                 loginView.classList.remove(
                     "hidden"
                 );
+
+                loginView.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
             }
 
             if (registerView) {
                 registerView.classList.add(
                     "hidden"
+                );
+
+                registerView.setAttribute(
+                    "aria-hidden",
+                    "true"
                 );
             }
 
@@ -1157,16 +1768,34 @@
                 loginTab.classList.add(
                     "active"
                 );
+
+                loginTab.setAttribute(
+                    "aria-selected",
+                    "true"
+                );
             }
 
             if (registerTab) {
                 registerTab.classList.remove(
                     "active"
                 );
+
+                registerTab.setAttribute(
+                    "aria-selected",
+                    "false"
+                );
             }
 
-            window.location.hash =
-                "login";
+            if (
+                window.location.hash !==
+                "#login"
+            ) {
+                history.replaceState(
+                    null,
+                    "",
+                    "#login"
+                );
+            }
         }
 
         function showRegister() {
@@ -1174,11 +1803,21 @@
                 loginView.classList.add(
                     "hidden"
                 );
+
+                loginView.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
             }
 
             if (registerView) {
                 registerView.classList.remove(
                     "hidden"
+                );
+
+                registerView.setAttribute(
+                    "aria-hidden",
+                    "false"
                 );
             }
 
@@ -1186,16 +1825,34 @@
                 loginTab.classList.remove(
                     "active"
                 );
+
+                loginTab.setAttribute(
+                    "aria-selected",
+                    "false"
+                );
             }
 
             if (registerTab) {
                 registerTab.classList.add(
                     "active"
                 );
+
+                registerTab.setAttribute(
+                    "aria-selected",
+                    "true"
+                );
             }
 
-            window.location.hash =
-                "register";
+            if (
+                window.location.hash !==
+                "#register"
+            ) {
+                history.replaceState(
+                    null,
+                    "",
+                    "#register"
+                );
+            }
         }
 
         if (loginTab) {
@@ -1203,6 +1860,7 @@
                 "click",
                 function (event) {
                     event.preventDefault();
+
                     showLogin();
                 }
             );
@@ -1213,26 +1871,23 @@
                 "click",
                 function (event) {
                     event.preventDefault();
+
                     showRegister();
                 }
             );
         }
-
-        /*
-         * Support existing links such as:
-         * href="#login"
-         * href="#register"
-         */
 
         document.addEventListener(
             "click",
             function (event) {
                 const target =
                     event.target.closest(
-                        '[data-show-auth]'
+                        "[data-show-auth]"
                     );
 
-                if (!target) return;
+                if (!target) {
+                    return;
+                }
 
                 const view =
                     target.dataset.showAuth;
@@ -1240,7 +1895,8 @@
                 event.preventDefault();
 
                 if (
-                    view === "register"
+                    view ===
+                    "register"
                 ) {
                     showRegister();
                 } else {
@@ -1255,7 +1911,8 @@
                     .toLowerCase();
 
             if (
-                hash === "#register"
+                hash ===
+                "#register"
             ) {
                 showRegister();
             } else {
@@ -1272,7 +1929,7 @@
     }
 
     /* =========================================================
-       PASSWORD TOGGLE INITIALIZATION
+       PASSWORD TOGGLES
        ========================================================= */
 
     function setupPasswordToggles() {
@@ -1284,7 +1941,9 @@
                         "[data-toggle-password]"
                     );
 
-                if (!button) return;
+                if (!button) {
+                    return;
+                }
 
                 event.preventDefault();
 
@@ -1301,7 +1960,7 @@
     }
 
     /* =========================================================
-       GLOBAL EVENT HANDLERS
+       GLOBAL LOGOUT
        ========================================================= */
 
     function setupGlobalLogout() {
@@ -1325,7 +1984,7 @@
     }
 
     /* =========================================================
-       AUTO SESSION CHECK FOR NON-AUTH PAGES
+       PROTECTED PAGES
        ========================================================= */
 
     function initializeProtectedPage() {
@@ -1346,14 +2005,12 @@
         ];
 
         if (
-            publicPages.includes(path)
+            publicPages.includes(
+                path
+            )
         ) {
             return;
         }
-
-        /*
-         * Any STOCKFLOW module page is protected.
-         */
 
         requireAuth();
     }
@@ -1384,37 +2041,47 @@
             .querySelectorAll(
                 "[data-user-name]"
             )
-            .forEach(function (element) {
-                element.textContent =
-                    name;
-            });
+            .forEach(
+                function (element) {
+                    element.textContent =
+                        name;
+                }
+            );
 
         document
             .querySelectorAll(
                 "[data-user-email]"
             )
-            .forEach(function (element) {
-                element.textContent =
-                    email;
-            });
+            .forEach(
+                function (element) {
+                    element.textContent =
+                        email;
+                }
+            );
 
         document
             .querySelectorAll(
                 "[data-user-role]"
             )
-            .forEach(function (element) {
-                element.textContent =
-                    role;
-            });
+            .forEach(
+                function (element) {
+                    element.textContent =
+                        role;
+                }
+            );
 
         document
             .querySelectorAll(
                 "[data-user-initials]"
             )
-            .forEach(function (element) {
-                element.textContent =
-                    getInitials(name);
-            });
+            .forEach(
+                function (element) {
+                    element.textContent =
+                        getInitials(
+                            name
+                        );
+                }
+            );
     }
 
     function getInitials(name) {
@@ -1436,12 +2103,14 @@
 
         return (
             words[0][0] +
-            words[words.length - 1][0]
+            words[
+                words.length - 1
+            ][0]
         ).toUpperCase();
     }
 
     /* =========================================================
-       PREVENT BACK BUTTON AFTER LOGOUT
+       HISTORY
        ========================================================= */
 
     function setupHistoryProtection() {
@@ -1461,19 +2130,32 @@
        ========================================================= */
 
     window.StockFlowAuth = {
-        login: login,
-        register: register,
+        login:
+            login,
 
-        verifyOtp: verifyOtp,
-        resendOtp: resendOtp,
+        register:
+            register,
 
-        logout: logout,
+        verifyOtp:
+            verifyOtp,
 
-        getToken: getToken,
-        getUser: getUser,
+        resendOtp:
+            resendOtp,
 
-        saveSession: saveSession,
-        clearSession: clearSession,
+        logout:
+            logout,
+
+        getToken:
+            getToken,
+
+        getUser:
+            getUser,
+
+        saveSession:
+            saveSession,
+
+        clearSession:
+            clearSession,
 
         isAuthenticated:
             isAuthenticated,
@@ -1497,9 +2179,6 @@
             getInitials
     };
 
-    /*
-     * Backward-compatible alias.
-     */
     window.Auth =
         window.StockFlowAuth;
 
