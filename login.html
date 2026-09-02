@@ -2,15 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1"
     >
 
-    <title>StockFlow | Sign In</title>
+    <meta
+        name="description"
+        content="STOCKFLOW — Phone Accessories Inventory Management System"
+    >
 
+    <meta
+        name="theme-color"
+        content="#0b0f14"
+    >
+
+    <title>STOCKFLOW | Sign In</title>
+
+    <!-- Global styles first -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Authentication styles last -->
     <link rel="stylesheet" href="auth.css">
-    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="auth-body">
@@ -18,16 +32,37 @@
     <main class="auth-page">
 
         <!-- =====================================================
-             LEFT INFORMATION PANEL
+             LEFT BRAND / INFORMATION PANEL
              ===================================================== -->
 
         <section class="auth-visual">
 
             <div class="auth-visual-content">
 
+                <!-- BRAND -->
+
                 <div class="brand">
-                    STOCKFLOW
+
+                    <span class="brand-mark">
+                        SF
+                    </span>
+
+                    <div class="brand-text">
+
+                        <strong>
+                            STOCKFLOW
+                        </strong>
+
+                        <small>
+                            INVENTORY MANAGEMENT SYSTEM
+                        </small>
+
+                    </div>
+
                 </div>
+
+
+                <!-- HERO COPY -->
 
                 <div class="visual-copy">
 
@@ -36,80 +71,126 @@
                     </span>
 
                     <h1>
-                        Inventory,<br>
-                        <span>in flow.</span>
+                        Everything in stock.
+                        <br>
+
+                        <span>
+                            Always in flow.
+                        </span>
                     </h1>
 
                     <p>
-                        A centralized inventory management system
-                        for products, stock movement, suppliers,
-                        categories, and transaction records.
+                        Manage phone accessories, monitor inventory levels,
+                        track stock movement, and maintain organized
+                        supplier and transaction records in one centralized system.
                     </p>
 
                 </div>
 
+
+                <!-- SYSTEM FEATURES -->
+
                 <div class="visual-features">
+
+                    <!-- FEATURE 01 -->
 
                     <div class="visual-feature">
 
-                        <span class="feature-icon">
+                        <span
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ✓
                         </span>
 
                         <div>
+
                             <strong>
                                 Inventory Control
                             </strong>
 
                             <small>
-                                Monitor product stock and availability.
+                                Monitor accessories, stock levels,
+                                availability, and reorder status.
                             </small>
+
                         </div>
 
                     </div>
 
 
+                    <!-- FEATURE 02 -->
+
                     <div class="visual-feature">
 
-                        <span class="feature-icon">
+                        <span
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ↕
                         </span>
 
                         <div>
+
                             <strong>
                                 Stock Movement
                             </strong>
 
                             <small>
-                                Track stock-in and stock-out transactions.
+                                Record and track stock-in and
+                                stock-out transactions accurately.
                             </small>
+
                         </div>
 
                     </div>
 
 
+                    <!-- FEATURE 03 -->
+
                     <div class="visual-feature">
 
-                        <span class="feature-icon">
+                        <span
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ▣
                         </span>
 
                         <div>
+
                             <strong>
                                 Organized Records
                             </strong>
 
                             <small>
-                                Keep suppliers, products and transactions organized.
+                                Keep products, categories, suppliers,
+                                and transactions organized.
                             </small>
+
                         </div>
 
                     </div>
 
                 </div>
 
+
+                <!-- VISUAL FOOTER -->
+
                 <div class="visual-footer">
-                    STOCKFLOW Inventory Management System
+
+                    <span>
+                        STOCKFLOW
+                    </span>
+
+                    <span>
+                        •
+                    </span>
+
+                    <span>
+                        Phone Accessories Inventory
+                    </span>
+
                 </div>
 
             </div>
@@ -118,28 +199,55 @@
 
 
         <!-- =====================================================
-             LOGIN PANEL
+             LOGIN AREA
              ===================================================== -->
 
         <section class="auth-box">
 
             <div class="auth-card">
 
+                <!-- MOBILE BRAND -->
+
                 <div class="auth-mobile-brand">
+
                     <div class="brand">
-                        STOCKFLOW
+
+                        <span class="brand-mark">
+                            SF
+                        </span>
+
+                        <div class="brand-text">
+
+                            <strong>
+                                STOCKFLOW
+                            </strong>
+
+                            <small>
+                                INVENTORY MANAGEMENT
+                            </small>
+
+                        </div>
+
                     </div>
+
                 </div>
 
 
+                <!-- LOGIN HEADING -->
+
                 <div class="auth-heading">
+
+                    <span class="auth-kicker">
+                        STOCKFLOW ACCESS
+                    </span>
 
                     <h2>
                         Welcome back
                     </h2>
 
                     <p class="muted">
-                        Sign in to continue managing your inventory.
+                        Sign in to continue managing your phone
+                        accessories inventory.
                     </p>
 
                 </div>
@@ -155,24 +263,29 @@
                     novalidate
                 >
 
+                    <!-- IDENTITY -->
+
                     <div class="form-field">
 
                         <label for="loginIdentity">
-                            Username, Email or Phone
+                            Email or Phone
                         </label>
 
                         <input
                             id="loginIdentity"
                             name="identity"
                             type="text"
-                            placeholder="Enter your username, email or phone"
+                            placeholder="Enter your email or phone number"
                             autocomplete="username"
+                            inputmode="email"
                             spellcheck="false"
                             required
                         >
 
                     </div>
 
+
+                    <!-- PASSWORD -->
 
                     <div class="form-field">
 
@@ -217,6 +330,8 @@
                     </div>
 
 
+                    <!-- SIGN IN -->
+
                     <button
                         id="loginButton"
                         class="auth-submit"
@@ -237,8 +352,10 @@
                     </button>
 
 
+                    <!-- LOGIN MESSAGE -->
+
                     <div
-                        id="message"
+                        id="loginMessage"
                         class="auth-message"
                         role="alert"
                         aria-live="polite"
@@ -248,7 +365,7 @@
 
 
                 <!-- =================================================
-                     REGISTER LINK
+                     REGISTRATION
                      ================================================= -->
 
                 <div class="auth-switch">
@@ -268,16 +385,49 @@
 
 
                 <!-- =================================================
+                     SECURITY NOTICE
+                     ================================================= -->
+
+                <div class="auth-security">
+
+                    <span
+                        class="security-icon"
+                        aria-hidden="true"
+                    >
+                        🔒
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Secure Inventory Access
+                        </strong>
+
+                        <small>
+                            Your account is protected with
+                            authenticated access and verification.
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
                      FOOTER
                      ================================================= -->
 
-                <div class="auth-footer">
+                <footer class="auth-footer">
 
                     <span>
-                        StockFlow Inventory Management System
+                        STOCKFLOW Inventory Management System
                     </span>
 
-                </div>
+                    <span>
+                        Phone Accessories Inventory
+                    </span>
+
+                </footer>
 
             </div>
 
