@@ -1,47 +1,39 @@
-/* =========================================================
+/* ==========================================================================
    STOCKFLOW
-   PHONE ACCESSORIES INVENTORY MANAGEMENT SYSTEM
+   Phone Accessories Inventory Management System
+   Global Application Styles
+   --------------------------------------------------------------------------
+   Covers:
+   Dashboard • Inventory • Products • Categories • Suppliers
+   Stock In • Stock Out • Transactions • Activity • Profile • Settings
 
-   GLOBAL SYSTEM STYLES
-   ---------------------------------------------------------
-   Used by:
-   Dashboard
-   Inventory
-   Products
-   Categories
-   Suppliers
-   Stock In
-   Stock Out
-   Transactions
-   Activity
-   Profile
-   Settings
-
-   Authentication styling belongs to auth.css.
-   ========================================================= */
+   Authentication styles are maintained separately in auth.css.
+   ========================================================================== */
 
 
-/* =========================================================
+/* ==========================================================================
    1. DESIGN TOKENS
-   ========================================================= */
+   ========================================================================== */
 
 :root {
-
-    --sf-bg: #f5f7fa;
+    /* Colors */
+    --sf-bg: #f6f8fb;
     --sf-surface: #ffffff;
     --sf-surface-soft: #f8fafc;
+    --sf-surface-hover: #f9fafb;
 
     --sf-primary: #111827;
     --sf-primary-hover: #1f2937;
 
     --sf-accent: #2563eb;
     --sf-accent-hover: #1d4ed8;
+    --sf-accent-soft: #eff6ff;
 
-    --sf-text: #111827;
+    --sf-text: #101828;
     --sf-text-secondary: #667085;
     --sf-text-muted: #98a2b3;
 
-    --sf-border: #e4e7ec;
+    --sf-border: #eaecf0;
     --sf-border-dark: #d0d5dd;
 
     --sf-success: #16a34a;
@@ -56,33 +48,55 @@
     --sf-info: #2563eb;
     --sf-info-bg: #eff6ff;
 
+    /* Sidebar */
     --sf-sidebar: #111827;
     --sf-sidebar-hover: #1f2937;
     --sf-sidebar-active: #374151;
+    --sf-sidebar-text: #d0d5dd;
+    --sf-sidebar-muted: #98a2b3;
 
-    --sf-radius-sm: 7px;
+    /* Typography */
+    --sf-font:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    /* Radius */
+    --sf-radius-xs: 6px;
+    --sf-radius-sm: 8px;
     --sf-radius-md: 10px;
-    --sf-radius-lg: 14px;
+    --sf-radius-lg: 12px;
+    --sf-radius-xl: 16px;
+    --sf-radius-full: 999px;
+
+    /* Shadows */
+    --sf-shadow-xs:
+        0 1px 2px rgba(16, 24, 40, 0.03);
 
     --sf-shadow-sm:
-        0 1px 2px rgba(15, 23, 42, 0.04);
+        0 1px 3px rgba(16, 24, 40, 0.05);
 
     --sf-shadow-md:
-        0 4px 14px rgba(15, 23, 42, 0.06);
+        0 4px 12px rgba(16, 24, 40, 0.06);
 
     --sf-shadow-lg:
-        0 12px 30px rgba(15, 23, 42, 0.09);
+        0 12px 28px rgba(16, 24, 40, 0.10);
 
+    /* Layout */
     --sf-sidebar-width: 250px;
     --sf-header-height: 68px;
 
-    --sf-transition: 0.18s ease;
+    /* Motion */
+    --sf-transition: 160ms ease;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    2. GLOBAL RESET
-   ========================================================= */
+   ========================================================================== */
 
 *,
 *::before,
@@ -97,24 +111,17 @@ html {
 
 body {
     min-height: 100vh;
-
     margin: 0;
-    padding: 0;
 
     background: var(--sf-bg);
     color: var(--sf-text);
 
-    font-family:
-        Inter,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-
+    font-family: var(--sf-font);
     font-size: 14px;
     line-height: 1.5;
 
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 }
 
@@ -131,7 +138,7 @@ button {
 
 button:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.55;
 }
 
 a {
@@ -140,8 +147,8 @@ a {
 }
 
 img {
-    max-width: 100%;
     display: block;
+    max-width: 100%;
 }
 
 table {
@@ -149,10 +156,18 @@ table {
     border-collapse: collapse;
 }
 
+h1,
+h2,
+h3,
+h4,
+p {
+    margin-top: 0;
+}
 
-/* =========================================================
-   3. APPLICATION
-   ========================================================= */
+
+/* ==========================================================================
+   3. APPLICATION SHELL
+   ========================================================================== */
 
 .sf-app {
     min-height: 100vh;
@@ -165,15 +180,13 @@ table {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    4. SIDEBAR
-   ========================================================= */
+   ========================================================================== */
 
 .sidebar {
     position: fixed;
-
-    inset:
-        0 auto 0 0;
+    inset: 0 auto 0 0;
 
     width: var(--sf-sidebar-width);
 
@@ -186,6 +199,10 @@ table {
     z-index: 1000;
 
     overflow-y: auto;
+    overscroll-behavior: contain;
+
+    scrollbar-width: thin;
+    scrollbar-color: #374151 transparent;
 }
 
 .sidebar-header {
@@ -196,20 +213,17 @@ table {
 
     padding: 0 20px;
 
-    border-bottom:
-        1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .sidebar-brand {
     display: flex;
     align-items: center;
-
     gap: 11px;
 
-    font-size: 17px;
-    font-weight: 750;
-
-    letter-spacing: -0.01em;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
 }
 
 .sidebar-logo {
@@ -220,29 +234,35 @@ table {
     align-items: center;
     justify-content: center;
 
-    border-radius: 8px;
+    flex-shrink: 0;
+
+    border-radius: var(--sf-radius-sm);
 
     background: #ffffff;
-    color: #111827;
+    color: var(--sf-primary);
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .sidebar-nav {
     flex: 1;
-
-    padding: 16px 11px;
+    padding: 18px 10px;
 }
 
 .nav-section {
-    margin-bottom: 20px;
+    margin-bottom: 22px;
+}
+
+.nav-section:last-child {
+    margin-bottom: 0;
 }
 
 .nav-section-title {
-    padding: 0 11px 7px;
+    padding: 0 11px 8px;
 
-    color: #98a2b3;
+    color: var(--sf-sidebar-muted);
 
     font-size: 9px;
     font-weight: 700;
@@ -257,18 +277,17 @@ table {
 
     display: flex;
     align-items: center;
-
     gap: 11px;
 
     margin-bottom: 3px;
     padding: 0 11px;
 
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
-    color: #d0d5dd;
+    color: var(--sf-sidebar-text);
 
     transition:
-        background var(--sf-transition),
+        background-color var(--sf-transition),
         color var(--sf-transition);
 }
 
@@ -280,7 +299,6 @@ table {
 .nav-link.active {
     background: var(--sf-sidebar-active);
     color: #ffffff;
-
     font-weight: 600;
 }
 
@@ -288,30 +306,36 @@ table {
     width: 19px;
     height: 19px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    flex-shrink: 0;
+    flex: 0 0 19px;
 
+    color: currentColor;
     font-size: 15px;
 }
 
 .nav-text {
+    min-width: 0;
     flex: 1;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .nav-badge {
-    min-width: 19px;
-    height: 19px;
-
-    padding: 0 5px;
+    min-width: 20px;
+    height: 20px;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 999px;
+    padding: 0 5px;
+
+    border-radius: var(--sf-radius-full);
 
     background: #ef4444;
     color: #ffffff;
@@ -321,40 +345,37 @@ table {
 }
 
 .sidebar-footer {
-    padding: 12px 11px;
+    padding: 12px 10px;
 
-    border-top:
-        1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .sidebar-user {
     display: flex;
     align-items: center;
-
-    gap: 9px;
+    gap: 10px;
 
     padding: 9px;
 
-    border-radius: 8px;
+    border-radius: var(--sf-radius-sm);
 
-    background:
-        rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-user-avatar {
     width: 34px;
     height: 34px;
 
-    flex-shrink: 0;
-
     display: flex;
     align-items: center;
     justify-content: center;
 
+    flex-shrink: 0;
+
     border-radius: 50%;
 
     background: #ffffff;
-    color: #111827;
+    color: var(--sf-primary);
 
     font-size: 11px;
     font-weight: 700;
@@ -362,50 +383,49 @@ table {
 
 .sidebar-user-info {
     min-width: 0;
+    flex: 1;
 }
 
 .sidebar-user-name {
+    overflow: hidden;
+
     color: #ffffff;
 
     font-size: 11px;
     font-weight: 600;
 
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidebar-user-role {
-    margin-top: 1px;
+    margin-top: 2px;
 
-    color: #98a2b3;
+    color: var(--sf-sidebar-muted);
 
     font-size: 9px;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    5. MAIN CONTENT
-   ========================================================= */
+   ========================================================================== */
 
 .main-content {
-    width:
-        calc(100% - var(--sf-sidebar-width));
-
+    width: calc(100% - var(--sf-sidebar-width));
     min-height: 100vh;
 
-    margin-left:
-        var(--sf-sidebar-width);
+    margin-left: var(--sf-sidebar-width);
 }
 
 .content-wrapper {
-    padding: 26px;
+    padding: 28px;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    6. TOP HEADER
-   ========================================================= */
+   ========================================================================== */
 
 .top-header {
     position: sticky;
@@ -419,12 +439,14 @@ table {
     align-items: center;
     justify-content: space-between;
 
-    padding: 0 26px;
+    padding: 0 28px;
 
-    background: rgba(255,255,255,0.97);
+    background: rgba(255, 255, 255, 0.96);
 
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .header-left,
@@ -444,18 +466,22 @@ table {
 .page-title {
     margin: 0;
 
+    color: var(--sf-text);
+
     font-size: 20px;
     font-weight: 700;
+    line-height: 1.2;
 
     letter-spacing: -0.025em;
 }
 
 .page-subtitle {
-    margin: 2px 0 0;
+    margin: 3px 0 0;
 
     color: var(--sf-text-secondary);
 
     font-size: 11px;
+    line-height: 1.4;
 }
 
 .mobile-menu-button {
@@ -468,21 +494,29 @@ table {
     justify-content: center;
 
     border: 1px solid var(--sf-border);
-    border-radius: 8px;
+    border-radius: var(--sf-radius-sm);
 
     background: #ffffff;
     color: var(--sf-text);
+
+    transition:
+        background-color var(--sf-transition),
+        border-color var(--sf-transition);
+}
+
+.mobile-menu-button:hover {
+    background: var(--sf-surface-soft);
+    border-color: var(--sf-border-dark);
 }
 
 
-/* =========================================================
+/* ==========================================================================
    7. USER MENU
-   ========================================================= */
+   ========================================================================== */
 
 .user-menu {
     display: flex;
     align-items: center;
-
     gap: 9px;
 
     cursor: pointer;
@@ -496,6 +530,8 @@ table {
     align-items: center;
     justify-content: center;
 
+    flex-shrink: 0;
+
     border-radius: 50%;
 
     background: var(--sf-primary);
@@ -508,6 +544,7 @@ table {
 .user-details {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .user-name {
@@ -521,18 +558,18 @@ table {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    8. PAGE HEADER
-   ========================================================= */
+   ========================================================================== */
 
 .page-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
 
-    gap: 18px;
+    gap: 20px;
 
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
 .page-header-content {
@@ -542,16 +579,17 @@ table {
 .page-header h1 {
     margin: 0;
 
-    font-size: 23px;
+    color: var(--sf-text);
+
+    font-size: 24px;
+    font-weight: 700;
     line-height: 1.25;
 
-    font-weight: 700;
-
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
 }
 
 .page-header p {
-    margin: 5px 0 0;
+    margin: 6px 0 0;
 
     color: var(--sf-text-secondary);
 
@@ -561,26 +599,23 @@ table {
 .page-header-actions {
     display: flex;
     align-items: center;
-
-    gap: 7px;
+    gap: 8px;
 
     flex-shrink: 0;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    9. STATISTICS
-   ========================================================= */
+   ========================================================================== */
 
 .stats-grid {
     display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+    gap: 16px;
 
-    gap: 14px;
-
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
 .stat-card {
@@ -591,7 +626,18 @@ table {
     border: 1px solid var(--sf-border);
     border-radius: var(--sf-radius-lg);
 
+    box-shadow: var(--sf-shadow-xs);
+
+    transition:
+        border-color var(--sf-transition),
+        box-shadow var(--sf-transition),
+        transform var(--sf-transition);
+}
+
+.stat-card:hover {
+    border-color: #dfe3e8;
     box-shadow: var(--sf-shadow-sm);
+    transform: translateY(-1px);
 }
 
 .stat-card-header {
@@ -599,7 +645,9 @@ table {
     align-items: center;
     justify-content: space-between;
 
-    margin-bottom: 14px;
+    gap: 10px;
+
+    margin-bottom: 15px;
 }
 
 .stat-card-title {
@@ -613,21 +661,24 @@ table {
     width: 34px;
     height: 34px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 8px;
+    flex-shrink: 0;
 
-    background: var(--sf-info-bg);
+    border-radius: var(--sf-radius-sm);
+
+    background: var(--sf-accent-soft);
     color: var(--sf-accent);
 }
 
 .stat-card-value {
-    font-size: 26px;
-    line-height: 1;
+    color: var(--sf-text);
 
+    font-size: 27px;
     font-weight: 700;
+    line-height: 1;
 
     letter-spacing: -0.04em;
 }
@@ -635,10 +686,9 @@ table {
 .stat-card-footer {
     display: flex;
     align-items: center;
-
     gap: 5px;
 
-    margin-top: 10px;
+    margin-top: 11px;
 
     color: var(--sf-text-secondary);
 
@@ -653,25 +703,21 @@ table {
 .stat-negative {
     color: var(--sf-danger);
     font-weight: 600;
-}
 
 
-/* =========================================================
+/* ==========================================================================
    10. CONTENT GRID
-   ========================================================= */
+   ========================================================================== */
 
 .content-grid {
     display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
     gap: 18px;
 }
 
 .content-grid.three-columns {
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .content-grid.full {
@@ -679,9 +725,9 @@ table {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    11. CARDS
-   ========================================================= */
+   ========================================================================== */
 
 .card {
     overflow: hidden;
@@ -691,33 +737,35 @@ table {
     border: 1px solid var(--sf-border);
     border-radius: var(--sf-radius-lg);
 
-    box-shadow: var(--sf-shadow-sm);
+    box-shadow: var(--sf-shadow-xs);
 }
 
 .card-header {
-    min-height: 56px;
+    min-height: 58px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    gap: 12px;
+    gap: 14px;
 
     padding: 15px 18px;
 
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
 }
 
 .card-title {
     margin: 0;
 
+    color: var(--sf-text);
+
     font-size: 14px;
     font-weight: 700;
+    line-height: 1.3;
 }
 
 .card-subtitle {
-    margin-top: 2px;
+    margin-top: 3px;
 
     color: var(--sf-text-secondary);
 
@@ -733,14 +781,13 @@ table {
 
     background: var(--sf-surface-soft);
 
-    border-top:
-        1px solid var(--sf-border);
+    border-top: 1px solid var(--sf-border);
 }
 
 
-/* =========================================================
+/* ==========================================================================
    12. BUTTONS
-   ========================================================= */
+   ========================================================================== */
 
 .btn {
     min-height: 36px;
@@ -748,22 +795,36 @@ table {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
-    gap: 6px;
+    gap: 7px;
 
     padding: 0 13px;
 
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     font-size: 11px;
     font-weight: 600;
+    line-height: 1;
+
+    white-space: nowrap;
 
     transition:
-        background var(--sf-transition),
+        background-color var(--sf-transition),
         border-color var(--sf-transition),
         color var(--sf-transition),
-        box-shadow var(--sf-transition);
+        box-shadow var(--sf-transition),
+        transform var(--sf-transition);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn:focus-visible,
+.btn-icon:focus-visible,
+.pagination-button:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.28);
+    outline-offset: 2px;
 }
 
 .btn-primary {
@@ -793,6 +854,7 @@ table {
 
 .btn-secondary:hover {
     background: var(--sf-surface-soft);
+    border-color: #b8c0cc;
 }
 
 .btn-success {
@@ -800,14 +862,26 @@ table {
     color: #ffffff;
 }
 
+.btn-success:hover {
+    background: #15803d;
+}
+
 .btn-warning {
     background: var(--sf-warning);
     color: #ffffff;
 }
 
+.btn-warning:hover {
+    background: #b45309;
+}
+
 .btn-danger {
     background: var(--sf-danger);
     color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
 }
 
 .btn-outline-danger {
@@ -819,21 +893,18 @@ table {
 
 .btn-outline-danger:hover {
     background: var(--sf-danger-bg);
+    border-color: #fca5a5;
 }
 
 .btn-sm {
     min-height: 30px;
-
     padding: 0 9px;
-
     font-size: 10px;
 }
 
 .btn-lg {
     min-height: 42px;
-
     padding: 0 17px;
-
     font-size: 12px;
 }
 
@@ -841,48 +912,50 @@ table {
     width: 34px;
     height: 34px;
 
-    padding: 0;
-
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
+    padding: 0;
+
     border: 1px solid var(--sf-border);
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     background: #ffffff;
     color: var(--sf-text-secondary);
+
+    transition:
+        background-color var(--sf-transition),
+        border-color var(--sf-transition),
+        color var(--sf-transition);
 }
 
 .btn-icon:hover {
     background: var(--sf-surface-soft);
+    border-color: var(--sf-border-dark);
     color: var(--sf-text);
 }
 
 
-/* =========================================================
-   13. SYSTEM FORMS
-   ========================================================= */
+/* ==========================================================================
+   13. FORMS
+   ========================================================================== */
 
 .form-grid {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 15px;
+    gap: 16px;
 }
 
 .form-grid.three {
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-
-    gap: 5px;
+    gap: 6px;
 }
 
 .form-group.full {
@@ -902,15 +975,12 @@ table {
 
 .form-control {
     width: 100%;
-
-    min-height: 39px;
+    min-height: 40px;
 
     padding: 0 11px;
 
-    border:
-        1px solid var(--sf-border-dark);
-
-    border-radius: 7px;
+    border: 1px solid var(--sf-border-dark);
+    border-radius: var(--sf-radius-sm);
 
     background: #ffffff;
     color: var(--sf-text);
@@ -922,19 +992,28 @@ table {
         box-shadow var(--sf-transition);
 }
 
+.form-control:hover {
+    border-color: #b8c0cc;
+}
+
 .form-control:focus {
     border-color: var(--sf-accent);
 
     box-shadow:
-        0 0 0 3px rgba(37,99,235,0.08);
+        0 0 0 3px rgba(37, 99, 235, 0.09);
 }
 
 .form-control::placeholder {
     color: var(--sf-text-muted);
 }
 
+.form-control:disabled {
+    background: var(--sf-surface-soft);
+    color: var(--sf-text-muted);
+}
+
 textarea.form-control {
-    min-height: 90px;
+    min-height: 92px;
 
     padding-top: 9px;
     padding-bottom: 9px;
@@ -948,13 +1027,11 @@ select.form-control {
 
 .form-help {
     color: var(--sf-text-secondary);
-
     font-size: 9px;
 }
 
 .form-error {
     color: var(--sf-danger);
-
     font-size: 9px;
 }
 
@@ -963,65 +1040,69 @@ select.form-control {
     align-items: center;
     justify-content: flex-end;
 
-    gap: 7px;
+    gap: 8px;
 
-    margin-top: 18px;
+    margin-top: 20px;
 }
 
 
-/* =========================================================
-   14. SEARCH / FILTERS
-   ========================================================= */
+/* ==========================================================================
+   14. SEARCH & FILTERS
+   ========================================================================== */
 
 .filter-bar {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
 
     gap: 9px;
 
-    flex-wrap: wrap;
-
-    margin-bottom: 14px;
+    margin-bottom: 15px;
 }
 
 .search-box {
     position: relative;
 
     flex: 1;
-
-    min-width: 210px;
+    min-width: 220px;
 }
 
 .search-box input {
     width: 100%;
-    height: 39px;
+    height: 40px;
 
     padding: 0 11px 0 36px;
 
     border: 1px solid var(--sf-border-dark);
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     background: #ffffff;
+    color: var(--sf-text);
 
     outline: none;
+
+    transition:
+        border-color var(--sf-transition),
+        box-shadow var(--sf-transition);
 }
 
 .search-box input:focus {
     border-color: var(--sf-accent);
 
     box-shadow:
-        0 0 0 3px rgba(37,99,235,0.08);
+        0 0 0 3px rgba(37, 99, 235, 0.09);
 }
 
 .search-icon {
     position: absolute;
-
     left: 11px;
     top: 50%;
 
     transform: translateY(-50%);
 
     color: var(--sf-text-muted);
+
+    pointer-events: none;
 }
 
 .filter-select {
@@ -1029,13 +1110,15 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    15. TABLES
-   ========================================================= */
+   ========================================================================== */
 
 .table-wrapper {
     width: 100%;
     overflow-x: auto;
+
+    scrollbar-width: thin;
 }
 
 .data-table {
@@ -1050,9 +1133,9 @@ select.form-control {
 .data-table th {
     padding: 11px 14px;
 
-    text-align: left;
-
     color: var(--sf-text-secondary);
+
+    text-align: left;
 
     font-size: 9px;
     font-weight: 700;
@@ -1062,8 +1145,7 @@ select.form-control {
 
     white-space: nowrap;
 
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
 }
 
 .data-table td {
@@ -1073,10 +1155,13 @@ select.form-control {
 
     font-size: 11px;
 
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
 
     vertical-align: middle;
+}
+
+.data-table tbody tr {
+    transition: background-color var(--sf-transition);
 }
 
 .data-table tbody tr:hover {
@@ -1090,7 +1175,6 @@ select.form-control {
 .table-product {
     display: flex;
     align-items: center;
-
     gap: 9px;
 }
 
@@ -1098,14 +1182,14 @@ select.form-control {
     width: 34px;
     height: 34px;
 
-    flex-shrink: 0;
-
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
+    flex-shrink: 0;
+
     border: 1px solid var(--sf-border);
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     background: var(--sf-surface-soft);
     color: var(--sf-text-secondary);
@@ -1116,11 +1200,12 @@ select.form-control {
 }
 
 .product-name {
+    overflow: hidden;
+
     font-weight: 600;
 
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .product-sku {
@@ -1134,14 +1219,13 @@ select.form-control {
 .table-actions {
     display: flex;
     align-items: center;
-
     gap: 4px;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    16. STATUS BADGES
-   ========================================================= */
+   ========================================================================== */
 
 .status-badge {
     min-height: 22px;
@@ -1152,10 +1236,12 @@ select.form-control {
 
     padding: 0 8px;
 
-    border-radius: 999px;
+    border-radius: var(--sf-radius-full);
 
     font-size: 9px;
     font-weight: 700;
+
+    line-height: 1;
 
     white-space: nowrap;
 }
@@ -1193,9 +1279,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    17. STOCK
-   ========================================================= */
+   ========================================================================== */
 
 .stock-value {
     font-weight: 700;
@@ -1216,14 +1302,13 @@ select.form-control {
 .stock-bar {
     width: 100%;
     max-width: 100px;
-
     height: 4px;
 
     margin-top: 5px;
 
     overflow: hidden;
 
-    border-radius: 999px;
+    border-radius: var(--sf-radius-full);
 
     background: #e4e7ec;
 }
@@ -1235,16 +1320,16 @@ select.form-control {
 
     background: var(--sf-accent);
 
-    transition: width 0.2s ease;
+    transition: width 200ms ease;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    18. EMPTY STATE
-   ========================================================= */
+   ========================================================================== */
 
 .empty-state {
-    padding: 46px 20px;
+    padding: 48px 20px;
 
     text-align: center;
 
@@ -1255,9 +1340,9 @@ select.form-control {
     width: 46px;
     height: 46px;
 
-    margin: 0 auto 11px;
+    margin: 0 auto 12px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
@@ -1279,29 +1364,29 @@ select.form-control {
 }
 
 .empty-state-text {
-    margin: 4px 0 0;
+    margin: 5px 0 0;
 
     font-size: 10px;
 }
 
 
-/* =========================================================
-   19. SYSTEM ALERTS
-   ========================================================= */
+/* ==========================================================================
+   19. ALERTS
+   ========================================================================== */
 
 .alert {
     display: flex;
     align-items: flex-start;
-
     gap: 9px;
 
-    margin-bottom: 14px;
-    padding: 10px 12px;
+    margin-bottom: 15px;
+    padding: 11px 13px;
 
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     font-size: 11px;
+    line-height: 1.45;
 }
 
 .alert-success {
@@ -1329,9 +1414,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    20. MODALS
-   ========================================================= */
+   ========================================================================== */
 
 .modal-overlay {
     position: fixed;
@@ -1343,10 +1428,12 @@ select.form-control {
     align-items: center;
     justify-content: center;
 
-    padding: 18px;
+    padding: 20px;
 
-    background:
-        rgba(15,23,42,0.45);
+    background: rgba(15, 23, 42, 0.48);
+
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
 .modal-overlay.active {
@@ -1357,14 +1444,15 @@ select.form-control {
     width: 100%;
     max-width: 560px;
 
-    max-height:
-        calc(100vh - 36px);
+    max-height: calc(100vh - 40px);
 
     overflow-y: auto;
 
     background: #ffffff;
 
-    border-radius: var(--sf-radius-lg);
+    border: 1px solid var(--sf-border);
+
+    border-radius: var(--sf-radius-xl);
 
     box-shadow: var(--sf-shadow-lg);
 }
@@ -1374,16 +1462,17 @@ select.form-control {
     align-items: center;
     justify-content: space-between;
 
-    gap: 10px;
+    gap: 12px;
 
-    padding: 16px 18px;
+    padding: 17px 18px;
 
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
 }
 
 .modal-title {
     margin: 0;
+
+    color: var(--sf-text);
 
     font-size: 15px;
     font-weight: 700;
@@ -1393,13 +1482,23 @@ select.form-control {
     width: 30px;
     height: 30px;
 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--sf-radius-xs);
 
     background: transparent;
     color: var(--sf-text-secondary);
 
     font-size: 17px;
+
+    transition:
+        background-color var(--sf-transition),
+        color var(--sf-transition);
 }
 
 .modal-close:hover {
@@ -1408,25 +1507,23 @@ select.form-control {
 }
 
 .modal-body {
-    padding: 18px;
+    padding: 19px;
 }
 
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-
-    gap: 7px;
+    gap: 8px;
 
     padding: 13px 18px;
 
-    border-top:
-        1px solid var(--sf-border);
+    border-top: 1px solid var(--sf-border);
 }
 
 
-/* =========================================================
+/* ==========================================================================
    21. DROPDOWN
-   ========================================================= */
+   ========================================================================== */
 
 .dropdown {
     position: relative;
@@ -1434,11 +1531,10 @@ select.form-control {
 
 .dropdown-menu {
     position: absolute;
-
-    top: calc(100% + 6px);
+    top: calc(100% + 7px);
     right: 0;
 
-    min-width: 175px;
+    min-width: 180px;
 
     padding: 5px;
 
@@ -1447,7 +1543,7 @@ select.form-control {
     background: #ffffff;
 
     border: 1px solid var(--sf-border);
-    border-radius: 9px;
+    border-radius: var(--sf-radius-md);
 
     box-shadow: var(--sf-shadow-lg);
 
@@ -1460,17 +1556,16 @@ select.form-control {
 
 .dropdown-item {
     width: 100%;
-    min-height: 34px;
+    min-height: 35px;
 
     display: flex;
     align-items: center;
-
     gap: 8px;
 
     padding: 0 9px;
 
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--sf-radius-xs);
 
     background: transparent;
     color: var(--sf-text);
@@ -1478,6 +1573,10 @@ select.form-control {
     text-align: left;
 
     font-size: 11px;
+
+    transition:
+        background-color var(--sf-transition),
+        color var(--sf-transition);
 }
 
 .dropdown-item:hover {
@@ -1485,53 +1584,60 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    22. PAGINATION
-   ========================================================= */
+   ========================================================================== */
 
 .pagination {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    gap: 10px;
+    gap: 12px;
 
     padding: 13px 18px;
 
-    border-top:
-        1px solid var(--sf-border);
+    border-top: 1px solid var(--sf-border);
 }
 
 .pagination-info {
     color: var(--sf-text-secondary);
-
     font-size: 10px;
 }
 
 .pagination-controls {
     display: flex;
     align-items: center;
-
-    gap: 3px;
+    gap: 4px;
 }
 
 .pagination-button {
     min-width: 30px;
     height: 30px;
 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
     padding: 0 7px;
 
     border: 1px solid var(--sf-border);
-    border-radius: 6px;
+    border-radius: var(--sf-radius-xs);
 
     background: #ffffff;
     color: var(--sf-text);
 
     font-size: 10px;
+
+    transition:
+        background-color var(--sf-transition),
+        border-color var(--sf-transition),
+        color var(--sf-transition);
 }
 
 .pagination-button:hover {
     background: var(--sf-surface-soft);
+    border-color: var(--sf-border-dark);
 }
 
 .pagination-button.active {
@@ -1541,9 +1647,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    23. LOADING
-   ========================================================= */
+   ========================================================================== */
 
 .loading-container {
     min-height: 150px;
@@ -1559,19 +1665,18 @@ select.form-control {
     width: 22px;
     height: 22px;
 
-    border: 3px solid var(--sf-border);
+    flex-shrink: 0;
 
+    border: 3px solid var(--sf-border);
     border-top-color: var(--sf-accent);
 
     border-radius: 50%;
 
-    animation:
-        sfSpin 0.8s linear infinite;
+    animation: sfSpin 800ms linear infinite;
 }
 
 .loading-text {
     margin-left: 9px;
-
     font-size: 11px;
 }
 
@@ -1582,51 +1687,47 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    24. TOAST
-   ========================================================= */
+   ========================================================================== */
 
 .toast-container {
     position: fixed;
-
     top: 78px;
     right: 18px;
 
     z-index: 3000;
 
-    width: min(350px, calc(100vw - 36px));
+    width: min(360px, calc(100vw - 36px));
 
     display: flex;
     flex-direction: column;
-
-    gap: 7px;
+    gap: 8px;
 }
 
 .toast {
     display: flex;
     align-items: flex-start;
-
     gap: 9px;
 
-    padding: 11px 13px;
+    padding: 12px 14px;
 
     background: #ffffff;
 
     border: 1px solid var(--sf-border);
-    border-radius: 9px;
+    border-radius: var(--sf-radius-md);
 
     box-shadow: var(--sf-shadow-lg);
 
     font-size: 11px;
 
-    animation:
-        sfToastIn 0.18s ease;
+    animation: sfToastIn 180ms ease;
 }
 
 @keyframes sfToastIn {
     from {
         opacity: 0;
-        transform: translateY(-6px);
+        transform: translateY(-7px);
     }
 
     to {
@@ -1636,55 +1737,54 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    25. QUICK ACTIONS
-   ========================================================= */
+   ========================================================================== */
 
 .quick-actions {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 9px;
+    gap: 10px;
 }
 
 .quick-action {
+    min-height: 52px;
+
     display: flex;
     align-items: center;
+    gap: 10px;
 
-    gap: 9px;
-
-    min-height: 50px;
-
-    padding: 9px 11px;
+    padding: 10px 11px;
 
     border: 1px solid var(--sf-border);
-    border-radius: 9px;
+    border-radius: var(--sf-radius-md);
 
     background: #ffffff;
 
     transition:
-        background var(--sf-transition),
-        border-color var(--sf-transition);
+        background-color var(--sf-transition),
+        border-color var(--sf-transition),
+        box-shadow var(--sf-transition);
 }
 
 .quick-action:hover {
     background: var(--sf-surface-soft);
     border-color: var(--sf-border-dark);
+    box-shadow: var(--sf-shadow-xs);
 }
 
 .quick-action-icon {
     width: 32px;
     height: 32px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
     flex-shrink: 0;
 
-    border-radius: 7px;
+    border-radius: var(--sf-radius-sm);
 
     background: var(--sf-info-bg);
     color: var(--sf-accent);
@@ -1696,7 +1796,7 @@ select.form-control {
 }
 
 .quick-action-description {
-    margin-top: 1px;
+    margin-top: 2px;
 
     color: var(--sf-text-secondary);
 
@@ -1704,53 +1804,50 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    26. INVENTORY SUMMARY
-   ========================================================= */
+   ========================================================================== */
 
 .inventory-summary {
     display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 9px;
+    gap: 10px;
 }
 
 .inventory-summary-item {
-    padding: 11px;
+    padding: 12px;
 
     border: 1px solid var(--sf-border);
-    border-radius: 9px;
+    border-radius: var(--sf-radius-md);
 
     background: var(--sf-surface-soft);
 }
 
 .inventory-summary-label {
     color: var(--sf-text-secondary);
-
     font-size: 9px;
 }
 
 .inventory-summary-value {
-    margin-top: 3px;
+    margin-top: 4px;
+
+    color: var(--sf-text);
 
     font-size: 17px;
     font-weight: 700;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    27. DETAILS
-   ========================================================= */
+   ========================================================================== */
 
 .detail-grid {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 13px 22px;
+    gap: 14px 24px;
 }
 
 .detail-item {
@@ -1758,7 +1855,7 @@ select.form-control {
 }
 
 .detail-label {
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 
     color: var(--sf-text-secondary);
 
@@ -1766,7 +1863,7 @@ select.form-control {
     font-weight: 600;
 
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
 }
 
 .detail-value {
@@ -1779,27 +1876,25 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    28. PROFILE
-   ========================================================= */
+   ========================================================================== */
 
 .profile-header {
     display: flex;
     align-items: center;
+    gap: 15px;
 
-    gap: 14px;
+    padding: 19px;
 
-    padding: 18px;
-
-    border-bottom:
-        1px solid var(--sf-border);
+    border-bottom: 1px solid var(--sf-border);
 }
 
 .profile-avatar {
     width: 58px;
     height: 58px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
@@ -1817,12 +1912,14 @@ select.form-control {
 .profile-name {
     margin: 0;
 
+    color: var(--sf-text);
+
     font-size: 17px;
     font-weight: 700;
 }
 
 .profile-role {
-    margin-top: 2px;
+    margin-top: 3px;
 
     color: var(--sf-text-secondary);
 
@@ -1830,12 +1927,12 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    29. CONFIRMATION
-   ========================================================= */
+   ========================================================================== */
 
 .confirm-box {
-    padding: 22px;
+    padding: 24px;
 
     text-align: center;
 }
@@ -1844,9 +1941,9 @@ select.form-control {
     width: 50px;
     height: 50px;
 
-    margin: 0 auto 12px;
+    margin: 0 auto 13px;
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
@@ -1861,12 +1958,14 @@ select.form-control {
 .confirm-title {
     margin: 0;
 
+    color: var(--sf-text);
+
     font-size: 15px;
     font-weight: 700;
 }
 
 .confirm-text {
-    margin: 5px 0 0;
+    margin: 6px 0 0;
 
     color: var(--sf-text-secondary);
 
@@ -1874,9 +1973,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    30. UTILITIES
-   ========================================================= */
+   ========================================================================== */
 
 .d-none {
     display: none !important;
@@ -1963,9 +2062,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    31. TABLET
-   ========================================================= */
+   ========================================================================== */
 
 @media (max-width: 1100px) {
 
@@ -1974,32 +2073,35 @@ select.form-control {
     }
 
     .content-wrapper {
-        padding: 21px;
+        padding: 22px;
+    }
+
+    .top-header {
+        padding: 0 22px;
     }
 
     .stats-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .content-grid.three-columns {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 
-/* =========================================================
-   32. MOBILE SIDEBAR
-   ========================================================= */
+/* ==========================================================================
+   32. MOBILE NAVIGATION
+   ========================================================================== */
 
 @media (max-width: 850px) {
 
     .sidebar {
         transform: translateX(-100%);
 
-        transition:
-            transform 0.2s ease;
+        transition: transform 200ms ease;
+
+        box-shadow: var(--sf-shadow-lg);
     }
 
     .sidebar.open {
@@ -2026,9 +2128,9 @@ select.form-control {
 }
 
 
-/* =========================================================
+/* ==========================================================================
    33. MOBILE
-   ========================================================= */
+   ========================================================================== */
 
 @media (max-width: 650px) {
 
@@ -2037,11 +2139,11 @@ select.form-control {
     }
 
     .content-wrapper {
-        padding: 14px;
+        padding: 16px 14px;
     }
 
     .top-header {
-        padding: 0 13px;
+        padding: 0 14px;
     }
 
     .page-title {
@@ -2057,7 +2159,9 @@ select.form-control {
         flex-direction: column;
         align-items: stretch;
 
-        margin-bottom: 17px;
+        gap: 14px;
+
+        margin-bottom: 18px;
     }
 
     .page-header h1 {
@@ -2074,11 +2178,15 @@ select.form-control {
 
     .stats-grid {
         grid-template-columns: 1fr;
-        gap: 9px;
+        gap: 10px;
     }
 
     .stat-card {
-        padding: 15px;
+        padding: 16px;
+    }
+
+    .stat-card-value {
+        font-size: 25px;
     }
 
     .form-grid,
@@ -2091,7 +2199,7 @@ select.form-control {
     }
 
     .card-header {
-        padding: 13px 15px;
+        padding: 14px 15px;
     }
 
     .card-body {
@@ -2147,24 +2255,30 @@ select.form-control {
     }
 
     .modal-overlay {
-        padding: 9px;
+        padding: 10px;
     }
 
     .modal {
-        max-height:
-            calc(100vh - 18px);
+        max-height: calc(100vh - 20px);
+        border-radius: var(--sf-radius-lg);
+    }
+
+    .toast-container {
+        top: 68px;
+        right: 12px;
+        width: calc(100vw - 24px);
     }
 }
 
 
-/* =========================================================
+/* ==========================================================================
    34. VERY SMALL DEVICES
-   ========================================================= */
+   ========================================================================== */
 
 @media (max-width: 400px) {
 
     .content-wrapper {
-        padding: 11px;
+        padding: 12px 11px;
     }
 
     .page-header h1 {
@@ -2177,48 +2291,47 @@ select.form-control {
 
     .btn {
         min-height: 35px;
-
         padding: 0 10px;
-
         font-size: 10px;
     }
 
     .modal-body {
         padding: 15px;
     }
+
+    .modal-header,
+    .modal-footer {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
 }
 
 
-/* =========================================================
+/* ==========================================================================
    35. ACCESSIBILITY
-   ========================================================= */
+   ========================================================================== */
 
 :focus-visible {
-    outline:
-        2px solid rgba(37,99,235,0.35);
-
+    outline: 2px solid rgba(37, 99, 235, 0.35);
     outline-offset: 2px;
 }
 
 
-/* =========================================================
+/* ==========================================================================
    36. REDUCED MOTION
-   ========================================================= */
+   ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
 
     *,
     *::before,
     *::after {
-        scroll-behavior: auto !important;
-
-        animation-duration:
-            0.01ms !important;
-
-        animation-iteration-count:
-            1 !important;
-
-        transition-duration:
-            0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
