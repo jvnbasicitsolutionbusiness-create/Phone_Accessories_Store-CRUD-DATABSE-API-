@@ -1,14 +1,283 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>StockFlow | Transactions</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
-<a href="dashboard.html">Dashboard</a>
-<a href="inventory-dashboard.html">Inventory Dashboard</a>
-<a href="products.html">Products</a>
-<a href="inventory.html">Inventory</a>
-<a href="categories.html">Categories</a>
-<a href="suppliers.html">Suppliers</a>
-<a href="stock-in.html">Stock In</a>
-<a href="stock-out.html">Stock Out</a>
-<a href="transactions.html">Transactions</a>
-<a href="activity.html">Activity Log</a>
-<a href="profile.html">Profile</a>
-<a href="settings.html">Settings</a>
-</nav></aside><main class="sf-main"><header class="sf-top"><div><div class="sf-title">Transactions</div><div class="sf-muted">Complete history of stock-in and stock-out movements.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header><div id="alert" class="sf-alert"></div><section class="sf-card"><div class="sf-row"><button class="sf-btn" id="all" type="button">All Transactions</button><button class="sf-btn secondary" id="ins" type="button">Stock In</button><button class="sf-btn secondary" id="outs" type="button">Stock Out</button></div></section><section class="sf-card"><div class="sf-table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Product</th><th>Qty</th><th>Total</th><th>User</th></tr></thead><tbody id="rows"><tr><td colspan="7" class="sf-empty">Loading...</td></tr></tbody></table></div></section></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="transactions.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>StockFlow | Transactions</title>
+
+    <!-- Shared StockFlow styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="modules.css">
+
+    <!-- Transactions page styles -->
+    <link rel="stylesheet" href="transactions.css">
+</head>
+
+<body>
+
+    <div class="sf-layout">
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="sf-side">
+
+            <div class="sf-brand">
+                STOCKFLOW
+            </div>
+
+            <nav class="sf-nav">
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="inventory-dashboard.html">
+                    Inventory Dashboard
+                </a>
+
+                <a href="products.html">
+                    Products
+                </a>
+
+                <a href="inventory.html">
+                    Inventory
+                </a>
+
+                <a href="categories.html">
+                    Categories
+                </a>
+
+                <a href="suppliers.html">
+                    Suppliers
+                </a>
+
+                <a href="stock-in.html">
+                    Stock In
+                </a>
+
+                <a href="stock-out.html">
+                    Stock Out
+                </a>
+
+                <a
+                    href="transactions.html"
+                    class="active"
+                    aria-current="page"
+                >
+                    Transactions
+                </a>
+
+                <a href="activity.html">
+                    Activity Log
+                </a>
+
+                <a href="profile.html">
+                    Profile
+                </a>
+
+                <a href="settings.html">
+                    Settings
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =================================================
+             MAIN CONTENT
+        ================================================== -->
+
+        <main class="sf-main">
+
+            <!-- TOP HEADER -->
+
+            <header class="sf-top">
+
+                <div>
+
+                    <div class="sf-title">
+                        Transactions
+                    </div>
+
+                    <div class="sf-muted">
+                        Complete history of stock-in and stock-out movements.
+                    </div>
+
+                </div>
+
+                <button
+                    class="sf-btn secondary transaction-menu-btn"
+                    data-menu
+                    type="button"
+                    aria-label="Toggle navigation menu"
+                >
+                    ☰
+                </button>
+
+            </header>
+
+
+            <!-- ALERT -->
+
+            <div
+                id="alert"
+                class="sf-alert"
+                role="alert"
+                aria-live="polite"
+            ></div>
+
+
+            <!-- =================================================
+                 TRANSACTION FILTERS
+            ================================================== -->
+
+            <section class="sf-card transaction-filter-card">
+
+                <div class="transaction-filter-header">
+
+                    <div>
+
+                        <h2>
+                            Transaction History
+                        </h2>
+
+                        <p class="sf-muted">
+                            Filter inventory movements by transaction type.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="transaction-filters"
+                    role="group"
+                    aria-label="Transaction filters"
+                >
+
+                    <button
+                        class="sf-btn transaction-filter active"
+                        id="all"
+                        type="button"
+                        aria-pressed="true"
+                    >
+                        All Transactions
+                    </button>
+
+                    <button
+                        class="sf-btn secondary transaction-filter"
+                        id="ins"
+                        type="button"
+                        aria-pressed="false"
+                    >
+                        Stock In
+                    </button>
+
+                    <button
+                        class="sf-btn secondary transaction-filter"
+                        id="outs"
+                        type="button"
+                        aria-pressed="false"
+                    >
+                        Stock Out
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 TRANSACTION TABLE
+            ================================================== -->
+
+            <section class="sf-card transaction-table-card">
+
+                <div class="transaction-table-header">
+
+                    <div>
+
+                        <h2>
+                            Transaction Records
+                        </h2>
+
+                        <p class="sf-muted">
+                            Complete record of inventory activity.
+                        </p>
+
+                    </div>
+
+                    <div class="transaction-count" id="transactionCount">
+                        —
+                    </div>
+
+                </div>
+
+
+                <div class="sf-table-wrap transaction-table-wrap">
+
+                    <table class="transaction-table">
+
+                        <thead>
+
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Product</th>
+                                <th scope="col">Qty</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">User</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="rows">
+
+                            <tr>
+
+                                <td
+                                    colspan="7"
+                                    class="sf-empty transaction-loading"
+                                >
+                                    Loading transactions...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="main.js"></script>
+    <script src="transactions.js"></script>
+
+</body>
+
+</html>
