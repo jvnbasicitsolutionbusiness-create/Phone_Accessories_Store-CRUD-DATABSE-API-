@@ -1,1202 +1,984 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+    <title>Stock Out | StockFlow</title>
 
-  <title>Stock Out | StockFlow</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-  <!-- =====================================================
-       FONTS
-  ====================================================== -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    >
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  >
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
 
-  <!-- =====================================================
-       FONT AWESOME
-  ====================================================== -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-  >
-
-  <!-- =====================================================
-       STOCKFLOW CSS
-  ====================================================== -->
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="stock-out.css">
+    <!-- StockFlow CSS -->
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./stock-out.css">
 </head>
 
 <body>
 
-  <!-- =====================================================
-       SIDEBAR
-  ===================================================== -->
+    <!-- ================================================
+         SIDEBAR
+    ================================================= -->
 
-  <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-    <!-- BRAND -->
+        <div class="sidebar-brand">
 
-    <div class="sidebar-brand">
-
-      <div class="brand-logo">
-        <span>SF</span>
-      </div>
-
-      <div class="brand-text">
-
-        <strong>
-          StockFlow
-        </strong>
-
-        <small>
-          Inventory System
-        </small>
-
-      </div>
-
-    </div>
-
-
-    <!-- USER -->
-
-    <div class="sidebar-user">
-
-      <div
-        class="sidebar-avatar"
-        id="sidebarAvatar"
-      >
-        U
-      </div>
-
-      <div class="sidebar-user-info">
-
-        <strong id="sidebarUserName">
-          User
-        </strong>
-
-        <span id="sidebarUserRole">
-          Employee
-        </span>
-
-      </div>
-
-    </div>
-
-
-    <!-- NAVIGATION -->
-
-    <nav class="sidebar-nav">
-
-      <div class="nav-section-title">
-        MAIN
-      </div>
-
-      <a
-        href="dashboard.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-chart-pie"></i>
-
-        <span>
-          Dashboard
-        </span>
-
-      </a>
-
-
-      <div class="nav-section-title">
-        INVENTORY
-      </div>
-
-
-      <a
-        href="products.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-box"></i>
-
-        <span>
-          Products
-        </span>
-
-      </a>
-
-
-      <a
-        href="categories.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-layer-group"></i>
-
-        <span>
-          Categories
-        </span>
-
-      </a>
-
-
-      <a
-        href="stock-in.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-arrow-right-to-bracket"></i>
-
-        <span>
-          Stock In
-        </span>
-
-      </a>
-
-
-      <a
-        href="stock-out.html"
-        class="nav-item active"
-      >
-
-        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-
-        <span>
-          Stock Out
-        </span>
-
-      </a>
-
-
-      <div class="nav-section-title">
-        MANAGEMENT
-      </div>
-
-
-      <a
-        href="suppliers.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-truck-field"></i>
-
-        <span>
-          Suppliers
-        </span>
-
-      </a>
-
-
-      <a
-        href="inventory.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-warehouse"></i>
-
-        <span>
-          Inventory
-        </span>
-
-      </a>
-
-
-      <div class="nav-section-title">
-        REPORTS
-      </div>
-
-
-      <a
-        href="reports.html"
-        class="nav-item"
-      >
-
-        <i class="fa-solid fa-chart-column"></i>
-
-        <span>
-          Reports
-        </span>
-
-      </a>
-
-    </nav>
-
-
-    <!-- SIDEBAR FOOTER -->
-
-    <div class="sidebar-footer">
-
-      <button
-        type="button"
-        class="logout-btn"
-        id="logoutBtn"
-      >
-
-        <i class="fa-solid fa-right-from-bracket"></i>
-
-        <span>
-          Logout
-        </span>
-
-      </button>
-
-    </div>
-
-  </aside>
-
-
-  <!-- =====================================================
-       MOBILE SIDEBAR OVERLAY
-  ====================================================== -->
-
-  <div
-    class="sidebar-overlay"
-    id="sidebarOverlay"
-  ></div>
-
-
-  <!-- =====================================================
-       MAIN CONTENT
-  ====================================================== -->
-
-  <main class="main-content">
-
-
-    <!-- ===================================================
-         TOPBAR
-    ==================================================== -->
-
-    <header class="topbar">
-
-      <div class="topbar-left">
-
-        <button
-          type="button"
-          class="mobile-menu-btn"
-          id="mobileMenuBtn"
-          aria-label="Open navigation"
-        >
-
-          <i class="fa-solid fa-bars"></i>
-
-        </button>
-
-
-        <div>
-
-          <div class="breadcrumb">
-
-            <span>
-              Inventory
-            </span>
-
-            <i class="fa-solid fa-chevron-right"></i>
-
-            <strong>
-              Stock Out
-            </strong>
-
-          </div>
-
-          <h1>
-            Stock Out
-          </h1>
-
-        </div>
-
-      </div>
-
-
-      <div class="topbar-right">
-
-        <!-- CONNECTION -->
-
-        <div
-          class="connection-badge"
-          id="connectionBadge"
-        >
-
-          <span class="connection-dot"></span>
-
-          <span>
-            ONLINE
-          </span>
-
-        </div>
-
-
-        <!-- USER -->
-
-        <div class="topbar-user">
-
-          <div
-            class="topbar-avatar"
-            id="topbarAvatar"
-          >
-            U
-          </div>
-
-          <div class="topbar-user-info">
-
-            <strong id="topbarUserName">
-              User
-            </strong>
-
-            <small id="topbarUserRole">
-              Employee
-            </small>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </header>
-
-
-    <!-- ===================================================
-         PAGE CONTENT
-    ==================================================== -->
-
-    <section class="page-content">
-
-
-      <!-- =================================================
-           PAGE HEADER
-      ================================================== -->
-
-      <div class="page-heading">
-
-        <div>
-
-          <span class="page-eyebrow">
-            INVENTORY MANAGEMENT
-          </span>
-
-          <h2>
-            Release Stock
-          </h2>
-
-          <p>
-            Record outgoing products and update the available inventory.
-          </p>
-
-        </div>
-
-
-        <div class="page-heading-icon">
-
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-
-        </div>
-
-      </div>
-
-
-      <!-- =================================================
-           CONNECTION MESSAGE
-      ================================================== -->
-
-      <div
-        class="connection-message"
-        id="connectionMessage"
-        hidden
-      ></div>
-
-
-      <!-- =================================================
-           STOCK OUT LAYOUT
-      ================================================== -->
-
-      <div class="stock-out-layout">
-
-
-        <!-- ===============================================
-             STOCK OUT FORM
-        ================================================ -->
-
-        <section class="content-card stock-out-form-card">
-
-
-          <!-- CARD HEADER -->
-
-          <div class="card-header">
-
-            <div>
-
-              <h3>
-                Stock Out Details
-              </h3>
-
-              <p>
-                Enter the details of the outgoing stock.
-              </p>
-
+            <div class="brand-logo">
+                <span>SF</span>
             </div>
 
-
-            <div class="card-header-icon">
-
-              <i class="fa-solid fa-box"></i>
-
+            <div class="brand-text">
+                <strong>StockFlow</strong>
+                <small>Inventory System</small>
             </div>
 
-          </div>
+        </div>
 
 
-          <!-- FORM -->
+        <!-- User -->
 
-          <form
-            id="stockOutForm"
-            autocomplete="off"
-          >
-
-
-            <!-- PRODUCT -->
-
-            <div class="form-group">
-
-              <label for="productSelect">
-
-                Product
-
-                <span class="required">
-                  *
-                </span>
-
-              </label>
-
-
-              <div class="input-wrapper">
-
-                <i class="fa-solid fa-box"></i>
-
-                <select
-                  id="productSelect"
-                  name="product"
-                  required
-                >
-
-                  <option value="">
-                    Select a product
-                  </option>
-
-                </select>
-
-              </div>
-
-
-              <small
-                class="field-help"
-                id="stockAvailabilityHelp"
-              >
-                Select a product to view available stock.
-              </small>
-
-            </div>
-
-
-            <!-- AVAILABLE STOCK -->
+        <div class="sidebar-user">
 
             <div
-              class="available-stock"
-              id="availableStockBox"
+                class="sidebar-avatar"
+                id="sidebarAvatar"
             >
+                U
+            </div>
 
-              <div class="available-stock-icon">
+            <div class="sidebar-user-info">
 
-                <i class="fa-solid fa-cubes"></i>
-
-              </div>
-
-
-              <div class="available-stock-content">
-
-                <span>
-                  Available Stock
-                </span>
-
-                <strong id="availableStock">
-                  0
+                <strong id="sidebarUserName">
+                    User
                 </strong>
 
-              </div>
-
-            </div>
-
-
-            <!-- QUANTITY -->
-
-            <div class="form-group">
-
-              <label for="quantity">
-
-                Quantity
-
-                <span class="required">
-                  *
+                <span id="sidebarUserRole">
+                    Employee
                 </span>
 
-              </label>
-
-
-              <div class="input-wrapper">
-
-                <i class="fa-solid fa-cubes"></i>
-
-                <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  min="1"
-                  step="1"
-                  placeholder="Enter quantity"
-                  required
-                >
-
-              </div>
-
-
-              <small
-                class="field-help"
-                id="quantityHelp"
-              >
-                Quantity must not exceed available stock.
-              </small>
-
             </div>
 
-
-            <!-- REASON -->
-
-            <div class="form-group">
-
-              <label for="stockOutReason">
-
-                Reason
-
-                <span class="required">
-                  *
-                </span>
-
-              </label>
+        </div>
 
 
-              <div class="input-wrapper">
+        <!-- Navigation -->
 
-                <i class="fa-solid fa-list-check"></i>
+        <nav class="sidebar-nav">
 
-                <select
-                  id="stockOutReason"
-                  name="reason"
-                  required
-                >
-
-                  <option value="">
-                    Select reason
-                  </option>
-
-                  <option value="SALE">
-                    Customer Sale
-                  </option>
-
-                  <option value="DAMAGED">
-                    Damaged
-                  </option>
-
-                  <option value="DEFECTIVE">
-                    Defective
-                  </option>
-
-                  <option value="RETURN">
-                    Supplier Return
-                  </option>
-
-                  <option value="TRANSFER">
-                    Stock Transfer
-                  </option>
-
-                  <option value="INTERNAL_USE">
-                    Internal Use
-                  </option>
-
-                  <option value="ADJUSTMENT">
-                    Inventory Adjustment
-                  </option>
-
-                  <option value="OTHER">
-                    Other
-                  </option>
-
-                </select>
-
-              </div>
-
+            <div class="nav-section-title">
+                MAIN
             </div>
 
-
-            <!-- REFERENCE -->
-
-            <div class="form-group">
-
-              <label for="referenceNumber">
-
-                Reference Number
-
-              </label>
+            <a
+                href="./dashboard.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
 
 
-              <div class="input-wrapper">
-
-                <i class="fa-solid fa-receipt"></i>
-
-                <input
-                  type="text"
-                  id="referenceNumber"
-                  name="referenceNumber"
-                  maxlength="100"
-                  placeholder="e.g. SO-2026-001"
-                >
-
-              </div>
-
-
-              <small class="field-help">
-
-                Sales order, invoice, transfer, or other reference.
-
-              </small>
-
+            <div class="nav-section-title">
+                INVENTORY
             </div>
 
+            <a
+                href="./products.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-box"></i>
+                <span>Products</span>
+            </a>
 
-            <!-- RECIPIENT -->
+            <a
+                href="./categories.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Categories</span>
+            </a>
 
-            <div class="form-group">
+            <a
+                href="./stock-in.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span>Stock In</span>
+            </a>
 
-              <label for="recipient">
-
-                Recipient / Customer
-
-              </label>
-
-
-              <div class="input-wrapper">
-
-                <i class="fa-solid fa-user"></i>
-
-                <input
-                  type="text"
-                  id="recipient"
-                  name="recipient"
-                  maxlength="150"
-                  placeholder="Enter customer or recipient"
-                >
-
-              </div>
-
-            </div>
-
-
-            <!-- DATE -->
-
-            <div class="form-group">
-
-              <label for="stockOutDate">
-
-                Stock Out Date
-
-                <span class="required">
-                  *
-                </span>
-
-              </label>
-
-
-              <div class="input-wrapper">
-
-                <i class="fa-solid fa-calendar"></i>
-
-                <input
-                  type="date"
-                  id="stockOutDate"
-                  name="stockOutDate"
-                  required
-                >
-
-              </div>
-
-            </div>
-
-
-            <!-- NOTES -->
-
-            <div class="form-group">
-
-              <label for="notes">
-
-                Notes
-
-              </label>
-
-
-              <textarea
-                id="notes"
-                name="notes"
-                rows="4"
-                maxlength="500"
-                placeholder="Add optional notes about this stock transaction..."
-              ></textarea>
-
-            </div>
-
-
-            <!-- FORM ACTIONS -->
-
-            <div class="form-actions">
-
-
-              <button
-                type="button"
-                class="btn btn-secondary"
-                id="clearStockOutBtn"
-              >
-
-                <i class="fa-solid fa-rotate-left"></i>
-
-                Clear
-
-              </button>
-
-
-              <button
-                type="submit"
-                class="btn btn-primary"
-                id="saveStockOutBtn"
-              >
-
+            <a
+                href="./stock-out.html"
+                class="nav-item active"
+                aria-current="page"
+            >
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>Stock Out</span>
+            </a>
 
-                <span>
-                  Release Stock
-                </span>
 
-              </button>
+            <div class="nav-section-title">
+                MANAGEMENT
+            </div>
+
+            <a
+                href="./suppliers.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-truck-field"></i>
+                <span>Suppliers</span>
+            </a>
+
+            <a
+                href="./inventory.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-warehouse"></i>
+                <span>Inventory</span>
+            </a>
+
+
+            <div class="nav-section-title">
+                REPORTS
+            </div>
+
+            <a
+                href="./reports.html"
+                class="nav-item"
+            >
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Reports</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Sidebar Footer -->
+
+        <div class="sidebar-footer">
+
+            <button
+                type="button"
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- Mobile Overlay -->
+
+    <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+    ></div>
+
+
+    <!-- ================================================
+         MAIN CONTENT
+    ================================================= -->
+
+    <main class="main-content">
+
+        <!-- Topbar -->
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="mobile-menu-btn"
+                    id="mobileMenuBtn"
+                    aria-label="Open navigation"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                >
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+
+                <div>
+
+                    <div class="breadcrumb">
+
+                        <span>Inventory</span>
+
+                        <i class="fa-solid fa-chevron-right"></i>
+
+                        <strong>Stock Out</strong>
+
+                    </div>
+
+                    <h1>Stock Out</h1>
+
+                </div>
 
             </div>
 
-          </form>
+
+            <div class="topbar-right">
+
+                <!-- Connection -->
+
+                <div
+                    class="connection-badge"
+                    id="connectionBadge"
+                >
+                    <span class="connection-dot"></span>
+                    <span>ONLINE</span>
+                </div>
+
+
+                <!-- User -->
+
+                <div class="topbar-user">
+
+                    <div
+                        class="topbar-avatar"
+                        id="topbarAvatar"
+                    >
+                        U
+                    </div>
+
+                    <div class="topbar-user-info">
+
+                        <strong id="topbarUserName">
+                            User
+                        </strong>
+
+                        <small id="topbarUserRole">
+                            Employee
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================
+             PAGE CONTENT
+        ================================================= -->
+
+        <section class="page-content">
+
+
+            <!-- Page Heading -->
+
+            <div class="page-heading">
+
+                <div>
+
+                    <span class="page-eyebrow">
+                        INVENTORY MANAGEMENT
+                    </span>
+
+                    <h2>
+                        Release Stock
+                    </h2>
+
+                    <p>
+                        Record outgoing products and update the available inventory.
+                    </p>
+
+                </div>
+
+
+                <div class="page-heading-icon">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </div>
+
+            </div>
+
+
+            <!-- Connection Message -->
+
+            <div
+                class="connection-message"
+                id="connectionMessage"
+                hidden
+            ></div>
+
+
+            <!-- ============================================
+                 STOCK OUT LAYOUT
+            ============================================= -->
+
+            <div class="stock-out-layout">
+
+
+                <!-- Stock Out Form -->
+
+                <section class="content-card stock-out-form-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <h3>
+                                Stock Out Details
+                            </h3>
+
+                            <p>
+                                Enter the details of the outgoing stock.
+                            </p>
+
+                        </div>
+
+                        <div class="card-header-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+
+                    </div>
+
+
+                    <form
+                        id="stockOutForm"
+                        autocomplete="off"
+                    >
+
+
+                        <!-- Product -->
+
+                        <div class="form-group">
+
+                            <label for="productSelect">
+                                Product
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-box"></i>
+
+                                <select
+                                    id="productSelect"
+                                    name="product"
+                                    required
+                                >
+                                    <option value="">
+                                        Select a product
+                                    </option>
+                                </select>
+
+                            </div>
+
+                            <small
+                                class="field-help"
+                                id="stockAvailabilityHelp"
+                            >
+                                Select a product to view available stock.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Available Stock -->
+
+                        <div
+                            class="available-stock"
+                            id="availableStockBox"
+                        >
+
+                            <div class="available-stock-icon">
+                                <i class="fa-solid fa-cubes"></i>
+                            </div>
+
+                            <div class="available-stock-content">
+
+                                <span>
+                                    Available Stock
+                                </span>
+
+                                <strong id="availableStock">
+                                    0
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Quantity -->
+
+                        <div class="form-group">
+
+                            <label for="quantity">
+                                Quantity
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-cubes"></i>
+
+                                <input
+                                    type="number"
+                                    id="quantity"
+                                    name="quantity"
+                                    min="1"
+                                    step="1"
+                                    placeholder="Enter quantity"
+                                    required
+                                >
+
+                            </div>
+
+                            <small
+                                class="field-help"
+                                id="quantityHelp"
+                            >
+                                Quantity must not exceed available stock.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Reason -->
+
+                        <div class="form-group">
+
+                            <label for="stockOutReason">
+                                Reason
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-list-check"></i>
+
+                                <select
+                                    id="stockOutReason"
+                                    name="reason"
+                                    required
+                                >
+
+                                    <option value="">
+                                        Select reason
+                                    </option>
+
+                                    <option value="SALE">
+                                        Customer Sale
+                                    </option>
+
+                                    <option value="DAMAGED">
+                                        Damaged
+                                    </option>
+
+                                    <option value="DEFECTIVE">
+                                        Defective
+                                    </option>
+
+                                    <option value="RETURN">
+                                        Supplier Return
+                                    </option>
+
+                                    <option value="TRANSFER">
+                                        Stock Transfer
+                                    </option>
+
+                                    <option value="INTERNAL_USE">
+                                        Internal Use
+                                    </option>
+
+                                    <option value="ADJUSTMENT">
+                                        Inventory Adjustment
+                                    </option>
+
+                                    <option value="OTHER">
+                                        Other
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Reference -->
+
+                        <div class="form-group">
+
+                            <label for="referenceNumber">
+                                Reference Number
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-receipt"></i>
+
+                                <input
+                                    type="text"
+                                    id="referenceNumber"
+                                    name="referenceNumber"
+                                    maxlength="100"
+                                    placeholder="e.g. SO-2026-001"
+                                >
+
+                            </div>
+
+                            <small class="field-help">
+                                Sales order, invoice, transfer, or other reference.
+                            </small>
+
+                        </div>
+
+
+                        <!-- Recipient -->
+
+                        <div class="form-group">
+
+                            <label for="recipient">
+                                Recipient / Customer
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-user"></i>
+
+                                <input
+                                    type="text"
+                                    id="recipient"
+                                    name="recipient"
+                                    maxlength="150"
+                                    placeholder="Enter customer or recipient"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Date -->
+
+                        <div class="form-group">
+
+                            <label for="stockOutDate">
+                                Stock Out Date
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="fa-solid fa-calendar"></i>
+
+                                <input
+                                    type="date"
+                                    id="stockOutDate"
+                                    name="stockOutDate"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Notes -->
+
+                        <div class="form-group">
+
+                            <label for="notes">
+                                Notes
+                            </label>
+
+                            <textarea
+                                id="notes"
+                                name="notes"
+                                rows="4"
+                                maxlength="500"
+                                placeholder="Add optional notes about this stock transaction..."
+                            ></textarea>
+
+                        </div>
+
+
+                        <!-- Actions -->
+
+                        <div class="form-actions">
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                id="clearStockOutBtn"
+                            >
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Clear
+                            </button>
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                id="saveStockOutBtn"
+                            >
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+                                <span>
+                                    Release Stock
+                                </span>
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </section>
+
+
+                <!-- =========================================
+                     TRANSACTION PREVIEW
+                ========================================== -->
+
+                <aside class="content-card stock-preview-card">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <h3>
+                                Transaction Preview
+                            </h3>
+
+                            <p>
+                                Review the outgoing stock before saving.
+                            </p>
+
+                        </div>
+
+                        <div class="card-header-icon">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+
+                    </div>
+
+
+                    <div class="preview-body">
+
+
+                        <!-- Product -->
+
+                        <div class="preview-product">
+
+                            <div class="preview-product-icon">
+                                <i class="fa-solid fa-box"></i>
+                            </div>
+
+                            <div>
+
+                                <strong id="previewProduct">
+                                    No product selected
+                                </strong>
+
+                                <span id="previewAvailable">
+                                    Available stock: 0
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Quantity -->
+
+                        <div class="preview-item">
+
+                            <span>Quantity</span>
+
+                            <strong id="previewQuantity">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Remaining -->
+
+                        <div class="preview-item">
+
+                            <span>Remaining Stock</span>
+
+                            <strong id="previewRemaining">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Reason -->
+
+                        <div class="preview-item">
+
+                            <span>Reason</span>
+
+                            <strong id="previewReason">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Recipient -->
+
+                        <div class="preview-item">
+
+                            <span>Recipient</span>
+
+                            <strong id="previewRecipient">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Reference -->
+
+                        <div class="preview-item">
+
+                            <span>Reference</span>
+
+                            <strong id="previewReference">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <!-- Date -->
+
+                        <div class="preview-item">
+
+                            <span>Date</span>
+
+                            <strong id="previewDate">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Warning -->
+
+                    <div class="preview-warning">
+
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+                        <p>
+                            Stock released through this transaction will be
+                            deducted from the selected product's available quantity.
+                        </p>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+
+            <!-- ============================================
+                 RECENT STOCK OUT
+            ============================================= -->
+
+            <section class="content-card recent-stock-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h3>
+                            Recent Stock Out
+                        </h3>
+
+                        <p>
+                            Latest outgoing inventory transactions.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary btn-small"
+                        id="refreshStockOutBtn"
+                    >
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Refresh
+                    </button>
+
+                </div>
+
+
+                <!-- Table -->
+
+                <div class="table-wrapper">
+
+                    <table class="data-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Reason</th>
+                                <th>Reference</th>
+                                <th>Recipient</th>
+                                <th>User</th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="stockOutTableBody">
+
+                            <tr>
+
+                                <td
+                                    colspan="7"
+                                    class="table-loading"
+                                >
+
+                                    <i class="fa-solid fa-spinner fa-spin"></i>
+
+                                    Loading stock transactions...
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
 
         </section>
 
-
-        <!-- ===============================================
-             TRANSACTION PREVIEW
-        ================================================ -->
-
-        <aside class="content-card stock-preview-card">
+    </main>
 
 
-          <!-- HEADER -->
+    <!-- ================================================
+         SUCCESS / ERROR MODAL
+    ================================================= -->
 
-          <div class="card-header">
+    <div
+        class="modal-backdrop"
+        id="stockOutModal"
+        hidden
+    >
 
-            <div>
+        <div
+            class="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stockOutModalTitle"
+        >
 
-              <h3>
-                Transaction Preview
-              </h3>
+            <button
+                type="button"
+                class="modal-close"
+                id="closeStockOutModal"
+                aria-label="Close"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
 
-              <p>
-                Review the outgoing stock before saving.
-              </p>
 
+            <div
+                class="modal-icon"
+                id="stockOutModalIcon"
+            >
+                <i class="fa-solid fa-check"></i>
             </div>
 
 
-            <div class="card-header-icon">
-
-              <i class="fa-solid fa-eye"></i>
-
-            </div>
-
-          </div>
-
-
-          <!-- PREVIEW -->
-
-          <div class="preview-body">
-
-
-            <!-- PRODUCT -->
-
-            <div class="preview-product">
-
-              <div class="preview-product-icon">
-
-                <i class="fa-solid fa-box"></i>
-
-              </div>
-
-
-              <div>
-
-                <strong id="previewProduct">
-                  No product selected
-                </strong>
-
-                <span id="previewAvailable">
-                  Available stock: 0
-                </span>
-
-              </div>
-
-            </div>
-
-
-            <!-- QUANTITY -->
-
-            <div class="preview-item">
-
-              <span>
-                Quantity
-              </span>
-
-              <strong id="previewQuantity">
-                0
-              </strong>
-
-            </div>
-
-
-            <!-- REMAINING -->
-
-            <div class="preview-item">
-
-              <span>
-                Remaining Stock
-              </span>
-
-              <strong id="previewRemaining">
-                0
-              </strong>
-
-            </div>
-
-
-            <!-- REASON -->
-
-            <div class="preview-item">
-
-              <span>
-                Reason
-              </span>
-
-              <strong id="previewReason">
-                —
-              </strong>
-
-            </div>
-
-
-            <!-- RECIPIENT -->
-
-            <div class="preview-item">
-
-              <span>
-                Recipient
-              </span>
-
-              <strong id="previewRecipient">
-                —
-              </strong>
-
-            </div>
-
-
-            <!-- REFERENCE -->
-
-            <div class="preview-item">
-
-              <span>
-                Reference
-              </span>
-
-              <strong id="previewReference">
-                —
-              </strong>
-
-            </div>
-
-
-            <!-- DATE -->
-
-            <div class="preview-item">
-
-              <span>
-                Date
-              </span>
-
-              <strong id="previewDate">
-                —
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          <!-- WARNING -->
-
-          <div class="preview-warning">
-
-            <i class="fa-solid fa-triangle-exclamation"></i>
-
-            <p>
-              Stock released through this transaction will be
-              deducted from the selected product's available quantity.
-            </p>
-
-          </div>
-
-        </aside>
-
-      </div>
-
-
-      <!-- =================================================
-           RECENT STOCK OUT
-      ================================================== -->
-
-      <section class="content-card recent-stock-card">
-
-
-        <!-- HEADER -->
-
-        <div class="card-header">
-
-          <div>
-
-            <h3>
-              Recent Stock Out
+            <h3 id="stockOutModalTitle">
+                Stock Released Successfully
             </h3>
 
-            <p>
-              Latest outgoing inventory transactions.
+
+            <p id="stockOutModalMessage">
+                The inventory has been updated successfully.
             </p>
 
-          </div>
 
-
-          <button
-            type="button"
-            class="btn btn-secondary btn-small"
-            id="refreshStockOutBtn"
-          >
-
-            <i class="fa-solid fa-arrows-rotate"></i>
-
-            Refresh
-
-          </button>
+            <button
+                type="button"
+                class="btn btn-primary modal-action"
+                id="stockOutModalOk"
+            >
+                Continue
+            </button>
 
         </div>
 
-
-        <!-- TABLE -->
-
-        <div class="table-wrapper">
-
-          <table class="data-table">
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Date
-                </th>
-
-                <th>
-                  Product
-                </th>
-
-                <th>
-                  Quantity
-                </th>
-
-                <th>
-                  Reason
-                </th>
-
-                <th>
-                  Reference
-                </th>
-
-                <th>
-                  Recipient
-                </th>
-
-                <th>
-                  User
-                </th>
-
-              </tr>
-
-            </thead>
+    </div>
 
 
-            <tbody id="stockOutTableBody">
+    <!-- ================================================
+         LOADING OVERLAY
+    ================================================= -->
 
-              <tr>
+    <div
+        class="loading-overlay"
+        id="stockOutLoading"
+        hidden
+    >
 
-                <td
-                  colspan="7"
-                  class="table-loading"
-                >
+        <div class="loading-card">
 
-                  <i class="fa-solid fa-spinner fa-spin"></i>
+            <div class="loading-spinner"></div>
 
-                  Loading stock transactions...
+            <strong>
+                Updating inventory...
+            </strong>
 
-                </td>
-
-              </tr>
-
-            </tbody>
-
-          </table>
+            <span>
+                Please wait while the stock transaction is being saved.
+            </span>
 
         </div>
 
-      </section>
-
-
-    </section>
-
-  </main>
-
-
-  <!-- =====================================================
-       SUCCESS / ERROR MODAL
-  ====================================================== -->
-
-  <div
-    class="modal-backdrop"
-    id="stockOutModal"
-    hidden
-  >
-
-    <div class="modal-card">
-
-
-      <button
-        type="button"
-        class="modal-close"
-        id="closeStockOutModal"
-        aria-label="Close"
-      >
-
-        <i class="fa-solid fa-xmark"></i>
-
-      </button>
-
-
-      <div
-        class="modal-icon"
-        id="stockOutModalIcon"
-      >
-
-        <i class="fa-solid fa-check"></i>
-
-      </div>
-
-
-      <h3 id="stockOutModalTitle">
-        Stock Released Successfully
-      </h3>
-
-
-      <p id="stockOutModalMessage">
-        The inventory has been updated successfully.
-      </p>
-
-
-      <button
-        type="button"
-        class="btn btn-primary modal-action"
-        id="stockOutModalOk"
-      >
-
-        Continue
-
-      </button>
-
     </div>
 
-  </div>
 
+    <!-- ================================================
+         JAVASCRIPT
+    ================================================= -->
 
-  <!-- =====================================================
-       LOADING OVERLAY
-  ====================================================== -->
-
-  <div
-    class="loading-overlay"
-    id="stockOutLoading"
-    hidden
-  >
-
-    <div class="loading-card">
-
-
-      <div class="loading-spinner"></div>
-
-
-      <strong>
-        Updating inventory...
-      </strong>
-
-
-      <span>
-        Please wait while the stock transaction is being saved.
-      </span>
-
-    </div>
-
-  </div>
-
-
-  <!-- =====================================================
-       JAVASCRIPT
-  ====================================================== -->
-
-  <!-- Configuration -->
-
-  <script src="config.js"></script>
-
-
-  <!-- API -->
-
-  <script src="API.js"></script>
-
-
-  <!-- Authentication -->
-
-  <script src="auth.js"></script>
-
-
-  <!-- Stock Out Module -->
-
-  <script src="stock-out.js"></script>
+    <script src="./config.js"></script>
+    <script src="./API.js"></script>
+    <script src="./auth.js"></script>
+    <script src="./stock-out.js"></script>
 
 </body>
 </html>
