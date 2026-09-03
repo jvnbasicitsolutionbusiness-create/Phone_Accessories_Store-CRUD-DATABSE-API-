@@ -1,0 +1,713 @@
+/* =========================================================
+   STOCKFLOW — SUPPLIERS PAGE
+   Page-specific professional styling
+   Requires:
+   - styles.css
+   - modules.css
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE FOUNDATION
+   ========================================================= */
+
+.sf-main {
+    min-height: 100vh;
+}
+
+.sf-main,
+.sf-card,
+.sf-form,
+.sf-table-wrap {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
+
+.sf-top {
+    gap: 20px;
+}
+
+.sf-title {
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.sf-top .sf-muted {
+    max-width: 650px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MENU BUTTON
+   ========================================================= */
+
+.sf-top > .sf-btn.secondary[data-menu] {
+    display: none;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   ALERT
+   ========================================================= */
+
+.sf-alert {
+    border: 1px solid transparent;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.sf-alert.show {
+    animation: supplierAlertIn 0.18s ease-out;
+}
+
+@keyframes supplierAlertIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.sf-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.03),
+        0 8px 24px rgba(15, 23, 42, 0.035);
+
+    transition:
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.sf-card:hover {
+    border-color: #dbe2ea;
+
+    box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.035),
+        0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.sf-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 18px;
+}
+
+.sf-card-head h3 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.sf-card-head .sf-muted {
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   SUPPLIER FORM
+   ========================================================= */
+
+#supplierForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+}
+
+#supplierForm input,
+#supplierForm select {
+    height: 43px;
+
+    color: #0f172a;
+    background: #ffffff;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+
+    outline: none;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+#supplierForm input {
+    padding: 0 12px;
+}
+
+#supplierForm select {
+    padding: 0 35px 0 12px;
+
+    cursor: pointer;
+}
+
+#supplierForm input::placeholder {
+    color: #94a3b8;
+}
+
+#supplierForm input:hover,
+#supplierForm select:hover {
+    border-color: #cbd5e1;
+}
+
+#supplierForm input:focus,
+#supplierForm select:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+#supplierForm input:disabled,
+#supplierForm select:disabled {
+    color: #94a3b8;
+    background: #f8fafc;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   FULL WIDTH FIELDS
+   ========================================================= */
+
+#supplierForm .full {
+    grid-column: 1 / -1;
+}
+
+#address {
+    width: 100%;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+   ========================================================= */
+
+#supplierForm .sf-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    gap: 9px;
+
+    padding-top: 5px;
+
+    border-top: 1px solid #eef2f7;
+}
+
+#supplierForm .sf-row .sf-btn {
+    min-width: 125px;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+#supplierForm .sf-btn {
+    min-height: 40px;
+
+    padding: 9px 15px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
+}
+
+#supplierForm .sf-btn:not(.secondary) {
+    background: #2563eb;
+
+    box-shadow:
+        0 2px 5px rgba(37, 99, 235, 0.16);
+}
+
+#supplierForm .sf-btn:not(.secondary):hover {
+    background: #1d4ed8;
+
+    box-shadow:
+        0 4px 10px rgba(37, 99, 235, 0.20);
+}
+
+#supplierForm .sf-btn.secondary {
+    color: #334155;
+    background: #ffffff;
+
+    border: 1px solid #dbe2ea;
+}
+
+#supplierForm .sf-btn.secondary:hover {
+    color: #0f172a;
+    background: #f8fafc;
+
+    border-color: #cbd5e1;
+}
+
+#supplierForm .sf-btn:active {
+    transform: translateY(1px);
+}
+
+#supplierForm .sf-btn:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.20);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   SUPPLIER DIRECTORY
+   ========================================================= */
+
+.sf-table-wrap {
+    width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.sf-table-wrap table {
+    width: 100%;
+    min-width: 760px;
+
+    border-collapse: collapse;
+}
+
+.sf-table-wrap th {
+    padding: 12px 13px;
+
+    color: #64748b;
+    background: #f8fafc;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    white-space: nowrap;
+}
+
+.sf-table-wrap td {
+    padding: 13px;
+
+    color: #334155;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    font-size: 10px;
+
+    vertical-align: middle;
+}
+
+.sf-table-wrap tbody tr {
+    transition:
+        background-color 0.12s ease;
+}
+
+.sf-table-wrap tbody tr:hover {
+    background: #f8fbff;
+}
+
+.sf-table-wrap tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   SUPPLIER NAME
+   ========================================================= */
+
+.sf-table-wrap td:first-child {
+    color: #0f172a;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   EMAIL
+   ========================================================= */
+
+.sf-table-wrap td:nth-child(4) {
+    color: #475569;
+}
+
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.sf-table-wrap .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 64px;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.02em;
+}
+
+.sf-table-wrap .badge.active {
+    color: #166534;
+    background: #dcfce7;
+
+    border: 1px solid #bbf7d0;
+}
+
+.sf-table-wrap .badge.inactive,
+.sf-table-wrap .badge.out,
+.sf-table-wrap .badge.danger {
+    color: #991b1b;
+    background: #fee2e2;
+
+    border: 1px solid #fecaca;
+}
+
+.sf-table-wrap .badge.neutral {
+    color: #475569;
+    background: #f1f5f9;
+
+    border: 1px solid #e2e8f0;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+   ========================================================= */
+
+.sf-actions {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+}
+
+.sf-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 32px;
+    min-height: 30px;
+
+    padding: 6px 9px;
+
+    color: #475569;
+    background: #ffffff;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 700;
+
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.sf-actions button:hover {
+    color: #2563eb;
+    background: #eff6ff;
+
+    border-color: #bfdbfe;
+}
+
+.sf-actions button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    outline-offset: 1px;
+}
+
+.sf-actions button.danger:hover {
+    color: #b91c1c;
+    background: #fef2f2;
+
+    border-color: #fecaca;
+}
+
+
+/* =========================================================
+   EMPTY / LOADING STATE
+   ========================================================= */
+
+.sf-empty {
+    height: 120px;
+
+    padding: 30px 15px !important;
+
+    color: #94a3b8 !important;
+
+    font-size: 11px !important;
+
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.sf-empty::before {
+    content: "";
+
+    display: block;
+
+    width: 32px;
+    height: 32px;
+
+    margin: 0 auto 9px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #eff6ff,
+            #f8fafc
+        );
+
+    border: 1px solid #dbeafe;
+    border-radius: 9px;
+}
+
+
+/* =========================================================
+   FORM VALIDATION
+   ========================================================= */
+
+#supplierForm input:user-invalid,
+#supplierForm select:user-invalid {
+    border-color: #fca5a5;
+}
+
+#supplierForm input:user-invalid:focus,
+#supplierForm select:user-invalid:focus {
+    border-color: #ef4444;
+
+    box-shadow:
+        0 0 0 3px rgba(239, 68, 68, 0.10);
+}
+
+
+/* =========================================================
+   DESKTOP SPACING
+   ========================================================= */
+
+@media (min-width: 1001px) {
+
+    .sf-main {
+        padding-top: 28px;
+    }
+
+    .sf-card {
+        margin-bottom: 18px;
+    }
+
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    #supplierForm {
+        grid-template-columns: 1fr;
+    }
+
+    #supplierForm .full {
+        grid-column: auto;
+    }
+
+    #supplierForm .sf-row {
+        grid-column: auto;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE NAVIGATION
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .sf-top > .sf-btn.secondary[data-menu] {
+        display: inline-flex;
+    }
+
+    .sf-main {
+        padding: 18px 15px;
+    }
+
+    .sf-title {
+        font-size: 21px;
+    }
+
+    .sf-top .sf-muted {
+        max-width: 90%;
+    }
+
+    .sf-card {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .sf-card-head {
+        margin-bottom: 15px;
+    }
+
+    #supplierForm {
+        gap: 12px;
+    }
+
+    #supplierForm .sf-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #supplierForm .sf-row .sf-btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .sf-main {
+        padding: 14px 11px;
+    }
+
+    .sf-top {
+        margin-bottom: 13px;
+    }
+
+    .sf-title {
+        font-size: 19px;
+    }
+
+    .sf-top .sf-muted {
+        font-size: 9px;
+    }
+
+    .sf-card {
+        padding: 13px;
+    }
+
+    .sf-card-head h3 {
+        font-size: 14px;
+    }
+
+    .sf-card-head .sf-muted {
+        font-size: 9px;
+    }
+
+    #supplierForm input,
+    #supplierForm select {
+        height: 42px;
+
+        font-size: 11px;
+    }
+
+    .sf-table-wrap table {
+        min-width: 720px;
+    }
+
+    .sf-table-wrap th,
+    .sf-table-wrap td {
+        padding: 10px;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+    }
+
+}
