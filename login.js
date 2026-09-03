@@ -1,3 +1,15 @@
+/* ============================================================
+   STOCKFLOW — LOGIN CONTROLLER
+   Handles:
+   - Existing session check
+   - Login validation
+   - API authentication
+   - Unverified account / OTP redirect
+   - Session storage
+   - Dashboard redirect
+   - Login button loading state
+   ============================================================ */
+
 document.addEventListener("DOMContentLoaded", () => {
 
     "use strict";
@@ -10,20 +22,48 @@ document.addEventListener("DOMContentLoaded", () => {
     const form =
         document.getElementById("loginForm");
 
+
     const message =
-        document.getElementById("message");
+        document.getElementById("loginMessage");
+
 
     const button =
         document.getElementById("loginButton");
 
+
     const identityInput =
         document.getElementById("loginIdentity");
+
 
     const passwordInput =
         document.getElementById("loginPassword");
 
 
+    /*
+     * login.js can safely exist on other pages.
+     * If the login form is not present, stop here.
+     */
+
     if (!form) {
+        return;
+    }
+
+
+    /* =========================================================
+       CHECK REQUIRED ELEMENTS
+       ========================================================= */
+
+    if (
+        !message ||
+        !button ||
+        !identityInput ||
+        !passwordInput
+    ) {
+
+        console.error(
+            "STOCKFLOW Login: Required login elements are missing."
+        );
+
         return;
     }
 
@@ -42,20 +82,33 @@ document.addEventListener("DOMContentLoaded", () => {
             const currentUser =
                 StockFlowAuth.getCurrentUser();
 
+
             if (currentUser) {
 
+                const dashboard =
+                    (
+                        window.STOCKFLOW_CONFIG &&
+                        STOCKFLOW_CONFIG.ROUTES &&
+                        STOCKFLOW_CONFIG.ROUTES.dashboard
+                    )
+                    ||
+                    "dashboard.html";
+
+
                 window.location.replace(
-                    STOCKFLOW_CONFIG.ROUTES.dashboard
+                    dashboard
                 );
+
 
                 return;
             }
+
         }
 
     } catch (error) {
 
         console.warn(
-            "Unable to check StockFlow session:",
+            "Unable to check STOCKFLOW session:",
             error
         );
 
@@ -63,13 +116,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       MESSAGE
+       MESSAGE FUNCTIONS
        ========================================================= */
 
     function clearMessage() {
 
         message.textContent = "";
-        message.className = "auth-message";
+
+        message.className =
+            "auth-message";
 
     }
 
@@ -81,6 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         message.textContent =
             text || "";
+
 
         message.className =
             "auth-message " + type;
@@ -94,7 +150,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setLoading(loading) {
 
-        button.disabled = loading;
+        button.disabled =
+            loading;
+
 
         button.classList.toggle(
             "loading",
@@ -103,10 +161,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const text =
-            button.querySelector(".button-text");
+            button.querySelector(
+                ".button-text"
+            );
+
 
         const loader =
-            button.querySelector(".button-loader");
+            button.querySelector(
+                ".button-loader"
+            );
 
 
         if (text) {
@@ -129,57 +192,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =========================================================
        PASSWORD TOGGLE
+       =========================================================
+       
+       NOTE:
+       auth.js also handles password toggles in the new setup.
+       Therefore we DO NOT attach another password listener here.
+       
+       This prevents the button from being triggered twice.
        ========================================================= */
-
-    document
-        .querySelectorAll(".password-toggle")
-        .forEach(toggle => {
-
-            toggle.addEventListener(
-                "click",
-                () => {
-
-                    const target =
-                        document.getElementById(
-                            toggle.dataset.target
-                        );
-
-                    if (!target) {
-                        return;
-                    }
-
-
-                    const show =
-                        target.type === "password";
-
-
-                    target.type =
-                        show
-                            ? "text"
-                            : "password";
-
-
-                    toggle.textContent =
-                        show
-                            ? "Hide"
-                            : "Show";
-
-
-                    toggle.setAttribute(
-                        "aria-label",
-                        show
-                            ? "Hide password"
-                            : "Show password"
-                    );
-
-                }
-            );
-
-        });
 
 
     /* =========================================================
-       LOGIN
+       CLEAR MESSAGE WHEN USER STARTS TYPING
+       ========================================================= */
+
+    identityInput.addEventListener(
+        "input",
+        () => {
+
+            if (
+                message.textContent
+            ) {
+
+                clearMessage();
+
+            }
+
+        }
+    );
+
+
+    passwordInput.addEventListener(
+        "input",
+        () => {
+
+            if (
+                message.textContent
+            ) {
+
+                clearMessage();
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
+       LOGIN FORM
        ========================================================= */
 
     form.addEventListener(
@@ -188,27 +248,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
+
+            /* -------------------------------------------------
+               CLEAR OLD MESSAGE
+               ------------------------------------------------- */
+
             clearMessage();
 
 
+            /* -------------------------------------------------
+               GET FORM VALUES
+               ------------------------------------------------- */
+
             const identity =
                 identityInput.value.trim();
+
 
             const password =
                 passwordInput.value;
 
 
-            /* ================================================
+            /* =================================================
                CLIENT-SIDE VALIDATION
-               ================================================ */
+               ================================================= */
 
             if (!identity) {
 
                 showMessage(
-                    "Please enter your username, email or phone number."
+                    "Please enter your username, email or phone number.",
+                    "error"
                 );
 
+
                 identityInput.focus();
+
 
                 return;
             }
@@ -217,30 +290,62 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!password) {
 
                 showMessage(
-                    "Please enter your password."
+                    "Please enter your password.",
+                    "error"
                 );
 
+
                 passwordInput.focus();
+
 
                 return;
             }
 
 
-            /* ================================================
+            /* =================================================
                START LOADING
-               ================================================ */
+               ================================================= */
 
             setLoading(true);
 
 
             try {
 
+                /* =================================================
+                   CHECK API
+                   ================================================= */
+
+                if (
+                    !window.StockFlowAPI ||
+                    typeof StockFlowAPI.login !== "function"
+                ) {
+
+                    throw new Error(
+                        "The login service is currently unavailable."
+                    );
+
+                }
+
+
+                /* =================================================
+                   SEND LOGIN REQUEST
+                   ================================================= */
+
                 const response =
                     await StockFlowAPI.login({
-                        identity: identity,
-                        password: password
+
+                        identity:
+                            identity,
+
+                        password:
+                            password
+
                     });
 
+
+                /* =================================================
+                   EMPTY RESPONSE
+                   ================================================= */
 
                 if (!response) {
 
@@ -251,37 +356,56 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 
-                /* ============================================
+                /* =================================================
                    LOGIN FAILED
-                   ============================================ */
+                   ================================================= */
 
                 if (!response.success) {
 
 
-                    /*
-                     * UNVERIFIED ACCOUNT
-                     *
-                     * The backend may return verified:false
-                     * or requiresVerification:true.
-                     */
+                    /* =============================================
+                       UNVERIFIED ACCOUNT
+                       ============================================= */
 
                     if (
                         response.verified === false ||
                         response.requiresVerification === true
                     ) {
 
+
+                        /*
+                         * Store the identity temporarily
+                         * so the OTP page knows which account
+                         * is being verified.
+                         */
+
                         const otpIdentity =
                             response.identity ||
                             response.username ||
+                            response.email ||
                             response.gmail ||
+                            response.phone ||
                             identity;
 
 
+                        const otpKey =
+                            (
+                                window.STOCKFLOW_CONFIG &&
+                                STOCKFLOW_CONFIG.OTP_KEY
+                            )
+                            ||
+                            "STOCKFLOW_OTP_IDENTITY";
+
+
                         sessionStorage.setItem(
-                            STOCKFLOW_CONFIG.OTP_KEY,
+                            otpKey,
                             otpIdentity
                         );
 
+
+                        /* -----------------------------------------
+                           SHOW WARNING
+                           ----------------------------------------- */
 
                         showMessage(
                             response.message ||
@@ -289,6 +413,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             "warning"
                         );
 
+
+                        /* -----------------------------------------
+                           REDIRECT TO OTP
+                           ----------------------------------------- */
 
                         setTimeout(
                             () => {
@@ -305,9 +433,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
 
-                    /*
-                     * NORMAL LOGIN ERROR
-                     */
+                    /* =============================================
+                       ACCOUNT LOCKED
+                       ============================================= */
+
+                    if (
+                        response.locked === true ||
+                        response.isLocked === true
+                    ) {
+
+                        showMessage(
+                            response.message ||
+                            "Your account is temporarily locked. Please try again later.",
+                            "warning"
+                        );
+
+
+                        return;
+                    }
+
+
+                    /* =============================================
+                       NORMAL LOGIN ERROR
+                       ============================================= */
 
                     showMessage(
                         response.message ||
@@ -320,9 +468,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 
-                /* ============================================
+                /* =================================================
                    SUCCESSFUL LOGIN
-                   ============================================ */
+                   ================================================= */
 
                 if (
                     window.StockFlowAuth &&
@@ -347,15 +495,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 
+                /* =================================================
+                   SUCCESS MESSAGE
+                   ================================================= */
+
                 showMessage(
                     "Sign in successful. Redirecting...",
                     "success"
                 );
 
 
-                /* ============================================
-                   DASHBOARD REDIRECT
-                   ============================================ */
+                /* =================================================
+                   DASHBOARD ROUTE
+                   ================================================= */
 
                 const dashboard =
                     (
@@ -366,6 +518,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     ||
                     "dashboard.html";
 
+
+                /* =================================================
+                   REDIRECT
+                   ================================================= */
 
                 setTimeout(
                     () => {
@@ -382,7 +538,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (error) {
 
                 console.error(
-                    "StockFlow login error:",
+                    "STOCKFLOW login error:",
                     error
                 );
 
