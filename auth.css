@@ -101,7 +101,6 @@
 
 /* ============================================================
    MAIN AUTH SHELL
-   THIS IS THE IMPORTANT FIX
    ============================================================ */
 
 .auth-shell {
@@ -513,7 +512,6 @@
 
 /* ============================================================
    MOBILE BRAND
-   Hidden on desktop
    ============================================================ */
 
 .auth-mobile-brand {
@@ -630,6 +628,7 @@
     min-height: 42px;
 
     border: 0;
+    outline: none;
 
     border-radius: 8px;
 
@@ -642,6 +641,9 @@
     font-weight: 700;
 
     cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
 
     transition:
         0.2s ease;
@@ -659,6 +661,15 @@
     box-shadow:
         0 2px 7px
         rgba(15, 23, 42, 0.08);
+}
+
+.auth-tab:focus,
+.auth-tab:focus-visible {
+    outline: none !important;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(37, 99, 235, 0.12);
 }
 
 
@@ -921,34 +932,45 @@
 
 .password-wrapper {
     position: relative;
+
+    width: 100%;
 }
 
 .password-wrapper input {
-    padding-right: 55px;
+    padding-right: 58px;
 }
+
+
+/* ============================================================
+   PASSWORD SHOW / HIDE BUTTON
+   ============================================================ */
 
 .password-toggle {
     position: absolute;
 
     top: 50%;
-    right: 6px;
+    right: 7px;
 
-    width: 40px;
+    width: 42px;
     height: 34px;
 
     transform:
         translateY(-50%);
 
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
     justify-content: center;
 
-    border: 0;
+    margin: 0;
+    padding: 0;
+
+    border: none !important;
+    outline: none !important;
 
     border-radius: 7px;
 
-    background: transparent;
+    background: transparent !important;
 
     color: #667085;
 
@@ -956,13 +978,67 @@
 
     font-weight: 700;
 
+    line-height: 1;
+
     cursor: pointer;
+
+    box-shadow: none !important;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease;
 }
 
 .password-toggle:hover {
-    background: #f2f4f7;
+    border: none !important;
+    outline: none !important;
+
+    background: #f2f4f7 !important;
 
     color: #344054;
+
+    box-shadow: none !important;
+}
+
+.password-toggle:active {
+    border: none !important;
+    outline: none !important;
+
+    background: #eaecf0 !important;
+
+    color: #344054;
+
+    box-shadow: none !important;
+
+    transform:
+        translateY(-50%);
+}
+
+.password-toggle:focus,
+.password-toggle:focus-visible {
+    border: none !important;
+    outline: none !important;
+
+    outline-offset: 0;
+
+    background: transparent !important;
+
+    box-shadow: none !important;
+}
+
+.password-toggle.active {
+    color: var(--sf-blue);
+
+    background: #eff6ff !important;
+}
+
+.password-toggle.active:hover {
+    background: #dbeafe !important;
+
+    color: var(--sf-blue-dark);
 }
 
 
@@ -1317,7 +1393,7 @@
 
     border:
         2px solid
-        rgba(255,255,255,0.35);
+        rgba(255, 255, 255, 0.35);
 
     border-top-color:
         #ffffff;
@@ -1794,6 +1870,8 @@
 
     border: 0;
 
+    outline: none;
+
     background: transparent;
 
     color: var(--sf-blue);
@@ -1808,6 +1886,16 @@
 .link-button:hover,
 .otp-resend button:hover {
     text-decoration: underline;
+}
+
+.link-button:focus,
+.link-button:focus-visible,
+.otp-resend button:focus,
+.otp-resend button:focus-visible {
+    border: 0;
+    outline: none;
+
+    box-shadow: none;
 }
 
 .link-button:disabled,
@@ -1915,13 +2003,6 @@
 .register-box .auth-card {
     max-width: 650px;
 }
-
-
-/*
- * Registration is intentionally allowed to become taller.
- * The left visual panel stretches with the shell instead of
- * becoming a tiny separate block.
- */
 
 .register-shell {
     align-items: stretch;
@@ -2314,6 +2395,13 @@
         letter-spacing:
             0.32em;
     }
+
+    .password-toggle {
+        right: 5px;
+
+        width: 40px;
+        height: 32px;
+    }
 }
 
 
@@ -2331,6 +2419,25 @@
         rgba(37, 99, 235, 0.35);
 
     outline-offset: 2px;
+}
+
+
+/* ============================================================
+   PASSWORD TOGGLE — NO BLUE OUTLINE
+   ============================================================ */
+
+.auth-body .password-toggle,
+.auth-body .password-toggle:hover,
+.auth-body .password-toggle:active,
+.auth-body .password-toggle:focus,
+.auth-body .password-toggle:focus-visible {
+    outline: none !important;
+
+    outline-offset: 0 !important;
+
+    border: none !important;
+
+    box-shadow: none !important;
 }
 
 
