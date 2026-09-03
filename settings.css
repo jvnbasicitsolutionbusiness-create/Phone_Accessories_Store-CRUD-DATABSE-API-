@@ -1,0 +1,511 @@
+/* =========================================================
+   STOCKFLOW — SETTINGS PAGE
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE FOUNDATION
+   ========================================================= */
+
+.sf-main {
+    min-height: 100vh;
+}
+
+.sf-main,
+.sf-card,
+.sf-form {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
+
+.sf-top {
+    gap: 20px;
+}
+
+.sf-title {
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.sf-top .sf-muted {
+    max-width: 650px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MOBILE MENU
+   ========================================================= */
+
+.settings-menu-btn {
+    display: none;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   SETTINGS CARD
+   ========================================================= */
+
+.settings-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.03),
+        0 8px 24px rgba(15, 23, 42, 0.035);
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.settings-card:hover {
+    border-color: #dbe2ea;
+
+    box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.035),
+        0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.settings-card .sf-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.settings-card .sf-card-head h3 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.settings-card .sf-card-head .sf-muted {
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   CARD ICON
+   ========================================================= */
+
+.settings-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 38px;
+
+    color: #2563eb;
+    background: #eff6ff;
+
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.settings-card-icon.session-icon {
+    color: #64748b;
+    background: #f8fafc;
+
+    border-color: #e2e8f0;
+}
+
+
+/* =========================================================
+   SETTINGS FORM
+   ========================================================= */
+
+.settings-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+
+/* =========================================================
+   SETTINGS FIELD
+   ========================================================= */
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+}
+
+.settings-field label {
+    margin-bottom: 6px;
+
+    color: #1e293b;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.settings-help {
+    min-height: 30px;
+
+    margin-bottom: 8px;
+
+    color: #64748b;
+
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.settings-form input,
+.settings-form select {
+    width: 100%;
+    height: 43px;
+
+    padding: 0 12px;
+
+    color: #0f172a;
+    background: #ffffff;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+
+    outline: none;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.settings-form input::placeholder {
+    color: #94a3b8;
+}
+
+.settings-form input:hover,
+.settings-form select:hover {
+    border-color: #cbd5e1;
+}
+
+.settings-form input:focus,
+.settings-form select:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.settings-form select {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   FULL WIDTH
+   ========================================================= */
+
+.settings-form .full {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+   ========================================================= */
+
+.settings-actions {
+    display: flex;
+
+    align-items: center;
+
+    padding-top: 4px;
+
+    border-top: 1px solid #eef2f7;
+}
+
+.settings-actions .sf-btn {
+    min-width: 130px;
+}
+
+
+/* =========================================================
+   SAVE BUTTON
+   ========================================================= */
+
+.settings-actions .sf-btn:not(.secondary) {
+    background: #2563eb;
+
+    box-shadow:
+        0 2px 6px rgba(37, 99, 235, 0.16);
+}
+
+.settings-actions .sf-btn:not(.secondary):hover {
+    background: #1d4ed8;
+
+    box-shadow:
+        0 4px 10px rgba(37, 99, 235, 0.20);
+}
+
+
+/* =========================================================
+   STATUS MESSAGE
+   ========================================================= */
+
+.settings-message {
+    min-height: 17px;
+
+    margin: 12px 0 0;
+
+    color: #64748b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.settings-message.success {
+    color: #15704f;
+}
+
+.settings-message.error {
+    color: #b42318;
+}
+
+
+/* =========================================================
+   SESSION CARD
+   ========================================================= */
+
+.session-card {
+    margin-top: 18px;
+}
+
+.session-content {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding-top: 5px;
+}
+
+.session-content strong {
+    display: block;
+
+    color: #0f172a;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.session-content p {
+    margin: 5px 0 0;
+
+    color: #64748b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.session-content .sf-btn.danger {
+    flex: 0 0 auto;
+
+    min-width: 90px;
+
+    box-shadow:
+        0 2px 5px rgba(185, 28, 28, 0.10);
+}
+
+.session-content .sf-btn.danger:hover {
+    background: #b91c1c;
+}
+
+
+/* =========================================================
+   FOCUS ACCESSIBILITY
+   ========================================================= */
+
+.settings-form input:focus-visible,
+.settings-form select:focus-visible,
+.settings-actions button:focus-visible,
+.session-content button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .settings-form {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-form .full {
+        grid-column: auto;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .settings-menu-btn {
+        display: inline-flex;
+    }
+
+    .sf-main {
+        padding: 18px 15px;
+    }
+
+    .sf-title {
+        font-size: 21px;
+    }
+
+    .sf-card {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .settings-card .sf-card-head {
+        gap: 12px;
+    }
+
+    .settings-card-icon {
+        width: 34px;
+        height: 34px;
+
+        font-size: 15px;
+    }
+
+    .settings-form {
+        gap: 14px;
+    }
+
+    .session-content {
+        align-items: stretch;
+
+        flex-direction: column;
+
+        gap: 14px;
+    }
+
+    .session-content .sf-btn.danger {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .sf-main {
+        padding: 14px 11px;
+    }
+
+    .sf-title {
+        font-size: 19px;
+    }
+
+    .sf-top .sf-muted {
+        font-size: 9px;
+    }
+
+    .sf-card {
+        padding: 14px;
+    }
+
+    .settings-card .sf-card-head h3 {
+        font-size: 14px;
+    }
+
+    .settings-card .sf-card-head .sf-muted {
+        font-size: 9px;
+    }
+
+    .settings-form input,
+    .settings-form select {
+        height: 42px;
+
+        font-size: 11px;
+    }
+
+    .settings-actions .sf-btn {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+    }
+
+}
