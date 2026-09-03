@@ -15,24 +15,24 @@
         content="STOCKFLOW Phone Accessories Inventory Management System"
     >
 
+    <meta
+        name="theme-color"
+        content="#06396d"
+    >
+
     <title>
-        STOCKFLOW | Sign In
+        STOCKFLOW | Account Access
     </title>
 
 
     <!-- =========================================================
-         GLOBAL STYLES
+         STYLES
          ========================================================= -->
 
     <link
         rel="stylesheet"
         href="style.css"
     >
-
-
-    <!-- =========================================================
-         AUTHENTICATION STYLES
-         ========================================================= -->
 
     <link
         rel="stylesheet"
@@ -41,35 +41,34 @@
 
 
     <!-- =========================================================
-         FINAL AUTH OVERRIDES
-         These rules intentionally come AFTER auth.css.
+         AUTH PAGE OVERRIDES
          ========================================================= -->
 
     <style>
 
         /* =====================================================
-           AUTH PAGE
+           PAGE
            ===================================================== */
 
         html,
         body {
+            width: 100%;
             min-height: 100%;
+            margin: 0;
         }
 
         body.auth-body {
             min-height: 100vh;
-            margin: 0;
 
             background: #eef0f2;
         }
 
 
         /* =====================================================
-           MAIN TWO-COLUMN LAYOUT
+           MAIN LAYOUT
            ===================================================== */
 
         .auth-page {
-
             width: 100%;
             min-height: 100vh;
 
@@ -83,26 +82,16 @@
         }
 
 
-        /*
-         * Both sides occupy the same vertical area.
-         */
-
-        .auth-visual,
-        .auth-box {
-            min-height: 100%;
-        }
-
-
         /* =====================================================
-           LEFT BLUE PANEL
+           LEFT SIDE
            ===================================================== */
 
         .auth-visual {
-
             position: relative;
 
+            min-height: 100vh;
+
             display: flex;
-            flex-direction: column;
 
             overflow: hidden;
 
@@ -118,8 +107,49 @@
         }
 
 
-        .auth-visual-overlay {
+        .auth-visual::before {
+            content: "";
 
+            position: absolute;
+
+            width: 470px;
+            height: 470px;
+
+            top: -230px;
+            right: -180px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.10);
+
+            border-radius: 50%;
+
+            pointer-events: none;
+        }
+
+
+        .auth-visual::after {
+            content: "";
+
+            position: absolute;
+
+            width: 380px;
+            height: 380px;
+
+            bottom: -250px;
+            left: -190px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.08);
+
+            border-radius: 50%;
+
+            pointer-events: none;
+        }
+
+
+        .auth-visual-overlay {
             position: absolute;
 
             inset: 0;
@@ -131,36 +161,25 @@
             background:
                 radial-gradient(
                     circle at 100% 0%,
-                    rgba(
-                        74,
-                        144,
-                        226,
-                        0.18
-                    ),
+                    rgba(74,144,226,0.18),
                     transparent 36%
                 ),
 
                 radial-gradient(
                     circle at 0% 100%,
-                    rgba(
-                        37,
-                        99,
-                        235,
-                        0.14
-                    ),
+                    rgba(37,99,235,0.14),
                     transparent 32%
                 );
         }
 
 
         .auth-visual-content {
-
             position: relative;
 
             z-index: 2;
 
             width: 100%;
-            min-height: 100%;
+            min-height: 100vh;
 
             display: flex;
             flex-direction: column;
@@ -169,6 +188,8 @@
                 42px
                 52px
                 34px;
+
+            box-sizing: border-box;
         }
 
 
@@ -177,28 +198,30 @@
            ===================================================== */
 
         .auth-brand {
-
             display: flex;
+
             align-items: center;
 
             gap: 11px;
         }
 
 
-        .brand-mark {
-
+        .auth-brand .brand-mark,
+        .auth-mobile-brand .brand-mark {
             width: 32px;
             height: 32px;
 
+            flex: 0 0 32px;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
-
-            flex: 0 0 32px;
 
             border-radius: 7px;
 
             background: #ffffff;
+
             color: #12345a;
 
             font-size: 10px;
@@ -207,8 +230,8 @@
 
 
         .brand-copy {
-
             display: flex;
+
             flex-direction: column;
 
             min-width: 0;
@@ -216,7 +239,6 @@
 
 
         .brand-copy strong {
-
             color: #ffffff;
 
             font-size: 11px;
@@ -227,7 +249,6 @@
 
 
         .brand-copy span {
-
             margin-top: 2px;
 
             color:
@@ -244,11 +265,10 @@
 
 
         /* =====================================================
-           BLUE PANEL COPY
+           LEFT CONTENT
            ===================================================== */
 
         .visual-copy {
-
             max-width: 540px;
 
             margin-top: auto;
@@ -257,7 +277,6 @@
 
 
         .visual-eyebrow {
-
             margin-bottom: 10px;
 
             color:
@@ -276,7 +295,6 @@
 
 
         .visual-copy h1 {
-
             max-width: 500px;
 
             margin: 0;
@@ -299,13 +317,11 @@
 
 
         .visual-copy h1 span {
-
             color: #1590ff;
         }
 
 
         .visual-copy p {
-
             max-width: 490px;
 
             margin:
@@ -332,8 +348,8 @@
            ===================================================== */
 
         .visual-features {
-
             display: flex;
+
             flex-direction: column;
 
             gap: 7px;
@@ -344,8 +360,8 @@
 
 
         .visual-feature {
-
             display: flex;
+
             align-items: center;
 
             gap: 10px;
@@ -374,19 +390,21 @@
                     255,
                     0.045
                 );
+
+            box-sizing: border-box;
         }
 
 
         .feature-icon {
-
             width: 27px;
             height: 27px;
 
+            flex: 0 0 27px;
+
             display: flex;
+
             align-items: center;
             justify-content: center;
-
-            flex: 0 0 27px;
 
             border-radius: 6px;
 
@@ -412,8 +430,8 @@
 
 
         .feature-content {
-
             display: flex;
+
             flex-direction: column;
 
             min-width: 0;
@@ -421,7 +439,6 @@
 
 
         .feature-content strong {
-
             color: #ffffff;
 
             font-size: 8px;
@@ -430,7 +447,6 @@
 
 
         .feature-content span {
-
             margin-top: 2px;
 
             color:
@@ -448,12 +464,12 @@
 
 
         /* =====================================================
-           BLUE PANEL FOOTER
+           LEFT FOOTER
            ===================================================== */
 
         .visual-footer {
-
             display: flex;
+
             align-items: center;
 
             gap: 8px;
@@ -473,13 +489,12 @@
 
 
         .footer-divider {
-
             color:
                 rgba(
                     255,
                     255,
                     255,
-                    0.2
+                    0.20
                 );
         }
 
@@ -489,10 +504,12 @@
            ===================================================== */
 
         .auth-box {
-
             min-width: 0;
 
+            min-height: 100vh;
+
             display: flex;
+
             flex-direction: column;
 
             background: #f4f5f6;
@@ -500,11 +517,11 @@
 
 
         .auth-card {
-
             width: 100%;
-            min-height: 100%;
+            min-height: 100vh;
 
             display: flex;
+
             flex-direction: column;
 
             padding:
@@ -513,6 +530,23 @@
                 25px;
 
             background: #f4f5f6;
+
+            box-sizing: border-box;
+        }
+
+
+        /* =====================================================
+           MOBILE BRAND
+           ===================================================== */
+
+        .auth-mobile-brand {
+            display: none;
+
+            align-items: center;
+
+            gap: 9px;
+
+            margin-bottom: 24px;
         }
 
 
@@ -521,13 +555,23 @@
            ===================================================== */
 
         .auth-header {
-
             margin-bottom: 16px;
         }
 
 
-        .auth-header h2 {
+        .auth-kicker {
+            display: block;
 
+            color: #667085;
+
+            font-size: 7px;
+            font-weight: 700;
+
+            letter-spacing: 0.05em;
+        }
+
+
+        .auth-header h2 {
             margin:
                 4px
                 0
@@ -541,7 +585,6 @@
 
 
         .auth-header p {
-
             margin: 0;
 
             color: #667085;
@@ -555,7 +598,6 @@
            ===================================================== */
 
         .auth-tabs {
-
             width: 100%;
 
             display: grid;
@@ -577,11 +619,12 @@
             border-radius: 6px;
 
             background: #e8eaed;
+
+            box-sizing: border-box;
         }
 
 
         .auth-tab {
-
             min-height: 28px;
 
             border: 0;
@@ -596,11 +639,19 @@
             font-weight: 600;
 
             cursor: pointer;
+
+            transition:
+                background-color 0.18s ease,
+                color 0.18s ease;
+        }
+
+
+        .auth-tab:hover {
+            color: #111827;
         }
 
 
         .auth-tab.active {
-
             background: #ffffff;
 
             color: #2563eb;
@@ -619,32 +670,22 @@
 
 
         /* =====================================================
-           PANEL VISIBILITY
+           AUTH PANELS
            ===================================================== */
 
         .auth-panel {
-
             display: block;
 
             width: 100%;
         }
 
 
-        /*
-         * CRITICAL.
-         *
-         * Only the currently selected panel exists
-         * in the visual layout.
-         */
-
         .auth-panel.hidden {
-
             display: none !important;
         }
 
 
         .auth-panel[aria-hidden="true"] {
-
             display: none !important;
         }
 
@@ -654,13 +695,21 @@
            ===================================================== */
 
         .auth-heading {
-
             margin-bottom: 17px;
         }
 
 
-        .auth-heading h3 {
+        .section-label {
+            color: #667085;
 
+            font-size: 7px;
+            font-weight: 700;
+
+            letter-spacing: 0.05em;
+        }
+
+
+        .auth-heading h3 {
             margin:
                 3px
                 0
@@ -674,7 +723,6 @@
 
 
         .auth-heading .muted {
-
             margin: 0;
 
             color: #667085;
@@ -685,60 +733,24 @@
         }
 
 
-        .section-label,
-        .auth-kicker {
-
-            color: #667085;
-
-            font-size: 7px;
-            font-weight: 700;
-
-            letter-spacing: 0.05em;
-        }
-
-
         /* =====================================================
            FORM
            ===================================================== */
 
         .auth-form {
-
             width: 100%;
 
             display: flex;
+
             flex-direction: column;
 
             gap: 11px;
         }
 
 
-        .auth-form-section {
-
-            display: flex;
-            flex-direction: column;
-
-            gap: 8px;
-        }
-
-
-        .auth-form-section + .auth-form-section {
-
-            margin-top: 2px;
-        }
-
-
-        .auth-form-section-title {
-
-            color: #111827;
-
-            font-size: 8px;
-            font-weight: 700;
-        }
-
-
         .form-field {
-
             display: flex;
+
             flex-direction: column;
 
             gap: 4px;
@@ -746,7 +758,6 @@
 
 
         .form-field label {
-
             color: #344054;
 
             font-size: 7px;
@@ -755,9 +766,10 @@
 
 
         .field-label-row {
-
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 10px;
@@ -765,7 +777,6 @@
 
 
         .form-control {
-
             width: 100%;
 
             height: 32px;
@@ -782,16 +793,18 @@
             border-radius: 5px;
 
             background: #ffffff;
+
             color: #101828;
 
             font-size: 7px;
 
             outline: none;
+
+            box-sizing: border-box;
         }
 
 
         .form-control:focus {
-
             border-color: #2563eb;
 
             box-shadow:
@@ -809,18 +822,7 @@
 
 
         .form-control::placeholder {
-
             color: #98a2b3;
-        }
-
-
-        .field-help {
-
-            color: #98a2b3;
-
-            font-size: 6px;
-
-            line-height: 1.35;
         }
 
 
@@ -829,64 +831,37 @@
            ===================================================== */
 
         .password-field {
-
             position: relative;
+
+            width: 100%;
         }
 
 
         .password-field .form-control {
-
-            padding-right: 45px;
+            padding-right: 48px;
         }
 
 
         .password-toggle {
-
             position: absolute;
 
             top: 50%;
-            right: 7px;
+            right: 5px;
 
             transform:
                 translateY(-50%);
 
-            padding:
-                2px
-                4px;
-
-            border: 0;
-
-            background: transparent;
-
-            color: #2563eb;
-
-            font-size: 7px;
-            font-weight: 600;
-        }
-
-
-        .password-toggle:hover {
-
-            color: #1d4ed8;
-        }
-
-
-        /* =====================================================
-           VERIFICATION
-           ===================================================== */
-
-        .verification-notice {
+            min-width: 36px;
+            height: 25px;
 
             display: flex;
-            align-items: flex-start;
 
-            gap: 8px;
-
-            margin-top: 1px;
+            align-items: center;
+            justify-content: center;
 
             padding:
-                8px
-                9px;
+                0
+                5px;
 
             border:
                 1px solid
@@ -894,48 +869,44 @@
 
             border-radius: 5px;
 
-            background: #eaf3ff;
+            background: #eff6ff;
 
-            color: #1e40af;
+            color: #0568d8;
+
+            font-size: 7px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            z-index: 5;
         }
 
 
-        .verification-icon {
-
-            width: 15px;
-            height: 15px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            flex: 0 0 15px;
-
-            border-radius: 50%;
-
+        .password-toggle:hover {
             background: #dbeafe;
 
-            font-size: 7px;
+            color: #1d4ed8;
         }
 
 
-        .verification-notice strong {
+        /* =====================================================
+           FORGOT PASSWORD
+           ===================================================== */
 
-            display: block;
-
-            margin-bottom: 2px;
+        .forgot-link {
+            color: #0568d8;
 
             font-size: 7px;
+            font-weight: 600;
+
+            text-decoration: none;
         }
 
 
-        .verification-notice span {
+        .forgot-link:hover {
+            color: #1d4ed8;
 
-            display: block;
-
-            font-size: 6px;
-
-            line-height: 1.4;
+            text-decoration: underline;
         }
 
 
@@ -944,7 +915,6 @@
            ===================================================== */
 
         .auth-message {
-
             min-height: 0;
 
             margin: 0;
@@ -956,34 +926,36 @@
 
 
         .auth-message:empty {
-
             display: none;
         }
 
 
         .auth-message.error {
-
             color: #dc2626;
         }
 
 
         .auth-message.success {
-
             color: #16a34a;
         }
 
 
+        .auth-message.warning {
+            color: #d97706;
+        }
+
+
         /* =====================================================
-           SUBMIT BUTTON
+           SUBMIT
            ===================================================== */
 
         .auth-submit {
-
             width: 100%;
 
             min-height: 34px;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
@@ -991,7 +963,9 @@
                 0
                 12px;
 
-            border: 0;
+            border:
+                1px solid
+                #0568d8;
 
             border-radius: 5px;
 
@@ -1014,66 +988,85 @@
                     235,
                     0.18
                 );
-
-            transition:
-                background-color
-                160ms
-                ease,
-
-                box-shadow
-                160ms
-                ease;
         }
 
 
         .auth-submit:hover:not(:disabled) {
-
             background: #0759b5;
         }
 
 
         .auth-submit:disabled {
-
             cursor: wait;
 
-            opacity: 1;
+            opacity: 0.75;
         }
 
 
-        /*
-         * =====================================================
-         * CRITICAL LOADING FIX
-         * =====================================================
-         *
-         * This prevents:
-         *
-         * Create Employee AccountCreating account...
-         *
-         * and:
-         *
-         * Sign InSigning in...
-         */
-
-        .auth-submit
-        .button-text[hidden],
-
-        .auth-submit
-        .button-loader[hidden] {
-
-            display: none !important;
-        }
-
-
-        .auth-submit
         .button-text,
-
-        .auth-submit
         .button-loader {
-
             display: inline-flex;
 
             align-items: center;
             justify-content: center;
+        }
+
+
+        .button-text[hidden],
+        .button-loader[hidden] {
+            display: none !important;
+        }
+
+
+        /* =====================================================
+           REGISTER FORM
+           ===================================================== */
+
+        .register-form {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+        }
+
+
+        .register-grid {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr;
+
+            gap: 10px;
+        }
+
+
+        .register-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+
+        .register-note {
+            margin-top: 2px;
+
+            padding:
+                8px
+                9px;
+
+            border:
+                1px solid
+                #bfdbfe;
+
+            border-radius: 5px;
+
+            background: #eff6ff;
+
+            color: #1e40af;
+
+            font-size: 7px;
+
+            line-height: 1.4;
         }
 
 
@@ -1082,9 +1075,10 @@
            ===================================================== */
 
         .auth-switch {
-
             display: flex;
+
             align-items: center;
+
             justify-content: center;
 
             gap: 4px;
@@ -1097,33 +1091,80 @@
         }
 
 
-        .link,
         .link-button {
-
-            color: #0568d8;
-        }
-
-
-        .link-button {
-
             padding: 0;
 
             border: 0;
 
             background: transparent;
 
+            color: #0568d8;
+
             font-size: inherit;
+            font-weight: 700;
 
             cursor: pointer;
         }
 
 
-        .link:hover,
         .link-button:hover {
-
             color: #1d4ed8;
 
             text-decoration: underline;
+        }
+
+
+        /* =====================================================
+           SECURITY
+           ===================================================== */
+
+        .auth-security {
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 8px;
+
+            margin-top: 17px;
+
+            padding:
+                8px
+                9px;
+
+            border:
+                1px solid
+                #e0e4ea;
+
+            border-radius: 5px;
+
+            background: #fafbfc;
+        }
+
+
+        .security-icon {
+            font-size: 9px;
+        }
+
+
+        .auth-security strong {
+            display: block;
+
+            color: #344054;
+
+            font-size: 7px;
+        }
+
+
+        .auth-security small {
+            display: block;
+
+            margin-top: 2px;
+
+            color: #98a2b3;
+
+            font-size: 6px;
+
+            line-height: 1.4;
         }
 
 
@@ -1132,9 +1173,10 @@
            ===================================================== */
 
         .auth-footer {
-
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
 
             gap: 8px;
@@ -1153,12 +1195,6 @@
         }
 
 
-        .auth-mobile-brand {
-
-            display: none;
-        }
-
-
         /* =====================================================
            MOBILE
            ===================================================== */
@@ -1166,44 +1202,42 @@
         @media (max-width: 900px) {
 
             .auth-page {
-
                 grid-template-columns: 1fr;
             }
 
 
             .auth-visual {
-
                 display: none;
             }
 
 
             .auth-box {
-
                 min-height: 100vh;
             }
 
 
             .auth-card {
-
-                width:
-                    min(
-                        100%,
-                        590px
-                    );
+                width: min(
+                    100%,
+                    590px
+                );
 
                 min-height: 100vh;
 
-                margin:
-                    0
-                    auto;
+                margin: 0 auto;
             }
+
+
+            .auth-mobile-brand {
+                display: flex;
+            }
+
         }
 
 
         @media (max-width: 600px) {
 
             .auth-card {
-
                 padding:
                     24px
                     18px
@@ -1211,22 +1245,15 @@
             }
 
 
-            .auth-mobile-brand {
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 9px;
-
-                margin-bottom: 25px;
+            .register-grid {
+                grid-template-columns: 1fr;
             }
 
 
-            .auth-tabs {
-
-                margin-bottom: 17px;
+            .register-grid .full-width {
+                grid-column: auto;
             }
+
         }
 
     </style>
@@ -1245,7 +1272,7 @@
 
 
         <!-- =====================================================
-             LEFT / BRAND PANEL
+             LEFT INFORMATION PANEL
              ===================================================== -->
 
         <section
@@ -1259,9 +1286,7 @@
             <div class="auth-visual-content">
 
 
-                <!-- =================================================
-                     BRAND
-                     ================================================= -->
+                <!-- BRAND -->
 
                 <header class="auth-brand">
 
@@ -1285,9 +1310,7 @@
                 </header>
 
 
-                <!-- =================================================
-                     MAIN VISUAL COPY
-                     ================================================= -->
+                <!-- MAIN COPY -->
 
                 <div class="visual-copy">
 
@@ -1315,16 +1338,17 @@
                 </div>
 
 
-                <!-- =================================================
-                     FEATURES
-                     ================================================= -->
+                <!-- FEATURES -->
 
                 <div class="visual-features">
 
 
                     <article class="visual-feature">
 
-                        <div class="feature-icon">
+                        <div
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ✓
                         </div>
 
@@ -1347,7 +1371,10 @@
 
                     <article class="visual-feature">
 
-                        <div class="feature-icon">
+                        <div
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ↕
                         </div>
 
@@ -1370,7 +1397,10 @@
 
                     <article class="visual-feature">
 
-                        <div class="feature-icon">
+                        <div
+                            class="feature-icon"
+                            aria-hidden="true"
+                        >
                             ▣
                         </div>
 
@@ -1390,13 +1420,10 @@
 
                     </article>
 
-
                 </div>
 
 
-                <!-- =================================================
-                     FOOTER
-                     ================================================= -->
+                <!-- FOOTER -->
 
                 <footer class="visual-footer">
 
@@ -1414,14 +1441,13 @@
 
                 </footer>
 
-
             </div>
 
         </section>
 
 
         <!-- =====================================================
-             RIGHT / AUTH SIDE
+             RIGHT AUTH AREA
              ===================================================== -->
 
         <section class="auth-box">
@@ -1430,9 +1456,7 @@
             <div class="auth-card">
 
 
-                <!-- =================================================
-                     MOBILE BRAND
-                     ================================================= -->
+                <!-- MOBILE BRAND -->
 
                 <div class="auth-mobile-brand">
 
@@ -1456,36 +1480,30 @@
                 </div>
 
 
-                <!-- =================================================
-                     HEADER
-                     ================================================= -->
+                <!-- HEADER -->
 
                 <header class="auth-header">
 
-                    <div>
-
-                        <span class="auth-kicker">
-                            SECURE ACCESS
-                        </span>
+                    <span class="auth-kicker">
+                        SECURE ACCESS
+                    </span>
 
 
-                        <h2>
-                            Account Access
-                        </h2>
+                    <h2>
+                        Account Access
+                    </h2>
 
 
-                        <p>
-                            Sign in or create an employee account
-                            to continue.
-                        </p>
-
-                    </div>
+                    <p>
+                        Sign in or create an employee account
+                        to continue.
+                    </p>
 
                 </header>
 
 
                 <!-- =================================================
-                     TABS
+                     AUTH TABS
                      ================================================= -->
 
                 <div
@@ -1558,6 +1576,8 @@
                     </div>
 
 
+                    <!-- LOGIN FORM -->
+
                     <form
                         id="loginForm"
                         class="auth-form"
@@ -1565,13 +1585,11 @@
                     >
 
 
-                        <!-- Identity -->
+                        <!-- USERNAME / EMAIL / PHONE -->
 
                         <div class="form-field">
 
-                            <label
-                                for="loginIdentity"
-                            >
+                            <label for="loginIdentity">
                                 Username, Email or Phone
                             </label>
 
@@ -1590,23 +1608,20 @@
                         </div>
 
 
-                        <!-- Password -->
+                        <!-- PASSWORD -->
 
                         <div class="form-field">
 
-
                             <div class="field-label-row">
 
-                                <label
-                                    for="loginPassword"
-                                >
+                                <label for="loginPassword">
                                     Password
                                 </label>
 
 
                                 <a
                                     href="forgotpassword.html"
-                                    class="link forgot-link"
+                                    class="forgot-link"
                                 >
                                     Forgot password?
                                 </a>
@@ -1643,7 +1658,7 @@
                         </div>
 
 
-                        <!-- Message -->
+                        <!-- MESSAGE -->
 
                         <div
                             id="loginMessage"
@@ -1653,7 +1668,7 @@
                         ></div>
 
 
-                        <!-- Submit -->
+                        <!-- SIGN IN -->
 
                         <button
                             type="submit"
@@ -1675,11 +1690,10 @@
 
                         </button>
 
-
                     </form>
 
 
-                    <!-- Switch -->
+                    <!-- CREATE ACCOUNT LINK -->
 
                     <div class="auth-switch">
 
@@ -1699,6 +1713,34 @@
 
                     </div>
 
+
+                    <!-- SECURITY NOTICE -->
+
+                    <div class="auth-security">
+
+                        <span
+                            class="security-icon"
+                            aria-hidden="true"
+                        >
+                            🔒
+                        </span>
+
+
+                        <div>
+
+                            <strong>
+                                Secure Inventory Access
+                            </strong>
+
+
+                            <small>
+                                Your account is protected with
+                                authenticated access and verification.
+                            </small>
+
+                        </div>
+
+                    </div>
 
                 </section>
 
@@ -1720,3 +1762,568 @@
                     <div class="auth-heading">
 
                         <span class="section-label">
+                            CREATE ACCOUNT
+                        </span>
+
+
+                        <h3>
+                            Create an employee account
+                        </h3>
+
+
+                        <p class="muted">
+                            Enter your information to create your
+                            STOCKFLOW employee account.
+                        </p>
+
+                    </div>
+
+
+                    <!-- REGISTER FORM -->
+
+                    <form
+                        id="registerForm"
+                        class="auth-form register-form"
+                        novalidate
+                    >
+
+
+                        <!-- PERSONAL INFORMATION -->
+
+                        <div class="register-grid">
+
+
+                            <!-- FIRST NAME -->
+
+                            <div class="form-field">
+
+                                <label for="registerFirstName">
+                                    First Name
+                                </label>
+
+
+                                <input
+                                    id="registerFirstName"
+                                    name="firstName"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Enter first name"
+                                    autocomplete="given-name"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- LAST NAME -->
+
+                            <div class="form-field">
+
+                                <label for="registerLastName">
+                                    Last Name
+                                </label>
+
+
+                                <input
+                                    id="registerLastName"
+                                    name="lastName"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Enter last name"
+                                    autocomplete="family-name"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- USERNAME -->
+
+                            <div class="form-field">
+
+                                <label for="registerUsername">
+                                    Username
+                                </label>
+
+
+                                <input
+                                    id="registerUsername"
+                                    name="username"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Create username"
+                                    autocomplete="username"
+                                    spellcheck="false"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- AGE -->
+
+                            <div class="form-field">
+
+                                <label for="registerAge">
+                                    Age
+                                </label>
+
+
+                                <input
+                                    id="registerAge"
+                                    name="age"
+                                    type="number"
+                                    class="form-control"
+                                    placeholder="Enter age"
+                                    min="1"
+                                    max="120"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- EMAIL -->
+
+                            <div class="form-field full-width">
+
+                                <label for="registerEmail">
+                                    Email / Gmail
+                                </label>
+
+
+                                <input
+                                    id="registerEmail"
+                                    name="email"
+                                    type="email"
+                                    class="form-control"
+                                    placeholder="Enter your email address"
+                                    autocomplete="email"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- PHONE -->
+
+                            <div class="form-field full-width">
+
+                                <label for="registerPhone">
+                                    Mobile Number
+                                </label>
+
+
+                                <input
+                                    id="registerPhone"
+                                    name="phone"
+                                    type="tel"
+                                    class="form-control"
+                                    placeholder="Enter your mobile number"
+                                    autocomplete="tel"
+                                    inputmode="tel"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- PASSWORD -->
+
+                            <div class="form-field">
+
+                                <label for="registerPassword">
+                                    Password
+                                </label>
+
+
+                                <div class="password-field">
+
+                                    <input
+                                        id="registerPassword"
+                                        name="password"
+                                        type="password"
+                                        class="form-control"
+                                        placeholder="Create password"
+                                        autocomplete="new-password"
+                                        required
+                                    >
+
+
+                                    <button
+                                        type="button"
+                                        class="password-toggle"
+                                        data-toggle-password="registerPassword"
+                                        data-target="registerPassword"
+                                        aria-label="Show password"
+                                        aria-pressed="false"
+                                    >
+                                        Show
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- CONFIRM PASSWORD -->
+
+                            <div class="form-field">
+
+                                <label for="registerConfirmPassword">
+                                    Confirm Password
+                                </label>
+
+
+                                <div class="password-field">
+
+                                    <input
+                                        id="registerConfirmPassword"
+                                        name="confirmPassword"
+                                        type="password"
+                                        class="form-control"
+                                        placeholder="Confirm password"
+                                        autocomplete="new-password"
+                                        required
+                                    >
+
+
+                                    <button
+                                        type="button"
+                                        class="password-toggle"
+                                        data-toggle-password="registerConfirmPassword"
+                                        data-target="registerConfirmPassword"
+                                        aria-label="Show password"
+                                        aria-pressed="false"
+                                    >
+                                        Show
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- VERIFICATION NOTICE -->
+
+                        <div class="register-note">
+
+                            <strong>
+                                Account Verification
+                            </strong>
+
+                            <br>
+
+                            After registration, your account can be
+                            verified through the registered email or
+                            mobile number before accessing STOCKFLOW.
+
+                        </div>
+
+
+                        <!-- MESSAGE -->
+
+                        <div
+                            id="registerMessage"
+                            class="auth-message"
+                            role="alert"
+                            aria-live="polite"
+                        ></div>
+
+
+                        <!-- CREATE ACCOUNT -->
+
+                        <button
+                            type="submit"
+                            id="registerButton"
+                            class="auth-submit"
+                        >
+
+                            <span class="button-text">
+                                Create Employee Account
+                            </span>
+
+
+                            <span
+                                class="button-loader"
+                                hidden
+                            >
+                                Creating account...
+                            </span>
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- BACK TO LOGIN -->
+
+                    <div class="auth-switch">
+
+                        <span>
+                            Already have an account?
+                        </span>
+
+
+                        <button
+                            type="button"
+                            id="registerToLogin"
+                            class="link-button"
+                            data-show-auth="login"
+                        >
+                            Sign in
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================================
+                     FOOTER
+                     ================================================= -->
+
+                <footer class="auth-footer">
+
+                    <span>
+                        STOCKFLOW Inventory Management System
+                    </span>
+
+
+                    <span>
+                        Phone Accessories Inventory
+                    </span>
+
+                </footer>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script src="config.js"></script>
+
+    <script src="api.js"></script>
+
+    <script src="auth.js"></script>
+
+    <script src="login.js"></script>
+
+    <script src="register.js"></script>
+
+
+    <!-- =========================================================
+         AUTH PAGE COMPATIBILITY SCRIPT
+         ========================================================= -->
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                "use strict";
+
+
+                /* =================================================
+                   PANEL SWITCHING
+                   ================================================= */
+
+                const tabs =
+                    document.querySelectorAll(
+                        "[data-show-auth]"
+                    );
+
+                const panels =
+                    document.querySelectorAll(
+                        "[data-auth-view]"
+                    );
+
+
+                function showAuth(view) {
+
+                    panels.forEach(
+                        panel => {
+
+                            const isActive =
+                                panel.dataset.authView === view;
+
+                            panel.classList.toggle(
+                                "hidden",
+                                !isActive
+                            );
+
+                            panel.setAttribute(
+                                "aria-hidden",
+                                String(!isActive)
+                            );
+
+                        }
+                    );
+
+
+                    document
+                        .querySelectorAll("[data-auth-tab]")
+                        .forEach(tab => {
+
+                            const isActive =
+                                tab.dataset.authTab === view;
+
+                            tab.classList.toggle(
+                                "active",
+                                isActive
+                            );
+
+                            tab.setAttribute(
+                                "aria-selected",
+                                String(isActive)
+                            );
+
+                        });
+
+
+                    /* Focus first field */
+
+                    const activePanel =
+                        document.querySelector(
+                            `[data-auth-view="${view}"]`
+                        );
+
+
+                    if (activePanel) {
+
+                        const firstInput =
+                            activePanel.querySelector(
+                                "input"
+                            );
+
+                        if (firstInput) {
+
+                            setTimeout(
+                                () => firstInput.focus(),
+                                50
+                            );
+
+                        }
+
+                    }
+
+                }
+
+
+                tabs.forEach(
+                    control => {
+
+                        control.addEventListener(
+                            "click",
+                            function () {
+
+                                const view =
+                                    this.dataset.showAuth;
+
+                                if (
+                                    view === "login" ||
+                                    view === "register"
+                                ) {
+
+                                    showAuth(view);
+
+                                }
+
+                            }
+                        );
+
+                    }
+                );
+
+
+                /* =================================================
+                   PASSWORD SHOW / HIDE
+                   ================================================= */
+
+                document
+                    .querySelectorAll(
+                        "[data-toggle-password]"
+                    )
+                    .forEach(
+                        toggle => {
+
+                            toggle.addEventListener(
+                                "click",
+                                function () {
+
+                                    const targetId =
+                                        this.dataset.target ||
+                                        this.dataset.togglePassword;
+
+                                    const input =
+                                        document.getElementById(
+                                            targetId
+                                        );
+
+
+                                    if (!input) {
+                                        return;
+                                    }
+
+
+                                    const shouldShow =
+                                        input.type === "password";
+
+
+                                    input.type =
+                                        shouldShow
+                                            ? "text"
+                                            : "password";
+
+
+                                    this.textContent =
+                                        shouldShow
+                                            ? "Hide"
+                                            : "Show";
+
+
+                                    this.setAttribute(
+                                        "aria-label",
+                                        shouldShow
+                                            ? "Hide password"
+                                            : "Show password"
+                                    );
+
+
+                                    this.setAttribute(
+                                        "aria-pressed",
+                                        String(
+                                            shouldShow
+                                        )
+                                    );
+
+                                }
+                            );
+
+                        }
+                    );
+
+
+                /* =================================================
+                   DEFAULT VIEW
+                   ================================================= */
+
+                showAuth("login");
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
