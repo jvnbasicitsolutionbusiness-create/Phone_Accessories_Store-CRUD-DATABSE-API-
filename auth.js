@@ -3,6 +3,7 @@
    Handles:
    - Sign In / Create Account tab switching
    - Login/Register panel visibility
+   - Password Show/Hide
    - Authentication navigation
    ============================================================ */
 
@@ -212,6 +213,87 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
+       PASSWORD SHOW / HIDE
+       ========================================================= */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const button =
+                event.target.closest(
+                    ".password-toggle"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            const wrapper =
+                button.closest(
+                    ".password-wrapper"
+                );
+
+
+            if (!wrapper) {
+                return;
+            }
+
+
+            const input =
+                wrapper.querySelector(
+                    "input"
+                );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            if (
+                input.type === "password"
+            ) {
+
+                input.type = "text";
+
+                button.textContent =
+                    "Hide";
+
+                button.classList.add(
+                    "active"
+                );
+
+                button.setAttribute(
+                    "aria-label",
+                    "Hide password"
+                );
+
+            } else {
+
+                input.type = "password";
+
+                button.textContent =
+                    "Show";
+
+                button.classList.remove(
+                    "active"
+                );
+
+                button.setAttribute(
+                    "aria-label",
+                    "Show password"
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
        KEYBOARD ACCESSIBILITY
        ========================================================= */
 
@@ -247,11 +329,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     nextIndex =
                         currentIndex + 1;
 
+
                     if (
                         nextIndex >=
                         tabArray.length
                     ) {
+
                         nextIndex = 0;
+
                     }
 
                 } else {
@@ -259,11 +344,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     nextIndex =
                         currentIndex - 1;
 
+
                     if (
                         nextIndex < 0
                     ) {
+
                         nextIndex =
                             tabArray.length - 1;
+
                     }
 
                 }
