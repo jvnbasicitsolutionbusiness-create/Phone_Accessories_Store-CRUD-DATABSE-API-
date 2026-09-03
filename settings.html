@@ -1,14 +1,392 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>StockFlow | Settings</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
-<a href="dashboard.html">Dashboard</a>
-<a href="inventory-dashboard.html">Inventory Dashboard</a>
-<a href="products.html">Products</a>
-<a href="inventory.html">Inventory</a>
-<a href="categories.html">Categories</a>
-<a href="suppliers.html">Suppliers</a>
-<a href="stock-in.html">Stock In</a>
-<a href="stock-out.html">Stock Out</a>
-<a href="transactions.html">Transactions</a>
-<a href="activity.html">Activity Log</a>
-<a href="profile.html">Profile</a>
-<a href="settings.html">Settings</a>
-</nav></aside><main class="sf-main"><header class="sf-top"><div><div class="sf-title">Settings</div><div class="sf-muted">System configuration and account controls.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header><section class="sf-card"><div class="sf-card-head"><div><h3>Inventory Settings</h3><p class="sf-muted">Default values used by the STOCKFLOW interface.</p></div></div><form id="settings" class="sf-form"><input id="reorder" type="number" min="0" value="5" placeholder="Default reorder level"><select id="theme"><option value="system">System appearance</option><option value="light">Light</option></select><div class="full"><button class="sf-btn" type="submit">Save Settings</button></div></form><p id="msg" class="sf-muted"></p></section><section class="sf-card"><div class="sf-card-head"><div><h3>Session</h3><p class="sf-muted">Sign out from this browser.</p></div></div><button class="sf-btn danger" id="logout" type="button">Logout</button></section></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script>document.addEventListener("DOMContentLoaded",async()=>{const u=await StockFlowAuth.requireAuth();if(!u)return;const r=document.getElementById("reorder"),t=document.getElementById("theme"),m=document.getElementById("msg"),s=localStorage.getItem("stockflow_reorder"),st=localStorage.getItem("stockflow_theme");if(s!==null)r.value=s;if(st)t.value=st;document.getElementById("settings").onsubmit=e=>{e.preventDefault();localStorage.setItem("stockflow_reorder",r.value);localStorage.setItem("stockflow_theme",t.value);m.textContent="Settings saved on this browser.";};document.getElementById("logout").onclick=()=>StockFlowAuth.logout();});</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>StockFlow | Settings</title>
+
+    <!-- Shared StockFlow styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="modules.css">
+
+    <!-- Settings page styles -->
+    <link rel="stylesheet" href="settings.css">
+</head>
+
+<body>
+
+    <div class="sf-layout">
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="sf-side">
+
+            <div class="sf-brand">
+                STOCKFLOW
+            </div>
+
+            <nav class="sf-nav">
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="inventory-dashboard.html">
+                    Inventory Dashboard
+                </a>
+
+                <a href="products.html">
+                    Products
+                </a>
+
+                <a href="inventory.html">
+                    Inventory
+                </a>
+
+                <a href="categories.html">
+                    Categories
+                </a>
+
+                <a href="suppliers.html">
+                    Suppliers
+                </a>
+
+                <a href="stock-in.html">
+                    Stock In
+                </a>
+
+                <a href="stock-out.html">
+                    Stock Out
+                </a>
+
+                <a href="transactions.html">
+                    Transactions
+                </a>
+
+                <a href="activity.html">
+                    Activity Log
+                </a>
+
+                <a href="profile.html">
+                    Profile
+                </a>
+
+                <a
+                    href="settings.html"
+                    class="active"
+                    aria-current="page"
+                >
+                    Settings
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =================================================
+             MAIN CONTENT
+        ================================================== -->
+
+        <main class="sf-main">
+
+            <!-- TOP HEADER -->
+
+            <header class="sf-top">
+
+                <div>
+
+                    <div class="sf-title">
+                        Settings
+                    </div>
+
+                    <div class="sf-muted">
+                        System configuration and account controls.
+                    </div>
+
+                </div>
+
+                <button
+                    class="sf-btn secondary settings-menu-btn"
+                    data-menu
+                    type="button"
+                    aria-label="Toggle navigation menu"
+                >
+                    ☰
+                </button>
+
+            </header>
+
+
+            <!-- =================================================
+                 INVENTORY SETTINGS
+            ================================================== -->
+
+            <section class="sf-card settings-card">
+
+                <div class="sf-card-head">
+
+                    <div>
+
+                        <h3>
+                            Inventory Settings
+                        </h3>
+
+                        <p class="sf-muted">
+                            Default values used by the STOCKFLOW interface.
+                        </p>
+
+                    </div>
+
+                    <div class="settings-card-icon">
+                        ⚙
+                    </div>
+
+                </div>
+
+
+                <form
+                    id="settings"
+                    class="sf-form settings-form"
+                    autocomplete="off"
+                >
+
+                    <!-- REORDER LEVEL -->
+
+                    <div class="settings-field">
+
+                        <label for="reorder">
+                            Default Reorder Level
+                        </label>
+
+                        <span class="settings-help">
+                            Products at or below this quantity can be
+                            considered low stock.
+                        </span>
+
+                        <input
+                            id="reorder"
+                            name="reorder"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value="5"
+                            placeholder="Default reorder level"
+                        >
+
+                    </div>
+
+
+                    <!-- THEME -->
+
+                    <div class="settings-field">
+
+                        <label for="theme">
+                            Appearance
+                        </label>
+
+                        <span class="settings-help">
+                            Choose the appearance used by this browser.
+                        </span>
+
+                        <select
+                            id="theme"
+                            name="theme"
+                        >
+
+                            <option value="system">
+                                System appearance
+                            </option>
+
+                            <option value="light">
+                                Light
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- SAVE -->
+
+                    <div class="full settings-actions">
+
+                        <button
+                            class="sf-btn"
+                            type="submit"
+                        >
+                            Save Settings
+                        </button>
+
+                    </div>
+
+                </form>
+
+
+                <!-- STATUS MESSAGE -->
+
+                <p
+                    id="msg"
+                    class="settings-message"
+                    role="status"
+                    aria-live="polite"
+                ></p>
+
+            </section>
+
+
+            <!-- =================================================
+                 SESSION
+            ================================================== -->
+
+            <section class="sf-card settings-card session-card">
+
+                <div class="sf-card-head">
+
+                    <div>
+
+                        <h3>
+                            Session
+                        </h3>
+
+                        <p class="sf-muted">
+                            Sign out from this browser.
+                        </p>
+
+                    </div>
+
+                    <div class="settings-card-icon session-icon">
+                        ↪
+                    </div>
+
+                </div>
+
+
+                <div class="session-content">
+
+                    <div>
+
+                        <strong>
+                            Sign out of STOCKFLOW
+                        </strong>
+
+                        <p>
+                            You will need to authenticate again to access
+                            your account.
+                        </p>
+
+                    </div>
+
+                    <button
+                        class="sf-btn danger"
+                        id="logout"
+                        type="button"
+                    >
+                        Logout
+                    </button>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+
+            const user = await StockFlowAuth.requireAuth();
+
+            if (!user) {
+                return;
+            }
+
+            const settingsForm = document.getElementById("settings");
+            const reorderInput = document.getElementById("reorder");
+            const themeSelect = document.getElementById("theme");
+            const message = document.getElementById("msg");
+            const logoutButton = document.getElementById("logout");
+
+            const savedReorder =
+                localStorage.getItem("stockflow_reorder");
+
+            const savedTheme =
+                localStorage.getItem("stockflow_theme");
+
+
+            /* Load saved settings */
+
+            if (savedReorder !== null) {
+                reorderInput.value = savedReorder;
+            }
+
+            if (savedTheme !== null) {
+                themeSelect.value = savedTheme;
+            }
+
+
+            /* Save settings */
+
+            settingsForm.addEventListener("submit", (event) => {
+
+                event.preventDefault();
+
+                const reorderValue =
+                    Math.max(0, Number(reorderInput.value) || 0);
+
+                const themeValue =
+                    themeSelect.value;
+
+
+                localStorage.setItem(
+                    "stockflow_reorder",
+                    reorderValue
+                );
+
+                localStorage.setItem(
+                    "stockflow_theme",
+                    themeValue
+                );
+
+
+                message.textContent =
+                    "Settings saved on this browser.";
+
+                message.classList.add("success");
+
+            });
+
+
+            /* Logout */
+
+            logoutButton.addEventListener("click", () => {
+
+                StockFlowAuth.logout();
+
+            });
+
+        });
+    </script>
+
+</body>
+
+</html>
