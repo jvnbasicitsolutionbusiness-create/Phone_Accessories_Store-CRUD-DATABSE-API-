@@ -1,31 +1,1152 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>StockFlow | Categories</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head>
-<body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
-<a href="dashboard.html">Dashboard</a>
-<a href="inventory-dashboard.html">Inventory Dashboard</a>
-<a href="products.html">Products</a>
-<a href="inventory.html">Inventory</a>
-<a href="categories.html">Categories</a>
-<a href="suppliers.html">Suppliers</a>
-<a href="stock-in.html">Stock In</a>
-<a href="stock-out.html">Stock Out</a>
-<a href="transactions.html">Transactions</a>
-<a href="activity.html">Activity Log</a>
-<a href="profile.html">Profile</a>
-<a href="settings.html">Settings</a>
-</nav></aside>
-<main class="sf-main"><header class="sf-top"><div><div class="sf-title">Categories</div><div class="sf-muted">Organize products by phone accessory type.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header>
-<div id="alert" class="sf-alert"></div>
-<section class="sf-card"><div class="sf-card-head"><div><h3>Categories Details</h3><p class="sf-muted">Create or update categories records.</p></div></div>
-<form id="categorieForm" class="sf-form"><input type="hidden" id="id">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
 
-<input id="name" placeholder="Category name" required><input id="description" placeholder="Description"><select id="status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="StockFlow Categories Management"
+    >
+
+    <title>Categories | StockFlow</title>
+
+    <!-- =====================================================
+         GOOGLE FONTS
+    ====================================================== -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         STOCKFLOW CSS
+    ====================================================== -->
+    <link
+        rel="stylesheet"
+        href="categories.css"
+    >
+</head>
+
+<body>
+
+<!-- =========================================================
+     MOBILE OVERLAY
+========================================================== -->
+
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay"
+></div>
 
 
-<div class="full sf-row"><button class="sf-btn" id="saveButton" type="submit">Save Category</button><button class="sf-btn secondary" id="clearButton" type="button">Clear</button></div></form></section>
-<section class="sf-card"><div class="sf-card-head"><div><h3>Categories</h3><p class="sf-muted">Registered categories in STOCKFLOW.</p></div></div>
-<div class="sf-table-wrap"><table><thead>
-<tr><th>Name</th><th>Description</th><th>Status</th><th>Actions</th></tr>
-</thead><tbody id="rows"><tr><td colspan="4" class="sf-empty">Loading...</td></tr></tbody></table></div></section>
-</main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="categories.js"></script></body></html>
+<!-- =========================================================
+     SIDEBAR
+========================================================== -->
+
+<aside
+    class="sidebar"
+    id="sidebar"
+>
+
+    <!-- BRAND -->
+    <div class="sidebar-brand">
+
+        <div class="brand-logo">
+            SF
+        </div>
+
+        <div class="brand-text">
+
+            <strong>
+                StockFlow
+            </strong>
+
+            <span>
+                Inventory System
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- NAVIGATION -->
+    <nav class="sidebar-nav">
+
+        <div class="nav-section-title">
+            MAIN
+        </div>
+
+
+        <a
+            href="dashboard.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-chart-pie"></i>
+
+            <span>
+                Dashboard
+            </span>
+
+        </a>
+
+
+        <div class="nav-section-title">
+            INVENTORY
+        </div>
+
+
+        <a
+            href="products.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-box"></i>
+
+            <span>
+                Products
+            </span>
+
+        </a>
+
+
+        <a
+            href="categories.html"
+            class="nav-item active"
+        >
+
+            <i class="fa-solid fa-layer-group"></i>
+
+            <span>
+                Categories
+            </span>
+
+        </a>
+
+
+        <a
+            href="stock-in.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+
+            <span>
+                Stock In
+            </span>
+
+        </a>
+
+
+        <a
+            href="stock-out.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+            <span>
+                Stock Out
+            </span>
+
+        </a>
+
+
+        <a
+            href="inventory.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-warehouse"></i>
+
+            <span>
+                Inventory
+            </span>
+
+        </a>
+
+
+        <div class="nav-section-title">
+            MANAGEMENT
+        </div>
+
+
+        <a
+            href="suppliers.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-truck-field"></i>
+
+            <span>
+                Suppliers
+            </span>
+
+        </a>
+
+
+        <a
+            href="reports.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-chart-column"></i>
+
+            <span>
+                Reports
+            </span>
+
+        </a>
+
+
+        <div class="nav-section-title">
+            SYSTEM
+        </div>
+
+
+        <a
+            href="settings.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-gear"></i>
+
+            <span>
+                Settings
+            </span>
+
+        </a>
+
+    </nav>
+
+
+    <!-- SIDEBAR FOOTER -->
+    <div class="sidebar-footer">
+
+        <div class="sidebar-user">
+
+            <div
+                class="sidebar-user-avatar"
+                id="sidebarUserAvatar"
+            >
+                U
+            </div>
+
+            <div class="sidebar-user-info">
+
+                <strong id="sidebarUserName">
+                    User
+                </strong>
+
+                <span id="sidebarUserRole">
+                    Employee
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="sidebar-logout"
+            id="logoutBtn"
+        >
+
+            <i class="fa-solid fa-right-from-bracket"></i>
+
+            <span>
+                Logout
+            </span>
+
+        </button>
+
+    </div>
+
+</aside>
+
+
+<!-- =========================================================
+     MAIN CONTENT
+========================================================== -->
+
+<main class="main-content">
+
+
+    <!-- =====================================================
+         TOPBAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+        <div class="topbar-left">
+
+            <button
+                type="button"
+                class="mobile-menu-btn"
+                id="mobileMenuBtn"
+                aria-label="Open navigation"
+            >
+
+                <i class="fa-solid fa-bars"></i>
+
+            </button>
+
+
+            <div class="page-heading">
+
+                <span class="page-kicker">
+                    INVENTORY MANAGEMENT
+                </span>
+
+                <h1>
+                    Categories
+                </h1>
+
+                <p>
+                    Organize your products into manageable categories.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="topbar-right">
+
+            <!-- CONNECTION STATUS -->
+            <div
+                class="connection-badge"
+                id="connectionBadge"
+            >
+
+                <span class="connection-dot"></span>
+
+                <span>
+                    ONLINE
+                </span>
+
+            </div>
+
+
+            <!-- USER -->
+            <div class="topbar-user">
+
+                <div
+                    class="topbar-avatar"
+                    id="topbarUserAvatar"
+                >
+                    U
+                </div>
+
+                <div class="topbar-user-info">
+
+                    <strong id="topbarUserName">
+                        User
+                    </strong>
+
+                    <span id="topbarUserRole">
+                        Employee
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         PAGE BODY
+    ====================================================== -->
+
+    <section class="page-content">
+
+
+        <!-- =================================================
+             CONNECTION MESSAGE
+        ================================================== -->
+
+        <div
+            class="connection-message"
+            id="connectionMessage"
+            hidden
+        ></div>
+
+
+        <!-- =================================================
+             STATISTICS
+        ================================================== -->
+
+        <div class="stats-grid">
+
+
+            <!-- TOTAL CATEGORIES -->
+
+            <article class="stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-layer-group"></i>
+
+                </div>
+
+                <div class="stat-content">
+
+                    <span>
+                        Total Categories
+                    </span>
+
+                    <strong id="totalCategories">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <!-- ACTIVE -->
+
+            <article class="stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                </div>
+
+                <div class="stat-content">
+
+                    <span>
+                        Active Categories
+                    </span>
+
+                    <strong id="activeCategories">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <!-- PRODUCTS -->
+
+            <article class="stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-boxes-stacked"></i>
+
+                </div>
+
+                <div class="stat-content">
+
+                    <span>
+                        Categorized Products
+                    </span>
+
+                    <strong id="categorizedProducts">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+
+            <!-- EMPTY -->
+
+            <article class="stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-folder-open"></i>
+
+                </div>
+
+                <div class="stat-content">
+
+                    <span>
+                        Empty Categories
+                    </span>
+
+                    <strong id="emptyCategories">
+                        0
+                    </strong>
+
+                </div>
+
+            </article>
+
+        </div>
+
+
+        <!-- =================================================
+             CATEGORY MANAGEMENT CARD
+        ================================================== -->
+
+        <section class="content-card">
+
+
+            <!-- CARD HEADER -->
+
+            <div class="content-card-header">
+
+                <div>
+
+                    <span class="section-kicker">
+                        PRODUCT ORGANIZATION
+                    </span>
+
+                    <h2>
+                        Category Management
+                    </h2>
+
+                    <p>
+                        Create, update, search and manage product categories.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="primary-btn"
+                    id="addCategoryBtn"
+                >
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    Add Category
+
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 TOOLBAR
+            ================================================== -->
+
+            <div class="table-toolbar">
+
+
+                <!-- SEARCH -->
+
+                <div class="search-box">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="search"
+                        id="categorySearch"
+                        placeholder="Search categories..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <!-- STATUS FILTER -->
+
+                <div class="filter-group">
+
+                    <label
+                        for="categoryStatusFilter"
+                        class="sr-only"
+                    >
+                        Filter by status
+                    </label>
+
+                    <select
+                        id="categoryStatusFilter"
+                    >
+
+                        <option value="ALL">
+                            All Status
+                        </option>
+
+                        <option value="ACTIVE">
+                            Active
+                        </option>
+
+                        <option value="INACTIVE">
+                            Inactive
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- REFRESH -->
+
+                <button
+                    type="button"
+                    class="secondary-btn"
+                    id="refreshCategoriesBtn"
+                    title="Refresh categories"
+                >
+
+                    <i class="fa-solid fa-rotate"></i>
+
+                    <span>
+                        Refresh
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 TABLE
+            ================================================== -->
+
+            <div class="table-wrapper">
+
+                <table
+                    class="data-table"
+                    id="categoriesTable"
+                >
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                CATEGORY
+                            </th>
+
+                            <th>
+                                DESCRIPTION
+                            </th>
+
+                            <th>
+                                PRODUCTS
+                            </th>
+
+                            <th>
+                                STATUS
+                            </th>
+
+                            <th>
+                                CREATED
+                            </th>
+
+                            <th class="action-column">
+                                ACTIONS
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="categoriesTableBody">
+
+                        <!-- Filled by categories.js -->
+
+                    </tbody>
+
+                </table>
+
+
+                <!-- =================================================
+                     LOADING STATE
+                ================================================== -->
+
+                <div
+                    class="table-state"
+                    id="categoriesLoading"
+                >
+
+                    <div class="loading-spinner"></div>
+
+                    <strong>
+                        Loading categories...
+                    </strong>
+
+                    <span>
+                        Please wait while StockFlow retrieves your data.
+                    </span>
+
+                </div>
+
+
+                <!-- =================================================
+                     EMPTY STATE
+                ================================================== -->
+
+                <div
+                    class="table-state"
+                    id="categoriesEmpty"
+                    hidden
+                >
+
+                    <div class="empty-icon">
+
+                        <i class="fa-solid fa-layer-group"></i>
+
+                    </div>
+
+                    <strong>
+                        No categories found
+                    </strong>
+
+                    <span>
+                        Create your first category to organize your products.
+                    </span>
+
+                    <button
+                        type="button"
+                        class="primary-btn"
+                        id="emptyAddCategoryBtn"
+                    >
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        Add Category
+
+                    </button>
+
+                </div>
+
+
+                <!-- =================================================
+                     ERROR STATE
+                ================================================== -->
+
+                <div
+                    class="table-state error-state"
+                    id="categoriesError"
+                    hidden
+                >
+
+                    <div class="empty-icon">
+
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+                    </div>
+
+                    <strong>
+                        Unable to load categories
+                    </strong>
+
+                    <span id="categoriesErrorMessage">
+                        Please check your connection and try again.
+                    </span>
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        id="retryCategoriesBtn"
+                    >
+
+                        <i class="fa-solid fa-rotate"></i>
+
+                        Try Again
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TABLE FOOTER
+            ================================================== -->
+
+            <div class="table-footer">
+
+                <span id="categoryResultsInfo">
+                    Showing 0 categories
+                </span>
+
+                <div
+                    class="pagination"
+                    id="categoryPagination"
+                >
+
+                    <!-- Generated by categories.js -->
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             INFORMATION PANEL
+        ================================================== -->
+
+        <section class="info-panel">
+
+            <div class="info-panel-icon">
+
+                <i class="fa-solid fa-circle-info"></i>
+
+            </div>
+
+            <div>
+
+                <strong>
+                    Keep your inventory organized
+                </strong>
+
+                <p>
+                    Categories help you group products such as cases,
+                    chargers, cables, earphones, power banks and other
+                    phone accessories for easier inventory monitoring.
+                </p>
+
+            </div>
+
+        </section>
+
+    </section>
+
+</main>
+
+
+<!-- =========================================================
+     CATEGORY MODAL
+========================================================== -->
+
+<div
+    class="modal-backdrop"
+    id="categoryModal"
+    hidden
+>
+
+    <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="categoryModalTitle"
+    >
+
+
+        <!-- MODAL HEADER -->
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="section-kicker">
+                    CATEGORY
+                </span>
+
+                <h2 id="categoryModalTitle">
+                    Add Category
+                </h2>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeCategoryModal"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <!-- MODAL FORM -->
+
+        <form
+            id="categoryForm"
+            novalidate
+        >
+
+            <input
+                type="hidden"
+                id="categoryId"
+                name="categoryId"
+            >
+
+
+            <!-- CATEGORY NAME -->
+
+            <div class="form-group">
+
+                <label for="categoryName">
+
+                    Category Name
+
+                    <span>
+                        *
+                    </span>
+
+                </label>
+
+                <input
+                    type="text"
+                    id="categoryName"
+                    name="categoryName"
+                    placeholder="e.g. Phone Cases"
+                    maxlength="100"
+                    autocomplete="off"
+                    required
+                >
+
+                <small>
+                    Enter a unique category name.
+                </small>
+
+            </div>
+
+
+            <!-- DESCRIPTION -->
+
+            <div class="form-group">
+
+                <label for="categoryDescription">
+                    Description
+                </label>
+
+                <textarea
+                    id="categoryDescription"
+                    name="categoryDescription"
+                    rows="4"
+                    maxlength="500"
+                    placeholder="Describe this product category..."
+                ></textarea>
+
+                <small>
+                    Optional. Maximum 500 characters.
+                </small>
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div class="form-group">
+
+                <label for="categoryStatus">
+                    Status
+                </label>
+
+                <select
+                    id="categoryStatus"
+                    name="categoryStatus"
+                >
+
+                    <option value="ACTIVE">
+                        Active
+                    </option>
+
+                    <option value="INACTIVE">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- FORM MESSAGE -->
+
+            <div
+                class="form-message"
+                id="categoryFormMessage"
+                hidden
+            ></div>
+
+
+            <!-- MODAL ACTIONS -->
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="secondary-btn"
+                    id="cancelCategoryBtn"
+                >
+
+                    Cancel
+
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                    id="saveCategoryBtn"
+                >
+
+                    <span
+                        class="button-spinner"
+                        id="saveCategorySpinner"
+                        hidden
+                    ></span>
+
+                    <i
+                        class="fa-solid fa-check"
+                        id="saveCategoryIcon"
+                    ></i>
+
+                    <span id="saveCategoryText">
+                        Save Category
+                    </span>
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     DELETE CONFIRMATION MODAL
+========================================================== -->
+
+<div
+    class="modal-backdrop"
+    id="deleteCategoryModal"
+    hidden
+>
+
+    <div
+        class="modal modal-small"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deleteCategoryTitle"
+    >
+
+        <div class="confirm-icon">
+
+            <i class="fa-solid fa-trash"></i>
+
+        </div>
+
+
+        <h2 id="deleteCategoryTitle">
+            Delete Category?
+        </h2>
+
+
+        <p>
+            Are you sure you want to delete
+            <strong id="deleteCategoryName">
+                this category
+            </strong>?
+            This action cannot be undone.
+        </p>
+
+
+        <div
+            class="form-message"
+            id="deleteCategoryMessage"
+            hidden
+        ></div>
+
+
+        <div class="modal-actions">
+
+            <button
+                type="button"
+                class="secondary-btn"
+                id="cancelDeleteCategoryBtn"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                type="button"
+                class="danger-btn"
+                id="confirmDeleteCategoryBtn"
+            >
+
+                <span
+                    class="button-spinner"
+                    id="deleteCategorySpinner"
+                    hidden
+                ></span>
+
+                <i class="fa-solid fa-trash"></i>
+
+                Delete
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     TOAST CONTAINER
+========================================================== -->
+
+<div
+    class="toast-container"
+    id="toastContainer"
+    aria-live="polite"
+    aria-atomic="true"
+></div>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<!-- Shared configuration -->
+<script src="config.js"></script>
+
+<!-- Shared API -->
+<script src="api.js"></script>
+
+<!-- Authentication -->
+<script src="auth.js"></script>
+
+<!-- Categories module -->
+<script src="categories.js"></script>
+
+</body>
+</html>
