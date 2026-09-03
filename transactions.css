@@ -1,0 +1,686 @@
+/* =========================================================
+   STOCKFLOW — TRANSACTIONS PAGE
+   Professional transaction history styling
+   Requires:
+   - styles.css
+   - modules.css
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.sf-main {
+    min-height: 100vh;
+}
+
+.sf-main,
+.sf-card,
+.sf-table-wrap {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
+
+.sf-top {
+    gap: 20px;
+}
+
+.sf-title {
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.sf-top .sf-muted {
+    max-width: 700px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MOBILE MENU
+   ========================================================= */
+
+.transaction-menu-btn {
+    display: none;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   ALERT
+   ========================================================= */
+
+.sf-alert {
+    border: 1px solid transparent;
+
+    box-shadow:
+        0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.sf-alert.show {
+    animation: transactionAlertIn 0.18s ease-out;
+}
+
+@keyframes transactionAlertIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.transaction-filter-card,
+.transaction-table-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.03),
+        0 8px 24px rgba(15, 23, 42, 0.035);
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.transaction-filter-card:hover,
+.transaction-table-card:hover {
+    border-color: #dbe2ea;
+
+    box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.035),
+        0 10px 28px rgba(15, 23, 42, 0.045);
+}
+
+
+/* =========================================================
+   FILTER CARD
+   ========================================================= */
+
+.transaction-filter-card {
+    padding: 0;
+
+    margin-bottom: 18px;
+}
+
+.transaction-filter-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    padding: 20px 22px 15px;
+}
+
+.transaction-filter-header h2,
+.transaction-table-header h2 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.transaction-filter-header .sf-muted,
+.transaction-table-header .sf-muted {
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FILTER BUTTONS
+   ========================================================= */
+
+.transaction-filters {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 0 22px 20px;
+
+    flex-wrap: wrap;
+}
+
+.transaction-filter {
+    min-height: 38px;
+
+    padding: 8px 14px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.1s ease;
+}
+
+.transaction-filter.active {
+    color: #ffffff;
+    background: #2563eb;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 2px 6px rgba(37, 99, 235, 0.18);
+}
+
+.transaction-filter.active:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.transaction-filter:not(.active) {
+    color: #475569;
+    background: #ffffff;
+
+    border: 1px solid #dbe2ea;
+}
+
+.transaction-filter:not(.active):hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+
+    border-color: #bfdbfe;
+}
+
+.transaction-filter:active {
+    transform: translateY(1px);
+}
+
+.transaction-filter:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   TRANSACTION TABLE CARD
+   ========================================================= */
+
+.transaction-table-card {
+    padding: 0;
+
+    overflow: hidden;
+}
+
+.transaction-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 20px 22px;
+
+    border-bottom: 1px solid #eef2f7;
+}
+
+
+/* =========================================================
+   TRANSACTION COUNT
+   ========================================================= */
+
+.transaction-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 35px;
+    height: 28px;
+
+    padding: 0 9px;
+
+    color: #1d4ed8;
+    background: #eff6ff;
+
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+
+    font-size: 10px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
+
+.transaction-table-wrap {
+    width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.transaction-table {
+    width: 100%;
+    min-width: 850px;
+
+    border-collapse: collapse;
+
+    table-layout: auto;
+}
+
+.transaction-table th {
+    padding: 12px 14px;
+
+    color: #64748b;
+    background: #f8fafc;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    white-space: nowrap;
+}
+
+.transaction-table td {
+    padding: 13px 14px;
+
+    color: #334155;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    font-size: 10px;
+
+    vertical-align: middle;
+}
+
+.transaction-table tbody tr {
+    transition:
+        background-color 0.12s ease;
+}
+
+.transaction-table tbody tr:hover {
+    background: #f8fbff;
+}
+
+.transaction-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   TABLE COLUMN STYLING
+   ========================================================= */
+
+/* Date */
+
+.transaction-table th:first-child,
+.transaction-table td:first-child {
+    white-space: nowrap;
+}
+
+
+/* Reference */
+
+.transaction-table td:nth-child(3) {
+    color: #475569;
+
+    font-weight: 600;
+}
+
+
+/* Product */
+
+.transaction-table td:nth-child(4) {
+    color: #0f172a;
+
+    font-weight: 700;
+}
+
+
+/* Quantity */
+
+.transaction-table th:nth-child(5),
+.transaction-table td:nth-child(5) {
+    text-align: center;
+}
+
+.transaction-table td:nth-child(5) {
+    color: #0f172a;
+
+    font-weight: 800;
+}
+
+
+/* Total */
+
+.transaction-table th:nth-child(6),
+.transaction-table td:nth-child(6) {
+    text-align: right;
+}
+
+.transaction-table td:nth-child(6) {
+    color: #0f172a;
+
+    font-weight: 800;
+}
+
+
+/* User */
+
+.transaction-table td:nth-child(7) {
+    color: #475569;
+}
+
+
+/* =========================================================
+   TRANSACTION TYPE BADGES
+   ========================================================= */
+
+/*
+   These rules support the common classes that your
+   transactions.js can output:
+
+   .badge
+   .badge.in
+   .badge.out
+   .badge.active
+   .badge.danger
+   .badge.neutral
+*/
+
+.transaction-table .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 65px;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 0.02em;
+
+    white-space: nowrap;
+}
+
+.transaction-table .badge.in {
+    color: #166534;
+    background: #dcfce7;
+
+    border: 1px solid #bbf7d0;
+}
+
+.transaction-table .badge.out {
+    color: #b91c1c;
+    background: #fee2e2;
+
+    border: 1px solid #fecaca;
+}
+
+.transaction-table .badge.active {
+    color: #166534;
+    background: #dcfce7;
+
+    border: 1px solid #bbf7d0;
+}
+
+.transaction-table .badge.danger {
+    color: #b91c1c;
+    background: #fee2e2;
+
+    border: 1px solid #fecaca;
+}
+
+.transaction-table .badge.neutral {
+    color: #475569;
+    background: #f1f5f9;
+
+    border: 1px solid #e2e8f0;
+}
+
+
+/* =========================================================
+   EMPTY / LOADING STATE
+   ========================================================= */
+
+.transaction-loading {
+    height: 130px;
+
+    padding: 35px 15px !important;
+
+    color: #94a3b8 !important;
+
+    font-size: 11px !important;
+
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.transaction-loading::before {
+    content: "";
+
+    display: block;
+
+    width: 30px;
+    height: 30px;
+
+    margin: 0 auto 9px;
+
+    border: 3px solid #dbeafe;
+    border-top-color: #2563eb;
+
+    border-radius: 50%;
+
+    animation: transactionSpinner 0.8s linear infinite;
+}
+
+@keyframes transactionSpinner {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   GENERAL EMPTY STATE
+   ========================================================= */
+
+.sf-empty {
+    color: #94a3b8;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .transaction-filter-header {
+        padding: 18px 18px 14px;
+    }
+
+    .transaction-filters {
+        padding: 0 18px 18px;
+    }
+
+    .transaction-table-header {
+        padding: 18px;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+        padding: 11px 12px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .transaction-menu-btn {
+        display: inline-flex;
+    }
+
+    .sf-main {
+        padding: 18px 15px;
+    }
+
+    .sf-title {
+        font-size: 21px;
+    }
+
+    .sf-top .sf-muted {
+        max-width: 90%;
+    }
+
+    .transaction-filter-card {
+        border-radius: 12px;
+    }
+
+    .transaction-table-card {
+        border-radius: 12px;
+    }
+
+    .transaction-filter-header {
+        padding: 16px;
+    }
+
+    .transaction-filters {
+        padding: 0 16px 16px;
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+    }
+
+    .transaction-filter {
+        width: 100%;
+    }
+
+    .transaction-table-header {
+        align-items: flex-start;
+
+        padding: 16px;
+    }
+
+    .transaction-table-header h2 {
+        font-size: 14px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .sf-main {
+        padding: 14px 11px;
+    }
+
+    .sf-title {
+        font-size: 19px;
+    }
+
+    .sf-top .sf-muted {
+        font-size: 9px;
+    }
+
+    .transaction-filter-header h2 {
+        font-size: 14px;
+    }
+
+    .transaction-filter-header .sf-muted,
+    .transaction-table-header .sf-muted {
+        font-size: 9px;
+    }
+
+    .transaction-count {
+        min-width: 31px;
+        height: 25px;
+
+        font-size: 9px;
+    }
+
+    .transaction-table {
+        min-width: 800px;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+    }
+
+}
