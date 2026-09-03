@@ -1,8 +1,37 @@
+/* ============================================================
+   STOCKFLOW — REGISTRATION CONTROLLER
+   Handles:
+   - Employee account registration
+   - First Name / Last Name
+   - Username
+   - Age
+   - Email / Gmail
+   - Philippine mobile number
+   - Password
+   - Confirm Password
+   - Registration API request
+   - OTP verification redirect
+   ============================================================ */
+
 document.addEventListener("DOMContentLoaded", () => {
+
     "use strict";
 
+
+    /* =========================================================
+       FORM
+       ========================================================= */
+
     const form =
-        document.getElementById("registerForm");
+        document.getElementById(
+            "registerForm"
+        );
+
+
+    /*
+     * Stop safely if this page does not
+     * contain the registration form.
+     */
 
     if (!form) {
         return;
@@ -18,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "registerMessage"
         );
 
+
     const button =
         document.getElementById(
             "registerButton"
@@ -26,35 +56,84 @@ document.addEventListener("DOMContentLoaded", () => {
             'button[type="submit"]'
         );
 
-    const nameInput =
+
+    /*
+     * FIRST NAME
+     *
+     * Current STOCKFLOW HTML uses a
+     * separate First Name field.
+     */
+
+    const firstNameInput =
+        document.getElementById(
+            "registerFirstName"
+        ) ||
+        document.getElementById(
+            "firstName"
+        );
+
+
+    /*
+     * LAST NAME
+     *
+     * Current STOCKFLOW HTML uses a
+     * separate Last Name field.
+     */
+
+    const lastNameInput =
+        document.getElementById(
+            "registerLastName"
+        ) ||
+        document.getElementById(
+            "lastName"
+        );
+
+
+    /*
+     * OLD FULL NAME FIELD
+     *
+     * Kept only for backward compatibility.
+     *
+     * If an older version of auth.html still
+     * contains registerName, the script can
+     * still read it.
+     */
+
+    const oldNameInput =
         document.getElementById(
             "registerName"
         );
+
 
     const usernameInput =
         document.getElementById(
             "registerUsername"
         );
 
+
     const ageInput =
         document.getElementById(
             "registerAge"
         );
+
 
     const emailInput =
         document.getElementById(
             "registerEmail"
         );
 
+
     const phoneInput =
         document.getElementById(
             "registerPhone"
         );
 
+
     const passwordInput =
         document.getElementById(
             "registerPassword"
         );
+
 
     const confirmPasswordInput =
         document.getElementById(
@@ -70,12 +149,15 @@ document.addEventListener("DOMContentLoaded", () => {
         text,
         type = "error"
     ) {
+
         if (!message) {
             return;
         }
 
+
         message.textContent =
             text || "";
+
 
         message.className =
             `auth-message ${type}`;
@@ -83,11 +165,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function clearMessage() {
+
         if (!message) {
             return;
         }
 
-        message.textContent = "";
+
+        message.textContent =
+            "";
+
 
         message.className =
             "auth-message";
@@ -98,16 +184,20 @@ document.addEventListener("DOMContentLoaded", () => {
        LOADING STATE
        ========================================================= */
 
-    function setLoading(loading) {
+    function setLoading(
+        loading
+    ) {
 
         if (!button) {
             return;
         }
 
+
         const text =
             button.querySelector(
                 ".button-text"
             );
+
 
         const loader =
             button.querySelector(
@@ -118,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.disabled =
             loading;
 
+
         button.classList.toggle(
             "loading",
             loading
@@ -125,26 +216,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * IMPORTANT:
-         *
-         * Do not replace button.textContent.
-         *
-         * The button already contains:
-         *
-         * .button-text
-         * .button-loader
-         *
-         * We only toggle the hidden state.
+         * Keep the original button
+         * HTML intact.
          */
 
         if (text) {
+
             text.hidden =
                 loading;
+
         }
 
+
         if (loader) {
+
             loader.hidden =
                 !loading;
+
         }
 
 
@@ -152,18 +240,33 @@ document.addEventListener("DOMContentLoaded", () => {
             "aria-busy",
             String(loading)
         );
+
     }
 
 
     /* =========================================================
-       VALUE HELPER
+       VALUE HELPERS
        ========================================================= */
 
-    function getValue(input) {
+    function getValue(
+        input
+    ) {
 
         return input
             ? input.value.trim()
             : "";
+
+    }
+
+
+    function getPasswordValue(
+        input
+    ) {
+
+        return input
+            ? input.value
+            : "";
+
     }
 
 
@@ -171,19 +274,80 @@ document.addEventListener("DOMContentLoaded", () => {
        VALIDATION
        ========================================================= */
 
-    function validateRegistration(data) {
+    function validateRegistration(
+        data
+    ) {
 
-        if (!data.name) {
+        /* -----------------------------------------------------
+           FIRST NAME
+           ----------------------------------------------------- */
+
+        if (!data.firstName) {
+
             return (
-                "Please enter your full name."
+                "Please enter your first name."
             );
+
         }
 
 
+        /* -----------------------------------------------------
+           LAST NAME
+           ----------------------------------------------------- */
+
+        if (!data.lastName) {
+
+            return (
+                "Please enter your last name."
+            );
+
+        }
+
+
+        /* -----------------------------------------------------
+           NAME CHARACTERS
+           ----------------------------------------------------- */
+
+        const namePattern =
+            /^[A-Za-zÀ-ÿ' -]+$/;
+
+
+        if (
+            !namePattern.test(
+                data.firstName
+            )
+        ) {
+
+            return (
+                "First name contains invalid characters."
+            );
+
+        }
+
+
+        if (
+            !namePattern.test(
+                data.lastName
+            )
+        ) {
+
+            return (
+                "Last name contains invalid characters."
+            );
+
+        }
+
+
+        /* -----------------------------------------------------
+           USERNAME
+           ----------------------------------------------------- */
+
         if (!data.username) {
+
             return (
                 "Please enter a username."
             );
+
         }
 
 
@@ -191,9 +355,11 @@ document.addEventListener("DOMContentLoaded", () => {
             data.username.length < 4 ||
             data.username.length > 30
         ) {
+
             return (
                 "Username must contain 4–30 characters."
             );
+
         }
 
 
@@ -202,19 +368,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.username
             )
         ) {
+
             return (
                 "Username may only contain letters, numbers, dots, underscores and hyphens."
             );
+
         }
 
+
+        /* -----------------------------------------------------
+           AGE
+           ----------------------------------------------------- */
 
         if (
             !data.age ||
             Number.isNaN(data.age)
         ) {
+
             return (
                 "Please enter your age."
             );
+
         }
 
 
@@ -222,16 +396,24 @@ document.addEventListener("DOMContentLoaded", () => {
             data.age < 18 ||
             data.age > 100
         ) {
+
             return (
-                "Please enter a valid age."
+                "Please enter a valid age between 18 and 100."
             );
+
         }
 
 
+        /* -----------------------------------------------------
+           EMAIL
+           ----------------------------------------------------- */
+
         if (!data.email) {
+
             return (
                 "Please enter your Gmail address."
             );
+
         }
 
 
@@ -244,16 +426,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.email
             )
         ) {
+
             return (
                 "Please enter a valid email address."
             );
+
         }
 
 
+        /* -----------------------------------------------------
+           PHONE
+           ----------------------------------------------------- */
+
         if (!data.phone) {
+
             return (
                 "Please enter your Philippine mobile number."
             );
+
         }
 
 
@@ -266,25 +456,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.phone
             )
         ) {
+
             return (
                 "Phone number must be in 09XXXXXXXXX format."
             );
+
         }
 
 
+        /* -----------------------------------------------------
+           PASSWORD
+           ----------------------------------------------------- */
+
         if (!data.password) {
+
             return (
                 "Please create a password."
             );
+
         }
 
 
         if (
             data.password.length < 8
         ) {
+
             return (
                 "Password must contain at least 8 characters."
             );
+
+        }
+
+
+        /* -----------------------------------------------------
+           CONFIRM PASSWORD
+           ----------------------------------------------------- */
+
+        if (!data.confirmPassword) {
+
+            return (
+                "Please confirm your password."
+            );
+
         }
 
 
@@ -292,13 +505,16 @@ document.addEventListener("DOMContentLoaded", () => {
             data.password !==
             data.confirmPassword
         ) {
+
             return (
                 "Passwords do not match."
             );
+
         }
 
 
         return null;
+
     }
 
 
@@ -312,20 +528,106 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
+
             clearMessage();
 
 
+            /* =================================================
+               READ FIRST NAME
+               ================================================= */
+
+            let firstName =
+                getValue(
+                    firstNameInput
+                );
+
+
+            /* =================================================
+               READ LAST NAME
+               ================================================= */
+
+            let lastName =
+                getValue(
+                    lastNameInput
+                );
+
+
+            /*
+             * BACKWARD COMPATIBILITY
+             *
+             * If an older auth.html contains only
+             * registerName, split it into first/last
+             * name automatically.
+             */
+
+            if (
+                (!firstName || !lastName) &&
+                oldNameInput
+            ) {
+
+                const oldName =
+                    getValue(
+                        oldNameInput
+                    );
+
+
+                const nameParts =
+                    oldName.split(/\s+/);
+
+
+                if (!firstName) {
+
+                    firstName =
+                        nameParts.shift() ||
+                        "";
+
+                }
+
+
+                if (!lastName) {
+
+                    lastName =
+                        nameParts.join(" ") ||
+                        "";
+
+                }
+
+            }
+
+
+            /* =================================================
+               READ FORM DATA
+               ================================================= */
+
             const data = {
 
+                firstName:
+                    firstName,
+
+
+                lastName:
+                    lastName,
+
+
+                /*
+                 * Combined full name.
+                 *
+                 * This is retained because your
+                 * existing backend may still expect
+                 * the "name" property.
+                 */
+
                 name:
-                    getValue(
-                        nameInput
-                    ),
+                    `${firstName} ${lastName}`
+                        .replace(/\s+/g, " ")
+                        .trim(),
+
 
                 username:
                     getValue(
                         usernameInput
                     ),
+
 
                 age:
                     Number(
@@ -334,25 +636,30 @@ document.addEventListener("DOMContentLoaded", () => {
                         )
                     ),
 
+
                 email:
                     getValue(
                         emailInput
                     ),
+
 
                 phone:
                     getValue(
                         phoneInput
                     ),
 
+
                 password:
-                    passwordInput
-                        ? passwordInput.value
-                        : "",
+                    getPasswordValue(
+                        passwordInput
+                    ),
+
 
                 confirmPassword:
-                    confirmPasswordInput
-                        ? confirmPasswordInput.value
-                        : ""
+                    getPasswordValue(
+                        confirmPasswordInput
+                    )
+
             };
 
 
@@ -373,7 +680,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     "error"
                 );
 
+
                 return;
+
             }
 
 
@@ -381,7 +690,9 @@ document.addEventListener("DOMContentLoaded", () => {
                START LOADING
                ================================================= */
 
-            setLoading(true);
+            setLoading(
+                true
+            );
 
 
             try {
@@ -392,49 +703,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (
                     !window.StockFlowAPI ||
-                    typeof StockFlowAPI.register !==
+                    typeof window.StockFlowAPI.register !==
                         "function"
                 ) {
 
                     throw new Error(
-                        "StockFlow registration service is unavailable."
+                        "STOCKFLOW registration service is unavailable."
                     );
+
                 }
 
 
                 /* =============================================
-                   API REQUEST
+                   REGISTER
                    ============================================= */
 
                 const response =
-                    await StockFlowAPI.register({
+                    await window.StockFlowAPI.register({
+
+                        /*
+                         * New structure
+                         */
+
+                        firstName:
+                            data.firstName,
+
+
+                        lastName:
+                            data.lastName,
+
+
+                        /*
+                         * Existing backend
+                         * compatibility.
+                         */
 
                         name:
                             data.name,
 
+
                         username:
                             data.username,
+
 
                         age:
                             data.age,
 
-                        /*
-                         * Keep gmail for compatibility
-                         * with your existing backend.
-                         */
-                        gmail:
-                            data.email,
 
                         /*
-                         * Also provide email.
-                         * If the backend ignores it,
-                         * that is fine.
+                         * Send both.
+                         *
+                         * Your API/backend can use
+                         * whichever field it supports.
                          */
+
                         email:
                             data.email,
 
+
+                        gmail:
+                            data.email,
+
+
                         phone:
                             data.phone,
+
 
                         password:
                             data.password
@@ -449,26 +782,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!response) {
 
                     throw new Error(
-                        "No response was received from the server."
+                        "No response was received from the STOCKFLOW server."
                     );
+
                 }
 
 
                 /* =============================================
-                   FAILED REGISTRATION
+                   REGISTRATION FAILED
                    ============================================= */
 
-                if (!response.success) {
+                if (
+                    response.success === false
+                ) {
 
                     showMessage(
                         response.message ||
-                        "Registration failed. Please try again.",
+                        "Registration failed. Please check your information and try again.",
                         "error"
                     );
 
-                    setLoading(false);
+
+                    setLoading(
+                        false
+                    );
+
 
                     return;
+
                 }
 
 
@@ -490,13 +831,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (
                     window.STOCKFLOW_CONFIG &&
-                    STOCKFLOW_CONFIG.OTP_KEY
+                    window.STOCKFLOW_CONFIG.OTP_KEY
                 ) {
 
                     sessionStorage.setItem(
-                        STOCKFLOW_CONFIG.OTP_KEY,
+                        window.STOCKFLOW_CONFIG.OTP_KEY,
                         otpIdentity
                     );
+
                 }
 
 
@@ -517,15 +859,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 showMessage(
                     response.message ||
-                    "Registration successful. A verification code has been sent to your email and phone.",
+                    "Registration successful. A verification code has been sent to your registered email and mobile number.",
                     "success"
                 );
 
 
+                /* =============================================
+                   REDIRECT TO OTP
+                   ============================================= */
+
                 /*
-                 * Keep button in loading state while
-                 * redirecting. This prevents the user from
-                 * submitting again.
+                 * Keep the button disabled while
+                 * redirecting so the user cannot
+                 * submit the registration twice.
                  */
 
                 window.setTimeout(
@@ -536,13 +882,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         );
 
                     },
-                    500
+                    700
                 );
+
 
             } catch (error) {
 
                 console.error(
-                    "StockFlow registration error:",
+                    "STOCKFLOW registration error:",
                     error
                 );
 
@@ -554,13 +901,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-                /*
-                 * If the page remains open,
-                 * restore the normal button.
-                 */
+                setLoading(
+                    false
+                );
 
-                setLoading(false);
             }
+
         }
     );
+
+
 });
