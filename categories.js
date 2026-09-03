@@ -1,25 +1,101 @@
 /* ============================================================
-   STOCKFLOW | CATEGORIES MODULE
+   STOCKFLOW | CATEGORIES
    categories.js
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-    "use strict";
+    const user = await StockFlowAuth.requireAuth();
+
+    if (!user) return;
+
+    StockFlowAuth.bindUserUI(user);
 
     /* ========================================================
-       ELEMENT HELPERS
+       GLOBAL UI
        ======================================================== */
 
-    const $ = (selector) =>
-        document.querySelector(selector);
+    const logoutBtn =
+        document.querySelector("#logoutBtn");
 
-    const $$ = (selector) =>
-        document.querySelectorAll(selector);
+    logoutBtn?.addEventListener("click", () => {
+        StockFlowAuth.logout();
+    });
+
+    const mobileMenuBtn =
+        document.querySelector("#mobileMenuBtn");
+
+    mobileMenuBtn?.addEventListener("click", () => {
+        document.body.classList.toggle("sidebar-open");
+    });
+
+    const sidebarOverlay =
+        document.querySelector("#sidebarOverlay");
+
+    sidebarOverlay?.addEventListener("click", () => {
+        document.body.classList.remove("sidebar-open");
+    });
 
 
-    const getElement = (id) =>
-        document.getElementById(id);
+    /* ========================================================
+       ELEMENTS
+       ======================================================== */
+
+    const tableBody =
+        document.querySelector("#categoriesTableBody");
+
+    const searchInput =
+        document.querySelector("#categorySearch");
+
+    const addBtn =
+        document.querySelector("#addCategoryBtn");
+
+    const modal =
+        document.querySelector("#categoryModal");
+
+    const modalTitle =
+        document.querySelector("#categoryModalTitle");
+
+    const form =
+        document.querySelector("#categoryForm");
+
+    const categoryIdInput =
+        document.querySelector("#categoryId");
+
+    const categoryNameInput =
+        document.querySelector("#categoryName");
+
+    const categoryDescriptionInput =
+        document.querySelector("#categoryDescription");
+
+    const categoryStatusInput =
+        document.querySelector("#categoryStatus");
+
+    const saveBtn =
+        document.querySelector("#saveCategoryBtn");
+
+    const closeButtons =
+        document.querySelectorAll(
+            "[data-close-category-modal]"
+        );
+
+    const loading =
+        document.querySelector("#categoriesLoading");
+
+    const emptyState =
+        document.querySelector("#categoriesEmpty");
+
+    const errorBox =
+        document.querySelector("#categoriesError");
+
+    const totalCategories =
+        document.querySelector("#totalCategories");
+
+    const activeCategories =
+        document.querySelector("#activeCategories");
+
+    const inactiveCategories =
+        document.querySelector("#inactiveCategories");
 
 
     /* ========================================================
@@ -28,161 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let categories = [];
 
-    let filteredCategories = [];
-
-    let editingCategoryId = null;
-
-    let currentPage = 1;
-
-    const itemsPerPage = 9;
-
-
-    /* ========================================================
-       AUTHENTICATION
-       ======================================================== */
-
-    try {
-
-        if (
-            typeof StockFlowAuth !== "undefined" &&
-            typeof StockFlowAuth.requireAuth === "function"
-        ) {
-
-            const user =
-                await StockFlowAuth.requireAuth();
-
-            if (!user) {
-                return;
-            }
-
-            if (
-                typeof StockFlowAuth.bindUserUI ===
-                "function"
-            ) {
-
-                StockFlowAuth.bindUserUI(user);
-
-            }
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "StockFlow authentication error:",
-            error
-        );
-
-        return;
-
-    }
-
-
-    /* ========================================================
-       COMMON UI
-       ======================================================== */
-
-    bindNavigation();
-
-    bindSearch();
-
-    bindFilters();
-
-    bindModalEvents();
-
-    bindCategoryForm();
-
-    bindRefresh();
-
-    bindLogout();
-
-
-    /* ========================================================
-       INITIAL LOAD
-       ======================================================== */
-
-    await loadCategories();
-
-
-    /* ========================================================
-       NAVIGATION
-       ======================================================== */
-
-    function bindNavigation() {
-
-        const mobileMenuBtn =
-            getElement("mobileMenuBtn");
-
-        const sidebarOverlay =
-            getElement("sidebarOverlay");
-
-
-        mobileMenuBtn?.addEventListener(
-            "click",
-            () => {
-
-                document.body.classList.toggle(
-                    "sidebar-open"
-                );
-
-            }
-        );
-
-
-        sidebarOverlay?.addEventListener(
-            "click",
-            () => {
-
-                document.body.classList.remove(
-                    "sidebar-open"
-                );
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       LOGOUT
-       ======================================================== */
-
-    function bindLogout() {
-
-        const logoutBtn =
-            getElement("logoutBtn");
-
-
-        logoutBtn?.addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    if (
-                        typeof StockFlowAuth !==
-                        "undefined" &&
-                        typeof StockFlowAuth.logout ===
-                        "function"
-                    ) {
-
-                        await StockFlowAuth.logout();
-
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
-
-                }
-
-            }
-        );
-
-    }
+    let editingId = null;
 
 
     /* ========================================================
@@ -191,125 +113,61 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadCategories() {
 
-        showLoading();
+        showLoading(true);
 
-        setConnectionStatus(
-            "CONNECTING"
-        );
-
+        hideError();
 
         try {
 
-            if (
-                typeof StockFlowAPI ===
-                "undefined"
-            ) {
-
-                throw new Error(
-                    "StockFlowAPI is not loaded."
-                );
-
-            }
-
-
-            let response;
-
-
-            /*
-             * Preferred API method.
-             */
+            const response =
+                await StockFlowAPI.getCategories();
 
             if (
-                typeof StockFlowAPI.getCategories ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.getCategories();
-
-            }
-
-            /*
-             * Alternative API method.
-             */
-
-            else if (
-                typeof StockFlowAPI.categories ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.categories();
-
-            }
-
-            else {
-
-                throw new Error(
-                    "Categories API method is missing from API.js."
-                );
-
-            }
-
-
-            if (
-                response &&
+                !response ||
                 response.success === false
             ) {
 
                 throw new Error(
-                    response.message ||
+                    response?.message ||
                     "Unable to load categories."
                 );
 
             }
 
-
             categories =
-                normalizeCategories(
-                    response
-                );
-
-
-            filteredCategories =
-                [...categories];
-
-
-            currentPage = 1;
-
+                response.categories ||
+                response.data ||
+                [];
 
             renderCategories();
 
-            updateSummary();
+            updateStatistics();
 
+        }
 
-            setConnectionStatus(
-                "ONLINE"
-            );
-
-
-        } catch (error) {
+        catch (error) {
 
             console.error(
                 "Category loading error:",
                 error
             );
 
+            showError(
+                error.message ||
+                "Unable to connect to the server."
+            );
 
             categories = [];
 
-            filteredCategories = [];
+            renderCategories();
 
+            updateStatistics();
 
-            renderError(
-                error.message ||
-                "Unable to load categories."
-            );
+        }
 
+        finally {
 
-            setConnectionStatus(
-                "OFFLINE"
-            );
+            showLoading(false);
 
         }
 
@@ -317,1236 +175,259 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       NORMALIZE API RESPONSE
-       ======================================================== */
-
-    function normalizeCategories(response) {
-
-        if (!response) {
-            return [];
-        }
-
-
-        let list = [];
-
-
-        if (
-            Array.isArray(response)
-        ) {
-
-            list =
-                response;
-
-        }
-
-        else if (
-            Array.isArray(
-                response.categories
-            )
-        ) {
-
-            list =
-                response.categories;
-
-        }
-
-        else if (
-            response.data &&
-            Array.isArray(
-                response.data.categories
-            )
-        ) {
-
-            list =
-                response.data.categories;
-
-        }
-
-        else if (
-            Array.isArray(
-                response.data
-            )
-        ) {
-
-            list =
-                response.data;
-
-        }
-
-
-        return list
-            .filter(Boolean)
-            .map(
-                normalizeCategory
-            );
-
-    }
-
-
-    /* ========================================================
-       NORMALIZE SINGLE CATEGORY
-       ======================================================== */
-
-    function normalizeCategory(item) {
-
-        return {
-
-            id:
-                item.id ??
-                item.ID ??
-                item.categoryId ??
-                item.CATEGORY_ID ??
-                item.uid ??
-                item.UID ??
-                "",
-
-
-            name:
-                item.name ??
-                item.NAME ??
-                item.categoryName ??
-                item.CATEGORY_NAME ??
-                "",
-
-
-            description:
-                item.description ??
-                item.DESCRIPTION ??
-                "",
-
-
-            status:
-                String(
-                    item.status ??
-                    item.STATUS ??
-                    "ACTIVE"
-                )
-                .toUpperCase(),
-
-
-            productCount:
-                Number(
-                    item.productCount ??
-                    item.PRODUCT_COUNT ??
-                    item.products ??
-                    item.PRODUCTS ??
-                    item.totalProducts ??
-                    0
-                ),
-
-
-            createdAt:
-                item.createdAt ??
-                item.CREATED_AT ??
-                item.created_at ??
-                "",
-
-
-            updatedAt:
-                item.updatedAt ??
-                item.UPDATED_AT ??
-                item.updated_at ??
-                ""
-
-        };
-
-    }
-
-
-    /* ========================================================
-       RENDER CATEGORIES
+       RENDER
        ======================================================== */
 
     function renderCategories() {
 
-        const grid =
-            getElement("categoriesGrid") ||
-            getElement("categoryGrid") ||
-            $(".categories-grid") ||
-            $(".category-grid");
+        if (!tableBody) return;
 
-
-        const tableBody =
-            getElement("categoriesTableBody") ||
-            getElement("categoryTableBody");
-
-
-        if (
-            !grid &&
-            !tableBody
-        ) {
-
-            console.warn(
-                "Category container not found."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            filteredCategories.length === 0
-        ) {
-
-            if (grid) {
-
-                grid.innerHTML =
-                    emptyStateHTML();
-
-            }
-
-
-            if (tableBody) {
-
-                tableBody.innerHTML =
-                    `
-                    <tr>
-                        <td colspan="7">
-                            ${emptyStateHTML()}
-                        </td>
-                    </tr>
-                    `;
-
-            }
-
-
-            updatePagination();
-
-            return;
-
-        }
-
-
-        const start =
-            (currentPage - 1) *
-            itemsPerPage;
-
-
-        const end =
-            start +
-            itemsPerPage;
-
-
-        const pageItems =
-            filteredCategories.slice(
-                start,
-                end
-            );
-
-
-        if (grid) {
-
-            grid.innerHTML =
-                pageItems
-                    .map(
-                        categoryCardHTML
-                    )
-                    .join("");
-
-        }
-
-
-        if (tableBody) {
-
-            tableBody.innerHTML =
-                pageItems
-                    .map(
-                        categoryRowHTML
-                    )
-                    .join("");
-
-        }
-
-
-        bindCategoryActions();
-
-        updatePagination();
-
-    }
-
-
-    /* ========================================================
-       CATEGORY CARD
-       ======================================================== */
-
-    function categoryCardHTML(category) {
-
-        const id =
-            escapeHTML(
-                category.id
-            );
-
-
-        const name =
-            escapeHTML(
-                category.name ||
-                "Unnamed Category"
-            );
-
-
-        const description =
-            escapeHTML(
-                category.description ||
-                "No description available."
-            );
-
-
-        const status =
+        const keyword =
             String(
-                category.status ||
-                "ACTIVE"
-            )
-            .toUpperCase();
-
-
-        const productCount =
-            Number(
-                category.productCount ||
-                0
-            );
-
-
-        return `
-
-            <article
-                class="category-card"
-                data-category-id="${id}"
-            >
-
-                <div class="category-card-header">
-
-                    <div class="category-card-icon">
-
-                        <i class="fa-solid fa-layer-group"></i>
-
-                    </div>
-
-
-                    <div class="category-card-menu">
-
-                        <button
-                            type="button"
-                            class="btn btn-secondary btn-icon edit-category-btn"
-                            data-id="${id}"
-                            title="Edit category"
-                            aria-label="Edit category"
-                        >
-
-                            <i class="fa-solid fa-pen"></i>
-
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="btn btn-danger btn-icon delete-category-btn"
-                            data-id="${id}"
-                            title="Delete category"
-                            aria-label="Delete category"
-                        >
-
-                            <i class="fa-solid fa-trash"></i>
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <div class="category-card-body">
-
-                    <h3 class="category-card-title">
-                        ${name}
-                    </h3>
-
-
-                    <p class="category-card-description">
-                        ${description}
-                    </p>
-
-                </div>
-
-
-                <div class="category-card-footer">
-
-                    <span class="category-product-count">
-
-                        <strong>
-                            ${productCount}
-                        </strong>
-
-                        <span>
-                            product${productCount === 1 ? "" : "s"}
-                        </span>
-
-                    </span>
-
-
-                    ${statusBadge(status)}
-
-                </div>
-
-            </article>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       CATEGORY TABLE ROW
-       ======================================================== */
-
-    function categoryRowHTML(category) {
-
-        const id =
-            escapeHTML(
-                category.id
-            );
-
-
-        const name =
-            escapeHTML(
-                category.name ||
-                "Unnamed Category"
-            );
-
-
-        const description =
-            escapeHTML(
-                category.description ||
-                "No description"
-            );
-
-
-        const status =
-            String(
-                category.status ||
-                "ACTIVE"
-            )
-            .toUpperCase();
-
-
-        const productCount =
-            Number(
-                category.productCount ||
-                0
-            );
-
-
-        const createdAt =
-            formatDate(
-                category.createdAt
-            );
-
-
-        return `
-
-            <tr
-                data-category-id="${id}"
-            >
-
-                <td>
-
-                    <div class="category-name-cell">
-
-                        <div class="category-table-icon">
-
-                            <i class="fa-solid fa-layer-group"></i>
-
-                        </div>
-
-
-                        <div>
-
-                            <strong>
-                                ${name}
-                            </strong>
-
-                            <small>
-                                ${description}
-                            </small>
-
-                        </div>
-
-                    </div>
-
-                </td>
-
-
-                <td>
-                    ${productCount}
-                </td>
-
-
-                <td>
-                    ${statusBadge(status)}
-                </td>
-
-
-                <td>
-                    ${createdAt || "—"}
-                </td>
-
-
-                <td>
-
-                    <div class="action-buttons">
-
-                        <button
-                            type="button"
-                            class="btn btn-secondary btn-icon edit-category-btn"
-                            data-id="${id}"
-                            title="Edit"
-                        >
-
-                            <i class="fa-solid fa-pen"></i>
-
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="btn btn-danger btn-icon delete-category-btn"
-                            data-id="${id}"
-                            title="Delete"
-                        >
-
-                            <i class="fa-solid fa-trash"></i>
-
-                        </button>
-
-                    </div>
-
-                </td>
-
-            </tr>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       STATUS BADGE
-       ======================================================== */
-
-    function statusBadge(status) {
-
-        const normalized =
-            String(
-                status ||
-                "ACTIVE"
-            )
-            .toUpperCase();
-
-
-        let className =
-            "status-active";
-
-
-        if (
-            normalized ===
-            "INACTIVE"
-        ) {
-
-            className =
-                "status-inactive";
-
-        }
-
-
-        if (
-            normalized ===
-            "PENDING"
-        ) {
-
-            className =
-                "status-pending";
-
-        }
-
-
-        return `
-
-            <span
-                class="status-badge ${className}"
-            >
-
-                <i class="fa-solid fa-circle"
-                   style="font-size:6px;">
-                </i>
-
-                ${escapeHTML(normalized)}
-
-            </span>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       EMPTY STATE
-       ======================================================== */
-
-    function emptyStateHTML() {
-
-        return `
-
-            <div class="empty-state">
-
-                <i class="fa-solid fa-layer-group"></i>
-
-                <strong>
-                    No categories found
-                </strong>
-
-                <p>
-                    Create your first product category
-                    to start organizing your inventory.
-                </p>
-
-            </div>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       ERROR STATE
-       ======================================================== */
-
-    function renderError(message) {
-
-        const grid =
-            getElement("categoriesGrid") ||
-            getElement("categoryGrid") ||
-            $(".categories-grid") ||
-            $(".category-grid");
-
-
-        const tableBody =
-            getElement("categoriesTableBody") ||
-            getElement("categoryTableBody");
-
-
-        const html = `
-
-            <div class="empty-state">
-
-                <i class="fa-solid fa-triangle-exclamation"></i>
-
-                <strong>
-                    Unable to load categories
-                </strong>
-
-                <p>
-                    ${escapeHTML(message)}
-                </p>
-
-
-                <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="retryCategoriesBtn"
-                    style="margin-top:15px;"
-                >
-
-                    <i class="fa-solid fa-rotate-right"></i>
-
-                    Retry
-
-                </button>
-
-            </div>
-
-        `;
-
-
-        if (grid) {
-
-            grid.innerHTML =
-                html;
-
-        }
-
-
-        if (tableBody) {
-
-            tableBody.innerHTML =
-                `
-                <tr>
-                    <td colspan="7">
-                        ${html}
-                    </td>
-                </tr>
-                `;
-
-        }
-
-
-        getElement(
-            "retryCategoriesBtn"
-        )?.addEventListener(
-            "click",
-            loadCategories
-        );
-
-    }
-
-
-    /* ========================================================
-       LOADING STATE
-       ======================================================== */
-
-    function showLoading() {
-
-        const grid =
-            getElement("categoriesGrid") ||
-            getElement("categoryGrid") ||
-            $(".categories-grid") ||
-            $(".category-grid");
-
-
-        const tableBody =
-            getElement("categoriesTableBody") ||
-            getElement("categoryTableBody");
-
-
-        const html = `
-
-            <div class="loading-state">
-
-                <i class="fa-solid fa-spinner fa-spin"></i>
-
-                <span>
-                    Loading categories...
-                </span>
-
-            </div>
-
-        `;
-
-
-        if (grid) {
-
-            grid.innerHTML =
-                html;
-
-        }
-
-
-        if (tableBody) {
-
-            tableBody.innerHTML =
-                `
-                <tr>
-                    <td colspan="7">
-                        ${html}
-                    </td>
-                </tr>
-                `;
-
-        }
-
-    }
-
-
-    /* ========================================================
-       SUMMARY
-       ======================================================== */
-
-    function updateSummary() {
-
-        const total =
-            categories.length;
-
-
-        const active =
-            categories.filter(
-                c =>
-                    String(
-                        c.status
-                    )
-                    .toUpperCase()
-                    === "ACTIVE"
-            ).length;
-
-
-        const inactive =
-            categories.filter(
-                c =>
-                    String(
-                        c.status
-                    )
-                    .toUpperCase()
-                    === "INACTIVE"
-            ).length;
-
-
-        const totalProducts =
-            categories.reduce(
-                (
-                    total,
-                    category
-                ) =>
-                    total +
-                    Number(
-                        category.productCount ||
-                        0
-                    ),
-                0
-            );
-
-
-        setText(
-            [
-                "categoriesCount",
-                "totalCategories",
-                "categoryCount"
-            ],
-            total
-        );
-
-
-        setText(
-            [
-                "activeCategoriesCount",
-                "activeCategoryCount"
-            ],
-            active
-        );
-
-
-        setText(
-            [
-                "inactiveCategoriesCount",
-                "inactiveCategoryCount"
-            ],
-            inactive
-        );
-
-
-        setText(
-            [
-                "categoryProductsCount",
-                "totalCategoryProducts"
-            ],
-            totalProducts
-        );
-
-    }
-
-
-    /* ========================================================
-       SEARCH
-       ======================================================== */
-
-    function bindSearch() {
-
-        const searchInput =
-            getElement("categorySearch") ||
-            getElement("searchCategory") ||
-            document.querySelector(
-                'input[name="categorySearch"]'
-            ) ||
-            document.querySelector(
-                '.search-box input'
-            );
-
-
-        searchInput?.addEventListener(
-            "input",
-            () => {
-
-                applyFilters(
-                    searchInput.value
-                );
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       FILTERS
-       ======================================================== */
-
-    function bindFilters() {
-
-        const filter =
-            getElement("categoryStatusFilter") ||
-            getElement("statusFilter") ||
-            document.querySelector(
-                'select[name="categoryStatus"]'
-            );
-
-
-        filter?.addEventListener(
-            "change",
-            () => {
-
-                const search =
-                    getSearchValue();
-
-
-                applyFilters(
-                    search
-                );
-
-            }
-        );
-
-    }
-
-
-    function applyFilters(searchValue = "") {
-
-        const search =
-            String(
-                searchValue ||
-                ""
+                searchInput?.value || ""
             )
             .trim()
             .toLowerCase();
 
 
-        const statusFilter =
-            getStatusFilter();
+        const filtered =
+            categories.filter(category => {
+
+                const name =
+                    getCategoryName(category)
+                        .toLowerCase();
+
+                const description =
+                    getCategoryDescription(category)
+                        .toLowerCase();
+
+                const status =
+                    getCategoryStatus(category)
+                        .toLowerCase();
+
+                return (
+                    !keyword ||
+                    name.includes(keyword) ||
+                    description.includes(keyword) ||
+                    status.includes(keyword)
+                );
+
+            });
 
 
-        filteredCategories =
+        tableBody.innerHTML = "";
+
+
+        if (!filtered.length) {
+
+            if (emptyState) {
+
+                emptyState.hidden = false;
+
+            }
+
+            return;
+
+        }
+
+
+        if (emptyState) {
+
+            emptyState.hidden = true;
+
+        }
+
+
+        filtered.forEach(category => {
+
+            const row =
+                document.createElement("tr");
+
+            const id =
+                getCategoryId(category);
+
+            const name =
+                getCategoryName(category);
+
+            const description =
+                getCategoryDescription(category);
+
+            const status =
+                getCategoryStatus(category);
+
+            const createdAt =
+                getCategoryDate(category);
+
+
+            row.innerHTML = `
+
+                <td>
+                    <span class="category-id">
+                        ${escapeHtml(id || "—")}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="category-name-cell">
+                        <div class="category-icon">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+
+                        <div>
+                            <strong>
+                                ${escapeHtml(name || "Unnamed Category")}
+                            </strong>
+
+                            ${
+                                description
+                                    ? `
+                                        <small>
+                                            ${escapeHtml(description)}
+                                        </small>
+                                      `
+                                    : ""
+                            }
+
+                        </div>
+                    </div>
+                </td>
+
+                <td>
+                    <span class="
+                        status-badge
+                        ${status.toLowerCase() === "active"
+                            ? "status-active"
+                            : "status-inactive"}
+                    ">
+                        ${escapeHtml(status)}
+                    </span>
+                </td>
+
+                <td>
+                    ${escapeHtml(createdAt || "—")}
+                </td>
+
+                <td>
+                    <div class="table-actions">
+
+                        <button
+                            type="button"
+                            class="icon-btn edit-category-btn"
+                            title="Edit category"
+                            data-id="${escapeHtml(id)}"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="icon-btn delete-category-btn danger"
+                            title="Delete category"
+                            data-id="${escapeHtml(id)}"
+                        >
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+
+                    </div>
+                </td>
+
+            `;
+
+
+            tableBody.appendChild(row);
+
+        });
+
+
+        bindRowActions();
+
+    }
+
+
+    /* ========================================================
+       STATISTICS
+       ======================================================== */
+
+    function updateStatistics() {
+
+        const total =
+            categories.length;
+
+        const active =
             categories.filter(
-                category => {
+                category =>
+                    getCategoryStatus(category)
+                        .toUpperCase() === "ACTIVE"
+            ).length;
 
-                    const matchesSearch =
-                        !search ||
-                        String(
-                            category.name
-                        )
-                        .toLowerCase()
-                        .includes(search) ||
-
-                        String(
-                            category.description
-                        )
-                        .toLowerCase()
-                        .includes(search);
+        const inactive =
+            total - active;
 
 
-                    const matchesStatus =
-                        !statusFilter ||
-                        statusFilter === "ALL" ||
-                        String(
-                            category.status
-                        )
-                        .toUpperCase()
-                        === statusFilter;
+        setText(
+            totalCategories,
+            total
+        );
 
+        setText(
+            activeCategories,
+            active
+        );
 
-                    return (
-                        matchesSearch &&
-                        matchesStatus
-                    );
-
-                }
-            );
-
-
-        currentPage = 1;
-
-        renderCategories();
-
-    }
-
-
-    function getSearchValue() {
-
-        const input =
-            getElement("categorySearch") ||
-            getElement("searchCategory") ||
-            document.querySelector(
-                'input[name="categorySearch"]'
-            ) ||
-            document.querySelector(
-                '.search-box input'
-            );
-
-
-        return input?.value || "";
-
-    }
-
-
-    function getStatusFilter() {
-
-        const filter =
-            getElement("categoryStatusFilter") ||
-            getElement("statusFilter") ||
-            document.querySelector(
-                'select[name="categoryStatus"]'
-            );
-
-
-        return String(
-            filter?.value ||
-            "ALL"
-        )
-        .toUpperCase();
-
-    }
-
-
-    /* ========================================================
-       CATEGORY ACTIONS
-       ======================================================== */
-
-    function bindCategoryActions() {
-
-        $$(".edit-category-btn")
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            const id =
-                                button.dataset.id;
-
-                            openEditCategory(
-                                id
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-
-        $$(".delete-category-btn")
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            const id =
-                                button.dataset.id;
-
-                            deleteCategory(
-                                id
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-    }
-
-
-    /* ========================================================
-       REFRESH
-       ======================================================== */
-
-    function bindRefresh() {
-
-        const refreshButtons =
-            [
-                getElement("refreshCategoriesBtn"),
-                getElement("refreshBtn")
-            ]
-            .filter(Boolean);
-
-
-        refreshButtons.forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    async () => {
-
-                        const original =
-                            button.innerHTML;
-
-
-                        button.disabled =
-                            true;
-
-
-                        button.innerHTML =
-                            `
-                            <i class="fa-solid fa-spinner fa-spin"></i>
-                            Refreshing
-                            `;
-
-
-                        try {
-
-                            await loadCategories();
-
-                        }
-
-                        finally {
-
-                            button.disabled =
-                                false;
-
-                            button.innerHTML =
-                                original;
-
-                        }
-
-                    }
-                );
-
-            }
+        setText(
+            inactiveCategories,
+            inactive
         );
 
     }
 
 
     /* ========================================================
-       MODAL
+       ADD CATEGORY
        ======================================================== */
 
-    function bindModalEvents() {
+    function openAddModal() {
 
-        const addButtons =
-            [
-                getElement("addCategoryBtn"),
-                getElement("createCategoryBtn"),
-                getElement("newCategoryBtn")
-            ]
-            .filter(Boolean);
+        editingId = null;
 
+        if (modalTitle) {
 
-        addButtons.forEach(
-            button => {
+            modalTitle.textContent =
+                "Add Category";
 
-                button.addEventListener(
-                    "click",
-                    () => {
+        }
 
-                        openAddCategory();
+        resetForm();
 
-                    }
-                );
-
-            }
+        setInputValue(
+            categoryStatusInput,
+            "ACTIVE"
         );
 
-
-        const closeButtons =
-            document.querySelectorAll(
-                ".modal-close, [data-close-modal]"
-            );
-
-
-        closeButtons.forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    closeAllModals
-                );
-
-            }
-        );
-
-
-        document.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target.classList.contains(
-                        "modal-overlay"
-                    )
-                ) {
-
-                    closeAllModals();
-
-                }
-
-            }
-        );
-
-
-        document.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key ===
-                    "Escape"
-                ) {
-
-                    closeAllModals();
-
-                }
-
-            }
-        );
+        showModal();
 
     }
 
 
     /* ========================================================
-       OPEN ADD CATEGORY
+       EDIT CATEGORY
        ======================================================== */
 
-    function openAddCategory() {
-
-        editingCategoryId =
-            null;
-
-
-        resetCategoryForm();
-
-
-        setModalTitle(
-            "Add Category"
-        );
-
-
-        setModalOpen(
-            true
-        );
-
-    }
-
-
-    /* ========================================================
-       OPEN EDIT CATEGORY
-       ======================================================== */
-
-    function openEditCategory(id) {
+    function openEditModal(id) {
 
         const category =
             categories.find(
                 item =>
                     String(
-                        item.id
-                    ) ===
-                    String(id)
+                        getCategoryId(item)
+                    ) === String(id)
             );
 
 
         if (!category) {
 
-            showNotification(
-                "Category not found.",
-                "error"
+            showError(
+                "Category could not be found."
             );
 
             return;
@@ -1554,89 +435,39 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        editingCategoryId =
-            category.id;
+        editingId = id;
 
 
-        setFormValue(
-            [
-                "categoryId",
-                "categoryID",
-                "editCategoryId"
-            ],
-            category.id
-        );
+        if (modalTitle) {
 
-
-        setFormValue(
-            [
-                "categoryName",
-                "name"
-            ],
-            category.name
-        );
-
-
-        setFormValue(
-            [
-                "categoryDescription",
-                "description"
-            ],
-            category.description
-        );
-
-
-        setFormValue(
-            [
-                "categoryStatus",
-                "status"
-            ],
-            category.status
-        );
-
-
-        setModalTitle(
-            "Edit Category"
-        );
-
-
-        setModalOpen(
-            true
-        );
-
-    }
-
-
-    /* ========================================================
-       CATEGORY FORM
-       ======================================================== */
-
-    function bindCategoryForm() {
-
-        const form =
-            getElement("categoryForm");
-
-
-        if (!form) {
-
-            return;
+            modalTitle.textContent =
+                "Edit Category";
 
         }
 
 
-        form.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-
-                await saveCategory(
-                    form
-                );
-
-            }
+        setInputValue(
+            categoryIdInput,
+            getCategoryId(category)
         );
+
+        setInputValue(
+            categoryNameInput,
+            getCategoryName(category)
+        );
+
+        setInputValue(
+            categoryDescriptionInput,
+            getCategoryDescription(category)
+        );
+
+        setInputValue(
+            categoryStatusInput,
+            getCategoryStatus(category)
+        );
+
+
+        showModal();
 
     }
 
@@ -1645,247 +476,151 @@ document.addEventListener("DOMContentLoaded", async () => {
        SAVE CATEGORY
        ======================================================== */
 
-    async function saveCategory(form) {
-
-        const submitButton =
-            form.querySelector(
-                'button[type="submit"]'
-            );
-
+    async function saveCategory() {
 
         const name =
-            getFormValue(
-                [
-                    "categoryName",
-                    "name"
-                ]
-            );
-
+            String(
+                categoryNameInput?.value || ""
+            ).trim();
 
         const description =
-            getFormValue(
-                [
-                    "categoryDescription",
-                    "description"
-                ]
-            );
-
+            String(
+                categoryDescriptionInput?.value || ""
+            ).trim();
 
         const status =
-            getFormValue(
-                [
-                    "categoryStatus",
-                    "status"
-                ]
-            ) ||
-            "ACTIVE";
+            String(
+                categoryStatusInput?.value ||
+                "ACTIVE"
+            ).trim().toUpperCase();
 
 
-        if (!name.trim()) {
+        if (!name) {
 
-            showNotification(
-                "Category name is required.",
-                "error"
+            showFormMessage(
+                "Category name is required."
             );
+
+            categoryNameInput?.focus();
 
             return;
 
         }
 
 
-        const duplicate =
-            categories.find(
-                category =>
-                    String(
-                        category.name
-                    )
-                    .trim()
-                    .toLowerCase()
-                    ===
-                    name
-                        .trim()
-                        .toLowerCase()
-                    &&
-                    String(
-                        category.id
-                    ) !==
-                    String(
-                        editingCategoryId
-                    )
+        if (name.length < 2) {
+
+            showFormMessage(
+                "Category name must contain at least 2 characters."
             );
 
-
-        if (duplicate) {
-
-            showNotification(
-                "A category with this name already exists.",
-                "error"
-            );
+            categoryNameInput?.focus();
 
             return;
 
         }
 
 
-        const payload = {
-
-            action:
-                editingCategoryId
-                    ? "updateCategory"
-                    : "createCategory",
-
-            id:
-                editingCategoryId ||
-                undefined,
-
-            categoryId:
-                editingCategoryId ||
-                undefined,
-
-            name:
-                name.trim(),
-
-            categoryName:
-                name.trim(),
-
-            description:
-                description.trim(),
-
-            status:
-                String(
-                    status
-                ).toUpperCase()
-
-        };
+        setSaving(true);
 
 
         try {
 
-            setButtonLoading(
-                submitButton,
-                true,
-                editingCategoryId
-                    ? "Updating..."
-                    : "Creating..."
-            );
-
-
             let response;
 
 
-            if (
-                editingCategoryId
-            ) {
+            if (editingId) {
 
-                if (
-                    typeof StockFlowAPI.updateCategory ===
-                    "function"
-                ) {
+                response =
+                    await StockFlowAPI.updateCategory({
 
-                    response =
-                        await StockFlowAPI.updateCategory(
-                            payload
-                        );
+                        id:
+                            editingId,
 
-                }
+                        categoryId:
+                            editingId,
 
-                else {
+                        name:
+                            name,
 
-                    response =
-                        await callGenericAPI(
-                            payload
-                        );
+                        categoryName:
+                            name,
 
-                }
+                        description:
+                            description,
+
+                        status:
+                            status
+
+                    });
 
             }
 
             else {
 
-                if (
-                    typeof StockFlowAPI.createCategory ===
-                    "function"
-                ) {
+                response =
+                    await StockFlowAPI.createCategory({
 
-                    response =
-                        await StockFlowAPI.createCategory(
-                            payload
-                        );
+                        name:
+                            name,
 
-                }
+                        categoryName:
+                            name,
 
-                else if (
-                    typeof StockFlowAPI.addCategory ===
-                    "function"
-                ) {
+                        description:
+                            description,
 
-                    response =
-                        await StockFlowAPI.addCategory(
-                            payload
-                        );
+                        status:
+                            status
 
-                }
-
-                else {
-
-                    response =
-                        await callGenericAPI(
-                            payload
-                        );
-
-                }
+                    });
 
             }
 
 
             if (
-                response &&
+                !response ||
                 response.success === false
             ) {
 
                 throw new Error(
-                    response.message ||
+                    response?.message ||
                     "Unable to save category."
                 );
 
             }
 
 
-            showNotification(
-                editingCategoryId
+            closeModal();
+
+            await loadCategories();
+
+            showToast(
+                editingId
                     ? "Category updated successfully."
                     : "Category created successfully.",
                 "success"
             );
 
+        }
 
-            closeAllModals();
-
-
-            await loadCategories();
-
-
-        } catch (error) {
+        catch (error) {
 
             console.error(
                 "Save category error:",
                 error
             );
 
-
-            showNotification(
+            showFormMessage(
                 error.message ||
-                "Unable to save category.",
-                "error"
+                "Unable to save category."
             );
 
+        }
 
-        } finally {
+        finally {
 
-            setButtonLoading(
-                submitButton,
-                false
-            );
+            setSaving(false);
 
         }
 
@@ -1902,130 +637,73 @@ document.addEventListener("DOMContentLoaded", async () => {
             categories.find(
                 item =>
                     String(
-                        item.id
-                    ) ===
-                    String(id)
+                        getCategoryId(item)
+                    ) === String(id)
             );
 
 
-        if (!category) {
-
-            showNotification(
-                "Category not found.",
-                "error"
-            );
-
-            return;
-
-        }
+        if (!category) return;
 
 
-        const productCount =
-            Number(
-                category.productCount ||
-                0
-            );
-
-
-        let message =
-            `Delete "${category.name}"?`;
-
-
-        if (
-            productCount > 0
-        ) {
-
-            message +=
-                ` This category currently has ${productCount} product${productCount === 1 ? "" : "s"}.`;
-
-        }
+        const name =
+            getCategoryName(category);
 
 
         const confirmed =
             window.confirm(
-                message
+                `Delete category "${name}"?\n\n` +
+                "This action may affect products assigned to this category."
             );
 
 
-        if (!confirmed) {
-
-            return;
-
-        }
+        if (!confirmed) return;
 
 
         try {
 
-            let response;
+            const response =
+                await StockFlowAPI.deleteCategory({
 
+                    id:
+                        id,
 
-            const payload = {
+                    categoryId:
+                        id
 
-                action:
-                    "deleteCategory",
-
-                id:
-                    category.id,
-
-                categoryId:
-                    category.id
-
-            };
+                });
 
 
             if (
-                typeof StockFlowAPI.deleteCategory ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.deleteCategory(
-                        payload
-                    );
-
-            }
-
-            else {
-
-                response =
-                    await callGenericAPI(
-                        payload
-                    );
-
-            }
-
-
-            if (
-                response &&
+                !response ||
                 response.success === false
             ) {
 
                 throw new Error(
-                    response.message ||
+                    response?.message ||
                     "Unable to delete category."
                 );
 
             }
 
 
-            showNotification(
+            await loadCategories();
+
+
+            showToast(
                 "Category deleted successfully.",
                 "success"
             );
 
+        }
 
-            await loadCategories();
-
-
-        } catch (error) {
+        catch (error) {
 
             console.error(
                 "Delete category error:",
                 error
             );
 
-
-            showNotification(
+            showToast(
                 error.message ||
                 "Unable to delete category.",
                 "error"
@@ -2037,641 +715,475 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       GENERIC API FALLBACK
+       ROW ACTIONS
        ======================================================== */
 
-    async function callGenericAPI(payload) {
-
-        if (
-            typeof StockFlowAPI.request ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.request(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.post ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.post(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.apiRequest ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.apiRequest(
-                payload
-            );
-
-        }
-
-
-        throw new Error(
-            "The required Categories API method is not available in API.js."
-        );
-
-    }
-
-
-    /* ========================================================
-       PAGINATION
-       ======================================================== */
-
-    function updatePagination() {
-
-        const total =
-            filteredCategories.length;
-
-
-        const pages =
-            Math.max(
-                1,
-                Math.ceil(
-                    total /
-                    itemsPerPage
-                )
-            );
-
-
-        if (
-            currentPage >
-            pages
-        ) {
-
-            currentPage =
-                pages;
-
-        }
-
-
-        const pageInfo =
-            getElement(
-                "paginationInfo"
-            );
-
-
-        if (pageInfo) {
-
-            if (total === 0) {
-
-                pageInfo.textContent =
-                    "No categories";
-
-            }
-
-            else {
-
-                const start =
-                    (currentPage - 1) *
-                    itemsPerPage +
-                    1;
-
-
-                const end =
-                    Math.min(
-                        currentPage *
-                        itemsPerPage,
-                        total
-                    );
-
-
-                pageInfo.textContent =
-                    `Showing ${start}–${end} of ${total} categories`;
-
-            }
-
-        }
-
-
-        const pagination =
-            getElement(
-                "paginationButtons"
-            );
-
-
-        if (!pagination) {
-
-            return;
-
-        }
-
-
-        if (
-            pages <= 1
-        ) {
-
-            pagination.innerHTML =
-                "";
-
-            return;
-
-        }
-
-
-        let html = "";
-
-
-        html += `
-
-            <button
-                type="button"
-                class="pagination-btn"
-                data-page="${currentPage - 1}"
-                ${currentPage === 1 ? "disabled" : ""}
-            >
-
-                <i class="fa-solid fa-chevron-left"></i>
-
-            </button>
-
-        `;
-
-
-        for (
-            let page = 1;
-            page <= pages;
-            page++
-        ) {
-
-            html += `
-
-                <button
-                    type="button"
-                    class="pagination-btn ${page === currentPage ? "active" : ""}"
-                    data-page="${page}"
-                >
-
-                    ${page}
-
-                </button>
-
-            `;
-
-        }
-
-
-        html += `
-
-            <button
-                type="button"
-                class="pagination-btn"
-                data-page="${currentPage + 1}"
-                ${currentPage === pages ? "disabled" : ""}
-            >
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-        `;
-
-
-        pagination.innerHTML =
-            html;
-
-
-        pagination
-            .querySelectorAll(
-                "[data-page]"
-            )
-            .forEach(
-                button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            const page =
-                                Number(
-                                    button.dataset.page
-                                );
-
-
-                            if (
-                                page < 1 ||
-                                page > pages
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            currentPage =
-                                page;
-
-
-                            renderCategories();
-
-                        }
-                    );
-
-                }
-            );
-
-    }
-
-
-    /* ========================================================
-       FORM HELPERS
-       ======================================================== */
-
-    function getFormValue(ids) {
-
-        for (
-            const id of ids
-        ) {
-
-            const element =
-                getElement(id);
-
-
-            if (
-                element
-            ) {
-
-                return element.value ||
-                    "";
-
-            }
-
-        }
-
-
-        return "";
-
-    }
-
-
-    function setFormValue(
-        ids,
-        value
-    ) {
-
-        for (
-            const id of ids
-        ) {
-
-            const element =
-                getElement(id);
-
-
-            if (
-                element
-            ) {
-
-                element.value =
-                    value ??
-                    "";
-
-                return;
-
-            }
-
-        }
-
-    }
-
-
-    function resetCategoryForm() {
-
-        const form =
-            getElement(
-                "categoryForm"
-            );
-
-
-        if (
-            form
-        ) {
-
-            form.reset();
-
-        }
-
-
-        setFormValue(
-            [
-                "categoryStatus",
-                "status"
-            ],
-            "ACTIVE"
-        );
-
-    }
-
-
-    /* ========================================================
-       MODAL HELPERS
-       ======================================================== */
-
-    function setModalTitle(title) {
-
-        const elements =
-            [
-                getElement("categoryModalTitle"),
-                getElement("modalTitle"),
-                document.querySelector(
-                    ".modal-header h2"
-                ),
-                document.querySelector(
-                    ".modal-header h3"
-                )
-            ]
-            .filter(Boolean);
-
-
-        if (
-            elements.length
-        ) {
-
-            elements[0].textContent =
-                title;
-
-        }
-
-    }
-
-
-    function setModalOpen(open) {
-
-        const modal =
-            getElement(
-                "categoryModal"
-            ) ||
-            getElement(
-                "categoryModalOverlay"
-            ) ||
-            document.querySelector(
-                ".modal-overlay"
-            );
-
-
-        if (!modal) {
-
-            return;
-
-        }
-
-
-        if (open) {
-
-            modal.classList.add(
-                "active"
-            );
-
-            modal.classList.add(
-                "show"
-            );
-
-
-            modal.setAttribute(
-                "aria-hidden",
-                "false"
-            );
-
-        }
-
-        else {
-
-            modal.classList.remove(
-                "active"
-            );
-
-            modal.classList.remove(
-                "show"
-            );
-
-
-            modal.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-
-        }
-
-    }
-
-
-    function closeAllModals() {
+    function bindRowActions() {
 
         document
             .querySelectorAll(
-                ".modal-overlay"
+                ".edit-category-btn"
             )
-            .forEach(
-                modal => {
+            .forEach(button => {
 
-                    modal.classList.remove(
-                        "active"
-                    );
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    modal.classList.remove(
-                        "show"
-                    );
+                        openEditModal(
+                            button.dataset.id
+                        );
 
-                    modal.setAttribute(
-                        "aria-hidden",
-                        "true"
-                    );
+                    }
+                );
 
-                }
-            );
+            });
 
 
-        editingCategoryId =
-            null;
+        document
+            .querySelectorAll(
+                ".delete-category-btn"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        deleteCategory(
+                            button.dataset.id
+                        );
+
+                    }
+                );
+
+            });
 
     }
 
 
     /* ========================================================
-       CONNECTION STATUS
+       MODAL
        ======================================================== */
 
-    function setConnectionStatus(status) {
+    function showModal() {
 
-        const badge =
-            getElement(
-                "connectionBadge"
-            );
+        if (!modal) return;
 
+        modal.hidden = false;
 
-        if (!badge) {
-
-            return;
-
-        }
-
-
-        badge.textContent =
-            status;
-
-
-        badge.classList.remove(
-            "online",
-            "offline",
-            "connecting"
+        document.body.classList.add(
+            "modal-open"
         );
 
 
-        const normalized =
-            String(
-                status
-            )
-            .toLowerCase();
+        setTimeout(() => {
+
+            categoryNameInput?.focus();
+
+        }, 50);
+
+    }
+
+
+    function closeModal() {
+
+        if (!modal) return;
+
+        modal.hidden = true;
+
+        document.body.classList.remove(
+            "modal-open"
+        );
+
+        editingId = null;
+
+        resetForm();
+
+        clearFormMessage();
+
+    }
+
+
+    function resetForm() {
+
+        form?.reset();
+
+        setInputValue(
+            categoryIdInput,
+            ""
+        );
+
+    }
+
+
+    /* ========================================================
+       SEARCH
+       ======================================================== */
+
+    searchInput?.addEventListener(
+        "input",
+        () => {
+
+            renderCategories();
+
+        }
+    );
+
+
+    /* ========================================================
+       BUTTON EVENTS
+       ======================================================== */
+
+    addBtn?.addEventListener(
+        "click",
+        openAddModal
+    );
+
+
+    closeButtons.forEach(button => {
+
+        button.addEventListener(
+            "click",
+            closeModal
+        );
+
+    });
+
+
+    form?.addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
+
+            saveCategory();
+
+        }
+    );
+
+
+    /* ========================================================
+       ESCAPE KEY
+       ======================================================== */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape" &&
+                modal &&
+                !modal.hidden
+            ) {
+
+                closeModal();
+
+            }
+
+        }
+    );
+
+
+    /* ========================================================
+       HELPER FUNCTIONS
+       ======================================================== */
+
+    function getCategoryId(category) {
+
+        return (
+            category?.id ??
+            category?.ID ??
+            category?.categoryId ??
+            category?.CATEGORY_ID ??
+            category?.uid ??
+            ""
+        );
+
+    }
+
+
+    function getCategoryName(category) {
+
+        return String(
+
+            category?.name ??
+            category?.NAME ??
+            category?.categoryName ??
+            category?.CATEGORY_NAME ??
+            ""
+
+        );
+
+    }
+
+
+    function getCategoryDescription(category) {
+
+        return String(
+
+            category?.description ??
+            category?.DESCRIPTION ??
+            ""
+
+        );
+
+    }
+
+
+    function getCategoryStatus(category) {
+
+        return String(
+
+            category?.status ??
+            category?.STATUS ??
+            category?.accountStatus ??
+            "ACTIVE"
+
+        ).trim().toUpperCase();
+
+    }
+
+
+    function getCategoryDate(category) {
+
+        const value =
+
+            category?.createdAt ??
+            category?.CREATED_AT ??
+            category?.created_at ??
+            category?.dateCreated ??
+            "";
+
+
+        if (!value) return "";
+
+
+        const date =
+            new Date(value);
 
 
         if (
-            normalized ===
-            "online"
+            !isNaN(
+                date.getTime()
+            )
         ) {
 
-            badge.classList.add(
-                "online"
+            return date.toLocaleDateString(
+                undefined,
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                }
             );
 
         }
 
-        else if (
-            normalized ===
-            "offline"
-        ) {
 
-            badge.classList.add(
-                "offline"
-            );
+        return String(value);
 
-        }
+    }
 
-        else {
 
-            badge.classList.add(
-                "connecting"
-            );
+    function escapeHtml(value) {
+
+        return String(
+            value ?? ""
+        )
+        .replace(
+            /[&<>"']/g,
+            character => ({
+
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+
+            }[character])
+        );
+
+    }
+
+
+    function setText(element, value) {
+
+        if (element) {
+
+            element.textContent =
+                String(value ?? "");
 
         }
 
     }
 
 
-    /* ========================================================
-       BUTTON LOADING
-       ======================================================== */
+    function setInputValue(element, value) {
 
-    function setButtonLoading(
-        button,
-        loading,
-        text = "Saving..."
-    ) {
+        if (element) {
 
-        if (!button) {
+            element.value =
+                value ?? "";
+
+        }
+
+    }
+
+
+    function showLoading(value) {
+
+        if (loading) {
+
+            loading.hidden =
+                !value;
+
+        }
+
+    }
+
+
+    function showError(message) {
+
+        if (!errorBox) {
+
+            console.error(message);
 
             return;
 
         }
 
 
-        if (
-            loading
-        ) {
+        errorBox.textContent =
+            message || "An error occurred.";
 
-            button.dataset.originalText =
-                button.innerHTML;
+        errorBox.hidden = false;
 
-
-            button.disabled =
-                true;
+    }
 
 
-            button.innerHTML =
+    function hideError() {
+
+        if (errorBox) {
+
+            errorBox.hidden = true;
+
+            errorBox.textContent = "";
+
+        }
+
+    }
+
+
+    function showFormMessage(message) {
+
+        let messageBox =
+            document.querySelector(
+                "#categoryFormMessage"
+            );
+
+
+        if (!messageBox) {
+
+            messageBox =
+                document.createElement("div");
+
+            messageBox.id =
+                "categoryFormMessage";
+
+            messageBox.className =
+                "form-message error";
+
+            form?.prepend(
+                messageBox
+            );
+
+        }
+
+
+        messageBox.textContent =
+            message;
+
+        messageBox.hidden = false;
+
+    }
+
+
+    function clearFormMessage() {
+
+        const messageBox =
+            document.querySelector(
+                "#categoryFormMessage"
+            );
+
+
+        if (messageBox) {
+
+            messageBox.hidden = true;
+
+            messageBox.textContent = "";
+
+        }
+
+    }
+
+
+    function setSaving(value) {
+
+        if (!saveBtn) return;
+
+
+        saveBtn.disabled =
+            value;
+
+
+        if (value) {
+
+            saveBtn.dataset.originalText =
+                saveBtn.textContent;
+
+            saveBtn.innerHTML =
                 `
-                <i class="fa-solid fa-spinner fa-spin"></i>
-                ${escapeHTML(text)}
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Saving...
                 `;
 
         }
 
         else {
 
-            button.disabled =
-                false;
-
-
-            if (
-                button.dataset.originalText
-            ) {
-
-                button.innerHTML =
-                    button.dataset.originalText;
-
-            }
+            saveBtn.innerHTML =
+                `
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    ${
+                        saveBtn.dataset.originalText ||
+                        "Save Category"
+                    }
+                `;
 
         }
 
     }
 
 
-    /* ========================================================
-       NOTIFICATION
-       ======================================================== */
-
-    function showNotification(
-        message,
-        type = "info"
-    ) {
+    function showToast(message, type = "success") {
 
         let container =
-            getElement(
-                "notificationContainer"
+            document.querySelector(
+                "#toastContainer"
             );
 
 
         if (!container) {
 
             container =
-                document.createElement(
-                    "div"
-                );
-
+                document.createElement("div");
 
             container.id =
-                "notificationContainer";
+                "toastContainer";
 
-
-            container.style.position =
-                "fixed";
-
-            container.style.top =
-                "20px";
-
-            container.style.right =
-                "20px";
-
-            container.style.zIndex =
-                "10000";
-
-            container.style.display =
-                "flex";
-
-            container.style.flexDirection =
-                "column";
-
-            container.style.gap =
-                "10px";
-
+            container.className =
+                "toast-container";
 
             document.body.appendChild(
                 container
@@ -2680,231 +1192,54 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        const notification =
-            document.createElement(
-                "div"
-            );
+        const toast =
+            document.createElement("div");
+
+        toast.className =
+            `toast toast-${type}`;
 
 
-        notification.style.padding =
-            "13px 16px";
+        toast.innerHTML = `
 
-        notification.style.borderRadius =
-            "10px";
+            <i class="fa-solid ${
+                type === "success"
+                    ? "fa-circle-check"
+                    : "fa-circle-exclamation"
+            }"></i>
 
-        notification.style.background =
-            "#ffffff";
+            <span>
+                ${escapeHtml(message)}
+            </span>
 
-        notification.style.border =
-            "1px solid #e3eaf3";
-
-        notification.style.boxShadow =
-            "0 10px 30px rgba(15,35,65,.12)";
-
-        notification.style.fontSize =
-            "13px";
-
-        notification.style.fontWeight =
-            "600";
-
-        notification.style.maxWidth =
-            "340px";
-
-
-        const icon =
-            type === "success"
-                ? "fa-circle-check"
-                : type === "error"
-                    ? "fa-circle-exclamation"
-                    : "fa-circle-info";
-
-
-        notification.innerHTML =
-            `
-
-            <div style="
-                display:flex;
-                align-items:flex-start;
-                gap:9px;
-            ">
-
-                <i
-                    class="fa-solid ${icon}"
-                    style="margin-top:2px;"
-                ></i>
-
-                <span>
-                    ${escapeHTML(message)}
-                </span>
-
-            </div>
-
-            `;
+        `;
 
 
         container.appendChild(
-            notification
+            toast
         );
 
 
-        setTimeout(
-            () => {
+        setTimeout(() => {
 
-                notification.style.opacity =
-                    "0";
-
-                notification.style.transform =
-                    "translateY(-5px)";
-
-                notification.style.transition =
-                    "all .2s ease";
-
-
-                setTimeout(
-                    () => {
-
-                        notification.remove();
-
-                    },
-                    220
-                );
-
-            },
-            3500
-        );
-
-    }
-
-
-    /* ========================================================
-       TEXT HELPER
-       ======================================================== */
-
-    function setText(
-        ids,
-        value
-    ) {
-
-        ids.forEach(
-            id => {
-
-                const element =
-                    getElement(id);
-
-
-                if (
-                    element
-                ) {
-
-                    element.textContent =
-                        value ??
-                        0;
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       DATE FORMAT
-       ======================================================== */
-
-    function formatDate(value) {
-
-        if (!value) {
-
-            return "";
-
-        }
-
-
-        const date =
-            new Date(
-                value
+            toast.classList.add(
+                "toast-hide"
             );
 
+            setTimeout(() => {
 
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
+                toast.remove();
 
-            return String(
-                value
-            );
+            }, 300);
 
-        }
-
-
-        return date.toLocaleDateString(
-            undefined,
-            {
-                year: "numeric",
-                month: "short",
-                day: "numeric"
-            }
-        );
+        }, 3500);
 
     }
 
 
     /* ========================================================
-       HTML ESCAPE
+       INITIALIZE
        ======================================================== */
 
-    function escapeHTML(value) {
-
-        return String(
-            value ??
-            ""
-        )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-    }
-
-
-    /* ========================================================
-       EXPOSE REFRESH FOR OTHER MODULES
-       ======================================================== */
-
-    window.StockFlowCategories = {
-
-        reload:
-            loadCategories,
-
-        getCategories:
-            () => [
-                ...categories
-            ],
-
-        getFilteredCategories:
-            () => [
-                ...filteredCategories
-            ]
-
-    };
+    await loadCategories();
 
 });
