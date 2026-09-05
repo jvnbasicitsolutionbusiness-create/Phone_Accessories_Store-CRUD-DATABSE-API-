@@ -214,6 +214,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =========================================================
        PASSWORD SHOW / HIDE
+       FIXED:
+       Supports .password-field and .password-wrapper
        ========================================================= */
 
     document.addEventListener(
@@ -231,21 +233,52 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            const wrapper =
-                button.closest(
-                    ".password-wrapper"
-                );
+            /*
+             * First use the explicit target ID.
+             * This is the safest method because the HTML
+             * already provides data-target.
+             */
+
+            let input = null;
 
 
-            if (!wrapper) {
-                return;
+            const targetId =
+                button.dataset.target ||
+                button.dataset.togglePassword;
+
+
+            if (targetId) {
+
+                input =
+                    document.getElementById(
+                        targetId
+                    );
+
             }
 
 
-            const input =
-                wrapper.querySelector(
-                    "input"
-                );
+            /*
+             * Fallback for wrapper-based markup.
+             */
+
+            if (!input) {
+
+                const wrapper =
+                    button.closest(
+                        ".password-field, .password-wrapper"
+                    );
+
+
+                if (wrapper) {
+
+                    input =
+                        wrapper.querySelector(
+                            "input"
+                        );
+
+                }
+
+            }
 
 
             if (!input) {
@@ -253,38 +286,67 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
+            /* -------------------------------------------------
+               SHOW PASSWORD
+               ------------------------------------------------- */
+
             if (
                 input.type === "password"
             ) {
 
                 input.type = "text";
 
+
                 button.textContent =
                     "Hide";
+
 
                 button.classList.add(
                     "active"
                 );
+
 
                 button.setAttribute(
                     "aria-label",
                     "Hide password"
                 );
 
-            } else {
+
+                button.setAttribute(
+                    "aria-pressed",
+                    "true"
+                );
+
+            }
+
+
+            /* -------------------------------------------------
+               HIDE PASSWORD
+               ------------------------------------------------- */
+
+            else {
 
                 input.type = "password";
 
+
                 button.textContent =
                     "Show";
+
 
                 button.classList.remove(
                     "active"
                 );
 
+
                 button.setAttribute(
                     "aria-label",
                     "Show password"
+                );
+
+
+                button.setAttribute(
+                    "aria-pressed",
+                    "false"
                 );
 
             }
@@ -309,6 +371,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 ) {
                     return;
                 }
+
+
+                event.preventDefault();
 
 
                 const tabArray =
@@ -339,7 +404,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     }
 
-                } else {
+                }
+
+
+                else {
 
                     nextIndex =
                         currentIndex - 1;
@@ -365,6 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     nextTab.focus();
 
+
                     showAuthPanel(
                         nextTab.dataset.authTab
                     );
@@ -378,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CLEAR AUTH FORMS WHEN SWITCHING
+       CLEAR AUTH MESSAGES
        ========================================================= */
 
     function clearInactiveMessages() {
@@ -402,8 +471,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
+       RESET PASSWORD BUTTON STATES
+       ========================================================= */
+
+    function resetButtonStates() {
+
+        const buttons =
+            document.querySelectorAll(
+                ".auth-submit"
+            );
+
+
+        buttons.forEach(button => {
+
+            button.classList.remove(
+                "loading"
+            );
+
+
+            button.disabled = false;
+
+
+            const text =
+                button.querySelector(
+                    ".button-text"
+                );
+
+
+            const loader =
+                button.querySelector(
+                    ".button-loader"
+                );
+
+
+            if (text) {
+
+                text.style.display =
+                    "";
+
+            }
+
+
+            if (loader) {
+
+                loader.hidden = true;
+
+            }
+
+        });
+
+    }
+
+
+    /* =========================================================
        INITIAL STATE
        ========================================================= */
+
+    resetButtonStates();
 
     showAuthPanel("login");
 
