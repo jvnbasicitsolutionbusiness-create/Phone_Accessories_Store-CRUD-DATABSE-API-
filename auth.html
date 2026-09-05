@@ -21,10 +21,6 @@
 
     <title>STOCKFLOW | Account Access</title>
 
-    <!-- =========================================================
-         STYLES
-         ========================================================= -->
-
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="auth.css">
 </head>
@@ -32,14 +28,11 @@
 
 <body class="auth-body">
 
-    <!-- =========================================================
-         AUTH PAGE
-         ========================================================= -->
-
     <main class="auth-page">
 
         <!-- =====================================================
              LEFT INFORMATION PANEL
+             DO NOT CHANGE — ORIGINAL DESIGN PRESERVED
              ===================================================== -->
 
         <section
@@ -50,8 +43,6 @@
             <div class="auth-visual-overlay"></div>
 
             <div class="auth-visual-content">
-
-                <!-- BRAND -->
 
                 <header class="auth-brand">
 
@@ -75,8 +66,6 @@
                 </header>
 
 
-                <!-- MAIN COPY -->
-
                 <div class="visual-copy">
 
                     <div class="visual-eyebrow">
@@ -98,8 +87,6 @@
 
                 </div>
 
-
-                <!-- FEATURES -->
 
                 <div class="visual-features">
 
@@ -180,8 +167,6 @@
                 </div>
 
 
-                <!-- FOOTER -->
-
                 <footer class="visual-footer">
 
                     <span>
@@ -241,9 +226,9 @@
 
                 <header class="auth-header">
 
-                    <span class="auth-kicker">
+                    <div class="auth-kicker">
                         SECURE ACCESS
-                    </span>
+                    </div>
 
                     <h2>
                         Account Access
@@ -258,7 +243,7 @@
 
 
                 <!-- =================================================
-                     AUTH TABS
+                     TABS
                      ================================================= -->
 
                 <div
@@ -277,7 +262,8 @@
                         aria-selected="true"
                         aria-controls="loginPanel"
                     >
-                        Sign In
+                        <span class="tab-indicator"></span>
+                        <span>Sign In</span>
                     </button>
 
 
@@ -291,7 +277,8 @@
                         aria-selected="false"
                         aria-controls="registerPanel"
                     >
-                        Create Account
+                        <span class="tab-indicator"></span>
+                        <span>Create Account</span>
                     </button>
 
                 </div>
@@ -328,8 +315,6 @@
                     </div>
 
 
-                    <!-- LOGIN FORM -->
-
                     <form
                         id="loginForm"
                         class="auth-form"
@@ -344,16 +329,20 @@
                                 Username, Email or Phone
                             </label>
 
-                            <input
-                                id="loginIdentity"
-                                name="identity"
-                                type="text"
-                                class="form-control"
-                                placeholder="Enter username, email or phone"
-                                autocomplete="username"
-                                spellcheck="false"
-                                required
-                            >
+                            <div class="input-shell">
+
+                                <input
+                                    id="loginIdentity"
+                                    name="identity"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Enter username, email or phone"
+                                    autocomplete="username"
+                                    spellcheck="false"
+                                    required
+                                >
+
+                            </div>
 
                         </div>
 
@@ -416,7 +405,7 @@
                         ></div>
 
 
-                        <!-- SIGN IN -->
+                        <!-- SIGN IN BUTTON -->
 
                         <button
                             type="submit"
@@ -440,7 +429,7 @@
                     </form>
 
 
-                    <!-- CREATE ACCOUNT LINK -->
+                    <!-- ACCOUNT SWITCH -->
 
                     <div class="auth-switch">
 
@@ -460,18 +449,18 @@
                     </div>
 
 
-                    <!-- SECURITY NOTICE -->
+                    <!-- SECURITY -->
 
                     <div class="auth-security">
 
-                        <span
+                        <div
                             class="security-icon"
                             aria-hidden="true"
                         >
-                            🔒
-                        </span>
+                            <span>✓</span>
+                        </div>
 
-                        <div>
+                        <div class="security-content">
 
                             <strong>
                                 Secure Inventory Access
@@ -519,8 +508,6 @@
 
                     </div>
 
-
-                    <!-- REGISTER FORM -->
 
                     <form
                         id="registerForm"
@@ -737,15 +724,23 @@
 
                         <div class="register-note">
 
-                            <strong>
-                                Account Verification
-                            </strong>
+                            <div class="register-note-icon">
+                                ✓
+                            </div>
 
-                            <br>
+                            <div>
 
-                            After registration, your account will
-                            continue to the verification step before
-                            accessing STOCKFLOW.
+                                <strong>
+                                    Account Verification
+                                </strong>
+
+                                <p>
+                                    After registration, your account will
+                                    continue to the verification step before
+                                    accessing STOCKFLOW.
+                                </p>
+
+                            </div>
 
                         </div>
 
@@ -806,9 +801,7 @@
                 </section>
 
 
-                <!-- =================================================
-                     FOOTER
-                     ================================================= -->
+                <!-- FOOTER -->
 
                 <footer class="auth-footer">
 
