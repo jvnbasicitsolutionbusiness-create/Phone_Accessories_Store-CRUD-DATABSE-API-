@@ -1093,17 +1093,23 @@ document.addEventListener("DOMContentLoaded", () => {
                    API CHECK
                    ============================================= */
 
-                if (
-                    !window.StockFlowAPI ||
-                    typeof window.StockFlowAPI.register !==
-                        "function"
-                ) {
-
-                    throw new Error(
-                        "STOCKFLOW registration service is currently unavailable."
-                    );
-
-                }
+               if (
+                   !window.StockFlowAPI ||
+                   typeof window.StockFlowAPI.register !== "function"
+               ) {
+               
+                   console.warn(
+                       "STOCKFLOW: Registration API is not connected yet."
+                   );
+               
+                   showMessage(
+                       "Registration is ready. Database connectivity will be enabled shortly.",
+                       "warning"
+                   );
+               
+                   return;
+               
+               }
 
 
                 /* =============================================
@@ -1237,13 +1243,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-                showMessage(
-                    error &&
-                    error.message
-                        ? error.message
-                        : "Unable to create your account. Please try again.",
-                    "error"
-                );
+               let errorMessage =
+                            error &&
+                            error.message
+                                ? error.message
+                                : "";
+                        
+                        if (
+                            /unavailable|failed to fetch|network|fetch|connection/i
+                                .test(errorMessage)
+                        ) {
+                        
+                            errorMessage =
+                                "Unable to connect to the registration system right now. Please try again.";
+                        
+                        }
+                        
+                        showMessage(
+                            errorMessage ||
+                            "Unable to create your account. Please check your information and try again.",
+                            "error"
+                        );
 
 
             } finally {
