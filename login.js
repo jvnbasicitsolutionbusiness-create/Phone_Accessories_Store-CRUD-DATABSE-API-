@@ -1,14 +1,37 @@
 /* ============================================================
    STOCKFLOW — LOGIN CONTROLLER
-   Handles:
-   - Existing session check
-   - Login validation
-   - API authentication
-   - Unverified account / OTP redirect
-   - Session storage
-   - Dashboard redirect
-   - Login button loading state
+   ============================================================
+
+   FLOW:
+
+   Login Form
+       ↓
+   Validate credentials
+       ↓
+   StockFlowAPI.login()
+       ↓
+   ┌───────────────────────────────┐
+   │ Account verified?             │
+   └───────────────┬───────────────┘
+                   │
+          ┌────────┴────────┐
+          │                 │
+        YES                NO
+          │                 │
+          ▼                 ▼
+     Save session       Save identity
+          │                 │
+          ▼                 ▼
+    Dashboard          verify.html
+   ============================================================
+
+   IMPORTANT:
+   - This file does NOT generate OTP.
+   - This file does NOT store OTP.
+   - Unverified accounts are redirected to verify.html.
+   - OTP verification is handled by the verification page.
    ============================================================ */
+
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -22,26 +45,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const form =
         document.getElementById("loginForm");
 
-
     const message =
         document.getElementById("loginMessage");
-
 
     const button =
         document.getElementById("loginButton");
 
-
     const identityInput =
         document.getElementById("loginIdentity");
-
 
     const passwordInput =
         document.getElementById("loginPassword");
 
 
     /*
-     * login.js can safely exist on other pages.
-     * If the login form is not present, stop here.
+     * login.js may exist on other pages.
+     * Stop safely if the login form does not exist.
      */
 
     if (!form) {
@@ -50,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CHECK REQUIRED ELEMENTS
+       REQUIRED ELEMENT CHECK
        ========================================================= */
 
     if (
@@ -69,54 +88,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CHECK EXISTING SESSION
+       CONFIGURATION
        ========================================================= */
 
-    try {
-
-        if (
-            window.StockFlowAuth &&
-            typeof StockFlowAuth.getCurrentUser === "function"
-        ) {
-
-            const currentUser =
-                StockFlowAuth.getCurrentUser();
+    const CONFIG =
+        window.STOCKFLOW_CONFIG ||
+        window.CONFIG ||
+        {};
 
 
-            if (currentUser) {
-
-                const dashboard =
-                    (
-                        window.STOCKFLOW_CONFIG &&
-                        STOCKFLOW_CONFIG.ROUTES &&
-                        STOCKFLOW_CONFIG.ROUTES.dashboard
-                    )
-                    ||
-                    "dashboard.html";
+    const ROUTES =
+        CONFIG.ROUTES ||
+        {};
 
 
-                window.location.replace(
-                    dashboard
-                );
+    const DASHBOARD_PAGE =
+        ROUTES.dashboard ||
+        ROUTES.DASHBOARD ||
+        "dashboard.html";
 
 
-                return;
-            }
+    const VERIFY_PAGE =
+        ROUTES.verify ||
+        ROUTES.VERIFY ||
+        "verify.html";
 
-        }
 
-    } catch (error) {
+    const OTP_IDENTITY_KEY =
+        CONFIG.OTP_IDENTITY_KEY ||
+        CONFIG.OTP_KEY ||
+        "STOCKFLOW_OTP_IDENTITY";
 
-        console.warn(
-            "Unable to check STOCKFLOW session:",
-            error
-        );
 
-    }
+    const OTP_UID_KEY =
+        CONFIG.OTP_UID_KEY ||
+        "STOCKFLOW_OTP_UID";
+
+
+    const OTP_EMAIL_KEY =
+        CONFIG.OTP_EMAIL_KEY ||
+        "STOCKFLOW_OTP_EMAIL";
+
+
+    const OTP_PHONE_KEY =
+        CONFIG.OTP_PHONE_KEY ||
+        "STOCKFLOW_OTP_PHONE";
+
+
+    const OTP_USERNAME_KEY =
+        CONFIG.OTP_USERNAME_KEY ||
+        "STOCKFLOW_OTP_USERNAME";
 
 
     /* =========================================================
-       MESSAGE FUNCTIONS
+       MESSAGE HELPERS
        ========================================================= */
 
     function clearMessage() {
@@ -137,22 +162,22 @@ document.addEventListener("DOMContentLoaded", () => {
         message.textContent =
             text || "";
 
-
         message.className =
-            "auth-message " + type;
+            `auth-message ${type}`;
 
     }
 
 
     /* =========================================================
-       BUTTON LOADING
+       LOADING STATE
        ========================================================= */
 
-    function setLoading(loading) {
+    function setLoading(
+        loading
+    ) {
 
         button.disabled =
             loading;
-
 
         button.classList.toggle(
             "loading",
@@ -187,23 +212,264 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
+        button.setAttribute(
+            "aria-busy",
+            String(loading)
+        );
+
     }
 
 
     /* =========================================================
-       PASSWORD TOGGLE
+       SAVE VERIFICATION STATE
        =========================================================
-       
-       NOTE:
-       auth.js also handles password toggles in the new setup.
-       Therefore we DO NOT attach another password listener here.
-       
-       This prevents the button from being triggered twice.
+
+       IMPORTANT:
+
+       Only account information is stored here.
+
+       OTP is NEVER stored in this file.
        ========================================================= */
+
+    function saveVerificationState(
+        response,
+        fallbackIdentity
+    ) {
+
+        response =
+            response || {};
+
+
+        const identity =
+            response.identity ||
+            response.uid ||
+            response.userId ||
+            response.id ||
+            response.username ||
+            response.email ||
+            response.gmail ||
+            response.phone ||
+            fallbackIdentity ||
+            "";
+
+
+        const uid =
+            response.uid ||
+            response.userId ||
+            response.id ||
+            "";
+
+
+        const email =
+            response.email ||
+            response.gmail ||
+            "";
+
+
+        const phone =
+            response.phone ||
+            "";
+
+
+        const username =
+            response.username ||
+            "";
+
+
+        try {
+
+            /*
+             * Primary identity key.
+             */
+
+            sessionStorage.setItem(
+                OTP_IDENTITY_KEY,
+                String(identity)
+            );
+
+
+            /*
+             * Additional information for verify.html.
+             */
+
+            sessionStorage.setItem(
+                OTP_UID_KEY,
+                String(uid)
+            );
+
+
+            sessionStorage.setItem(
+                OTP_EMAIL_KEY,
+                String(email)
+            );
+
+
+            sessionStorage.setItem(
+                OTP_PHONE_KEY,
+                String(phone)
+            );
+
+
+            sessionStorage.setItem(
+                OTP_USERNAME_KEY,
+                String(username)
+            );
+
+
+            /*
+             * Backward-compatible keys.
+             */
+
+            sessionStorage.setItem(
+                "stockflow_otp_identity",
+                String(identity)
+            );
+
+
+            sessionStorage.setItem(
+                "stockflow_otp_email",
+                String(email)
+            );
+
+
+            sessionStorage.setItem(
+                "stockflow_otp_phone",
+                String(phone)
+            );
+
+
+            sessionStorage.setItem(
+                "stockflow_otp_username",
+                String(username)
+            );
+
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to save verification state.",
+                error
+            );
+
+        }
+
+
+        return {
+            identity,
+            uid,
+            email,
+            phone,
+            username
+        };
+
+    }
 
 
     /* =========================================================
-       CLEAR MESSAGE WHEN USER STARTS TYPING
+       EXISTING SESSION CHECK
+       ========================================================= */
+
+    function checkExistingSession() {
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getCurrentUser ===
+                    "function"
+            ) {
+
+                const currentUser =
+                    window.StockFlowAuth.getCurrentUser();
+
+
+                if (currentUser) {
+
+                    window.location.replace(
+                        DASHBOARD_PAGE
+                    );
+
+                    return true;
+
+                }
+
+            }
+
+
+            /*
+             * Compatibility fallback.
+             */
+
+            const rawSession =
+                sessionStorage.getItem(
+                    "STOCKFLOW_SESSION"
+                );
+
+
+            if (rawSession) {
+
+                try {
+
+                    const session =
+                        JSON.parse(
+                            rawSession
+                        );
+
+
+                    if (
+                        session &&
+                        (
+                            session.success === true ||
+                            session.authenticated === true ||
+                            session.user
+                        )
+                    ) {
+
+                        window.location.replace(
+                            DASHBOARD_PAGE
+                        );
+
+                        return true;
+
+                    }
+
+                } catch (parseError) {
+
+                    sessionStorage.removeItem(
+                        "STOCKFLOW_SESSION"
+                    );
+
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to check existing session.",
+                error
+            );
+
+        }
+
+
+        return false;
+
+    }
+
+
+    if (
+        checkExistingSession()
+    ) {
+
+        return;
+
+    }
+
+
+    /* =========================================================
+       CLEAR MESSAGE WHILE TYPING
        ========================================================= */
 
     identityInput.addEventListener(
@@ -239,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       LOGIN FORM
+       LOGIN SUBMIT
        ========================================================= */
 
     form.addEventListener(
@@ -249,16 +515,12 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
 
 
-            /* -------------------------------------------------
-               CLEAR OLD MESSAGE
-               ------------------------------------------------- */
-
             clearMessage();
 
 
-            /* -------------------------------------------------
-               GET FORM VALUES
-               ------------------------------------------------- */
+            /* =================================================
+               READ VALUES
+               ================================================= */
 
             const identity =
                 identityInput.value.trim();
@@ -269,7 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* =================================================
-               CLIENT-SIDE VALIDATION
+               VALIDATION
                ================================================= */
 
             if (!identity) {
@@ -282,8 +544,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 identityInput.focus();
 
-
                 return;
+
             }
 
 
@@ -297,42 +559,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 passwordInput.focus();
 
-
                 return;
+
             }
 
 
             /* =================================================
-               START LOADING
+               LOADING
                ================================================= */
 
-            setLoading(true);
+            setLoading(
+                true
+            );
 
 
             try {
 
-                /* =================================================
+                /* =============================================
                    CHECK API
-                   ================================================= */
+                   ============================================= */
 
                 if (
                     !window.StockFlowAPI ||
-                    typeof StockFlowAPI.login !== "function"
+                    typeof window.StockFlowAPI.login !==
+                        "function"
                 ) {
 
                     throw new Error(
-                        "The login service is currently unavailable."
+                        "The STOCKFLOW login service is currently unavailable."
                     );
 
                 }
 
 
-                /* =================================================
-                   SEND LOGIN REQUEST
-                   ================================================= */
+                /* =============================================
+                   API REQUEST
+                   ============================================= */
 
                 const response =
-                    await StockFlowAPI.login({
+                    await window.StockFlowAPI.login({
 
                         identity:
                             identity,
@@ -343,9 +608,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
 
-                /* =================================================
+                /* =============================================
                    EMPTY RESPONSE
-                   ================================================= */
+                   ============================================= */
 
                 if (!response) {
 
@@ -356,128 +621,120 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 
-                /* =================================================
-                   LOGIN FAILED
-                   ================================================= */
+                /* =============================================
+                   ACCOUNT NOT VERIFIED
+                   ============================================= */
 
-                if (!response.success) {
-
-
-                    /* =============================================
-                       UNVERIFIED ACCOUNT
-                       ============================================= */
-
-                    if (
+                if (
+                    response.success === false &&
+                    (
                         response.verified === false ||
-                        response.requiresVerification === true
-                    ) {
+                        response.requiresVerification === true ||
+                        response.needsVerification === true
+                    )
+                ) {
 
-
-                        /*
-                         * Store the identity temporarily
-                         * so the OTP page knows which account
-                         * is being verified.
-                         */
-
-                        const otpIdentity =
-                            response.identity ||
-                            response.username ||
-                            response.email ||
-                            response.gmail ||
-                            response.phone ||
-                            identity;
-
-
-                        const otpKey =
-                            (
-                                window.STOCKFLOW_CONFIG &&
-                                STOCKFLOW_CONFIG.OTP_KEY
-                            )
-                            ||
-                            "STOCKFLOW_OTP_IDENTITY";
-
-
-                        sessionStorage.setItem(
-                            otpKey,
-                            otpIdentity
+                    const verification =
+                        saveVerificationState(
+                            response,
+                            identity
                         );
 
-
-                        /* -----------------------------------------
-                           SHOW WARNING
-                           ----------------------------------------- */
-
-                        showMessage(
-                            response.message ||
-                            "Your account has not been verified. Redirecting to OTP verification...",
-                            "warning"
-                        );
-
-
-                        /* -----------------------------------------
-                           REDIRECT TO OTP
-                           ----------------------------------------- */
-
-                        setTimeout(
-                            () => {
-
-                                window.location.href =
-                                    "verify-otp.html";
-
-                            },
-                            700
-                        );
-
-
-                        return;
-                    }
-
-
-                    /* =============================================
-                       ACCOUNT LOCKED
-                       ============================================= */
 
                     if (
-                        response.locked === true ||
-                        response.isLocked === true
+                        !verification.identity
                     ) {
 
-                        showMessage(
-                            response.message ||
-                            "Your account is temporarily locked. Please try again later.",
-                            "warning"
+                        throw new Error(
+                            "Your account requires verification, but no verification identity was returned."
                         );
 
-
-                        return;
                     }
 
-
-                    /* =============================================
-                       NORMAL LOGIN ERROR
-                       ============================================= */
 
                     showMessage(
                         response.message ||
-                        "Invalid credentials. Please check your login information.",
+                        "Your account is not verified. Redirecting to verification...",
+                        "warning"
+                    );
+
+
+                    /*
+                     * Directly use verify.html.
+                     *
+                     * Do NOT use verify-otp.html.
+                     */
+
+                    window.setTimeout(
+                        () => {
+
+                            window.location.replace(
+                                VERIFY_PAGE
+                            );
+
+                        },
+                        700
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* =============================================
+                   ACCOUNT LOCKED
+                   ============================================= */
+
+                if (
+                    response.locked === true ||
+                    response.isLocked === true ||
+                    response.accountLocked === true
+                ) {
+
+                    showMessage(
+                        response.message ||
+                        "Your account is temporarily locked. Please try again later.",
+                        "warning"
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* =============================================
+                   NORMAL LOGIN FAILURE
+                   ============================================= */
+
+                if (
+                    response.success !== true
+                ) {
+
+                    showMessage(
+                        response.message ||
+                        "Invalid login credentials. Please check your information and try again.",
                         "error"
                     );
 
 
                     return;
+
                 }
 
 
-                /* =================================================
-                   SUCCESSFUL LOGIN
-                   ================================================= */
+                /* =============================================
+                   SAVE LOGIN SESSION
+                   ============================================= */
 
                 if (
                     window.StockFlowAuth &&
-                    typeof StockFlowAuth.saveLogin === "function"
+                    typeof window.StockFlowAuth.saveLogin ===
+                        "function"
                 ) {
 
-                    StockFlowAuth.saveLogin(
+                    window.StockFlowAuth.saveLogin(
                         response
                     );
 
@@ -487,51 +744,51 @@ document.addEventListener("DOMContentLoaded", () => {
                      * Compatibility fallback.
                      */
 
-                    sessionStorage.setItem(
-                        "STOCKFLOW_SESSION",
-                        JSON.stringify(response)
-                    );
+                    try {
+
+                        sessionStorage.setItem(
+                            "STOCKFLOW_SESSION",
+                            JSON.stringify(
+                                response
+                            )
+                        );
+
+                    } catch (storageError) {
+
+                        console.warn(
+                            "STOCKFLOW: Unable to save login session.",
+                            storageError
+                        );
+
+                    }
 
                 }
 
 
-                /* =================================================
-                   SUCCESS MESSAGE
-                   ================================================= */
+                /* =============================================
+                   SUCCESS
+                   ============================================= */
 
                 showMessage(
+                    response.message ||
                     "Sign in successful. Redirecting...",
                     "success"
                 );
 
 
-                /* =================================================
-                   DASHBOARD ROUTE
-                   ================================================= */
+                /* =============================================
+                   DASHBOARD REDIRECT
+                   ============================================= */
 
-                const dashboard =
-                    (
-                        window.STOCKFLOW_CONFIG &&
-                        STOCKFLOW_CONFIG.ROUTES &&
-                        STOCKFLOW_CONFIG.ROUTES.dashboard
-                    )
-                    ||
-                    "dashboard.html";
-
-
-                /* =================================================
-                   REDIRECT
-                   ================================================= */
-
-                setTimeout(
+                window.setTimeout(
                     () => {
 
                         window.location.replace(
-                            dashboard
+                            DASHBOARD_PAGE
                         );
 
                     },
-                    250
+                    400
                 );
 
 
@@ -544,15 +801,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 showMessage(
-                    error.message ||
-                    "Unable to sign in. Please try again.",
+                    error &&
+                    error.message
+                        ? error.message
+                        : "Unable to sign in. Please try again.",
                     "error"
                 );
 
 
             } finally {
 
-                setLoading(false);
+                setLoading(
+                    false
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
+       PREVENT DOUBLE ENTER SUBMISSION
+       ========================================================= */
+
+    form.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                button.disabled
+            ) {
+
+                event.preventDefault();
 
             }
 
