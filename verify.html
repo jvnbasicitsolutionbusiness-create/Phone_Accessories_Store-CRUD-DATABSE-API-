@@ -1,8 +1,14 @@
 <!doctype html>
 <html lang="en">
+
 <head>
+
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
     <meta
         name="description"
@@ -13,362 +19,522 @@
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="auth.css">
+
 </head>
+
 
 <body class="auth-body">
 
-    <main class="auth-page">
-        <div class="auth-shell verify-shell">
+<main class="auth-page">
 
-            <!-- =========================
-                 LEFT / VISUAL PANEL
-            ========================== -->
-            <section
-                class="auth-visual verify-visual"
-                aria-label="STOCKFLOW account security"
-            >
-                <div class="auth-visual-overlay"></div>
+<div class="auth-shell verify-shell">
 
-                <div class="auth-visual-content">
 
-                    <!-- Brand -->
-                    <header class="auth-brand">
-                        <div class="brand-mark" aria-hidden="true">SF</div>
+    <!-- =====================================================
+         LEFT VISUAL PANEL
+    ====================================================== -->
 
-                        <div class="brand-copy">
-                            <strong>STOCKFLOW</strong>
-                            <span>Inventory Management System</span>
-                        </div>
-                    </header>
+    <section
+        class="auth-visual verify-visual"
+        aria-label="STOCKFLOW account security"
+    >
 
-                    <!-- Main Visual Copy -->
-                    <div class="visual-copy">
-                        <div class="visual-eyebrow">
-                            ACCOUNT SECURITY
-                        </div>
+        <div class="auth-visual-overlay"></div>
 
-                        <h1>
-                            One more step to
-                            <span>get started.</span>
-                        </h1>
+        <div class="auth-visual-content">
 
-                        <p>
-                            Confirm your account with the one-time
-                            verification code sent to your registered
-                            email address.
-                        </p>
-                    </div>
+            <header class="auth-brand">
 
-                    <!-- Security Features -->
-                    <div class="visual-features">
+                <div class="brand-mark">
+                    SF
+                </div>
 
-                        <article class="visual-feature">
-                            <div class="feature-icon" aria-hidden="true">
-                                ✓
-                            </div>
+                <div class="brand-copy">
 
-                            <div class="feature-content">
-                                <strong>Secure Verification</strong>
-                                <span>
-                                    One-time codes help protect your account.
-                                </span>
-                            </div>
-                        </article>
+                    <strong>
+                        STOCKFLOW
+                    </strong>
 
-                        <article class="visual-feature">
-                            <div class="feature-icon" aria-hidden="true">
-                                @
-                            </div>
-
-                            <div class="feature-content">
-                                <strong>Email First</strong>
-                                <span>
-                                    Your registered email is the primary method.
-                                </span>
-                            </div>
-                        </article>
-
-                        <article class="visual-feature">
-                            <div class="feature-icon" aria-hidden="true">
-                                ☎
-                            </div>
-
-                            <div class="feature-content">
-                                <strong>Phone Backup</strong>
-                                <span>
-                                    Use your registered phone if email is unavailable.
-                                </span>
-                            </div>
-                        </article>
-
-                    </div>
-
-                    <!-- Visual Footer -->
-                    <footer class="visual-footer">
-                        STOCKFLOW • Secure Account Verification
-                    </footer>
+                    <span>
+                        Inventory Management System
+                    </span>
 
                 </div>
-            </section>
+
+            </header>
 
 
-            <!-- =========================
-                 RIGHT / VERIFICATION PANEL
-            ========================== -->
-            <section class="auth-box verify-box">
+            <div class="visual-copy">
 
-                <div class="auth-card">
+                <div class="visual-eyebrow">
+                    ACCOUNT SECURITY
+                </div>
 
-                    <!-- Mobile Brand -->
-                    <div class="auth-mobile-brand">
-                        <div class="brand-mark" aria-hidden="true">
-                            SF
-                        </div>
+                <h1>
+                    One more step to
+                    <span>get started.</span>
+                </h1>
 
-                        <div class="brand-copy">
-                            <strong>STOCKFLOW</strong>
-                            <span>Inventory Management System</span>
-                        </div>
+                <p>
+                    Confirm your account with the
+                    one-time verification code generated
+                    for your registration.
+                </p>
+
+            </div>
+
+
+            <div class="visual-features">
+
+                <article class="visual-feature">
+
+                    <div class="feature-icon">
+                        ✓
                     </div>
 
+                    <div class="feature-content">
 
-                    <!-- Header -->
-                    <header class="auth-header">
-                        <div class="auth-kicker">
-                            ACCOUNT VERIFICATION
-                        </div>
+                        <strong>
+                            Secure Verification
+                        </strong>
 
-                        <h1>Verify your account</h1>
-
-                        <p>
-                            Enter the 6-digit code sent to your registered
-                            email address.
-                        </p>
-                    </header>
-
-
-                    <!-- =========================
-                         EMAIL VERIFICATION
-                    ========================== -->
-                    <section
-                        class="verification-method primary"
-                        aria-label="Email verification"
-                    >
-                        <div
-                            class="verification-method-icon"
-                            aria-hidden="true"
-                        >
-                            @
-                        </div>
-
-                        <div class="verification-method-copy">
-                            <strong>Email verification</strong>
-
-                            <span
-                                id="emailDeliveryStatus"
-                                data-otp-email
-                            >
-                                Code sent to your registered email
-                            </span>
-
-                            <small>
-                                Check your inbox and spam/junk folder.
-                            </small>
-                        </div>
-                    </section>
-
-
-                    <!-- =========================
-                         PHONE BACKUP
-                    ========================== -->
-                    <section
-                        class="verification-method"
-                        aria-label="Phone verification"
-                    >
-                        <div
-                            class="verification-method-icon"
-                            aria-hidden="true"
-                        >
-                            ☎
-                        </div>
-
-                        <div class="verification-method-copy">
-                            <strong>Phone backup</strong>
-
-                            <span
-                                id="phoneDeliveryStatus"
-                                data-otp-phone
-                            >
-                                Use your registered phone if email is unavailable.
-                            </span>
-
-                            <small>
-                                Request a phone code only if you need
-                                the backup method.
-                            </small>
-                        </div>
-
-                        <button
-                            id="resendPhoneOtpBtn"
-                            class="verification-method-action"
-                            type="button"
-                            data-resend-phone-otp
-                        >
-                            Send code
-                        </button>
-                    </section>
-
-
-                    <!-- =========================
-                         OTP FORM
-                    ========================== -->
-                    <form
-                        id="otpForm"
-                        class="auth-form otp-form"
-                        autocomplete="off"
-                        novalidate
-                    >
-
-                        <div class="form-field">
-
-                            <label for="otp">
-                                Verification Code
-                            </label>
-
-                            <input
-                                id="otp"
-                                name="otp"
-                                class="form-control otp-input"
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="one-time-code"
-                                maxlength="6"
-                                pattern="[0-9]{6}"
-                                placeholder="000000"
-                                aria-label="6-digit verification code"
-                                aria-describedby="otpHelp"
-                                required
-                            >
-
-                            <div
-                                id="otpHelp"
-                                class="field-help"
-                            >
-                                Enter the 6-digit code from your
-                                email or phone.
-                            </div>
-
-                        </div>
-
-
-                        <!-- OTP Status / Error Message -->
-                        <div
-                            id="otpMessage"
-                            class="otp-message"
-                            role="alert"
-                            aria-live="polite"
-                            hidden
-                        ></div>
-
-
-                        <!-- Submit -->
-                        <button
-                            id="verifyOtpBtn"
-                            type="submit"
-                            class="auth-submit"
-                            disabled
-                        >
-                            <span class="button-text">
-                                Verify Account
-                            </span>
-
-                            <span
-                                class="button-loader"
-                                hidden
-                                aria-hidden="true"
-                            >
-                                Verifying...
-                            </span>
-                        </button>
-
-                    </form>
-
-
-                    <!-- =========================
-                         RESEND EMAIL
-                    ========================== -->
-                    <div class="otp-resend">
-                        <span>Didn't receive the email?</span>
-
-                        <button
-                            id="resendEmailOtpBtn"
-                            class="link-button"
-                            type="button"
-                            data-resend-email-otp
-                        >
-                            Resend email code
-                        </button>
-                    </div>
-
-
-                    <!-- Email Timer -->
-                    <div
-                        id="emailOtpTimer"
-                        class="otp-timer"
-                        aria-live="polite"
-                    >
-                        Resend available in 2:00
-                    </div>
-
-
-                    <!-- Phone Timer -->
-                    <div
-                        id="phoneOtpTimer"
-                        class="otp-timer"
-                        aria-live="polite"
-                    >
-                        Phone backup is available now.
-                    </div>
-
-
-                    <!-- =========================
-                         BACK TO LOGIN
-                    ========================== -->
-                    <div class="auth-switch">
                         <span>
-                            Want to use a different account?
+                            One-time codes help protect your account.
                         </span>
 
-                        <a
-                            class="link"
-                            href="auth.html#login"
-                            data-back-login
+                    </div>
+
+                </article>
+
+
+                <article class="visual-feature">
+
+                    <div class="feature-icon">
+                        @
+                    </div>
+
+                    <div class="feature-content">
+
+                        <strong>
+                            Email Verification
+                        </strong>
+
+                        <span>
+                            Your registered email is the primary method.
+                        </span>
+
+                    </div>
+
+                </article>
+
+
+                <article class="visual-feature">
+
+                    <div class="feature-icon">
+                        ☎
+                    </div>
+
+                    <div class="feature-content">
+
+                        <strong>
+                            Phone Backup
+                        </strong>
+
+                        <span>
+                            Use your registered phone as a backup.
+                        </span>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <footer class="visual-footer">
+
+                STOCKFLOW • Secure Account Verification
+
+            </footer>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         RIGHT VERIFICATION PANEL
+    ====================================================== -->
+
+    <section class="auth-box verify-box">
+
+        <div class="auth-card">
+
+
+            <!-- MOBILE BRAND -->
+
+            <div class="auth-mobile-brand">
+
+                <div class="brand-mark">
+                    SF
+                </div>
+
+                <div class="brand-copy">
+
+                    <strong>
+                        STOCKFLOW
+                    </strong>
+
+                    <span>
+                        Inventory Management System
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- HEADER -->
+
+            <header class="auth-header">
+
+                <div class="auth-kicker">
+                    ACCOUNT VERIFICATION
+                </div>
+
+                <h1>
+                    Verify your account
+                </h1>
+
+                <p id="verificationDescription">
+                    Preparing your verification code...
+                </p>
+
+            </header>
+
+
+
+            <!-- =================================================
+                 EMAIL STATUS
+            ================================================== -->
+
+            <section
+                class="verification-method primary"
+                aria-label="Email verification"
+            >
+
+                <div class="verification-method-icon">
+                    @
+                </div>
+
+                <div class="verification-method-copy">
+
+                    <strong>
+                        Email verification
+                    </strong>
+
+                    <span id="emailDeliveryStatus">
+                        Preparing verification code...
+                    </span>
+
+                    <small>
+                        Check your inbox and spam/junk folder.
+                    </small>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 PHONE BACKUP
+            ================================================== -->
+
+            <section
+                class="verification-method"
+                aria-label="Phone verification"
+            >
+
+                <div class="verification-method-icon">
+                    ☎
+                </div>
+
+                <div class="verification-method-copy">
+
+                    <strong>
+                        Phone backup
+                    </strong>
+
+                    <span id="phoneDeliveryStatus">
+                        Use your registered phone if needed.
+                    </span>
+
+                    <small>
+                        Request a phone code only if email is unavailable.
+                    </small>
+
+                </div>
+
+                <button
+                    id="resendPhoneOtpBtn"
+                    class="verification-method-action"
+                    type="button"
+                    data-resend-phone-otp
+                    disabled
+                >
+                    Send code
+                </button>
+
+            </section>
+
+
+
+            <!-- =================================================
+                 OTP FORM
+            ================================================== -->
+
+            <form
+                id="otpForm"
+                class="auth-form otp-form"
+                autocomplete="off"
+                novalidate
+            >
+
+                <div class="form-field">
+
+                    <label>
+                        Verification Code
+                    </label>
+
+
+                    <!-- SIX OTP BOXES -->
+
+                    <div
+                        id="otpBoxes"
+                        class="otp-boxes"
+                        aria-label="6-digit verification code"
+                    >
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            autocomplete="one-time-code"
+                            aria-label="Verification digit 1"
+                            disabled
                         >
-                            Back to login
-                        </a>
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            aria-label="Verification digit 2"
+                            disabled
+                        >
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            aria-label="Verification digit 3"
+                            disabled
+                        >
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            aria-label="Verification digit 4"
+                            disabled
+                        >
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            aria-label="Verification digit 5"
+                            disabled
+                        >
+
+                        <input
+                            class="otp-digit"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="1"
+                            aria-label="Verification digit 6"
+                            disabled
+                        >
+
                     </div>
 
 
-                    <!-- Footer -->
-                    <footer class="auth-footer">
-                        <span>© 2026 STOCKFLOW</span>
-                        <span>Secure Account Verification</span>
-                    </footer>
+                    <!-- Hidden compatibility input -->
+
+                    <input
+                        id="otp"
+                        name="otp"
+                        type="hidden"
+                        value=""
+                    >
+
+
+                    <div
+                        id="otpHelp"
+                        class="field-help"
+                    >
+                        Your 6-digit verification code will appear
+                        after a short security delay.
+                    </div>
 
                 </div>
-            </section>
+
+
+
+                <!-- MESSAGE -->
+
+                <div
+                    id="otpMessage"
+                    class="otp-message"
+                    role="alert"
+                    aria-live="polite"
+                    hidden
+                ></div>
+
+
+
+                <!-- VERIFY BUTTON -->
+
+                <button
+                    id="verifyOtpBtn"
+                    type="submit"
+                    class="auth-submit"
+                    disabled
+                >
+
+                    <span class="button-text">
+                        Verify Account
+                    </span>
+
+                    <span
+                        class="button-loader"
+                        hidden
+                    >
+                        Verifying...
+                    </span>
+
+                </button>
+
+            </form>
+
+
+
+            <!-- =================================================
+                 RESEND EMAIL
+            ================================================== -->
+
+            <div class="otp-resend">
+
+                <span>
+                    Didn't receive the email?
+                </span>
+
+                <button
+                    id="resendEmailOtpBtn"
+                    class="link-button"
+                    type="button"
+                    data-resend-email-otp
+                >
+                    Resend email code
+                </button>
+
+            </div>
+
+
+
+            <!-- EMAIL TIMER -->
+
+            <div
+                id="emailOtpTimer"
+                class="otp-timer"
+                aria-live="polite"
+            >
+                Resend available in 2:00
+            </div>
+
+
+
+            <!-- PHONE TIMER -->
+
+            <div
+                id="phoneOtpTimer"
+                class="otp-timer"
+                aria-live="polite"
+            >
+                Phone backup is available now.
+            </div>
+
+
+
+            <!-- BACK LOGIN -->
+
+            <div class="auth-switch">
+
+                <span>
+                    Want to use a different account?
+                </span>
+
+                <a
+                    class="link"
+                    href="auth.html#login"
+                    data-back-login
+                >
+                    Back to login
+                </a>
+
+            </div>
+
+
+
+            <!-- FOOTER -->
+
+            <footer class="auth-footer">
+
+                <span>
+                    © 2026 STOCKFLOW
+                </span>
+
+                <span>
+                    Secure Account Verification
+                </span>
+
+            </footer>
 
         </div>
-    </main>
+
+    </section>
+
+</div>
+
+</main>
 
 
-    <!-- =========================
-         JAVASCRIPT
-    ========================== -->
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="auth.js"></script>
-    <script src="otp.js"></script>
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script src="otp.js"></script>
 
 </body>
+
 </html>
