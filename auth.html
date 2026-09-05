@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="utf-8">
 
     <meta
@@ -20,1256 +19,24 @@
         content="#06396d"
     >
 
-    <title>
-        STOCKFLOW | Account Access
-    </title>
-
+    <title>STOCKFLOW | Account Access</title>
 
     <!-- =========================================================
          STYLES
          ========================================================= -->
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="auth.css"
-    >
-
-
-    <!-- =========================================================
-         AUTH PAGE OVERRIDES
-         ========================================================= -->
-
-    <style>
-
-        /* =====================================================
-           PAGE
-           ===================================================== */
-
-        html,
-        body {
-            width: 100%;
-            min-height: 100%;
-            margin: 0;
-        }
-
-        body.auth-body {
-            min-height: 100vh;
-
-            background: #eef0f2;
-        }
-
-
-        /* =====================================================
-           MAIN LAYOUT
-           ===================================================== */
-
-        .auth-page {
-            width: 100%;
-            min-height: 100vh;
-
-            display: grid;
-
-            grid-template-columns:
-                minmax(0, 1fr)
-                minmax(460px, 590px);
-
-            align-items: stretch;
-        }
-
-
-        /* =====================================================
-           LEFT SIDE
-           ===================================================== */
-
-        .auth-visual {
-            position: relative;
-
-            min-height: 100vh;
-
-            display: flex;
-
-            overflow: hidden;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #08294d 0%,
-                    #06396d 55%,
-                    #07447d 100%
-                );
-
-            color: #ffffff;
-        }
-
-
-        .auth-visual::before {
-            content: "";
-
-            position: absolute;
-
-            width: 470px;
-            height: 470px;
-
-            top: -230px;
-            right: -180px;
-
-            border:
-                1px solid
-                rgba(255,255,255,0.10);
-
-            border-radius: 50%;
-
-            pointer-events: none;
-        }
-
-
-        .auth-visual::after {
-            content: "";
-
-            position: absolute;
-
-            width: 380px;
-            height: 380px;
-
-            bottom: -250px;
-            left: -190px;
-
-            border:
-                1px solid
-                rgba(255,255,255,0.08);
-
-            border-radius: 50%;
-
-            pointer-events: none;
-        }
-
-
-        .auth-visual-overlay {
-            position: absolute;
-
-            inset: 0;
-
-            z-index: 1;
-
-            pointer-events: none;
-
-            background:
-                radial-gradient(
-                    circle at 100% 0%,
-                    rgba(74,144,226,0.18),
-                    transparent 36%
-                ),
-
-                radial-gradient(
-                    circle at 0% 100%,
-                    rgba(37,99,235,0.14),
-                    transparent 32%
-                );
-        }
-
-
-        .auth-visual-content {
-            position: relative;
-
-            z-index: 2;
-
-            width: 100%;
-            min-height: 100vh;
-
-            display: flex;
-            flex-direction: column;
-
-            padding:
-                42px
-                52px
-                34px;
-
-            box-sizing: border-box;
-        }
-
-
-        /* =====================================================
-           BRAND
-           ===================================================== */
-
-        .auth-brand {
-            display: flex;
-
-            align-items: center;
-
-            gap: 11px;
-        }
-
-
-        .auth-brand .brand-mark,
-        .auth-mobile-brand .brand-mark {
-            width: 32px;
-            height: 32px;
-
-            flex: 0 0 32px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 7px;
-
-            background: #ffffff;
-
-            color: #12345a;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-
-        .brand-copy {
-            display: flex;
-
-            flex-direction: column;
-
-            min-width: 0;
-        }
-
-
-        .brand-copy strong {
-            color: #ffffff;
-
-            font-size: 11px;
-            font-weight: 800;
-
-            letter-spacing: 0.02em;
-        }
-
-
-        .brand-copy span {
-            margin-top: 2px;
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.58
-                );
-
-            font-size: 7px;
-            line-height: 1.2;
-        }
-
-
-        /* =====================================================
-           LEFT CONTENT
-           ===================================================== */
-
-        .visual-copy {
-            max-width: 540px;
-
-            margin-top: auto;
-            margin-bottom: 30px;
-        }
-
-
-        .visual-eyebrow {
-            margin-bottom: 10px;
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.72
-                );
-
-            font-size: 8px;
-            font-weight: 700;
-
-            letter-spacing: 0.06em;
-        }
-
-
-        .visual-copy h1 {
-            max-width: 500px;
-
-            margin: 0;
-
-            color: #ffffff;
-
-            font-size:
-                clamp(
-                    32px,
-                    3.5vw,
-                    48px
-                );
-
-            font-weight: 700;
-
-            line-height: 1.02;
-
-            letter-spacing: -0.045em;
-        }
-
-
-        .visual-copy h1 span {
-            color: #1590ff;
-        }
-
-
-        .visual-copy p {
-            max-width: 490px;
-
-            margin:
-                17px
-                0
-                0;
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.63
-                );
-
-            font-size: 11px;
-
-            line-height: 1.65;
-        }
-
-
-        /* =====================================================
-           FEATURES
-           ===================================================== */
-
-        .visual-features {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 7px;
-
-            width: 100%;
-            max-width: 490px;
-        }
-
-
-        .visual-feature {
-            display: flex;
-
-            align-items: center;
-
-            gap: 10px;
-
-            min-height: 48px;
-
-            padding:
-                8px
-                10px;
-
-            border:
-                1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.12
-                );
-
-            border-radius: 7px;
-
-            background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.045
-                );
-
-            box-sizing: border-box;
-        }
-
-
-        .feature-icon {
-            width: 27px;
-            height: 27px;
-
-            flex: 0 0 27px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 6px;
-
-            background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.09
-                );
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.85
-                );
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-
-        .feature-content {
-            display: flex;
-
-            flex-direction: column;
-
-            min-width: 0;
-        }
-
-
-        .feature-content strong {
-            color: #ffffff;
-
-            font-size: 8px;
-            font-weight: 700;
-        }
-
-
-        .feature-content span {
-            margin-top: 2px;
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.52
-                );
-
-            font-size: 7px;
-
-            line-height: 1.35;
-        }
-
-
-        /* =====================================================
-           LEFT FOOTER
-           ===================================================== */
-
-        .visual-footer {
-            display: flex;
-
-            align-items: center;
-
-            gap: 8px;
-
-            margin-top: 24px;
-
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.34
-                );
-
-            font-size: 7px;
-        }
-
-
-        .footer-divider {
-            color:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.20
-                );
-        }
-
-
-        /* =====================================================
-           RIGHT SIDE
-           ===================================================== */
-
-        .auth-box {
-            min-width: 0;
-
-            min-height: 100vh;
-
-            display: flex;
-
-            flex-direction: column;
-
-            background: #f4f5f6;
-        }
-
-
-        .auth-card {
-            width: 100%;
-            min-height: 100vh;
-
-            display: flex;
-
-            flex-direction: column;
-
-            padding:
-                34px
-                40px
-                25px;
-
-            background: #f4f5f6;
-
-            box-sizing: border-box;
-        }
-
-
-        /* =====================================================
-           MOBILE BRAND
-           ===================================================== */
-
-        .auth-mobile-brand {
-            display: none;
-
-            align-items: center;
-
-            gap: 9px;
-
-            margin-bottom: 24px;
-        }
-
-
-        /* =====================================================
-           HEADER
-           ===================================================== */
-
-        .auth-header {
-            margin-bottom: 16px;
-        }
-
-
-        .auth-kicker {
-            display: block;
-
-            color: #667085;
-
-            font-size: 7px;
-            font-weight: 700;
-
-            letter-spacing: 0.05em;
-        }
-
-
-        .auth-header h2 {
-            margin:
-                4px
-                0
-                4px;
-
-            color: #111827;
-
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-
-        .auth-header p {
-            margin: 0;
-
-            color: #667085;
-
-            font-size: 9px;
-        }
-
-
-        /* =====================================================
-           TABS
-           ===================================================== */
-
-        .auth-tabs {
-            width: 100%;
-
-            display: grid;
-
-            grid-template-columns:
-                1fr
-                1fr;
-
-            gap: 2px;
-
-            margin-bottom: 20px;
-
-            padding: 2px;
-
-            border:
-                1px solid
-                #d9dde3;
-
-            border-radius: 6px;
-
-            background: #e8eaed;
-
-            box-sizing: border-box;
-        }
-
-
-        .auth-tab {
-            min-height: 28px;
-
-            border: 0;
-
-            border-radius: 5px;
-
-            background: transparent;
-
-            color: #667085;
-
-            font-size: 8px;
-            font-weight: 600;
-
-            cursor: pointer;
-
-            transition:
-                background-color 0.18s ease,
-                color 0.18s ease;
-        }
-
-
-        .auth-tab:hover {
-            color: #111827;
-        }
-
-
-        .auth-tab.active {
-            background: #ffffff;
-
-            color: #2563eb;
-
-            box-shadow:
-                0
-                1px
-                2px
-                rgba(
-                    16,
-                    24,
-                    40,
-                    0.08
-                );
-        }
-
-
-        /* =====================================================
-           AUTH PANELS
-           ===================================================== */
-
-        .auth-panel {
-            display: block;
-
-            width: 100%;
-        }
-
-
-        .auth-panel.hidden {
-            display: none !important;
-        }
-
-
-        .auth-panel[aria-hidden="true"] {
-            display: none !important;
-        }
-
-
-        /* =====================================================
-           AUTH HEADING
-           ===================================================== */
-
-        .auth-heading {
-            margin-bottom: 17px;
-        }
-
-
-        .section-label {
-            color: #667085;
-
-            font-size: 7px;
-            font-weight: 700;
-
-            letter-spacing: 0.05em;
-        }
-
-
-        .auth-heading h3 {
-            margin:
-                3px
-                0
-                4px;
-
-            color: #111827;
-
-            font-size: 15px;
-            font-weight: 700;
-        }
-
-
-        .auth-heading .muted {
-            margin: 0;
-
-            color: #667085;
-
-            font-size: 8px;
-
-            line-height: 1.45;
-        }
-
-
-        /* =====================================================
-           FORM
-           ===================================================== */
-
-        .auth-form {
-            width: 100%;
-
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 11px;
-        }
-
-
-        .form-field {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 4px;
-        }
-
-
-        .form-field label {
-            color: #344054;
-
-            font-size: 7px;
-            font-weight: 600;
-        }
-
-
-        .field-label-row {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 10px;
-        }
-
-
-        .form-control {
-            width: 100%;
-
-            height: 32px;
-            min-height: 32px;
-
-            padding:
-                0
-                9px;
-
-            border:
-                1px solid
-                #cbd2da;
-
-            border-radius: 5px;
-
-            background: #ffffff;
-
-            color: #101828;
-
-            font-size: 7px;
-
-            outline: none;
-
-            box-sizing: border-box;
-        }
-
-
-        .form-control:focus {
-            border-color: #2563eb;
-
-            box-shadow:
-                0
-                0
-                0
-                2px
-                rgba(
-                    37,
-                    99,
-                    235,
-                    0.10
-                );
-        }
-
-
-        .form-control::placeholder {
-            color: #98a2b3;
-        }
-
-
-        /* =====================================================
-           PASSWORD
-           ===================================================== */
-
-        .password-field {
-            position: relative;
-
-            width: 100%;
-        }
-
-
-        .password-field .form-control {
-            padding-right: 48px;
-        }
-
-
-        .password-toggle {
-            position: absolute;
-
-            top: 50%;
-            right: 5px;
-
-            transform:
-                translateY(-50%);
-
-            min-width: 36px;
-            height: 25px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            padding:
-                0
-                5px;
-
-            border:
-                1px solid
-                #93c5fd;
-
-            border-radius: 5px;
-
-            background: #eff6ff;
-
-            color: #0568d8;
-
-            font-size: 7px;
-            font-weight: 700;
-
-            cursor: pointer;
-
-            z-index: 5;
-        }
-
-
-        .password-toggle:hover {
-            background: #dbeafe;
-
-            color: #1d4ed8;
-        }
-
-
-        /* =====================================================
-           FORGOT PASSWORD
-           ===================================================== */
-
-        .forgot-link {
-            color: #0568d8;
-
-            font-size: 7px;
-            font-weight: 600;
-
-            text-decoration: none;
-        }
-
-
-        .forgot-link:hover {
-            color: #1d4ed8;
-
-            text-decoration: underline;
-        }
-
-
-        /* =====================================================
-           MESSAGE
-           ===================================================== */
-
-        .auth-message {
-            min-height: 0;
-
-            margin: 0;
-
-            font-size: 7px;
-
-            line-height: 1.4;
-        }
-
-
-        .auth-message:empty {
-            display: none;
-        }
-
-
-        .auth-message.error {
-            color: #dc2626;
-        }
-
-
-        .auth-message.success {
-            color: #16a34a;
-        }
-
-
-        .auth-message.warning {
-            color: #d97706;
-        }
-
-
-        /* =====================================================
-           SUBMIT
-           ===================================================== */
-
-        .auth-submit {
-            width: 100%;
-
-            min-height: 34px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            padding:
-                0
-                12px;
-
-            border:
-                1px solid
-                #0568d8;
-
-            border-radius: 5px;
-
-            background: #0568d8;
-
-            color: #ffffff;
-
-            font-size: 8px;
-            font-weight: 600;
-
-            cursor: pointer;
-
-            box-shadow:
-                0
-                2px
-                5px
-                rgba(
-                    37,
-                    99,
-                    235,
-                    0.18
-                );
-        }
-
-
-        .auth-submit:hover:not(:disabled) {
-            background: #0759b5;
-        }
-
-
-        .auth-submit:disabled {
-            cursor: wait;
-
-            opacity: 0.75;
-        }
-
-
-        .button-text,
-        .button-loader {
-            display: inline-flex;
-
-            align-items: center;
-            justify-content: center;
-        }
-
-
-        .button-text[hidden],
-        .button-loader[hidden] {
-            display: none !important;
-        }
-
-
-        /* =====================================================
-           REGISTER FORM
-           ===================================================== */
-
-        .register-form {
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 10px;
-        }
-
-
-        .register-grid {
-            display: grid;
-
-            grid-template-columns:
-                1fr
-                1fr;
-
-            gap: 10px;
-        }
-
-
-        .register-grid .full-width {
-            grid-column: 1 / -1;
-        }
-
-
-        .register-note {
-            margin-top: 2px;
-
-            padding:
-                8px
-                9px;
-
-            border:
-                1px solid
-                #bfdbfe;
-
-            border-radius: 5px;
-
-            background: #eff6ff;
-
-            color: #1e40af;
-
-            font-size: 7px;
-
-            line-height: 1.4;
-        }
-
-
-        /* =====================================================
-           SWITCH
-           ===================================================== */
-
-        .auth-switch {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            gap: 4px;
-
-            margin-top: 10px;
-
-            color: #667085;
-
-            font-size: 7px;
-        }
-
-
-        .link-button {
-            padding: 0;
-
-            border: 0;
-
-            background: transparent;
-
-            color: #0568d8;
-
-            font-size: inherit;
-            font-weight: 700;
-
-            cursor: pointer;
-        }
-
-
-        .link-button:hover {
-            color: #1d4ed8;
-
-            text-decoration: underline;
-        }
-
-
-        /* =====================================================
-           SECURITY
-           ===================================================== */
-
-        .auth-security {
-            display: flex;
-
-            align-items: flex-start;
-
-            gap: 8px;
-
-            margin-top: 17px;
-
-            padding:
-                8px
-                9px;
-
-            border:
-                1px solid
-                #e0e4ea;
-
-            border-radius: 5px;
-
-            background: #fafbfc;
-        }
-
-
-        .security-icon {
-            font-size: 9px;
-        }
-
-
-        .auth-security strong {
-            display: block;
-
-            color: #344054;
-
-            font-size: 7px;
-        }
-
-
-        .auth-security small {
-            display: block;
-
-            margin-top: 2px;
-
-            color: #98a2b3;
-
-            font-size: 6px;
-
-            line-height: 1.4;
-        }
-
-
-        /* =====================================================
-           FOOTER
-           ===================================================== */
-
-        .auth-footer {
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 8px;
-
-            margin-top: auto;
-
-            padding-top: 20px;
-
-            border-top:
-                1px solid
-                #dfe3e8;
-
-            color: #98a2b3;
-
-            font-size: 6px;
-        }
-
-
-        /* =====================================================
-           MOBILE
-           ===================================================== */
-
-        @media (max-width: 900px) {
-
-            .auth-page {
-                grid-template-columns: 1fr;
-            }
-
-
-            .auth-visual {
-                display: none;
-            }
-
-
-            .auth-box {
-                min-height: 100vh;
-            }
-
-
-            .auth-card {
-                width: min(
-                    100%,
-                    590px
-                );
-
-                min-height: 100vh;
-
-                margin: 0 auto;
-            }
-
-
-            .auth-mobile-brand {
-                display: flex;
-            }
-
-        }
-
-
-        @media (max-width: 600px) {
-
-            .auth-card {
-                padding:
-                    24px
-                    18px
-                    20px;
-            }
-
-
-            .register-grid {
-                grid-template-columns: 1fr;
-            }
-
-
-            .register-grid .full-width {
-                grid-column: auto;
-            }
-
-        }
-
-    </style>
-
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
 </head>
 
 
 <body class="auth-body">
-
 
     <!-- =========================================================
          AUTH PAGE
          ========================================================= -->
 
     <main class="auth-page">
-
 
         <!-- =====================================================
              LEFT INFORMATION PANEL
@@ -1282,24 +49,22 @@
 
             <div class="auth-visual-overlay"></div>
 
-
             <div class="auth-visual-content">
-
 
                 <!-- BRAND -->
 
                 <header class="auth-brand">
 
-                    <div class="brand-mark">
+                    <div
+                        class="brand-mark"
+                        aria-hidden="true"
+                    >
                         SF
                     </div>
 
-
                     <div class="brand-copy">
 
-                        <strong>
-                            STOCKFLOW
-                        </strong>
+                        <strong>STOCKFLOW</strong>
 
                         <span>
                             Inventory Management System
@@ -1318,15 +83,11 @@
                         PHONE ACCESSORIES INVENTORY
                     </div>
 
-
                     <h1>
                         Manage your
-                        <span>
-                            inventory
-                        </span>
+                        <span>inventory</span>
                         with confidence.
                     </h1>
-
 
                     <p>
                         A centralized inventory management system
@@ -1342,7 +103,6 @@
 
                 <div class="visual-features">
 
-
                     <article class="visual-feature">
 
                         <div
@@ -1351,7 +111,6 @@
                         >
                             ✓
                         </div>
-
 
                         <div class="feature-content">
 
@@ -1378,7 +137,6 @@
                             ↕
                         </div>
 
-
                         <div class="feature-content">
 
                             <strong>
@@ -1403,7 +161,6 @@
                         >
                             ▣
                         </div>
-
 
                         <div class="feature-content">
 
@@ -1452,18 +209,18 @@
 
         <section class="auth-box">
 
-
             <div class="auth-card">
-
 
                 <!-- MOBILE BRAND -->
 
                 <div class="auth-mobile-brand">
 
-                    <div class="brand-mark">
+                    <div
+                        class="brand-mark"
+                        aria-hidden="true"
+                    >
                         SF
                     </div>
-
 
                     <div class="brand-copy">
 
@@ -1488,11 +245,9 @@
                         SECURE ACCESS
                     </span>
 
-
                     <h2>
                         Account Access
                     </h2>
-
 
                     <p>
                         Sign in or create an employee account
@@ -1555,18 +310,15 @@
                     aria-hidden="false"
                 >
 
-
                     <div class="auth-heading">
 
                         <span class="section-label">
                             SIGN IN
                         </span>
 
-
                         <h3>
                             Welcome back
                         </h3>
-
 
                         <p class="muted">
                             Enter your account credentials to
@@ -1584,7 +336,6 @@
                         novalidate
                     >
 
-
                         <!-- USERNAME / EMAIL / PHONE -->
 
                         <div class="form-field">
@@ -1592,7 +343,6 @@
                             <label for="loginIdentity">
                                 Username, Email or Phone
                             </label>
-
 
                             <input
                                 id="loginIdentity"
@@ -1618,9 +368,8 @@
                                     Password
                                 </label>
 
-
                                 <a
-                                    href="forgotpassword.html"
+                                    href="forgot-password.html"
                                     class="forgot-link"
                                 >
                                     Forgot password?
@@ -1640,7 +389,6 @@
                                     autocomplete="current-password"
                                     required
                                 >
-
 
                                 <button
                                     type="button"
@@ -1680,7 +428,6 @@
                                 Sign In
                             </span>
 
-
                             <span
                                 class="button-loader"
                                 hidden
@@ -1700,7 +447,6 @@
                         <span>
                             Don't have an account?
                         </span>
-
 
                         <button
                             type="button"
@@ -1725,13 +471,11 @@
                             🔒
                         </span>
 
-
                         <div>
 
                             <strong>
                                 Secure Inventory Access
                             </strong>
-
 
                             <small>
                                 Your account is protected with
@@ -1758,18 +502,15 @@
                     aria-hidden="true"
                 >
 
-
                     <div class="auth-heading">
 
                         <span class="section-label">
                             CREATE ACCOUNT
                         </span>
 
-
                         <h3>
                             Create an employee account
                         </h3>
-
 
                         <p class="muted">
                             Enter your information to create your
@@ -1787,11 +528,7 @@
                         novalidate
                     >
 
-
-                        <!-- PERSONAL INFORMATION -->
-
                         <div class="register-grid">
-
 
                             <!-- FIRST NAME -->
 
@@ -1800,7 +537,6 @@
                                 <label for="registerFirstName">
                                     First Name
                                 </label>
-
 
                                 <input
                                     id="registerFirstName"
@@ -1823,7 +559,6 @@
                                     Last Name
                                 </label>
 
-
                                 <input
                                     id="registerLastName"
                                     name="lastName"
@@ -1844,7 +579,6 @@
                                 <label for="registerUsername">
                                     Username
                                 </label>
-
 
                                 <input
                                     id="registerUsername"
@@ -1868,7 +602,6 @@
                                     Age
                                 </label>
 
-
                                 <input
                                     id="registerAge"
                                     name="age"
@@ -1891,7 +624,6 @@
                                     Email / Gmail
                                 </label>
 
-
                                 <input
                                     id="registerEmail"
                                     name="email"
@@ -1913,13 +645,12 @@
                                     Mobile Number
                                 </label>
 
-
                                 <input
                                     id="registerPhone"
                                     name="phone"
                                     type="tel"
                                     class="form-control"
-                                    placeholder="Enter your mobile number"
+                                    placeholder="09XXXXXXXXX"
                                     autocomplete="tel"
                                     inputmode="tel"
                                     required
@@ -1936,7 +667,6 @@
                                     Password
                                 </label>
 
-
                                 <div class="password-field">
 
                                     <input
@@ -1948,7 +678,6 @@
                                         autocomplete="new-password"
                                         required
                                     >
-
 
                                     <button
                                         type="button"
@@ -1974,7 +703,6 @@
                                     Confirm Password
                                 </label>
 
-
                                 <div class="password-field">
 
                                     <input
@@ -1986,7 +714,6 @@
                                         autocomplete="new-password"
                                         required
                                     >
-
 
                                     <button
                                         type="button"
@@ -2016,9 +743,9 @@
 
                             <br>
 
-                            After registration, your account can be
-                            verified through the registered email or
-                            mobile number before accessing STOCKFLOW.
+                            After registration, your account will
+                            continue to the verification step before
+                            accessing STOCKFLOW.
 
                         </div>
 
@@ -2045,7 +772,6 @@
                                 Create Employee Account
                             </span>
 
-
                             <span
                                 class="button-loader"
                                 hidden
@@ -2065,7 +791,6 @@
                         <span>
                             Already have an account?
                         </span>
-
 
                         <button
                             type="button"
@@ -2091,7 +816,6 @@
                         STOCKFLOW Inventory Management System
                     </span>
 
-
                     <span>
                         Phone Accessories Inventory
                     </span>
@@ -2110,219 +834,10 @@
          ========================================================= -->
 
     <script src="config.js"></script>
-
     <script src="api.js"></script>
-
     <script src="auth.js"></script>
-
     <script src="login.js"></script>
-
     <script src="register.js"></script>
-
-
-    <!-- =========================================================
-         AUTH PAGE COMPATIBILITY SCRIPT
-         ========================================================= -->
-
-    <script>
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            function () {
-
-                "use strict";
-
-
-                /* =================================================
-                   PANEL SWITCHING
-                   ================================================= */
-
-                const tabs =
-                    document.querySelectorAll(
-                        "[data-show-auth]"
-                    );
-
-                const panels =
-                    document.querySelectorAll(
-                        "[data-auth-view]"
-                    );
-
-
-                function showAuth(view) {
-
-                    panels.forEach(
-                        panel => {
-
-                            const isActive =
-                                panel.dataset.authView === view;
-
-                            panel.classList.toggle(
-                                "hidden",
-                                !isActive
-                            );
-
-                            panel.setAttribute(
-                                "aria-hidden",
-                                String(!isActive)
-                            );
-
-                        }
-                    );
-
-
-                    document
-                        .querySelectorAll("[data-auth-tab]")
-                        .forEach(tab => {
-
-                            const isActive =
-                                tab.dataset.authTab === view;
-
-                            tab.classList.toggle(
-                                "active",
-                                isActive
-                            );
-
-                            tab.setAttribute(
-                                "aria-selected",
-                                String(isActive)
-                            );
-
-                        });
-
-
-                    /* Focus first field */
-
-                    const activePanel =
-                        document.querySelector(
-                            `[data-auth-view="${view}"]`
-                        );
-
-
-                    if (activePanel) {
-
-                        const firstInput =
-                            activePanel.querySelector(
-                                "input"
-                            );
-
-                        if (firstInput) {
-
-                            setTimeout(
-                                () => firstInput.focus(),
-                                50
-                            );
-
-                        }
-
-                    }
-
-                }
-
-
-                tabs.forEach(
-                    control => {
-
-                        control.addEventListener(
-                            "click",
-                            function () {
-
-                                const view =
-                                    this.dataset.showAuth;
-
-                                if (
-                                    view === "login" ||
-                                    view === "register"
-                                ) {
-
-                                    showAuth(view);
-
-                                }
-
-                            }
-                        );
-
-                    }
-                );
-
-
-                /* =================================================
-                   PASSWORD SHOW / HIDE
-                   ================================================= */
-
-                document
-                    .querySelectorAll(
-                        "[data-toggle-password]"
-                    )
-                    .forEach(
-                        toggle => {
-
-                            toggle.addEventListener(
-                                "click",
-                                function () {
-
-                                    const targetId =
-                                        this.dataset.target ||
-                                        this.dataset.togglePassword;
-
-                                    const input =
-                                        document.getElementById(
-                                            targetId
-                                        );
-
-
-                                    if (!input) {
-                                        return;
-                                    }
-
-
-                                    const shouldShow =
-                                        input.type === "password";
-
-
-                                    input.type =
-                                        shouldShow
-                                            ? "text"
-                                            : "password";
-
-
-                                    this.textContent =
-                                        shouldShow
-                                            ? "Hide"
-                                            : "Show";
-
-
-                                    this.setAttribute(
-                                        "aria-label",
-                                        shouldShow
-                                            ? "Hide password"
-                                            : "Show password"
-                                    );
-
-
-                                    this.setAttribute(
-                                        "aria-pressed",
-                                        String(
-                                            shouldShow
-                                        )
-                                    );
-
-                                }
-                            );
-
-                        }
-                    );
-
-
-                /* =================================================
-                   DEFAULT VIEW
-                   ================================================= */
-
-                showAuth("login");
-
-            }
-        );
-
-    </script>
 
 </body>
 
