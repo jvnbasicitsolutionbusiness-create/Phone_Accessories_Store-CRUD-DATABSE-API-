@@ -1,2 +1,271 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activity Log | StockFlow</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head><body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><div class="sf-nav">
-<a href="dashboard.html">Dashboard</a><a href="products.html">Products</a><a href="inventory.html">Inventory</a><a href="categories.html">Categories</a><a href="suppliers.html">Suppliers</a><a href="stock-in.html">Stock In</a><a href="stock-out.html">Stock Out</a><a href="transactions.html">Transactions</a><a href="activity.html">Activity Log</a><a href="profile.html">Profile</a><a href="settings.html">Settings</a></div></aside><main class="sf-main"><div class="sf-top"><div><div class="sf-title">Activity Log</div><div class="sf-muted">Audit trail for inventory changes.</div></div><button class="sf-btn secondary" data-menu>☰</button></div><div class="sf-card"><button class="sf-btn secondary" id="refresh">Refresh</button></div><div class="sf-card"><table><thead><tr><th>Date</th><th>Action</th><th>Module</th><th>Reference</th><th>User</th><th>Details</th></tr></thead><tbody id="rows"></tbody></table></div></main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script>(async()=>{await StockFlowAuth.requireAuth();const q=id=>document.getElementById(id);async function load(){const r=await StockFlowAPI.listActivity();q("rows").innerHTML=(r.activity||[]).map(x=>`<tr><td>${x.DATE||""}</td><td>${x.ACTION}</td><td>${x.MODULE}</td><td>${x.REFERENCE}</td><td>${x.USER}</td><td>${x.DETAILS}</td></tr>`).join("")||'<tr><td colspan="6">No activity.</td></tr>'}q("refresh").onclick=load;load()})()</script></body></html>
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="STOCKFLOW Activity Log"
+    >
+
+    <title>Activity Log | STOCKFLOW</title>
+
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modules.css">
+
+</head>
+
+
+<body>
+
+    <!-- =========================================================
+         STOCKFLOW LAYOUT
+         ========================================================= -->
+
+    <div class="sf-layout">
+
+        <!-- =====================================================
+             SIDEBAR
+             ===================================================== -->
+
+        <aside
+            class="sf-side"
+            id="sidebar"
+        >
+
+            <div class="sf-brand">
+                STOCKFLOW
+            </div>
+
+
+            <nav
+                class="sf-nav"
+                aria-label="Main navigation"
+            >
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="products.html">
+                    Products
+                </a>
+
+                <a href="inventory.html">
+                    Inventory
+                </a>
+
+                <a href="categories.html">
+                    Categories
+                </a>
+
+                <a href="suppliers.html">
+                    Suppliers
+                </a>
+
+                <a href="stock-in.html">
+                    Stock In
+                </a>
+
+                <a href="stock-out.html">
+                    Stock Out
+                </a>
+
+                <a href="transactions.html">
+                    Transactions
+                </a>
+
+                <a
+                    href="activity.html"
+                    class="active"
+                >
+                    Activity Log
+                </a>
+
+                <a href="profile.html">
+                    Profile
+                </a>
+
+                <a href="settings.html">
+                    Settings
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =====================================================
+             MAIN CONTENT
+             ===================================================== -->
+
+        <main class="sf-main">
+
+            <!-- TOP BAR -->
+
+            <header class="sf-top">
+
+                <div>
+
+                    <div class="sf-title">
+                        Activity Log
+                    </div>
+
+                    <div class="sf-muted">
+                        Audit trail for inventory changes.
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="sf-btn secondary"
+                    id="menuButton"
+                    data-menu
+                    aria-label="Open navigation menu"
+                >
+                    ☰
+                </button>
+
+            </header>
+
+
+            <!-- =================================================
+                 TOOLBAR
+                 ================================================= -->
+
+            <section class="sf-card activity-toolbar">
+
+                <div>
+
+                    <strong>
+                        System Activity
+                    </strong>
+
+                    <span class="sf-muted">
+                        Recent inventory and account actions
+                    </span>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="sf-btn secondary"
+                    id="refresh"
+                >
+                    ↻ Refresh
+                </button>
+
+            </section>
+
+
+            <!-- =================================================
+                 ACTIVITY TABLE
+                 ================================================= -->
+
+            <section class="sf-card">
+
+                <div class="sf-table-header">
+
+                    <div>
+
+                        <h2>
+                            Activity Records
+                        </h2>
+
+                        <p class="sf-muted">
+                            Track actions performed within STOCKFLOW.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sf-table-wrapper">
+
+                    <table class="sf-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                                <th>
+                                    Module
+                                </th>
+
+                                <th>
+                                    Reference
+                                </th>
+
+                                <th>
+                                    User
+                                </th>
+
+                                <th>
+                                    Details
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="rows">
+
+                            <tr>
+
+                                <td
+                                    colspan="6"
+                                    class="sf-empty"
+                                >
+                                    Loading activity...
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="auth.js"></script>
+    <script src="main.js"></script>
+    <script src="activity.js"></script>
+
+</body>
+
+</html>
