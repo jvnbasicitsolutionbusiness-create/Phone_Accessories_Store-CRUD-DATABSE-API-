@@ -1,658 +1,1472 @@
-/* =========================================================
-   STOCKFLOW MODULES
-   Shared styles for StockFlow pages
-   ========================================================= */
+/* ============================================================
+   STOCKFLOW — INVENTORY MODULES
+   Products • Categories • Suppliers
+   Stock In • Stock Out • Transactions
+   Activity • Reports
 
-/* ---------- Variables ---------- */
+   RESPONSIVE:
+   Desktop / PC
+   Laptop
+   Tablet
+   Mobile
+   ============================================================ */
+
+
+/* ============================================================
+   MODULE VARIABLES
+   ============================================================ */
 
 :root {
-    --blue: #1769e0;
-    --blue-dark: #1258bd;
 
-    --navy: #10233f;
-    --sidebar: #0e1d32;
-    --sidebar-hover: #17304f;
-    --sidebar-text: #aebed2;
+    --module-bg:
+        #f5f7fa;
 
-    --muted: #64748b;
+    --module-surface:
+        #ffffff;
 
-    --bg: #f5f7fa;
-    --white: #ffffff;
+    --module-border:
+        #e4e7ec;
 
-    --border: #e5eaf1;
-    --input-border: #dbe2ea;
+    --module-text:
+        #101828;
 
-    --success-bg: #eaf8f2;
-    --success-text: #15704f;
+    --module-muted:
+        #667085;
 
-    --error-bg: #fff0f0;
-    --error-text: #b42318;
+    --module-blue:
+        #2563eb;
 
-    --warning-bg: #fff3df;
-    --warning-text: #a05f00;
+    --module-blue-dark:
+        #1d4ed8;
 
-    --neutral-bg: #eef2f7;
-    --neutral-text: #475569;
+    --module-blue-soft:
+        #eff6ff;
 
-    --radius: 10px;
+    --module-success:
+        #16a34a;
+
+    --module-danger:
+        #dc2626;
+
+    --module-warning:
+        #d97706;
+
+    --module-radius:
+        14px;
+
+    --module-shadow:
+        0 8px 28px
+        rgba(15,23,42,.06);
+
 }
 
 
-/* ---------- Reset ---------- */
+/* ============================================================
+   MODULE PAGE
+   ============================================================ */
 
-* {
-    box-sizing: border-box;
-}
+.module-page {
 
-html {
-    scroll-behavior: smooth;
-}
+    min-height:
+        100vh;
 
-body {
-    margin: 0;
-    min-height: 100vh;
+    background:
+        var(--module-bg);
 
-    background: var(--bg);
-    color: var(--navy);
-
-    font-family: Manrope, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-button,
-input,
-select,
-textarea {
-    font: inherit;
-}
-
-button {
-    -webkit-tap-highlight-color: transparent;
-}
-
-a {
-    -webkit-tap-highlight-color: transparent;
+    color:
+        var(--module-text);
 }
 
 
-/* ---------- Layout ---------- */
+/* ============================================================
+   MODULE CONTENT
+   ============================================================ */
 
-.sf-layout {
-    min-height: 100vh;
+.module-content {
+
+    width:
+        100%;
+
+    max-width:
+        1500px;
+
+    margin:
+        0 auto;
+
+    padding:
+        30px;
 }
 
 
-/* ---------- Sidebar ---------- */
+/* ============================================================
+   MODULE HEADER
+   ============================================================ */
 
-.sf-side {
-    position: fixed;
+.module-header {
 
-    left: 0;
-    top: 0;
-    bottom: 0;
+    display:
+        flex;
 
-    width: 230px;
+    align-items:
+        flex-start;
 
-    background: var(--sidebar);
-    color: #fff;
+    justify-content:
+        space-between;
 
-    padding: 22px 14px;
+    gap:
+        20px;
 
-    overflow-y: auto;
-    z-index: 1000;
-}
-
-.sf-brand {
-    padding: 0 10px 22px;
-
-    color: #fff;
-
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
+    margin-bottom:
+        22px;
 }
 
 
-/* ---------- Navigation ---------- */
+.module-header-copy {
 
-.sf-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.sf-nav a {
-    display: block;
-
-    color: var(--sidebar-text);
-    text-decoration: none;
-
-    padding: 10px;
-    border-radius: 8px;
-
-    font-size: 11px;
-    font-weight: 600;
-
-    transition:
-        background-color 0.15s ease,
-        color 0.15s ease;
-}
-
-.sf-nav a:hover {
-    background: var(--sidebar-hover);
-    color: #fff;
-}
-
-.sf-nav a.active {
-    background: var(--sidebar-hover);
-    color: #fff;
+    min-width:
+        0;
 }
 
 
-/* ---------- Main ---------- */
+.module-header h1 {
 
-.sf-main {
-    width: 100%;
-    max-width: 1500px;
+    margin:
+        0 0 6px;
 
-    margin-left: 230px;
-    padding: 25px;
+    font-size:
+        clamp(24px, 2.5vw, 32px);
+
+    line-height:
+        1.15;
+
+    letter-spacing:
+        -.03em;
 }
 
 
-/* ---------- Top Header ---------- */
+.module-header p {
 
-.sf-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin:
+        0;
 
-    gap: 15px;
+    color:
+        var(--module-muted);
 
-    margin-bottom: 16px;
-}
+    font-size:
+        12px;
 
-.sf-title {
-    color: var(--navy);
-
-    font-size: 24px;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.sf-muted {
-    margin-top: 3px;
-
-    color: var(--muted);
-
-    font-size: 10px;
+    line-height:
+        1.55;
 }
 
 
-/* ---------- Cards ---------- */
+/* ============================================================
+   MODULE ACTIONS
+   ============================================================ */
 
-.sf-card {
-    margin-bottom: 15px;
-    padding: 18px;
+.module-actions {
 
-    background: var(--white);
+    display:
+        flex;
 
-    border: 1px solid var(--border);
-    border-radius: 13px;
+    align-items:
+        center;
 
-    overflow: hidden;
-}
+    gap:
+        8px;
 
-.sf-card-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    gap: 15px;
-
-    margin-bottom: 16px;
-}
-
-.sf-card h3 {
-    margin: 0;
-
-    color: var(--navy);
-
-    font-size: 15px;
-    font-weight: 800;
-}
-
-.sf-card p {
-    margin-bottom: 0;
+    flex-wrap:
+        wrap;
 }
 
 
-/* ---------- Forms ---------- */
+/* ============================================================
+   MODULE BUTTON
+   ============================================================ */
 
-.sf-form {
-    display: grid;
+.module-btn {
 
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height:
+        42px;
 
-    gap: 12px;
-}
+    display:
+        inline-flex;
 
-.sf-form input,
-.sf-form select,
-.sf-form textarea {
-    width: 100%;
-    min-width: 0;
+    align-items:
+        center;
 
-    padding: 11px 12px;
+    justify-content:
+        center;
 
-    color: var(--navy);
-    background: #fff;
+    gap:
+        7px;
 
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
+    padding:
+        0 15px;
 
-    outline: none;
+    border:
+        1px solid transparent;
 
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
-}
+    border-radius:
+        9px;
 
-.sf-form input::placeholder,
-.sf-form textarea::placeholder {
-    color: #94a3b8;
-}
+    font-size:
+        11px;
 
-.sf-form input:focus,
-.sf-form select:focus,
-.sf-form textarea:focus {
-    border-color: var(--blue);
-
-    box-shadow: 0 0 0 3px rgba(23, 105, 224, 0.10);
-}
-
-.sf-form textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-.sf-form .full {
-    grid-column: 1 / -1;
+    font-weight:
+        800;
 }
 
 
-/* ---------- Form Buttons Row ---------- */
+.module-btn-primary {
 
-.sf-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+    color:
+        #ffffff;
 
-.sf-row .sf-btn {
-    flex: 0 0 auto;
+    background:
+        var(--module-blue);
 }
 
 
-/* ---------- Buttons ---------- */
+.module-btn-primary:hover {
 
-.sf-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-height: 38px;
-
-    padding: 10px 14px;
-
-    border: 0;
-    border-radius: 8px;
-
-    background: var(--blue);
-    color: #fff;
-
-    cursor: pointer;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    transition:
-        background-color 0.15s ease,
-        transform 0.1s ease,
-        opacity 0.15s ease;
-}
-
-.sf-btn:hover {
-    background: var(--blue-dark);
-}
-
-.sf-btn:active {
-    transform: translateY(1px);
-}
-
-.sf-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.sf-btn.secondary {
-    background: var(--neutral-bg);
-    color: var(--navy);
-}
-
-.sf-btn.secondary:hover {
-    background: #e2e8f0;
-}
-
-.sf-btn.danger {
-    background: #d84b4b;
-    color: #fff;
-}
-
-.sf-btn.danger:hover {
-    background: #bd3939;
+    background:
+        var(--module-blue-dark);
 }
 
 
-/* ---------- Alert ---------- */
+.module-btn-secondary {
 
-.sf-alert {
-    display: none;
+    color:
+        var(--module-text);
 
-    margin-bottom: 10px;
-    padding: 10px 12px;
+    border-color:
+        var(--module-border);
 
-    border-radius: 8px;
-
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.sf-alert.show {
-    display: block;
-}
-
-.sf-alert.success {
-    background: var(--success-bg);
-    color: var(--success-text);
-}
-
-.sf-alert.error {
-    background: var(--error-bg);
-    color: var(--error-text);
+    background:
+        #ffffff;
 }
 
 
-/* ---------- Tables ---------- */
+/* ============================================================
+   MODULE CARD
+   ============================================================ */
 
-.sf-table-wrap {
-    width: 100%;
+.module-card {
 
-    overflow-x: auto;
+    min-width:
+        0;
 
-    -webkit-overflow-scrolling: touch;
-}
+    margin-bottom:
+        18px;
 
-table {
-    width: 100%;
-    min-width: 650px;
+    padding:
+        20px;
 
-    border-collapse: collapse;
-}
+    border:
+        1px solid var(--module-border);
 
-th,
-td {
-    padding: 11px;
+    border-radius:
+        var(--module-radius);
 
-    text-align: left;
+    background:
+        var(--module-surface);
 
-    border-bottom: 1px solid #edf1f5;
-
-    font-size: 10px;
-    vertical-align: middle;
-}
-
-th {
-    background: #f8fafc;
-
-    color: #64748b;
-
-    font-size: 9px;
-    font-weight: 800;
-
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-tbody tr:hover {
-    background: #fafcff;
-}
-
-tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.sf-empty {
-    padding: 25px;
-
-    color: var(--muted);
-
-    text-align: center;
+    box-shadow:
+        var(--module-shadow);
 }
 
 
-/* ---------- Status Badges ---------- */
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
 
-.badge {
-    display: inline-block;
+.module-filter-bar {
 
-    padding: 4px 8px;
+    display:
+        grid;
 
-    border-radius: 999px;
+    grid-template-columns:
+        minmax(220px, 1.5fr)
+        repeat(3, minmax(140px, 1fr))
+        auto;
 
-    font-size: 8px;
-    font-weight: 800;
+    gap:
+        10px;
 
-    line-height: 1;
-}
-
-.badge.active,
-.badge.in {
-    background: var(--success-bg);
-    color: var(--success-text);
-}
-
-.badge.low {
-    background: var(--warning-bg);
-    color: var(--warning-text);
-}
-
-.badge.out,
-.badge.danger {
-    background: #ffebeb;
-    color: var(--error-text);
-}
-
-.badge.neutral {
-    background: var(--neutral-bg);
-    color: var(--neutral-text);
+    margin-bottom:
+        18px;
 }
 
 
-/* ---------- Table Actions ---------- */
+.module-filter {
 
-.sf-actions {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    min-width:
+        0;
 
-    white-space: nowrap;
-}
+    min-height:
+        42px;
 
-.sf-actions button {
-    padding: 6px 8px;
+    padding:
+        0 12px;
 
-    border: 0;
-    border-radius: 6px;
+    border:
+        1px solid var(--module-border);
 
-    cursor: pointer;
+    border-radius:
+        9px;
 
-    font-size: 9px;
-    font-weight: 700;
+    outline:
+        none;
 
-    transition:
-        background-color 0.15s ease,
-        transform 0.1s ease;
-}
+    color:
+        var(--module-text);
 
-.sf-actions button:active {
-    transform: translateY(1px);
-}
+    background:
+        #ffffff;
 
-
-/* ---------- Statistics ---------- */
-
-.stat-strip {
-    display: grid;
-
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    gap: 10px;
-
-    margin-bottom: 15px;
-}
-
-.mini-stat {
-    padding: 15px;
-
-    background: #fff;
-
-    border: 1px solid var(--border);
-    border-radius: 11px;
-}
-
-.mini-stat small,
-.mini-stat strong {
-    display: block;
-}
-
-.mini-stat small {
-    color: var(--muted);
-
-    font-size: 8px;
-    font-weight: 600;
-}
-
-.mini-stat strong {
-    margin-top: 4px;
-
-    color: var(--navy);
-
-    font-size: 20px;
-    font-weight: 800;
+    font-size:
+        11px;
 }
 
 
-/* =========================================================
-   TABLET / MOBILE
-   ========================================================= */
+.module-filter:focus {
 
-@media (max-width: 800px) {
+    border-color:
+        var(--module-blue);
 
-    /* Sidebar */
-    .sf-side {
-        transform: translateX(-100%);
+    box-shadow:
+        0 0 0 3px
+        rgba(37,99,235,.09);
+}
 
-        transition: transform 0.2s ease;
 
-        box-shadow: 5px 0 20px rgba(15, 23, 42, 0.15);
+/* ============================================================
+   SEARCH
+   ============================================================ */
+
+.module-search {
+
+    position:
+        relative;
+
+    min-width:
+        0;
+}
+
+
+.module-search input {
+
+    width:
+        100%;
+
+    min-height:
+        42px;
+
+    padding:
+        0 13px 0 38px;
+
+    border:
+        1px solid var(--module-border);
+
+    border-radius:
+        9px;
+
+    outline:
+        none;
+
+    background:
+        #ffffff;
+
+    font-size:
+        11px;
+}
+
+
+.module-search-icon {
+
+    position:
+        absolute;
+
+    left:
+        13px;
+
+    top:
+        50%;
+
+    transform:
+        translateY(-50%);
+
+    color:
+        var(--module-muted);
+
+    pointer-events:
+        none;
+}
+
+
+/* ============================================================
+   DATA TABLE
+   ============================================================ */
+
+.module-table-wrapper {
+
+    width:
+        100%;
+
+    overflow-x:
+        auto;
+
+    -webkit-overflow-scrolling:
+        touch;
+}
+
+
+.module-table {
+
+    width:
+        100%;
+
+    min-width:
+        720px;
+
+    border-collapse:
+        collapse;
+}
+
+
+.module-table th {
+
+    padding:
+        12px 14px;
+
+    border-bottom:
+        1px solid var(--module-border);
+
+    color:
+        #667085;
+
+    background:
+        #f8fafc;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        .07em;
+
+    text-align:
+        left;
+
+    text-transform:
+        uppercase;
+
+    white-space:
+        nowrap;
+}
+
+
+.module-table td {
+
+    padding:
+        13px 14px;
+
+    border-bottom:
+        1px solid #eef0f3;
+
+    color:
+        #344054;
+
+    font-size:
+        10px;
+
+    vertical-align:
+        middle;
+}
+
+
+.module-table tbody tr:hover {
+
+    background:
+        #fafcff;
+}
+
+
+/* ============================================================
+   PRODUCT CELL
+   ============================================================ */
+
+.module-product {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    min-width:
+        180px;
+}
+
+
+.module-product-icon {
+
+    width:
+        35px;
+
+    height:
+        35px;
+
+    flex:
+        0 0 35px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    border-radius:
+        9px;
+
+    color:
+        var(--module-blue);
+
+    background:
+        var(--module-blue-soft);
+}
+
+
+.module-product-info {
+
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+}
+
+
+.module-product-info strong {
+
+    overflow:
+        hidden;
+
+    color:
+        var(--module-text);
+
+    font-size:
+        11px;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+}
+
+
+.module-product-info small {
+
+    margin-top:
+        3px;
+
+    color:
+        var(--module-muted);
+
+    font-size:
+        9px;
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.module-status {
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    min-height:
+        24px;
+
+    padding:
+        0 8px;
+
+    border-radius:
+        20px;
+
+    font-size:
+        8px;
+
+    font-weight:
+        800;
+
+    white-space:
+        nowrap;
+}
+
+
+.module-status.success {
+
+    color:
+        #166534;
+
+    background:
+        #dcfce7;
+}
+
+
+.module-status.warning {
+
+    color:
+        #92400e;
+
+    background:
+        #fef3c7;
+}
+
+
+.module-status.danger {
+
+    color:
+        #991b1b;
+
+    background:
+        #fee2e2;
+}
+
+
+.module-status.neutral {
+
+    color:
+        #475467;
+
+    background:
+        #f2f4f7;
+}
+
+
+/* ============================================================
+   TABLE ACTIONS
+   ============================================================ */
+
+.module-actions-cell {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        flex-end;
+
+    gap:
+        5px;
+}
+
+
+.module-icon-btn {
+
+    width:
+        31px;
+
+    height:
+        31px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    border:
+        1px solid var(--module-border);
+
+    border-radius:
+        7px;
+
+    color:
+        var(--module-muted);
+
+    background:
+        #ffffff;
+}
+
+
+.module-icon-btn:hover {
+
+    color:
+        var(--module-blue);
+
+    border-color:
+        #bfd2f5;
+
+    background:
+        #f8fbff;
+}
+
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.module-empty {
+
+    min-height:
+        220px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    padding:
+        30px;
+
+    text-align:
+        center;
+}
+
+
+.module-empty-icon {
+
+    width:
+        48px;
+
+    height:
+        48px;
+
+    margin-bottom:
+        12px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    border-radius:
+        13px;
+
+    color:
+        var(--module-blue);
+
+    background:
+        var(--module-blue-soft);
+}
+
+
+.module-empty strong {
+
+    font-size:
+        13px;
+}
+
+
+.module-empty p {
+
+    max-width:
+        380px;
+
+    margin:
+        6px 0 0;
+
+    color:
+        var(--module-muted);
+
+    font-size:
+        10px;
+
+    line-height:
+        1.5;
+}
+
+
+/* ============================================================
+   FORM GRID
+   ============================================================ */
+
+.module-form-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:
+        15px;
+}
+
+
+.module-form-field {
+
+    min-width:
+        0;
+}
+
+
+.module-form-field.full {
+
+    grid-column:
+        1 / -1;
+}
+
+
+.module-form-field label {
+
+    display:
+        block;
+
+    margin-bottom:
+        6px;
+
+    color:
+        #344054;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+}
+
+
+.module-form-field input,
+.module-form-field select,
+.module-form-field textarea {
+
+    width:
+        100%;
+
+    min-height:
+        43px;
+
+    padding:
+        9px 11px;
+
+    border:
+        1px solid var(--module-border);
+
+    border-radius:
+        9px;
+
+    outline:
+        none;
+
+    color:
+        var(--module-text);
+
+    background:
+        #ffffff;
+
+    font-size:
+        11px;
+}
+
+
+.module-form-field textarea {
+
+    min-height:
+        100px;
+
+    resize:
+        vertical;
+}
+
+
+.module-form-field input:focus,
+.module-form-field select:focus,
+.module-form-field textarea:focus {
+
+    border-color:
+        var(--module-blue);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(37,99,235,.09);
+}
+
+
+/* ============================================================
+   SUMMARY GRID
+   ============================================================ */
+
+.module-summary-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap:
+        12px;
+
+    margin-bottom:
+        18px;
+}
+
+
+.module-summary {
+
+    min-width:
+        0;
+
+    padding:
+        16px;
+
+    border:
+        1px solid var(--module-border);
+
+    border-radius:
+        12px;
+
+    background:
+        #ffffff;
+}
+
+
+.module-summary span {
+
+    display:
+        block;
+
+    color:
+        var(--module-muted);
+
+    font-size:
+        9px;
+
+    font-weight:
+        700;
+
+    text-transform:
+        uppercase;
+}
+
+
+.module-summary strong {
+
+    display:
+        block;
+
+    margin-top:
+        7px;
+
+    color:
+        var(--module-text);
+
+    font-size:
+        23px;
+
+    line-height:
+        1;
+
+    font-weight:
+        800;
+}
+
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+
+.module-modal {
+
+    position:
+        fixed;
+
+    inset:
+        0;
+
+    z-index:
+        2000;
+
+    display:
+        none;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    padding:
+        20px;
+
+    background:
+        rgba(2, 12, 27, .45);
+}
+
+
+.module-modal.open {
+
+    display:
+        flex;
+}
+
+
+.module-modal-card {
+
+    width:
+        100%;
+
+    max-width:
+        560px;
+
+    max-height:
+        calc(100vh - 40px);
+
+    overflow-y:
+        auto;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 30px 80px
+        rgba(0,0,0,.18);
+}
+
+
+.module-modal-header {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        15px;
+
+    padding:
+        18px 20px;
+
+    border-bottom:
+        1px solid var(--module-border);
+}
+
+
+.module-modal-header h2 {
+
+    margin:
+        0;
+
+    font-size:
+        16px;
+}
+
+
+.module-modal-close {
+
+    width:
+        32px;
+
+    height:
+        32px;
+
+    border:
+        0;
+
+    border-radius:
+        8px;
+
+    background:
+        #f2f4f7;
+
+    color:
+        #475467;
+}
+
+
+.module-modal-body {
+
+    padding:
+        20px;
+}
+
+
+.module-modal-footer {
+
+    display:
+        flex;
+
+    justify-content:
+        flex-end;
+
+    gap:
+        8px;
+
+    padding:
+        15px 20px;
+
+    border-top:
+        1px solid var(--module-border);
+}
+
+
+/* ============================================================
+   LAPTOP
+   ============================================================ */
+
+@media (max-width: 1200px) {
+
+    .module-content {
+
+        padding:
+            25px;
     }
 
-    .sf-menu-open .sf-side {
-        transform: translateX(0);
+
+    .module-filter-bar {
+
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
     }
 
 
-    /* Main */
-    .sf-main {
-        margin-left: 0;
-        padding: 15px;
+    .module-search {
+
+        grid-column:
+            1 / -1;
     }
 
 
-    /* Header */
-    .sf-top {
-        align-items: flex-start;
+    .module-summary-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
     }
 
-    .sf-title {
-        font-size: 20px;
-    }
-
-
-    /* Forms */
-    .sf-form {
-        grid-template-columns: 1fr;
-    }
-
-    .sf-form .full {
-        grid-column: auto;
-    }
-
-
-    /* Statistics */
-    .stat-strip {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-
-    /* Cards */
-    .sf-card {
-        padding: 15px;
-    }
 }
 
 
-/* ---------- Small Phones ---------- */
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 991px) {
+
+    .module-content {
+
+        padding:
+            22px;
+    }
+
+
+    .module-header {
+
+        flex-direction:
+            column;
+    }
+
+
+    .module-actions {
+
+        width:
+            100%;
+    }
+
+
+    .module-filter-bar {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    .module-form-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .module-form-field.full {
+
+        grid-column:
+            auto;
+    }
+
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 767px) {
+
+    .module-content {
+
+        padding:
+            17px 14px;
+    }
+
+
+    .module-header {
+
+        margin-bottom:
+            17px;
+    }
+
+
+    .module-header h1 {
+
+        font-size:
+            23px;
+    }
+
+
+    .module-header p {
+
+        font-size:
+            10px;
+    }
+
+
+    .module-actions {
+
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+    }
+
+
+    .module-btn {
+
+        width:
+            100%;
+    }
+
+
+    .module-filter-bar {
+
+        grid-template-columns:
+            1fr;
+
+        gap:
+            8px;
+    }
+
+
+    .module-search {
+
+        grid-column:
+            auto;
+    }
+
+
+    .module-card {
+
+        padding:
+            15px;
+    }
+
+
+    .module-summary-grid {
+
+        grid-template-columns:
+            1fr;
+
+        gap:
+            9px;
+    }
+
+
+    .module-table {
+
+        min-width:
+            680px;
+    }
+
+
+    .module-form-grid {
+
+        gap:
+            12px;
+    }
+
+
+    .module-modal {
+
+        align-items:
+            flex-end;
+
+        padding:
+            0;
+    }
+
+
+    .module-modal-card {
+
+        max-height:
+            92vh;
+
+        border-radius:
+            17px 17px 0 0;
+    }
+
+
+    .module-modal-footer {
+
+        flex-direction:
+            column-reverse;
+    }
+
+
+    .module-modal-footer .module-btn {
+
+        width:
+            100%;
+    }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
 
 @media (max-width: 480px) {
 
-    .sf-main {
-        padding: 10px;
+    .module-content {
+
+        padding:
+            14px 10px;
     }
 
-    .sf-title {
-        font-size: 18px;
+
+    .module-card {
+
+        padding:
+            13px;
     }
 
-    .sf-muted {
-        font-size: 9px;
+
+    .module-summary {
+
+        padding:
+            14px;
     }
 
-    .sf-card {
-        padding: 13px;
-        border-radius: 10px;
+
+    .module-summary strong {
+
+        font-size:
+            21px;
     }
 
-    .sf-card-head {
-        align-items: flex-start;
+
+    .module-modal-body {
+
+        padding:
+            16px;
     }
 
-    .sf-row {
-        flex-direction: column;
-        align-items: stretch;
+
+    .module-modal-header {
+
+        padding:
+            16px;
     }
 
-    .sf-row .sf-btn {
-        width: 100%;
+
+    .module-table th {
+
+        padding:
+            10px;
     }
 
-    .stat-strip {
-        grid-template-columns: 1fr;
+
+    .module-table td {
+
+        padding:
+            11px 10px;
     }
 
-    .sf-top > .sf-btn {
-        flex-shrink: 0;
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+
+    .module-content {
+
+        padding:
+            12px 8px;
     }
+
+
+    .module-header h1 {
+
+        font-size:
+            21px;
+    }
+
+
+    .module-card {
+
+        padding:
+            12px;
+    }
+
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+
+        transition:
+            none !important;
+
+        animation:
+            none !important;
+    }
+
 }
