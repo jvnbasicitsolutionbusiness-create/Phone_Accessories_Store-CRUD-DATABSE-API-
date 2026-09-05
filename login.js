@@ -579,18 +579,23 @@ document.addEventListener("DOMContentLoaded", () => {
                    CHECK API
                    ============================================= */
 
-                if (
-                    !window.StockFlowAPI ||
-                    typeof window.StockFlowAPI.login !==
-                        "function"
-                ) {
-
-                    throw new Error(
-                        "The STOCKFLOW login service is currently unavailable."
-                    );
-
-                }
-
+               if (
+                      !window.StockFlowAPI ||
+                      typeof window.StockFlowAPI.login !== "function"
+                  ) {
+                  
+                      console.warn(
+                          "STOCKFLOW: Login API is not connected yet."
+                      );
+                  
+                      showMessage(
+                          "Login is ready. Database connectivity will be enabled shortly.",
+                          "warning"
+                      );
+                  
+                      return;
+                  
+                  }
 
                 /* =============================================
                    API REQUEST
@@ -800,13 +805,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-                showMessage(
-                    error &&
-                    error.message
-                        ? error.message
-                        : "Unable to sign in. Please try again.",
-                    "error"
-                );
+                let errorMessage =
+                               error &&
+                               error.message
+                                   ? error.message
+                                   : "";
+                           
+                           if (
+                               /unavailable|failed to fetch|network|fetch|connection/i
+                                   .test(errorMessage)
+                           ) {
+                           
+                               errorMessage =
+                                   "Unable to connect to the login system right now. Please try again.";
+                           
+                           }
+                           
+                           showMessage(
+                               errorMessage ||
+                               "Unable to sign in. Please check your information and try again.",
+                               "error"
+                           );
 
 
             } finally {
