@@ -2308,8 +2308,9 @@
 }
 
 /* ============================================================
-   STOCKFLOW — VERIFY PAGE OVERRIDES
-   VERIFY PAGE ONLY
+   STOCKFLOW — VERIFY PAGE
+   Verification / OTP UI
+   Scoped to .verify-shell / .verify-box only
    ============================================================ */
 
 .verify-shell {
@@ -2322,7 +2323,9 @@
 }
 
 .verify-box {
+    min-width: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .verify-box .auth-card {
@@ -2339,7 +2342,6 @@
     margin-bottom: 22px;
 }
 
-/* The verification page uses h1, while the other auth pages use h2/h3. */
 .verify-box .auth-header h1 {
     margin: 0 0 9px;
     color: var(--auth-text);
@@ -2360,10 +2362,10 @@
 .verify-box .verification-method {
     position: relative;
     width: 100%;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 13px;
-    min-width: 0;
     padding: 14px 15px;
     border: 1px solid #e2e7ef;
     border-radius: 14px;
@@ -2447,6 +2449,7 @@
 
 .verify-box #emailDeliveryStatus,
 .verify-box #phoneDeliveryStatus {
+    display: block;
     color: #667085;
 }
 
@@ -2460,6 +2463,7 @@
     background: #ffffff;
     font-size: 11px;
     font-weight: 800;
+    line-height: 1;
     white-space: nowrap;
     transition:
         color 0.18s ease,
@@ -2478,13 +2482,6 @@
 .verify-box .verification-method-action:disabled {
     cursor: not-allowed;
     opacity: 0.55;
-}
-
-.verify-box .verification-method-action:focus-visible,
-.verify-box .link-button:focus-visible,
-.verify-box .auth-submit:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.16);
-    outline-offset: 2px;
 }
 
 /* ============================================================
@@ -2568,7 +2565,7 @@
 }
 
 /* ============================================================
-   OTP MESSAGE / TIMER
+   OTP MESSAGE / TIMER / RESEND
    ============================================================ */
 
 .verify-box .otp-message {
@@ -2631,6 +2628,7 @@
 
 .verify-box .otp-resend > span,
 .verify-box .otp-resend > p {
+    min-width: 0;
     margin: 0;
     color: #667085;
     font-size: 11px;
@@ -2652,6 +2650,14 @@
 
 .verify-box .auth-footer {
     margin-top: 22px;
+}
+
+.verify-box .verification-method-action:focus-visible,
+.verify-box .link-button:focus-visible,
+.verify-box .auth-submit:focus-visible,
+.verify-box .otp-digit:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.16);
+    outline-offset: 2px;
 }
 
 /* ============================================================
@@ -2691,6 +2697,8 @@
     .verify-box {
         min-height: 100vh;
         padding: 18px 14px;
+        align-items: center;
+        justify-content: flex-start;
     }
 
     .verify-box .auth-card {
@@ -2717,6 +2725,7 @@
     }
 
     .verify-box .verification-method {
+        align-items: flex-start;
         padding: 13px;
         gap: 11px;
     }
@@ -2738,6 +2747,7 @@
     }
 
     .verify-box .verification-method-action {
+        align-self: center;
         min-height: 32px;
         padding: 0 10px;
         font-size: 10px;
@@ -2785,7 +2795,6 @@
     }
 
     .verify-box .verification-method {
-        align-items: flex-start;
         padding: 12px;
     }
 
@@ -2796,7 +2805,9 @@
     }
 
     .verify-box .verification-method-action {
-        align-self: center;
+        min-height: 31px;
+        padding: 0 9px;
+        font-size: 10px;
     }
 
     .verify-box .otp-boxes {
@@ -2834,7 +2845,7 @@
     }
 
     .verify-box .verification-method {
-        gap: 9px;
+        gap: 8px;
         padding: 10px;
     }
 
@@ -2855,8 +2866,8 @@
     }
 
     .verify-box .verification-method-action {
-        min-height: 30px;
-        padding: 0 8px;
+        min-height: 29px;
+        padding: 0 7px;
         font-size: 9px;
     }
 
@@ -2886,6 +2897,7 @@
 @media (max-height: 600px) and (max-width: 900px) {
     .verify-box {
         align-items: flex-start;
+        justify-content: flex-start;
     }
 
     .verify-box .auth-card {
