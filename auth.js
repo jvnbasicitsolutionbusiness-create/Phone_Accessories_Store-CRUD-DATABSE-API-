@@ -1,10 +1,21 @@
 /* ============================================================
    STOCKFLOW — AUTHENTICATION CONTROLLER
+   File: auth.js
+
    Handles:
    - Sign In / Create Account tab switching
    - Login/Register panel visibility
    - Password Show/Hide
    - Authentication navigation
+   - URL hash navigation
+   - Keyboard accessibility
+
+   NOTE:
+   This file does NOT handle:
+   - API requests
+   - OTP verification
+   - Sessions
+   - Firebase
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -35,8 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * If this is not the authentication page,
-     * stop safely.
+     * If this page does not contain
+     * authentication components, stop safely.
      */
 
     if (
@@ -52,13 +63,13 @@ document.addEventListener("DOMContentLoaded", () => {
        SHOW AUTH PANEL
        ========================================================= */
 
-    function showAuthPanel(view) {
+    function showAuthPanel(view, focusInput = true) {
 
         if (
             view !== "login" &&
             view !== "register"
         ) {
-            return;
+            view = "login";
         }
 
 
@@ -119,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /* -----------------------------------------------------
-           FOCUS FIRST INPUT
+           ACCESSIBILITY
            ----------------------------------------------------- */
 
         const activePanel =
@@ -128,24 +139,56 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (!activePanel) {
-            return;
+        if (
+            activePanel &&
+            focusInput
+        ) {
+
+            const firstInput =
+                activePanel.querySelector(
+                    "input:not([type='hidden'])"
+                );
+
+
+            if (firstInput) {
+
+                setTimeout(() => {
+
+                    firstInput.focus();
+
+                }, 60);
+
+            }
+
         }
 
 
-        const firstInput =
-            activePanel.querySelector(
-                "input"
+        /* -----------------------------------------------------
+           UPDATE HASH
+           ----------------------------------------------------- */
+
+        const currentHash =
+            window.location.hash;
+
+
+        const desiredHash =
+            "#" + view;
+
+
+        if (
+            currentHash !== desiredHash
+        ) {
+
+            /*
+             * Replace the hash instead of creating
+             * unnecessary browser history entries.
+             */
+
+            history.replaceState(
+                null,
+                "",
+                desiredHash
             );
-
-
-        if (firstInput) {
-
-            setTimeout(() => {
-
-                firstInput.focus();
-
-            }, 50);
 
         }
 
@@ -166,7 +209,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     tab.dataset.authTab;
 
 
-                showAuthPanel(view);
+                showAuthPanel(
+                    view,
+                    true
+                );
 
             }
         );
@@ -181,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
     authControls.forEach(control => {
 
         /*
-         * Avoid registering the tab buttons twice.
+         * Do not register the tab buttons twice.
          */
 
         if (
@@ -204,7 +250,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     control.dataset.showAuth;
 
 
-                showAuthPanel(view);
+                showAuthPanel(
+                    view,
+                    true
+                );
 
             }
         );
@@ -214,8 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =========================================================
        PASSWORD SHOW / HIDE
-       FIXED:
-       Supports .password-field and .password-wrapper
        ========================================================= */
 
     document.addEventListener(
@@ -233,14 +280,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            /*
-             * First use the explicit target ID.
-             * This is the safest method because the HTML
-             * already provides data-target.
-             */
-
             let input = null;
 
+
+            /* -------------------------------------------------
+               EXPLICIT TARGET
+               ------------------------------------------------- */
 
             const targetId =
                 button.dataset.target ||
@@ -257,15 +302,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            /*
-             * Fallback for wrapper-based markup.
-             */
+            /* -------------------------------------------------
+               WRAPPER FALLBACK
+               ------------------------------------------------- */
 
             if (!input) {
 
                 const wrapper =
                     button.closest(
-                        ".password-field, .password-wrapper"
+                        ".password-field, .password-wrapper, .password-wrap"
                     );
 
 
@@ -287,14 +332,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* -------------------------------------------------
-               SHOW PASSWORD
+               SHOW
                ------------------------------------------------- */
 
             if (
                 input.type === "password"
             ) {
 
-                input.type = "text";
+                input.type =
+                    "text";
 
 
                 button.textContent =
@@ -321,12 +367,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* -------------------------------------------------
-               HIDE PASSWORD
+               HIDE
                ------------------------------------------------- */
 
             else {
 
-                input.type = "password";
+                input.type =
+                    "password";
 
 
                 button.textContent =
@@ -356,7 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       KEYBOARD ACCESSIBILITY
+       KEYBOARD TAB NAVIGATION
        ========================================================= */
 
     authTabs.forEach(tab => {
@@ -377,11 +424,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 const tabArray =
-                    Array.from(authTabs);
+                    Array.from(
+                        authTabs
+                    );
 
 
                 const currentIndex =
-                    tabArray.indexOf(tab);
+                    tabArray.indexOf(
+                        tab
+                    );
 
 
                 let nextIndex;
@@ -406,7 +457,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
 
-
                 else {
 
                     nextIndex =
@@ -429,16 +479,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     tabArray[nextIndex];
 
 
-                if (nextTab) {
-
-                    nextTab.focus();
-
-
-                    showAuthPanel(
-                        nextTab.dataset.authTab
-                    );
-
+                if (!nextTab) {
+                    return;
                 }
+
+
+                nextTab.focus();
+
+
+                showAuthPanel(
+                    nextTab.dataset.authTab,
+                    false
+                );
 
             }
         );
@@ -460,7 +512,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         messages.forEach(message => {
 
-            message.textContent = "";
+            message.textContent =
+                "";
 
             message.className =
                 "auth-message";
@@ -471,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       RESET PASSWORD BUTTON STATES
+       RESET BUTTON STATES
        ========================================================= */
 
     function resetButtonStates() {
@@ -489,7 +542,8 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            button.disabled = false;
+            button.disabled =
+                false;
 
 
             const text =
@@ -514,7 +568,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (loader) {
 
-                loader.hidden = true;
+                loader.hidden =
+                    true;
 
             }
 
@@ -524,16 +579,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
+       HASH ROUTING
+       ========================================================= */
+
+    function getHashView() {
+
+        const hash =
+            window.location.hash
+                .replace("#", "")
+                .toLowerCase()
+                .trim();
+
+
+        if (
+            hash === "register"
+        ) {
+
+            return "register";
+
+        }
+
+
+        return "login";
+
+    }
+
+
+    /* =========================================================
+       HASH CHANGE
+       ========================================================= */
+
+    window.addEventListener(
+        "hashchange",
+        () => {
+
+            const view =
+                getHashView();
+
+
+            clearInactiveMessages();
+
+
+            showAuthPanel(
+                view,
+                false
+            );
+
+        }
+    );
+
+
+    /* =========================================================
        INITIAL STATE
        ========================================================= */
 
     resetButtonStates();
 
-    showAuthPanel("login");
+
+    const initialView =
+        getHashView();
+
+
+    showAuthPanel(
+        initialView,
+        false
+    );
 
 
     /* =========================================================
-       PUBLIC AUTH CONTROLLER
+       PUBLIC CONTROLLER
        ========================================================= */
 
     window.StockFlowAuthUI = {
@@ -542,7 +656,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearInactiveMessages();
 
-            showAuthPanel("login");
+
+            showAuthPanel(
+                "login",
+                true
+            );
 
         },
 
@@ -551,7 +669,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearInactiveMessages();
 
-            showAuthPanel("register");
+
+            showAuthPanel(
+                "register",
+                true
+            );
 
         },
 
