@@ -2306,3 +2306,589 @@
     }
 
 }
+
+/* ============================================================
+   STOCKFLOW — VERIFY PAGE OVERRIDES
+   VERIFY PAGE ONLY
+   ============================================================ */
+
+.verify-shell {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.verify-visual {
+    position: relative;
+}
+
+.verify-box {
+    overflow-y: auto;
+}
+
+.verify-box .auth-card {
+    width: 100%;
+    max-width: 560px;
+    padding: 34px;
+}
+
+.verify-box .auth-mobile-brand {
+    margin-bottom: 24px;
+}
+
+.verify-box .auth-header {
+    margin-bottom: 22px;
+}
+
+/* The verification page uses h1, while the other auth pages use h2/h3. */
+.verify-box .auth-header h1 {
+    margin: 0 0 9px;
+    color: var(--auth-text);
+    font-size: clamp(28px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+}
+
+.verify-box .auth-header p {
+    max-width: 470px;
+}
+
+/* ============================================================
+   VERIFICATION METHODS
+   ============================================================ */
+
+.verify-box .verification-method {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid #e2e7ef;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.verify-box .verification-method + .verification-method {
+    margin-top: 10px;
+}
+
+.verify-box .verification-method.primary {
+    border-color: #cfe0ff;
+    background: linear-gradient(135deg, #f8fbff 0%, #f1f6ff 100%);
+    box-shadow: 0 5px 18px rgba(37, 99, 235, 0.07);
+}
+
+@media (hover: hover) {
+    .verify-box .verification-method:hover {
+        border-color: #c8d2df;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+        transform: translateY(-1px);
+    }
+
+    .verify-box .verification-method.primary:hover {
+        border-color: #bcd2f7;
+    }
+}
+
+.verify-box .verification-method-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #d9e6fb;
+    border-radius: 11px;
+    color: var(--auth-blue);
+    background: #eaf2ff;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.verify-box .verification-method:not(.primary) .verification-method-icon {
+    color: #475467;
+    border-color: #e4e7ec;
+    background: #f7f8fa;
+}
+
+.verify-box .verification-method-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.verify-box .verification-method-copy strong {
+    color: #172033;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.verify-box .verification-method-copy span,
+.verify-box .verification-method-copy small {
+    color: #667085;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.verify-box .verification-method-copy span:empty,
+.verify-box .verification-method-copy small:empty {
+    display: none;
+}
+
+.verify-box #emailDeliveryStatus,
+.verify-box #phoneDeliveryStatus {
+    color: #667085;
+}
+
+.verify-box .verification-method-action {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid #cdd8e7;
+    border-radius: 9px;
+    color: #344054;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.verify-box .verification-method-action:hover:not(:disabled) {
+    color: var(--auth-blue-dark);
+    border-color: #a9c1e8;
+    background: #f8fbff;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.08);
+}
+
+.verify-box .verification-method-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.verify-box .verification-method-action:focus-visible,
+.verify-box .link-button:focus-visible,
+.verify-box .auth-submit:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.16);
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   OTP FORM
+   ============================================================ */
+
+.verify-box .otp-form {
+    width: 100%;
+    margin-top: 20px;
+    gap: 15px;
+}
+
+.verify-box .otp-form .form-field {
+    margin: 0;
+}
+
+.verify-box .otp-form .form-field > label {
+    margin-bottom: 9px;
+}
+
+.verify-box .otp-boxes {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 9px;
+    margin: 0;
+}
+
+.verify-box .otp-digit {
+    width: 100%;
+    min-width: 0;
+    height: 58px;
+    padding: 0;
+    border: 1px solid var(--auth-border);
+    border-radius: 12px;
+    outline: none;
+    color: var(--auth-text);
+    background: #ffffff;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    caret-color: var(--auth-blue);
+    box-shadow: 0 2px 7px rgba(15, 23, 42, 0.025);
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.verify-box .otp-digit:hover:not(:disabled) {
+    border-color: #b8c1ce;
+}
+
+.verify-box .otp-digit:focus {
+    border-color: var(--auth-blue);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    transform: translateY(-1px);
+}
+
+.verify-box .otp-digit:disabled {
+    cursor: not-allowed;
+    color: #98a2b3;
+    border-color: #e4e7ec;
+    background: #f7f8fa;
+    box-shadow: none;
+}
+
+.verify-box .otp-digit:not(:disabled) {
+    background: #ffffff;
+}
+
+.verify-box .field-help {
+    margin: 9px 0 0;
+    color: #98a2b3;
+    font-size: 10.5px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   OTP MESSAGE / TIMER
+   ============================================================ */
+
+.verify-box .otp-message {
+    width: 100%;
+    margin: 0;
+    padding: 11px 13px;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    color: #475467;
+    background: #f8fafc;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.verify-box .otp-message:not([hidden]) {
+    display: block;
+}
+
+.verify-box .otp-message.success {
+    border-color: #b7e3c5;
+    color: #166534;
+    background: #f0fdf4;
+}
+
+.verify-box .otp-message.error {
+    border-color: #fecaca;
+    color: #b42318;
+    background: #fef3f2;
+}
+
+.verify-box .otp-message.info {
+    border-color: #cfe0ff;
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.verify-box .otp-timer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    margin: 0;
+    padding: 5px 9px;
+    border-radius: 8px;
+    color: #667085;
+    background: #f6f7f9;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.verify-box .otp-resend {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 1px;
+}
+
+.verify-box .otp-resend > span,
+.verify-box .otp-resend > p {
+    margin: 0;
+    color: #667085;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.verify-box .otp-resend .link-button {
+    flex: 0 0 auto;
+    font-size: 11px;
+}
+
+.verify-box .auth-submit {
+    margin-top: 2px;
+}
+
+.verify-box .auth-switch {
+    margin-top: 18px;
+}
+
+.verify-box .auth-footer {
+    margin-top: 22px;
+}
+
+/* ============================================================
+   VERIFY PAGE — TABLET
+   ============================================================ */
+
+@media (max-width: 1100px) {
+    .verify-box .auth-card {
+        max-width: 540px;
+        padding: 30px;
+    }
+
+    .verify-box .auth-header h1 {
+        font-size: 32px;
+    }
+}
+
+/* ============================================================
+   VERIFY PAGE — TABLET PORTRAIT
+   ============================================================ */
+
+@media (max-width: 900px) {
+    .verify-box {
+        padding: 38px 28px;
+    }
+
+    .verify-box .auth-card {
+        max-width: 620px;
+    }
+}
+
+/* ============================================================
+   VERIFY PAGE — MOBILE
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .verify-box {
+        min-height: 100vh;
+        padding: 18px 14px;
+    }
+
+    .verify-box .auth-card {
+        width: 100%;
+        max-width: 560px;
+        padding: 26px 21px;
+        border-radius: 17px;
+    }
+
+    .verify-box .auth-mobile-brand {
+        margin-bottom: 22px;
+    }
+
+    .verify-box .auth-header {
+        margin-bottom: 20px;
+    }
+
+    .verify-box .auth-header h1 {
+        font-size: 27px;
+    }
+
+    .verify-box .auth-header p {
+        font-size: 13px;
+    }
+
+    .verify-box .verification-method {
+        padding: 13px;
+        gap: 11px;
+    }
+
+    .verify-box .verification-method-icon {
+        width: 37px;
+        height: 37px;
+        flex-basis: 37px;
+        border-radius: 10px;
+    }
+
+    .verify-box .verification-method-copy strong {
+        font-size: 11.5px;
+    }
+
+    .verify-box .verification-method-copy span,
+    .verify-box .verification-method-copy small {
+        font-size: 10.5px;
+    }
+
+    .verify-box .verification-method-action {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 10px;
+    }
+
+    .verify-box .otp-form {
+        margin-top: 18px;
+    }
+
+    .verify-box .otp-boxes {
+        gap: 7px;
+    }
+
+    .verify-box .otp-digit {
+        height: 52px;
+        border-radius: 10px;
+        font-size: 20px;
+    }
+}
+
+/* ============================================================
+   VERIFY PAGE — SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 480px) {
+    .verify-box {
+        padding: 12px 9px;
+    }
+
+    .verify-box .auth-card {
+        padding: 23px 17px;
+        border-radius: 15px;
+    }
+
+    .verify-box .auth-mobile-brand {
+        margin-bottom: 21px;
+    }
+
+    .verify-box .auth-header h1 {
+        font-size: 24px;
+    }
+
+    .verify-box .auth-header p {
+        font-size: 12.5px;
+    }
+
+    .verify-box .verification-method {
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    .verify-box .verification-method-icon {
+        width: 35px;
+        height: 35px;
+        flex-basis: 35px;
+    }
+
+    .verify-box .verification-method-action {
+        align-self: center;
+    }
+
+    .verify-box .otp-boxes {
+        gap: 5px;
+    }
+
+    .verify-box .otp-digit {
+        height: 48px;
+        border-radius: 9px;
+        font-size: 18px;
+    }
+
+    .verify-box .otp-resend {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .verify-box .otp-timer {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   VERIFY PAGE — VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 360px) {
+    .verify-box .auth-card {
+        padding: 20px 13px;
+    }
+
+    .verify-box .auth-header h1 {
+        font-size: 22px;
+    }
+
+    .verify-box .verification-method {
+        gap: 9px;
+        padding: 10px;
+    }
+
+    .verify-box .verification-method-icon {
+        width: 33px;
+        height: 33px;
+        flex-basis: 33px;
+        font-size: 13px;
+    }
+
+    .verify-box .verification-method-copy strong {
+        font-size: 11px;
+    }
+
+    .verify-box .verification-method-copy span,
+    .verify-box .verification-method-copy small {
+        font-size: 10px;
+    }
+
+    .verify-box .verification-method-action {
+        min-height: 30px;
+        padding: 0 8px;
+        font-size: 9px;
+    }
+
+    .verify-box .otp-boxes {
+        gap: 4px;
+    }
+
+    .verify-box .otp-digit {
+        height: 44px;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .verify-box .field-help,
+    .verify-box .otp-message,
+    .verify-box .otp-resend > span,
+    .verify-box .otp-resend > p,
+    .verify-box .otp-resend .link-button {
+        font-size: 10px;
+    }
+}
+
+/* ============================================================
+   VERIFY PAGE — LANDSCAPE MOBILE
+   ============================================================ */
+
+@media (max-height: 600px) and (max-width: 900px) {
+    .verify-box {
+        align-items: flex-start;
+    }
+
+    .verify-box .auth-card {
+        margin: 0 auto;
+    }
+}
