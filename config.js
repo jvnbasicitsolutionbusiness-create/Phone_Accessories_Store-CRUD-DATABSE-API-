@@ -1,16 +1,21 @@
 /* =========================================================
    STOCKFLOW — SYSTEM CONFIGURATION
    File: config.js
+
    Purpose:
    - Central configuration for the entire STOCKFLOW system
    - Google Apps Script API
    - Firebase configuration
    - Application routes
+   - Authentication settings
    - Session settings
+   - Inventory settings
    ========================================================= */
 
 (function () {
+
     "use strict";
+
 
     /* =========================================================
        CORE APPLICATION CONFIGURATION
@@ -22,14 +27,30 @@
            APPLICATION
            ----------------------------------------------------- */
 
-        APP_NAME: "STOCKFLOW",
+        APP_NAME:
+            "STOCKFLOW",
 
         APP_FULL_NAME:
             "Phone Accessories Inventory Management System",
 
-        VERSION: "1.0.0",
+        VERSION:
+            "1.0.0",
 
-        ENVIRONMENT: "production",
+        /*
+           Current project is a midterm/demo system.
+
+           IMPORTANT:
+           This does NOT mean the application is insecure by
+           design. It means the OTP delivery is simulated.
+
+           The backend still generates the authoritative OTP
+           and stores it in Google Sheets + Firebase.
+        */
+        ENVIRONMENT:
+            "development",
+
+        DEMO_MODE:
+            true,
 
 
         /* -----------------------------------------------------
@@ -37,7 +58,7 @@
            ----------------------------------------------------- */
 
         API_URL:
-            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
+            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65qL4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
 
 
         /* -----------------------------------------------------
@@ -49,33 +70,58 @@
 
 
         /* -----------------------------------------------------
-           FIREBASE
+           FIREBASE REALTIME DATABASE
            
            IMPORTANT:
-           Firebase is NOT accessed directly by the browser
-           for STOCKFLOW database operations.
+           The browser does NOT directly write authentication
+           or OTP information to Firebase.
 
-           Google Apps Script remains the authoritative
-           backend/API layer.
+           Google Apps Script is the authoritative backend.
+
+           Apps Script will synchronize required data to
+           Firebase using the Firebase REST API.
            ----------------------------------------------------- */
 
         FIREBASE: {
+
             DATABASE_URL:
-                "https://midtermexamproject-default-rtdb.firebaseio.com/"
+                "https://midtermexamproject-default-rtdb.firebaseio.com/",
+
+            /*
+               Optional Firebase REST authentication token.
+
+               Leave empty for now if your Firebase rules permit
+               the Apps Script backend to perform the required
+               operations.
+
+               For a more secure production deployment, this
+               should be handled through backend credentials.
+            */
+            AUTH_TOKEN:
+                ""
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            AUTHENTICATION
-           ----------------------------------------------------- */
+           ===================================================== */
 
         AUTH: {
+
+            /* -------------------------------------------------
+               SESSION
+               ------------------------------------------------- */
 
             SESSION_KEY:
                 "STOCKFLOW_TOKEN",
 
             USER_KEY:
                 "STOCKFLOW_USER",
+
+
+            /* -------------------------------------------------
+               OTP STORAGE KEYS
+               ------------------------------------------------- */
 
             OTP_EMAIL_KEY:
                 "STOCKFLOW_OTP_EMAIL",
@@ -89,27 +135,78 @@
             OTP_CHANNEL_KEY:
                 "STOCKFLOW_OTP_CHANNEL",
 
+            OTP_IDENTITY_KEY:
+                "STOCKFLOW_OTP_IDENTITY",
+
+
+            /* -------------------------------------------------
+               REDIRECT
+               ------------------------------------------------- */
+
             REDIRECT_KEY:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
 
-            OTP_LENGTH: 6,
 
-            OTP_EXPIRATION_MINUTES: 10,
+            /* -------------------------------------------------
+               OTP
+               ------------------------------------------------- */
 
-            OTP_RESEND_COOLDOWN_SECONDS: 60,
+            OTP_LENGTH:
+                6,
 
-            MAX_OTP_ATTEMPTS: 4
+            OTP_EXPIRATION_MINUTES:
+                10,
+
+            OTP_RESEND_COOLDOWN_SECONDS:
+                60,
+
+            MAX_OTP_ATTEMPTS:
+                4,
+
+            OTP_LOCK_MINUTES:
+                30,
+
+
+            /* -------------------------------------------------
+               DEMO OTP
+               ------------------------------------------------- */
+
+            /*
+               In DEMO_MODE, the backend may return the
+               server-generated OTP to the frontend.
+
+               otp.js will use that value to automatically
+               populate the six OTP boxes after a short delay.
+
+               The frontend does NOT generate the authoritative
+               OTP.
+            */
+
+            DEMO_AUTO_FILL:
+                true,
+
+            DEMO_AUTO_FILL_DELAY_MIN:
+                3000,
+
+            DEMO_AUTO_FILL_DELAY_MAX:
+                5000
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            API REQUEST CONFIGURATION
-           ----------------------------------------------------- */
+           ===================================================== */
 
         API: {
 
             METHOD:
                 "POST",
+
+            /*
+               text/plain prevents unnecessary CORS preflight
+               requests when communicating with Google Apps
+               Script Web Apps.
+            */
 
             CONTENT_TYPE:
                 "text/plain;charset=utf-8",
@@ -125,9 +222,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            APPLICATION ROUTES
-           ----------------------------------------------------- */
+           ===================================================== */
 
         ROUTES: {
 
@@ -143,14 +240,39 @@
             AUTH:
                 "auth.html",
 
-            OTP:
-                "verify-otp.html",
+            /*
+               Canonical OTP verification page.
+            */
 
             VERIFY:
                 "verify.html",
 
+            /*
+               Kept for compatibility with older links.
+               verify-otp.html can redirect to verify.html.
+            */
+
+            OTP:
+                "verify.html",
+
+            /*
+               Canonical forgot-password page.
+            */
+
             FORGOT_PASSWORD:
+                "forgot-password.html",
+
+            /*
+               Legacy filename compatibility.
+            */
+
+            FORGOT_PASSWORD_LEGACY:
                 "forgotpassword.html",
+
+
+            /* -------------------------------------------------
+               MAIN SYSTEM
+               ------------------------------------------------- */
 
             DASHBOARD:
                 "dashboard.html",
@@ -190,9 +312,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            INVENTORY CONFIGURATION
-           ----------------------------------------------------- */
+           ===================================================== */
 
         INVENTORY: {
 
@@ -213,9 +335,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            USER ROLES
-           ----------------------------------------------------- */
+           ===================================================== */
 
         ROLES: {
 
@@ -227,9 +349,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            ACCOUNT STATUS
-           ----------------------------------------------------- */
+           ===================================================== */
 
         ACCOUNT_STATUS: {
 
@@ -253,9 +375,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            TRANSACTION TYPES
-           ----------------------------------------------------- */
+           ===================================================== */
 
         TRANSACTION_TYPES: {
 
@@ -267,9 +389,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            PRODUCT STATUS
-           ----------------------------------------------------- */
+           ===================================================== */
 
         PRODUCT_STATUS: {
 
@@ -287,9 +409,9 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            STORAGE
-           ----------------------------------------------------- */
+           ===================================================== */
 
         STORAGE: {
 
@@ -311,6 +433,9 @@
             OTP_CHANNEL:
                 "STOCKFLOW_OTP_CHANNEL",
 
+            OTP_IDENTITY:
+                "STOCKFLOW_OTP_IDENTITY",
+
             REDIRECT_AFTER_LOGIN:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
 
@@ -319,27 +444,44 @@
         },
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            PUBLIC PAGES
-           ----------------------------------------------------- */
+           ===================================================== */
 
         PUBLIC_PAGES: [
+
             "",
+
             "index.html",
+
             "auth.html",
+
             "register.html",
+
             "verify.html",
+
+            /*
+               Legacy compatibility page.
+            */
+
             "verify-otp.html",
+
+            "forgot-password.html",
+
+            /*
+               Legacy compatibility page.
+            */
+
             "forgotpassword.html"
         ],
 
 
-        /* -----------------------------------------------------
+        /* =====================================================
            DEBUGGING
-           ----------------------------------------------------- */
+           ===================================================== */
 
         DEBUG:
-            false
+            true
     };
 
 
@@ -351,32 +493,84 @@
 
         const errors = [];
 
+
+        /* -----------------------------------------------------
+           API URL
+           ----------------------------------------------------- */
+
         if (
             !STOCKFLOW_CONFIG.API_URL ||
             STOCKFLOW_CONFIG.API_URL.indexOf(
                 "/exec"
             ) === -1
         ) {
+
             errors.push(
                 "Invalid Google Apps Script API URL."
             );
         }
 
+
+        /* -----------------------------------------------------
+           GOOGLE SHEET
+           ----------------------------------------------------- */
+
         if (
             !STOCKFLOW_CONFIG.GOOGLE_SHEET_ID
         ) {
+
             errors.push(
                 "Google Sheet ID is missing."
             );
         }
 
+
+        /* -----------------------------------------------------
+           FIREBASE
+           ----------------------------------------------------- */
+
         if (
+            !STOCKFLOW_CONFIG.FIREBASE ||
             !STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL
         ) {
+
             errors.push(
                 "Firebase Database URL is missing."
             );
         }
+
+
+        /* -----------------------------------------------------
+           OTP
+           ----------------------------------------------------- */
+
+        if (
+            STOCKFLOW_CONFIG.AUTH.OTP_LENGTH !== 6
+        ) {
+
+            errors.push(
+                "OTP length must be 6 digits."
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           OTP ATTEMPTS
+           ----------------------------------------------------- */
+
+        if (
+            STOCKFLOW_CONFIG.AUTH.MAX_OTP_ATTEMPTS < 1
+        ) {
+
+            errors.push(
+                "Maximum OTP attempts must be at least 1."
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           ERRORS
+           ----------------------------------------------------- */
 
         if (
             errors.length > 0
@@ -388,6 +582,7 @@
 
             errors.forEach(
                 function (error) {
+
                     console.error(
                         "• " + error
                     );
@@ -396,6 +591,7 @@
 
             return false;
         }
+
 
         return true;
     }
@@ -406,8 +602,12 @@
        ========================================================= */
 
     function getApiUrl() {
-        return STOCKFLOW_CONFIG.API_URL;
+
+        return (
+            STOCKFLOW_CONFIG.API_URL
+        );
     }
+
 
     function getRoute(routeName) {
 
@@ -417,15 +617,33 @@
                 routeName
             ]
         ) {
+
             return (
                 STOCKFLOW_CONFIG.ROUTES
                     .DASHBOARD
             );
         }
 
-        return STOCKFLOW_CONFIG.ROUTES[
-            routeName
-        ];
+
+        return (
+            STOCKFLOW_CONFIG.ROUTES[
+                routeName
+            ]
+        );
+    }
+
+
+    /* =========================================================
+       FIREBASE URL HELPER
+       ========================================================= */
+
+    function getFirebaseUrl() {
+
+        return (
+            STOCKFLOW_CONFIG
+                .FIREBASE
+                .DATABASE_URL
+        );
     }
 
 
@@ -434,32 +652,52 @@
        ========================================================= */
 
     function isProduction() {
+
         return (
-            STOCKFLOW_CONFIG.ENVIRONMENT ===
+            STOCKFLOW_CONFIG
+                .ENVIRONMENT ===
             "production"
         );
     }
 
-    function isDebug() {
+
+    function isDemoMode() {
+
         return (
-            STOCKFLOW_CONFIG.DEBUG === true
+            STOCKFLOW_CONFIG
+                .DEMO_MODE === true
+        );
+    }
+
+
+    function isDebug() {
+
+        return (
+            STOCKFLOW_CONFIG
+                .DEBUG === true
         );
     }
 
 
     /* =========================================================
-       GLOBAL CONFIG OBJECTS
+       GLOBAL CONFIG OBJECT
        ========================================================= */
 
     window.STOCKFLOW_CONFIG =
         STOCKFLOW_CONFIG;
 
-    /*
-     * Backward-compatible aliases.
-     */
+
+    /* =========================================================
+       BACKWARD COMPATIBILITY
+       ========================================================= */
 
     window.CONFIG =
         STOCKFLOW_CONFIG;
+
+
+    /* =========================================================
+       STOCKFLOW CONFIG HELPER
+       ========================================================= */
 
     window.StockFlowConfig = {
 
@@ -468,6 +706,9 @@
 
         getApiUrl:
             getApiUrl,
+
+        getFirebaseUrl:
+            getFirebaseUrl,
 
         getRoute:
             getRoute,
@@ -478,6 +719,9 @@
         isProduction:
             isProduction,
 
+        isDemoMode:
+            isDemoMode,
+
         isDebug:
             isDebug
     };
@@ -487,7 +731,40 @@
        VALIDATE WHEN LOADED
        ========================================================= */
 
-    validateConfig();
+    const valid =
+        validateConfig();
+
+
+    if (
+        valid &&
+        STOCKFLOW_CONFIG.DEBUG
+    ) {
+
+        console.log(
+            "%cSTOCKFLOW CONFIG LOADED",
+            "font-weight:bold;"
+        );
+
+        console.log(
+            "Version:",
+            STOCKFLOW_CONFIG.VERSION
+        );
+
+        console.log(
+            "Environment:",
+            STOCKFLOW_CONFIG.ENVIRONMENT
+        );
+
+        console.log(
+            "Demo Mode:",
+            STOCKFLOW_CONFIG.DEMO_MODE
+        );
+
+        console.log(
+            "API:",
+            STOCKFLOW_CONFIG.API_URL
+        );
+    }
 
 
 })();
