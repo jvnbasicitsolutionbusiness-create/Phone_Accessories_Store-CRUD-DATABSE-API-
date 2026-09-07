@@ -4,12 +4,17 @@
 
    IMPORTANT
    ------------------------------------------------------------
-   This CSS is scoped ONLY to .verify-shell.
+   This stylesheet is scoped ONLY to .verify-shell.
 
-   DO NOT add login/register selectors here.
-   DO NOT modify style.css for the Verify page.
+   LOGIN / REGISTER:
+   - NOT MODIFIED
+   - NOT TARGETED
+   - NOT DEPENDENT ON THESE RULES
 
-   Responsive targets:
+   GLOBAL style.css:
+   - NOT MODIFIED
+
+   Responsive:
    - Desktop
    - Laptop
    - Tablet
@@ -29,14 +34,9 @@
 
     display: grid;
 
-    /*
-       Desktop:
-       Left  = branding/security panel
-       Right = verification card area
-    */
     grid-template-columns:
-        minmax(520px, 43vw)
-        minmax(0, 1fr);
+        minmax(500px, 42%)
+        minmax(0, 58%);
 
     overflow: hidden;
 
@@ -45,17 +45,12 @@
 
 
 /*
-   IMPORTANT FIX
-
-   Your verify.html still has:
+   verify.html uses:
 
    class="auth-shell verify-shell"
 
-   So we explicitly neutralize any width/layout limitation
-   coming from the shared .auth-shell class.
-
-   This affects the Verify page only because it requires
-   .verify-shell.
+   Neutralize only the shared auth-shell dimensions
+   for the Verify page.
 */
 
 .verify-shell.auth-shell {
@@ -70,7 +65,7 @@
 
 
 /* ============================================================
-   LEFT VISUAL PANEL
+   LEFT BRAND / SECURITY PANEL
    ============================================================ */
 
 .verify-shell .verify-visual {
@@ -96,7 +91,7 @@
 
 
 /* ============================================================
-   DECORATIVE BACKGROUND CIRCLES
+   DECORATIVE CIRCLES
    ============================================================ */
 
 .verify-shell .verify-visual::before {
@@ -148,7 +143,7 @@
 
 
 /* ============================================================
-   LEFT VISUAL CONTENT
+   LEFT PANEL CONTENT
    ============================================================ */
 
 .verify-shell .verify-visual .auth-visual-content {
@@ -167,14 +162,14 @@
     justify-content: center;
 
     padding:
-        clamp(48px, 6vw, 92px);
+        clamp(44px, 5vw, 82px);
 
     overflow: hidden;
 }
 
 
 /* ============================================================
-   VISUAL COPY
+   LEFT PANEL COPY
    ============================================================ */
 
 .verify-shell .verify-visual .visual-copy {
@@ -217,7 +212,7 @@
         #ffffff;
 
     font-size:
-        clamp(44px, 4.4vw, 68px);
+        clamp(44px, 4.2vw, 68px);
 
     font-weight:
         800;
@@ -246,7 +241,7 @@
         rgba(255, 255, 255, 0.76);
 
     font-size:
-        clamp(14px, 1.05vw, 17px);
+        clamp(14px, 1vw, 17px);
 
     line-height:
         1.75;
@@ -254,7 +249,7 @@
 
 
 /* ============================================================
-   HIGHLIGHTED BLUE TEXT
+   BLUE ACCENT TEXT
    ============================================================ */
 
 .verify-shell .verify-visual .visual-copy .text-blue,
@@ -265,7 +260,7 @@
 
 
 /* ============================================================
-   HIDE LARGE VERIFY-UNNECESSARY SECTIONS
+   OPTIONAL VISUAL SECTIONS
    ============================================================ */
 
 .verify-shell .verify-visual .visual-features,
@@ -275,7 +270,7 @@
 
 
 /* ============================================================
-   RIGHT VERIFICATION AREA
+   RIGHT VERIFY AREA
    ============================================================ */
 
 .verify-shell .verify-box {
@@ -292,7 +287,7 @@
     justify-content: center;
 
     padding:
-        48px clamp(28px, 5vw, 80px);
+        44px clamp(28px, 4vw, 72px);
 
     overflow-x: hidden;
     overflow-y: auto;
@@ -308,13 +303,13 @@
 
 .verify-shell .verify-box .auth-card {
     width: 100%;
-    max-width: 540px;
+    max-width: 600px;
 
     margin:
         0 auto;
 
     padding:
-        40px;
+        38px;
 
     border:
         1px solid
@@ -340,7 +335,7 @@
 
 .verify-shell .verify-box .auth-mobile-brand {
     margin-bottom:
-        28px;
+        24px;
 }
 
 
@@ -349,20 +344,22 @@
    ============================================================ */
 
 .verify-shell .verify-box .auth-header {
+    width: 100%;
+
     margin:
-        0 0 26px;
+        0 0 24px;
 }
 
 
 .verify-shell .verify-box .auth-header h1 {
     margin:
-        0 0 10px;
+        0 0 9px;
 
     color:
         #071a33;
 
     font-size:
-        clamp(30px, 2.5vw, 40px);
+        clamp(30px, 2.4vw, 40px);
 
     font-weight:
         800;
@@ -377,7 +374,7 @@
 
 .verify-shell .verify-box .auth-header p {
     width: 100%;
-    max-width: 460px;
+    max-width: 500px;
 
     margin: 0;
 
@@ -397,7 +394,10 @@
    ============================================================ */
 
 .verify-shell .verification-method {
+    position: relative;
+
     width: 100%;
+    min-width: 0;
 
     display: flex;
 
@@ -421,7 +421,8 @@
     transition:
         border-color 0.18s ease,
         box-shadow 0.18s ease,
-        transform 0.18s ease;
+        transform 0.18s ease,
+        background 0.18s ease;
 }
 
 
@@ -432,6 +433,8 @@
 }
 
 
+/* Keep the current attractive primary styling */
+
 .verify-shell .verification-method.primary {
     border-color:
         #b9d2f5;
@@ -440,6 +443,10 @@
         #f7fbff;
 }
 
+
+/*
+   Keep the mouse animation you liked.
+*/
 
 .verify-shell .verification-method:hover {
     border-color:
@@ -564,7 +571,7 @@
 
 
 /* ============================================================
-   PHONE ACTION BUTTON
+   METHOD ACTION BUTTONS
    ============================================================ */
 
 .verify-shell .verification-method-action {
@@ -596,13 +603,17 @@
     font-weight:
         800;
 
+    line-height:
+        1;
+
     white-space:
         nowrap;
 
     transition:
         border-color 0.18s ease,
         background 0.18s ease,
-        color 0.18s ease;
+        color 0.18s ease,
+        transform 0.18s ease;
 }
 
 
@@ -615,6 +626,15 @@
 
     background:
         #f5f9ff;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.verify-shell .verification-method-action:active:not(:disabled) {
+    transform:
+        translateY(0);
 }
 
 
@@ -638,7 +658,8 @@
 
     flex-direction: column;
 
-    gap: 14px;
+    gap:
+        14px;
 
     margin-top:
         24px;
@@ -646,6 +667,8 @@
 
 
 .verify-shell .otp-form .form-field {
+    width: 100%;
+
     margin:
         0;
 }
@@ -669,7 +692,7 @@
 
 
 /* ============================================================
-   OTP BOXES
+   OTP SIX-DIGIT BOXES
    ============================================================ */
 
 .verify-shell .otp-boxes {
@@ -716,6 +739,9 @@
 
     font-weight:
         800;
+
+    line-height:
+        1;
 
     text-align:
         center;
@@ -769,12 +795,12 @@
 
 
 /* ============================================================
-   OTP HELP
+   OTP HELP TEXT
    ============================================================ */
 
 .verify-shell .field-help {
     margin:
-        9px 0 0;
+        8px 0 0;
 
     color:
         #7188a1;
@@ -867,28 +893,41 @@
 
 
 /* ============================================================
-   RESEND AREA
+   RESEND / "DIDN'T RECEIVE THE CODE?" AREA
    ============================================================ */
 
 .verify-shell .otp-resend {
     width: 100%;
 
+    min-height:
+        22px;
+
     display: flex;
 
     align-items: center;
 
-    justify-content: space-between;
+    justify-content: center;
 
     gap:
-        12px;
+        5px;
 
-    margin-top:
-        2px;
+    margin:
+        0;
+
+    padding:
+        0;
 }
 
 
+/*
+   Keep this area as one clean sentence.
+*/
+
 .verify-shell .otp-resend > span,
 .verify-shell .otp-resend > p {
+    display:
+        inline;
+
     margin:
         0;
 
@@ -897,54 +936,80 @@
 
     font-size:
         11px;
+
+    line-height:
+        1.5;
 }
 
+
+/*
+   Hide the timer pills visually.
+
+   The JavaScript can continue updating them,
+   but they no longer appear as the two unwanted
+   tiny boxes underneath the resend text.
+*/
 
 .verify-shell .otp-timer {
-    display: inline-flex;
-
-    align-items: center;
-
-    min-height:
-        30px;
-
-    padding:
-        6px 10px;
-
-    border-radius:
-        8px;
-
-    color:
-        #49627e;
-
-    background:
-        #edf3fa;
-
-    font-size:
-        10.5px;
-
-    font-weight:
-        700;
+    display:
+        none !important;
 }
 
+
+/*
+   Resend / click-here links
+*/
 
 .verify-shell .otp-resend .link-button {
     flex:
         0 0 auto;
 
+    display:
+        inline;
+
+    margin:
+        0;
+
+    padding:
+        0;
+
+    border:
+        0;
+
     color:
         #1d4ed8;
+
+    background:
+        transparent;
 
     font-size:
         11px;
 
     font-weight:
         800;
+
+    line-height:
+        1.5;
+
+    text-decoration:
+        none;
+
+    cursor:
+        pointer;
+}
+
+
+.verify-shell .otp-resend .link-button:hover {
+    color:
+        #1742a0;
+
+    text-decoration:
+        underline;
 }
 
 
 /* ============================================================
-   VERIFY BUTTON
+   VERIFY ACCOUNT BUTTON
    ============================================================ */
 
 .verify-shell .auth-submit {
@@ -955,6 +1020,10 @@
 
     margin-top:
         2px;
+
+    border:
+        1px solid
+        transparent;
 
     border-radius:
         11px;
@@ -972,6 +1041,12 @@
     box-shadow:
         0 10px 24px
         rgba(37, 99, 235, 0.20);
+
+    transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease,
+        opacity 0.18s ease;
 }
 
 
@@ -986,6 +1061,15 @@
     box-shadow:
         0 12px 28px
         rgba(37, 99, 235, 0.28);
+
+    transform:
+        translateY(-1px);
+}
+
+
+.verify-shell .auth-submit:active:not(:disabled) {
+    transform:
+        translateY(0);
 }
 
 
@@ -998,6 +1082,9 @@
 
     box-shadow:
         none;
+
+    transform:
+        none;
 }
 
 
@@ -1007,7 +1094,7 @@
 
 .verify-shell .auth-switch {
     margin-top:
-        20px;
+        18px;
 
     text-align:
         center;
@@ -1023,6 +1110,15 @@
 }
 
 
+.verify-shell .auth-switch a:hover {
+    color:
+        #1742a0;
+
+    text-decoration:
+        underline;
+}
+
+
 /* ============================================================
    FOOTER
    ============================================================ */
@@ -1034,16 +1130,46 @@
 
 
 /* ============================================================
-   LARGE LAPTOP
-   1200px and below
+   LARGE DESKTOP
+   1400px+
    ============================================================ */
 
-@media (max-width: 1200px) {
+@media (min-width: 1401px) {
 
     .verify-shell {
         grid-template-columns:
-            minmax(450px, 40%)
-            minmax(0, 1fr);
+            minmax(560px, 42%)
+            minmax(0, 58%);
+    }
+
+
+    .verify-shell .verify-box {
+        padding:
+            48px 72px;
+    }
+
+
+    .verify-shell .verify-box .auth-card {
+        max-width:
+            620px;
+
+        padding:
+            42px;
+    }
+}
+
+
+/* ============================================================
+   LAPTOP
+   1200px — 1400px
+   ============================================================ */
+
+@media (max-width: 1400px) {
+
+    .verify-shell {
+        grid-template-columns:
+            minmax(480px, 42%)
+            minmax(0, 58%);
     }
 
 
@@ -1057,19 +1183,19 @@
     .verify-shell .verify-visual
     .visual-copy h1 {
         font-size:
-            clamp(40px, 4.5vw, 58px);
+            clamp(40px, 4.3vw, 60px);
     }
 
 
     .verify-shell .verify-box {
         padding:
-            36px;
+            40px;
     }
 
 
     .verify-shell .verify-box .auth-card {
         max-width:
-            520px;
+            580px;
 
         padding:
             36px;
@@ -1078,16 +1204,16 @@
 
 
 /* ============================================================
-   LAPTOP
-   1050px and below
+   SMALL LAPTOP
+   1050px — 1199px
    ============================================================ */
 
-@media (max-width: 1050px) {
+@media (max-width: 1199px) {
 
     .verify-shell {
         grid-template-columns:
-            minmax(400px, 38%)
-            minmax(0, 1fr);
+            minmax(420px, 40%)
+            minmax(0, 60%);
     }
 
 
@@ -1101,22 +1227,28 @@
     .verify-shell .verify-visual
     .visual-copy h1 {
         font-size:
-            clamp(36px, 4vw, 50px);
+            clamp(36px, 4.1vw, 52px);
     }
 
 
     .verify-shell .verify-box {
         padding:
-            28px;
+            30px;
     }
 
 
     .verify-shell .verify-box .auth-card {
         max-width:
-            510px;
+            560px;
 
         padding:
             32px;
+    }
+
+
+    .verify-shell .otp-boxes {
+        gap:
+            9px;
     }
 }
 
@@ -1124,9 +1256,6 @@
 /* ============================================================
    TABLET
    900px and below
-
-   The visual panel disappears.
-   The verification card becomes the primary page.
    ============================================================ */
 
 @media (max-width: 900px) {
@@ -1151,6 +1280,10 @@
             #f5f9fd;
     }
 
+
+    /*
+       Hide the large branding panel only on tablet/mobile.
+    */
 
     .verify-shell .verify-visual {
         display:
@@ -1182,6 +1315,9 @@
 
         background:
             #f5f9fd;
+
+        overflow:
+            visible;
     }
 
 
@@ -1190,10 +1326,22 @@
             100%;
 
         max-width:
-            560px;
+            600px;
 
         padding:
             36px;
+    }
+
+
+    .verify-shell .verification-method-action {
+        min-height:
+            38px;
+
+        padding:
+            0 13px;
+
+        font-size:
+            11px;
     }
 }
 
@@ -1216,7 +1364,7 @@
 
     .verify-shell .verify-box .auth-card {
         max-width:
-            540px;
+            560px;
 
         padding:
             30px 24px;
@@ -1239,9 +1387,6 @@
 
 
     .verify-shell .verification-method {
-        align-items:
-            center;
-
         padding:
             13px;
     }
@@ -1328,15 +1473,31 @@
     }
 
 
+    /* --------------------------------------------------------
+       Verification methods
+       -------------------------------------------------------- */
+
     .verify-shell .verification-method {
         align-items:
-            flex-start;
+            center;
 
         gap:
             10px;
 
         padding:
             12px;
+    }
+
+
+    .verify-shell .verification-method-icon {
+        width:
+            40px;
+
+        height:
+            40px;
+
+        flex-basis:
+            40px;
     }
 
 
@@ -1373,6 +1534,10 @@
     }
 
 
+    /* --------------------------------------------------------
+       OTP
+       -------------------------------------------------------- */
+
     .verify-shell .otp-form {
         margin-top:
             20px;
@@ -1404,11 +1569,14 @@
 
 
     .verify-shell .otp-resend {
-        align-items:
-            flex-start;
+        justify-content:
+            center;
 
-        flex-direction:
-            column;
+        flex-wrap:
+            wrap;
+
+        text-align:
+            center;
     }
 }
 
@@ -1453,7 +1621,17 @@
     }
 
 
+    /* --------------------------------------------------------
+       Verification methods
+       -------------------------------------------------------- */
+
     .verify-shell .verification-method {
+        align-items:
+            center;
+
+        gap:
+            9px;
+
         padding:
             11px;
     }
@@ -1471,6 +1649,24 @@
     }
 
 
+    .verify-shell .verification-method-copy strong {
+        font-size:
+            11.5px;
+    }
+
+
+    .verify-shell .verification-method-copy span {
+        font-size:
+            10px;
+    }
+
+
+    .verify-shell .verification-method-copy small {
+        font-size:
+            9.5px;
+    }
+
+
     .verify-shell .verification-method-action {
         padding:
             0 8px;
@@ -1479,6 +1675,10 @@
             9px;
     }
 
+
+    /* --------------------------------------------------------
+       OTP
+       -------------------------------------------------------- */
 
     .verify-shell .otp-boxes {
         gap:
@@ -1502,6 +1702,133 @@
         font-size:
             10px;
     }
+
+
+    .verify-shell .otp-resend > span,
+    .verify-shell .otp-resend > p,
+    .verify-shell .otp-resend .link-button {
+        font-size:
+            10.5px;
+    }
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   400px and below
+   ============================================================ */
+
+@media (max-width: 400px) {
+
+    .verify-shell .verify-box {
+        padding:
+            10px 7px;
+    }
+
+
+    .verify-shell .verify-box .auth-card {
+        padding:
+            21px 13px;
+
+        border-radius:
+            15px;
+    }
+
+
+    .verify-shell .verify-box .auth-header h1 {
+        font-size:
+            23px;
+    }
+
+
+    .verify-shell .verify-box .auth-header p {
+        font-size:
+            12px;
+    }
+
+
+    .verify-shell .verification-method {
+        gap:
+            8px;
+
+        padding:
+            10px;
+    }
+
+
+    .verify-shell .verification-method-icon {
+        width:
+            35px;
+
+        height:
+            35px;
+
+        flex-basis:
+            35px;
+
+        border-radius:
+            10px;
+
+        font-size:
+            14px;
+    }
+
+
+    .verify-shell .verification-method-copy {
+        min-width:
+            0;
+    }
+
+
+    .verify-shell .verification-method-copy strong {
+        font-size:
+            11px;
+    }
+
+
+    .verify-shell .verification-method-copy span {
+        font-size:
+            9.5px;
+    }
+
+
+    .verify-shell .verification-method-copy small {
+        font-size:
+            9px;
+    }
+
+
+    .verify-shell .verification-method-action {
+        min-height:
+            32px;
+
+        padding:
+            0 7px;
+
+        font-size:
+            8.5px;
+
+        border-radius:
+            8px;
+    }
+
+
+    .verify-shell .otp-boxes {
+        gap:
+            4px;
+    }
+
+
+    .verify-shell .otp-digit {
+        height:
+            42px;
+
+        border-radius:
+            8px;
+
+        font-size:
+            16px;
+    }
 }
 
 
@@ -1514,37 +1841,37 @@
 
     .verify-shell .verify-box {
         padding:
-            8px 6px;
+            8px 5px;
     }
 
 
     .verify-shell .verify-box .auth-card {
         padding:
-            20px 12px;
+            19px 11px;
     }
 
 
     .verify-shell .verify-box .auth-header h1 {
         font-size:
-            22px;
+            21px;
     }
 
 
     .verify-shell .verification-method {
         gap:
-            8px;
+            7px;
     }
 
 
     .verify-shell .verification-method-icon {
         width:
-            34px;
+            33px;
 
         height:
-            34px;
+            33px;
 
         flex-basis:
-            34px;
+            33px;
     }
 
 
@@ -1553,19 +1880,19 @@
             0 6px;
 
         font-size:
-            8.5px;
+            8px;
     }
 
 
     .verify-shell .otp-boxes {
         gap:
-            4px;
+            3px;
     }
 
 
     .verify-shell .otp-digit {
         height:
-            41px;
+            40px;
 
         font-size:
             15px;
