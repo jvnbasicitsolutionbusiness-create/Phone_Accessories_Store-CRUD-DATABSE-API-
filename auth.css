@@ -1,10 +1,1345 @@
 /* ============================================================
-   STOCKFLOW — VERIFY PAGE
-   Scoped only to verify.html
+   STOCKFLOW — AUTHENTICATION DESIGN
+   Version: 2.0
+
+   Pages:
+   1. Login
+   2. Register
+   3. Verify
+
+   COLOR SYSTEM:
+   - Dark Blue
+   - Blue
+   - White
 
    IMPORTANT:
-   This section does NOT modify Login, Register,
-   Forgot Password, or the normal auth layout.
+   Verify-specific rules are scoped under .verify-shell.
+   They do NOT modify normal Login/Register components.
+   ============================================================ */
+
+
+/* ============================================================
+   ============================================================
+   SHARED LOGIN / REGISTER AUTH LAYOUT
+   ============================================================
+   ============================================================ */
+
+
+/* ============================================================
+   AUTH PAGE
+   ============================================================ */
+
+.auth-body {
+
+    min-height: 100vh;
+
+    background:
+        var(--sf-white);
+
+}
+
+
+.auth-page {
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.12fr)
+        minmax(480px, 0.88fr);
+
+    background:
+        var(--sf-white);
+
+}
+
+
+/* ============================================================
+   LEFT VISUAL PANEL
+   ============================================================ */
+
+.auth-visual {
+
+    position: relative;
+
+    min-width: 0;
+
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    color: var(--sf-white);
+
+    background:
+        linear-gradient(
+            135deg,
+            #061a33 0%,
+            #082d57 48%,
+            #0b4b91 100%
+        );
+
+}
+
+
+/* Decorative blue light */
+
+.auth-visual::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 560px;
+    height: 560px;
+
+    top: -290px;
+    right: -230px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.10);
+
+    background:
+        rgba(37, 99, 235, 0.12);
+
+}
+
+
+/* Decorative lower circle */
+
+.auth-visual::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 440px;
+    height: 440px;
+
+    bottom: -270px;
+    left: -230px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.08);
+
+    background:
+        rgba(30, 64, 175, 0.15);
+
+}
+
+
+/* ============================================================
+   VISUAL OVERLAY
+   ============================================================ */
+
+.auth-visual-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 1;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at 85% 10%,
+            rgba(59, 130, 246, 0.22),
+            transparent 35%
+        ),
+
+        radial-gradient(
+            circle at 10% 90%,
+            rgba(37, 99, 235, 0.18),
+            transparent 34%
+        );
+
+}
+
+
+/* ============================================================
+   VISUAL CONTENT
+   ============================================================ */
+
+.auth-visual-content {
+
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding:
+        44px
+        clamp(40px, 5vw, 82px)
+        34px;
+
+}
+
+
+/* ============================================================
+   BRAND
+   ============================================================ */
+
+.auth-brand {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+
+.auth-brand .brand-mark,
+.auth-mobile-brand .brand-mark {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #3b82f6,
+            #1d4ed8
+        );
+
+    color: var(--sf-white);
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 10px 26px
+        rgba(37, 99, 235, 0.30);
+
+}
+
+
+.auth-brand .brand-copy,
+.auth-mobile-brand .brand-copy {
+
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+
+}
+
+
+.auth-brand .brand-copy strong,
+.auth-mobile-brand .brand-copy strong {
+
+    color: var(--sf-white);
+
+    font-size: 15px;
+
+    font-weight: 800;
+
+    line-height: 1.1;
+
+    letter-spacing: 0.07em;
+
+}
+
+
+.auth-brand .brand-copy span,
+.auth-mobile-brand .brand-copy span {
+
+    margin-top: 4px;
+
+    color:
+        rgba(255, 255, 255, 0.62);
+
+    font-size: 9px;
+
+    line-height: 1.3;
+
+}
+
+
+/* ============================================================
+   VISUAL COPY
+   ============================================================ */
+
+.visual-copy {
+
+    width: 100%;
+
+    max-width: 650px;
+
+    margin-top: auto;
+
+    margin-bottom: 30px;
+
+}
+
+
+.visual-eyebrow {
+
+    margin-bottom: 14px;
+
+    color:
+        rgba(255, 255, 255, 0.68);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.12em;
+
+}
+
+
+.visual-copy h1 {
+
+    max-width: 650px;
+
+    margin: 0;
+
+    color: var(--sf-white);
+
+    font-size:
+        clamp(42px, 4.2vw, 68px);
+
+    font-weight: 800;
+
+    line-height: 1.02;
+
+    letter-spacing: -0.045em;
+
+}
+
+
+.visual-copy h1 span {
+
+    color:
+        #60a5fa;
+
+}
+
+
+.visual-copy p {
+
+    max-width: 590px;
+
+    margin:
+        22px 0 0;
+
+    color:
+        rgba(255, 255, 255, 0.68);
+
+    font-size:
+        clamp(14px, 1.1vw, 16px);
+
+    line-height: 1.75;
+
+}
+
+
+/* ============================================================
+   FEATURES
+   ============================================================ */
+
+.visual-features {
+
+    width: 100%;
+
+    max-width: 600px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+}
+
+
+.visual-feature {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    min-height: 60px;
+
+    padding:
+        11px 13px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.12);
+
+    border-radius:
+        13px;
+
+    background:
+        rgba(255, 255, 255, 0.055);
+
+    backdrop-filter:
+        blur(8px);
+
+    -webkit-backdrop-filter:
+        blur(8px);
+
+}
+
+
+.feature-icon {
+
+    width: 36px;
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    display: grid;
+
+    place-items: center;
+
+    border:
+        1px solid
+        rgba(96, 165, 250, 0.30);
+
+    border-radius: 10px;
+
+    color:
+        #93c5fd;
+
+    background:
+        rgba(37, 99, 235, 0.18);
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+}
+
+
+.feature-content {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.feature-content strong {
+
+    color: var(--sf-white);
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+}
+
+
+.feature-content span {
+
+    margin-top: 3px;
+
+    color:
+        rgba(255, 255, 255, 0.56);
+
+    font-size: 10px;
+
+    line-height: 1.4;
+
+}
+
+
+/* ============================================================
+   VISUAL FOOTER
+   ============================================================ */
+
+.visual-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    margin-top: 24px;
+
+    color:
+        rgba(255, 255, 255, 0.38);
+
+    font-size: 9px;
+
+}
+
+
+.footer-divider {
+
+    color:
+        rgba(255, 255, 255, 0.20);
+
+}
+
+
+/* ============================================================
+   RIGHT AUTH AREA
+   ============================================================ */
+
+.auth-box {
+
+    min-width: 0;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: stretch;
+
+    justify-content: center;
+
+    overflow-y: auto;
+
+    background:
+        var(--sf-white);
+
+}
+
+
+/* ============================================================
+   AUTH CARD
+   ============================================================ */
+
+.auth-card {
+
+    width: 100%;
+
+    max-width: 620px;
+
+    min-height: 100vh;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding:
+        clamp(34px, 5vw, 62px)
+        clamp(28px, 5vw, 64px)
+        28px;
+
+    background:
+        var(--sf-white);
+
+}
+
+
+/* ============================================================
+   MOBILE BRAND
+   ============================================================ */
+
+.auth-mobile-brand {
+
+    display: none;
+
+    align-items: center;
+
+    gap: 11px;
+
+    margin-bottom: 32px;
+
+}
+
+
+.auth-mobile-brand .brand-copy strong {
+
+    color:
+        var(--sf-navy);
+
+}
+
+
+.auth-mobile-brand .brand-copy span {
+
+    color:
+        var(--sf-muted);
+
+}
+
+
+/* ============================================================
+   AUTH HEADER
+   ============================================================ */
+
+.auth-header {
+
+    margin-bottom: 28px;
+
+}
+
+
+.auth-kicker {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color:
+        var(--sf-blue);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.12em;
+
+}
+
+
+.auth-header h2 {
+
+    margin:
+        0 0 8px;
+
+    color:
+        var(--sf-navy);
+
+    font-size:
+        clamp(27px, 3vw, 36px);
+
+    font-weight: 800;
+
+    line-height: 1.1;
+
+    letter-spacing: -0.035em;
+
+}
+
+
+.auth-header p {
+
+    margin: 0;
+
+    color:
+        var(--sf-muted);
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+}
+
+
+/* ============================================================
+   LOGIN / REGISTER TABS
+   ============================================================ */
+
+.auth-tabs {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 4px;
+
+    margin-bottom: 30px;
+
+    padding: 4px;
+
+    border:
+        1px solid
+        var(--sf-border);
+
+    border-radius:
+        12px;
+
+    background:
+        var(--sf-blue-light);
+
+}
+
+
+.auth-tab {
+
+    min-height: 42px;
+
+    border: 0;
+
+    border-radius:
+        9px;
+
+    background:
+        transparent;
+
+    color:
+        var(--sf-muted);
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+
+}
+
+
+.auth-tab:hover {
+
+    color:
+        var(--sf-blue-dark);
+
+}
+
+
+.auth-tab.active {
+
+    color:
+        var(--sf-blue-dark);
+
+    background:
+        var(--sf-white);
+
+    box-shadow:
+        0 4px 12px
+        rgba(7, 26, 51, 0.10);
+
+}
+
+
+/* ============================================================
+   AUTH PANELS
+   ============================================================ */
+
+.auth-panel {
+
+    width: 100%;
+
+    display: block;
+
+}
+
+
+.auth-panel.hidden {
+
+    display: none !important;
+
+}
+
+
+.auth-panel[aria-hidden="true"] {
+
+    display: none !important;
+
+}
+
+
+/* ============================================================
+   AUTH HEADING
+   ============================================================ */
+
+.auth-heading {
+
+    margin-bottom: 22px;
+
+}
+
+
+.section-label {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    color:
+        var(--sf-blue);
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.10em;
+
+}
+
+
+.auth-heading h3 {
+
+    margin:
+        0 0 7px;
+
+    color:
+        var(--sf-navy);
+
+    font-size: 21px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+}
+
+
+.auth-heading .muted {
+
+    margin: 0;
+
+    color:
+        var(--sf-muted);
+
+    font-size: 12px;
+
+    line-height: 1.55;
+
+}
+
+
+/* ============================================================
+   FORM
+   ============================================================ */
+
+.auth-form {
+
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 17px;
+
+}
+
+
+.form-field {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+}
+
+
+.form-field label {
+
+    color:
+        var(--sf-text-2);
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+
+.field-label-row {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+}
+
+
+.form-control {
+
+    min-height: 48px;
+
+    border-radius:
+        11px;
+
+    font-size:
+        13px;
+
+}
+
+
+/* ============================================================
+   PASSWORD
+   ============================================================ */
+
+.password-field {
+
+    position: relative;
+
+    width: 100%;
+
+}
+
+
+.password-field .form-control {
+
+    padding-right: 76px;
+
+}
+
+
+.password-toggle {
+
+    right: 8px;
+
+    min-width: 48px;
+
+    min-height: 32px;
+
+}
+
+
+/* ============================================================
+   FORGOT PASSWORD
+   ============================================================ */
+
+.forgot-link {
+
+    color:
+        var(--sf-blue);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+.forgot-link:hover {
+
+    color:
+        var(--sf-blue-dark);
+
+    text-decoration:
+        underline;
+
+}
+
+
+/* ============================================================
+   MESSAGE
+   ============================================================ */
+
+.auth-message {
+
+    min-height: 0;
+
+    margin:
+        -3px 0 0;
+
+    font-size: 11px;
+
+}
+
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+
+.auth-submit {
+
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        0 16px;
+
+    border:
+        1px solid
+        var(--sf-blue);
+
+    border-radius:
+        11px;
+
+    color:
+        var(--sf-white);
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--sf-blue),
+            var(--sf-blue-dark)
+        );
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+    cursor:
+        pointer;
+
+    box-shadow:
+        0 9px 24px
+        rgba(37, 99, 235, 0.20);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
+
+}
+
+
+.auth-submit:hover:not(:disabled) {
+
+    transform:
+        translateY(-1px);
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--sf-blue-dark),
+            #1742a0
+        );
+
+    box-shadow:
+        0 13px 30px
+        rgba(37, 99, 235, 0.28);
+
+}
+
+
+.auth-submit:active:not(:disabled) {
+
+    transform:
+        translateY(0);
+
+}
+
+
+.auth-submit:disabled {
+
+    opacity:
+        0.60;
+
+    cursor:
+        wait;
+
+}
+
+
+.button-text,
+.button-loader {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+/* ============================================================
+   REGISTER FORM
+   ============================================================ */
+
+.register-form {
+
+    gap: 15px;
+
+}
+
+
+.register-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr;
+
+    gap: 15px;
+
+}
+
+
+.register-grid .full-width {
+
+    grid-column:
+        1 / -1;
+
+}
+
+
+/* ============================================================
+   REGISTER NOTICE
+   ============================================================ */
+
+.register-note {
+
+    padding:
+        13px 14px;
+
+    border:
+        1px solid
+        #bfdbfe;
+
+    border-radius:
+        11px;
+
+    color:
+        var(--sf-blue-dark);
+
+    background:
+        var(--sf-blue-light);
+
+    font-size:
+        10px;
+
+    line-height:
+        1.55;
+
+}
+
+
+.register-note strong {
+
+    color:
+        var(--sf-navy);
+
+    font-size:
+        11px;
+
+}
+
+
+/* ============================================================
+   SWITCH
+   ============================================================ */
+
+.auth-switch {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 5px;
+
+    margin-top:
+        20px;
+
+    color:
+        var(--sf-muted);
+
+    font-size:
+        11px;
+
+}
+
+
+.link-button {
+
+    padding: 0;
+
+    border: 0;
+
+    background:
+        transparent;
+
+    color:
+        var(--sf-blue);
+
+    font-size:
+        inherit;
+
+    font-weight:
+        800;
+
+    cursor:
+        pointer;
+
+}
+
+
+.link-button:hover {
+
+    color:
+        var(--sf-blue-dark);
+
+    text-decoration:
+        underline;
+
+}
+
+
+/* ============================================================
+   SECURITY NOTICE
+   ============================================================ */
+
+.auth-security {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin-top:
+        22px;
+
+    padding:
+        13px 14px;
+
+    border:
+        1px solid
+        var(--sf-border);
+
+    border-radius:
+        11px;
+
+    background:
+        var(--sf-blue-light);
+
+}
+
+
+.security-icon {
+
+    width: 27px;
+    height: 27px;
+
+    flex: 0 0 27px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius:
+        8px;
+
+    color:
+        var(--sf-blue);
+
+    background:
+        var(--sf-white);
+
+    font-size:
+        12px;
+
+}
+
+
+.auth-security strong {
+
+    display: block;
+
+    color:
+        var(--sf-navy);
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+
+}
+
+
+.auth-security small {
+
+    display: block;
+
+    margin-top:
+        3px;
+
+    color:
+        var(--sf-muted);
+
+    font-size:
+        9px;
+
+    line-height:
+        1.45;
+
+}
+
+
+/* ============================================================
+   AUTH FOOTER
+   ============================================================ */
+
+.auth-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top:
+        auto;
+
+    padding-top:
+        24px;
+
+    color:
+        var(--sf-light);
+
+    font-size:
+        9px;
+
+}
+
+
+/* ============================================================
+   ============================================================
+   VERIFY PAGE ONLY
+   ============================================================
+   Everything below is scoped under .verify-shell.
+   ============================================================
    ============================================================ */
 
 
@@ -12,27 +1347,28 @@
    VERIFY SHELL
    ============================================================ */
 
-.verify-shell,
-.verify-shell.auth-shell {
+.verify-shell {
 
     width: 100%;
+
     min-height: 100vh;
 
     display: grid;
 
     grid-template-columns:
-        minmax(0, 1fr)
-        minmax(500px, 590px);
+        minmax(0, 1.05fr)
+        minmax(480px, 0.95fr);
 
     overflow: hidden;
 
-    background: #f8fafc;
+    background:
+        var(--sf-white);
 
 }
 
 
 /* ============================================================
-   LEFT VISUAL PANEL
+   VERIFY LEFT PANEL
    ============================================================ */
 
 .verify-shell .verify-visual {
@@ -44,20 +1380,19 @@
 
     overflow: hidden;
 
-    color: #ffffff;
+    color:
+        var(--sf-white);
 
     background:
         linear-gradient(
             135deg,
-            #061d36 0%,
-            #08294d 45%,
-            #0b4380 100%
+            #061a33 0%,
+            #082d57 50%,
+            #0b4b91 100%
         );
 
 }
 
-
-/* Decorative circles */
 
 .verify-shell .verify-visual::before {
 
@@ -65,16 +1400,21 @@
 
     position: absolute;
 
-    width: 520px;
-    height: 520px;
+    width: 560px;
+    height: 560px;
 
-    top: -220px;
-    right: -180px;
+    top: -270px;
+    right: -240px;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.10);
 
     background:
-        rgba(59, 130, 246, 0.18);
+        rgba(37, 99, 235, 0.13);
 
 }
 
@@ -88,20 +1428,21 @@
     width: 430px;
     height: 430px;
 
-    bottom: -240px;
-    left: -180px;
+    bottom: -260px;
+    left: -220px;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
-    background:
-        rgba(37, 99, 235, 0.12);
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.08);
 
 }
 
 
 /* ============================================================
    VERIFY VISUAL CONTENT
-   Prevents huge/cut-off text
    ============================================================ */
 
 .verify-shell .verify-visual .auth-visual-content {
@@ -111,6 +1452,7 @@
     z-index: 2;
 
     width: 100%;
+
     min-height: 100vh;
 
     display: flex;
@@ -128,86 +1470,93 @@
 .verify-shell .verify-visual .visual-copy {
 
     width: 100%;
-    max-width: 620px;
 
-    margin: 0;
+    max-width:
+        620px;
 
-}
-
-
-.verify-shell .verify-visual .visual-eyebrow {
-
-    margin-bottom: 18px;
+    margin:
+        0 0 30px;
 
 }
 
 
 .verify-shell .verify-visual .visual-copy h1 {
 
-    max-width: 620px;
+    max-width:
+        620px;
 
     margin:
         0 0 20px;
 
+    color:
+        var(--sf-white);
+
     font-size:
-        clamp(42px, 4.5vw, 68px);
+        clamp(40px, 4.5vw, 64px);
 
-    line-height: 1.05;
+    font-weight:
+        800;
 
-    letter-spacing: -0.045em;
+    line-height:
+        1.04;
 
-    word-break: normal;
-    overflow-wrap: normal;
+    letter-spacing:
+        -0.045em;
 
 }
 
 
 .verify-shell .verify-visual .visual-copy p {
 
-    max-width: 540px;
+    max-width:
+        540px;
+
+    color:
+        rgba(255, 255, 255, 0.68);
 
     font-size:
         clamp(14px, 1.1vw, 17px);
 
-    line-height: 1.75;
+    line-height:
+        1.7;
 
 }
 
 
-/* Hide unnecessary large feature sections on verify page */
+/* Keep Verify focused */
 
 .verify-shell .verify-visual .visual-features,
 .verify-shell .verify-visual .visual-footer {
 
-    display: none;
+    display:
+        none;
 
 }
 
 
 /* ============================================================
-   RIGHT VERIFY AREA
+   VERIFY RIGHT AREA
    ============================================================ */
 
 .verify-shell .verify-box {
 
     min-width: 0;
+
     min-height: 100vh;
 
     display: flex;
 
     align-items: center;
-    justify-content: center;
 
-    padding: 40px;
+    justify-content: center;
 
     overflow-y: auto;
 
+    padding:
+        42px;
+
     background:
-        linear-gradient(
-            180deg,
-            #f8fafc 0%,
-            #f3f6fa 100%
-        );
+        var(--sf-white);
 
 }
 
@@ -220,88 +1569,95 @@
 
     width: 100%;
 
-    max-width: 500px;
+    max-width:
+        520px;
 
-    margin: auto;
+    min-height:
+        auto;
 
-    padding: 36px;
+    margin:
+        auto;
+
+    padding:
+        40px;
 
     border:
         1px solid
-        rgba(15, 23, 42, 0.08);
+        var(--sf-border-light);
 
-    border-radius: 22px;
+    border-radius:
+        var(--sf-radius-xl);
 
     background:
-        rgba(255, 255, 255, 0.98);
+        var(--sf-white);
 
     box-shadow:
-        0 25px 70px
-        rgba(15, 23, 42, 0.10),
-        0 5px 20px
-        rgba(15, 23, 42, 0.04);
+        var(--sf-shadow);
 
 }
 
 
 /* ============================================================
-   HEADER
+   VERIFY HEADER
    ============================================================ */
 
-.verify-box .auth-mobile-brand {
+.verify-shell .verify-box .auth-header {
 
-    margin-bottom: 26px;
-
-}
-
-
-.verify-box .auth-header {
-
-    margin-bottom: 24px;
+    margin-bottom:
+        24px;
 
 }
 
 
-.verify-box .auth-header h1 {
+.verify-shell .verify-box .auth-header h1,
+.verify-shell .verify-box .auth-header h2 {
 
     margin:
         0 0 9px;
 
     color:
-        #101828;
+        var(--sf-navy);
 
     font-size:
-        clamp(30px, 3vw, 38px);
+        clamp(28px, 3vw, 36px);
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    line-height: 1.12;
+    line-height:
+        1.12;
 
-    letter-spacing: -0.04em;
+    letter-spacing:
+        -0.04em;
 
 }
 
 
-.verify-box .auth-header p {
+.verify-shell .verify-box .auth-header p {
 
-    max-width: 440px;
+    max-width:
+        440px;
 
-    margin: 0;
+    margin:
+        0;
 
-    color: #667085;
+    color:
+        var(--sf-muted);
 
-    font-size: 14px;
+    font-size:
+        12px;
 
-    line-height: 1.65;
+    line-height:
+        1.65;
 
 }
 
 
 /* ============================================================
-   VERIFICATION METHODS
+   VERIFY METHOD CARDS
    ============================================================ */
 
-.verify-box .verification-method {
+.verify-shell .verification-method {
 
     width: 100%;
 
@@ -311,15 +1667,18 @@
 
     gap: 13px;
 
-    padding: 14px;
+    padding:
+        14px;
 
     border:
         1px solid
-        #e2e8f0;
+        var(--sf-border);
 
-    border-radius: 14px;
+    border-radius:
+        14px;
 
-    background: #ffffff;
+    background:
+        var(--sf-white);
 
     transition:
         border-color 0.18s ease,
@@ -329,46 +1688,43 @@
 }
 
 
-.verify-box .verification-method +
-.verify-box .verification-method {
+.verify-shell .verification-method
++ .verification-method {
 
-    margin-top: 10px;
+    margin-top:
+        10px;
 
 }
 
 
-/* Primary email method */
+.verify-shell .verification-method.primary {
 
-.verify-box .verification-method.primary {
-
-    border-color: #cfe0ff;
+    border-color:
+        #bfdbfe;
 
     background:
         linear-gradient(
             135deg,
             #f8fbff,
-            #f1f6ff
+            #eff6ff
         );
 
 }
 
 
-.verify-box .verification-method:hover {
+.verify-shell .verification-method:hover {
 
-    border-color: #b8c8dd;
+    border-color:
+        #93c5fd;
 
     box-shadow:
-        0 7px 20px
-        rgba(15, 23, 42, 0.06);
+        0 8px 22px
+        rgba(7, 26, 51, 0.07);
 
 }
 
 
-/* ============================================================
-   METHOD ICON
-   ============================================================ */
-
-.verify-box .verification-method-icon {
+.verify-shell .verification-method-icon {
 
     width: 42px;
     height: 42px;
@@ -382,179 +1738,198 @@
 
     border:
         1px solid
-        #d9e6fb;
+        var(--sf-blue-soft);
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    color: #2563eb;
+    color:
+        var(--sf-blue);
 
-    background: #eaf2ff;
+    background:
+        var(--sf-blue-light);
 
-    font-size: 16px;
+    font-size:
+        16px;
 
 }
 
 
-.verify-box .verification-method:not(.primary)
-.verification-method-icon {
+.verify-shell .verification-method-copy {
 
-    color: #475467;
+    min-width:
+        0;
 
-    border-color: #e4e7ec;
+    flex:
+        1;
 
-    background: #f7f8fa;
+}
+
+
+.verify-shell .verification-method-copy strong {
+
+    display:
+        block;
+
+    margin-bottom:
+        3px;
+
+    color:
+        var(--sf-navy);
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+}
+
+
+.verify-shell .verification-method-copy span {
+
+    display:
+        block;
+
+    color:
+        var(--sf-muted);
+
+    font-size:
+        10px;
+
+    line-height:
+        1.45;
+
+}
+
+
+.verify-shell .verification-method-copy small {
+
+    display:
+        block;
+
+    margin-top:
+        3px;
+
+    color:
+        var(--sf-light);
+
+    font-size:
+        9px;
 
 }
 
 
 /* ============================================================
-   METHOD TEXT
+   VERIFY ACTION BUTTON
    ============================================================ */
 
-.verify-box .verification-method-copy {
+.verify-shell .verification-method-action {
 
-    min-width: 0;
+    flex:
+        0 0 auto;
 
-    flex: 1;
-
-}
-
-
-.verify-box .verification-method-copy strong {
-
-    display: block;
-
-    margin-bottom: 3px;
-
-    color: #172033;
-
-    font-size: 13px;
-
-    font-weight: 800;
-
-}
-
-
-.verify-box .verification-method-copy span {
-
-    display: block;
-
-    color: #667085;
-
-    font-size: 11.5px;
-
-    line-height: 1.5;
-
-}
-
-
-.verify-box .verification-method-copy small {
-
-    display: block;
-
-    margin-top: 3px;
-
-    color: #98a2b3;
-
-    font-size: 10.5px;
-
-    line-height: 1.45;
-
-}
-
-
-/* ============================================================
-   PHONE BUTTON
-   ============================================================ */
-
-.verify-box .verification-method-action {
-
-    flex: 0 0 auto;
-
-    min-height: 38px;
+    min-height:
+        38px;
 
     padding:
-        0 14px;
+        0 13px;
 
     border:
         1px solid
-        #cfd8e6;
+        var(--sf-border);
 
-    border-radius: 9px;
+    border-radius:
+        9px;
 
-    color: #344054;
+    color:
+        var(--sf-text-2);
 
-    background: #ffffff;
+    background:
+        var(--sf-white);
 
-    font-size: 11px;
+    font-size:
+        10px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    white-space: nowrap;
-
-    transition:
-        color 0.18s ease,
-        border-color 0.18s ease,
-        background 0.18s ease;
-
-}
-
-
-.verify-box .verification-method-action:hover:not(:disabled) {
-
-    color: #1d4ed8;
-
-    border-color: #9dbce8;
-
-    background: #f8fbff;
+    white-space:
+        nowrap;
 
 }
 
 
-.verify-box .verification-method-action:disabled {
+.verify-shell .verification-method-action:hover:not(:disabled) {
 
-    opacity: 0.55;
+    color:
+        var(--sf-blue-dark);
 
-    cursor: not-allowed;
+    border-color:
+        #93c5fd;
+
+    background:
+        var(--sf-blue-light);
+
+}
+
+
+.verify-shell .verification-method-action:disabled {
+
+    opacity:
+        0.50;
+
+    cursor:
+        not-allowed;
 
 }
 
 
 /* ============================================================
-   OTP FORM
+   VERIFY OTP FORM
    ============================================================ */
 
-.verify-box .otp-form {
+.verify-shell .otp-form {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
-    gap: 14px;
+    gap:
+        14px;
 
-    margin-top: 22px;
-
-}
-
-
-.verify-box .otp-form .form-field {
-
-    margin: 0;
+    margin-top:
+        22px;
 
 }
 
 
-.verify-box .otp-form .form-field > label {
+.verify-shell .otp-form .form-field {
 
-    margin-bottom: 10px;
+    margin:
+        0;
 
-    color: #344054;
+}
 
-    font-size: 12px;
 
-    font-weight: 800;
+.verify-shell .otp-form .form-field > label {
+
+    margin-bottom:
+        9px;
+
+    color:
+        var(--sf-text-2);
+
+    font-size:
+        11px;
+
+    font-weight:
+        800;
 
 }
 
@@ -563,49 +1938,64 @@
    OTP BOXES
    ============================================================ */
 
-.verify-box .otp-boxes {
+.verify-shell .otp-boxes {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: grid;
+    display:
+        grid;
 
     grid-template-columns:
         repeat(6, minmax(0, 1fr));
 
-    gap: 9px;
+    gap:
+        9px;
 
 }
 
 
-.verify-box .otp-digit {
+.verify-shell .otp-digit {
 
-    width: 100%;
+    width:
+        100%;
 
-    min-width: 0;
+    min-width:
+        0;
 
-    height: 54px;
+    height:
+        56px;
 
-    padding: 0;
+    padding:
+        0;
 
     border:
         1px solid
-        #d9dee7;
+        var(--sf-border);
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    outline: none;
+    outline:
+        none;
 
-    color: #101828;
+    color:
+        var(--sf-navy);
 
-    background: #ffffff;
+    background:
+        var(--sf-white);
 
-    font-size: 21px;
+    font-size:
+        21px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    text-align: center;
+    text-align:
+        center;
 
-    caret-color: #2563eb;
+    caret-color:
+        var(--sf-blue);
 
     transition:
         border-color 0.18s ease,
@@ -615,197 +2005,235 @@
 }
 
 
-.verify-box .otp-digit:hover:not(:disabled) {
+.verify-shell .otp-digit:hover:not(:disabled) {
 
-    border-color: #b8c1ce;
+    border-color:
+        #93b7df;
 
 }
 
 
-.verify-box .otp-digit:focus {
+.verify-shell .otp-digit:focus {
 
-    border-color: #2563eb;
+    border-color:
+        var(--sf-blue);
 
     box-shadow:
         0 0 0 4px
         rgba(37, 99, 235, 0.10);
 
-    transform: translateY(-1px);
+    transform:
+        translateY(-1px);
 
 }
 
 
-.verify-box .otp-digit:disabled {
+.verify-shell .otp-digit:disabled {
 
-    cursor: not-allowed;
+    cursor:
+        not-allowed;
 
-    color: #98a2b3;
+    color:
+        var(--sf-light);
 
-    border-color: #e4e7ec;
+    border-color:
+        var(--sf-border-light);
 
-    background: #f7f8fa;
+    background:
+        var(--sf-blue-light);
 
 }
 
 
 /* ============================================================
-   OTP HELP TEXT
+   OTP HELP
    ============================================================ */
 
-.verify-box .field-help {
+.verify-shell .field-help {
 
     margin:
-        9px 0 0;
+        8px 0 0;
 
-    color: #98a2b3;
+    color:
+        var(--sf-light);
 
-    font-size: 11px;
+    font-size:
+        10px;
 
-    line-height: 1.5;
+    line-height:
+        1.5;
 
 }
 
 
 /* ============================================================
-   STATUS MESSAGE
-   IMPORTANT:
-   HIDDEN messages must REALLY stay hidden.
+   OTP MESSAGE
    ============================================================ */
 
-.verify-box .otp-message {
+.verify-shell .otp-message {
 
-    display: none;
+    display:
+        none;
 
-    width: 100%;
+    width:
+        100%;
 
-    margin: 0;
+    margin:
+        0;
 
     padding:
         11px 13px;
 
     border:
         1px solid
-        #dbe2ea;
+        var(--sf-border);
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
-    color: #475467;
+    color:
+        var(--sf-text-2);
 
-    background: #f8fafc;
+    background:
+        var(--sf-blue-light);
 
-    font-size: 11px;
+    font-size:
+        10px;
 
-    line-height: 1.5;
-
-}
-
-
-.verify-box .otp-message:not([hidden]) {
-
-    display: block;
+    line-height:
+        1.5;
 
 }
 
 
-/* Error */
+.verify-shell .otp-message:not([hidden]) {
 
-.verify-box .otp-message.error {
-
-    color: #b42318;
-
-    background: #fef3f2;
-
-    border-color: #fecaca;
+    display:
+        block;
 
 }
 
 
-/* Success */
+.verify-shell .otp-message.error {
 
-.verify-box .otp-message.success {
+    color:
+        var(--sf-danger);
 
-    color: #166534;
+    background:
+        #fef2f2;
 
-    background: #f0fdf4;
-
-    border-color: #bbf7d0;
+    border-color:
+        #fecaca;
 
 }
 
 
-/* Info */
+.verify-shell .otp-message.success {
 
-.verify-box .otp-message.info {
+    color:
+        var(--sf-success);
 
-    color: #1d4ed8;
+    background:
+        #f0fdf4;
 
-    background: #eff6ff;
+    border-color:
+        #bbf7d0;
 
-    border-color: #bfdbfe;
+}
+
+
+.verify-shell .otp-message.info {
+
+    color:
+        var(--sf-blue-dark);
+
+    background:
+        var(--sf-blue-light);
+
+    border-color:
+        #bfdbfe;
 
 }
 
 
 /* ============================================================
-   RESEND AREA
+   OTP RESEND
    ============================================================ */
 
-.verify-box .otp-resend {
+.verify-shell .otp-resend {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
-    gap: 12px;
+    gap:
+        12px;
 
-    margin-top: 2px;
-
-}
-
-
-.verify-box .otp-resend > span,
-.verify-box .otp-resend > p {
-
-    margin: 0;
-
-    color: #667085;
-
-    font-size: 11px;
+    margin-top:
+        3px;
 
 }
 
 
-.verify-box .otp-timer {
+.verify-shell .otp-resend > span,
+.verify-shell .otp-resend > p {
 
-    display: inline-flex;
+    margin:
+        0;
 
-    align-items: center;
+    color:
+        var(--sf-muted);
 
-    min-height: 30px;
+    font-size:
+        10px;
+
+}
+
+
+.verify-shell .otp-timer {
+
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    min-height:
+        30px;
 
     padding:
         6px 10px;
 
-    border-radius: 8px;
+    border-radius:
+        8px;
 
-    color: #667085;
+    color:
+        var(--sf-muted);
 
-    background: #f2f4f7;
+    background:
+        var(--sf-blue-light);
 
-    font-size: 10.5px;
+    font-size:
+        9px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
 }
 
 
-.verify-box .otp-resend .link-button {
+.verify-shell .otp-resend .link-button {
 
-    flex: 0 0 auto;
+    flex:
+        0 0 auto;
 
-    font-size: 11px;
+    font-size:
+        10px;
 
 }
 
@@ -814,73 +2242,108 @@
    VERIFY BUTTON
    ============================================================ */
 
-.verify-box .auth-submit {
+.verify-shell .auth-submit {
 
-    width: 100%;
+    width:
+        100%;
 
-    min-height: 52px;
+    min-height:
+        50px;
 
-    margin-top: 2px;
+    margin-top:
+        3px;
 
 }
 
 
 /* ============================================================
-   SWITCH / BACK TO LOGIN
+   VERIFY SWITCH / FOOTER
    ============================================================ */
 
-.verify-box .auth-switch {
+.verify-shell .auth-switch {
 
-    margin-top: 20px;
+    margin-top:
+        18px;
+
+}
+
+
+.verify-shell .auth-footer {
+
+    margin-top:
+        20px;
+
+    padding-top:
+        18px;
+
+    border-top:
+        1px solid
+        var(--sf-border-light);
 
 }
 
 
 /* ============================================================
-   FOOTER
+   ============================================================
+   AUTH RESPONSIVE
+   ============================================================
    ============================================================ */
 
-.verify-box .auth-footer {
-
-    margin-top: 20px;
-
-}
-
 
 /* ============================================================
-   TABLET
+   LARGE TABLET
    ============================================================ */
 
 @media (max-width: 1100px) {
 
-    .verify-shell,
-    .verify-shell.auth-shell {
+    .auth-page {
 
         grid-template-columns:
             minmax(0, 1fr)
-            minmax(450px, 520px);
+            minmax(430px, 0.85fr);
 
     }
 
+    .auth-visual-content {
+
+        padding:
+            38px 42px 30px;
+
+    }
+
+    .visual-copy h1 {
+
+        font-size:
+            clamp(38px, 4.5vw, 54px);
+
+    }
+
+    .auth-card {
+
+        padding:
+            38px 36px 25px;
+
+    }
+
+    .verify-shell {
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(430px, 0.85fr);
+
+    }
 
     .verify-shell .verify-box {
 
-        padding: 28px;
+        padding:
+            28px;
 
     }
-
 
     .verify-shell .verify-box .auth-card {
 
-        padding: 32px;
-
-    }
-
-
-    .verify-shell .verify-visual .visual-copy h1 {
-
-        font-size:
-            clamp(38px, 4.8vw, 54px);
+        padding:
+            32px;
 
     }
 
@@ -888,31 +2351,91 @@
 
 
 /* ============================================================
-   TABLET PORTRAIT
+   TABLET / MOBILE
    ============================================================ */
 
 @media (max-width: 900px) {
 
-    .verify-shell,
-    .verify-shell.auth-shell {
+    .auth-page {
 
-        display: block;
+        display:
+            block;
+
+        min-height:
+            100vh;
 
     }
 
+    .auth-visual {
+
+        display:
+            none;
+
+    }
+
+    .auth-box {
+
+        min-height:
+            100vh;
+
+        padding:
+            0;
+
+    }
+
+    .auth-card {
+
+        width:
+            min(
+                100%,
+                620px
+            );
+
+        min-height:
+            100vh;
+
+        margin:
+            0 auto;
+
+        padding:
+            38px 30px 26px;
+
+    }
+
+    .auth-mobile-brand {
+
+        display:
+            flex;
+
+    }
+
+
+    /* VERIFY */
+
+    .verify-shell {
+
+        display:
+            block;
+
+        min-height:
+            100vh;
+
+    }
 
     .verify-shell .verify-visual {
 
-        display: none;
+        display:
+            none;
 
     }
 
-
     .verify-shell .verify-box {
 
-        min-height: 100vh;
+        min-height:
+            100vh;
 
-        padding: 42px 28px;
+        padding:
+            30px 20px;
 
     }
 
@@ -923,80 +2446,145 @@
    MOBILE
    ============================================================ */
 
-@media (max-width: 767px) {
+@media (max-width: 600px) {
 
-    .verify-shell .verify-box {
-
-        align-items: flex-start;
+    .auth-card {
 
         padding:
-            20px 14px;
+            28px 20px 22px;
 
     }
 
+    .auth-header {
+
+        margin-bottom:
+            23px;
+
+    }
+
+    .auth-header h2 {
+
+        font-size:
+            29px;
+
+    }
+
+    .auth-tabs {
+
+        margin-bottom:
+            24px;
+
+    }
+
+    .auth-tab {
+
+        min-height:
+            40px;
+
+    }
+
+    .auth-heading h3 {
+
+        font-size:
+            20px;
+
+    }
+
+    .register-grid {
+
+        grid-template-columns:
+            1fr;
+
+        gap:
+            14px;
+
+    }
+
+    .register-grid .full-width {
+
+        grid-column:
+            auto;
+
+    }
+
+    .auth-footer {
+
+        flex-direction:
+            column;
+
+        align-items:
+            flex-start;
+
+    }
+
+
+    /* VERIFY */
+
+    .verify-shell .verify-box {
+
+        align-items:
+            flex-start;
+
+        padding:
+            18px 12px;
+
+    }
 
     .verify-shell .verify-box .auth-card {
 
         padding:
-            27px 21px;
+            27px 19px;
 
-        border-radius: 18px;
-
-    }
-
-
-    .verify-box .auth-header h1 {
-
-        font-size: 28px;
+        border-radius:
+            19px;
 
     }
 
+    .verify-shell .verify-box .auth-header h1,
+    .verify-shell .verify-box .auth-header h2 {
 
-    .verify-box .verification-method {
-
-        align-items: flex-start;
-
-        gap: 11px;
-
-    }
-
-
-    .verify-box .verification-method-icon {
-
-        width: 39px;
-        height: 39px;
-
-        flex-basis: 39px;
+        font-size:
+            27px;
 
     }
 
+    .verify-shell .verification-method {
 
-    .verify-box .verification-method-action {
+        align-items:
+            flex-start;
 
-        align-self: center;
+    }
 
-        min-height: 35px;
+    .verify-shell .verification-method-action {
+
+        align-self:
+            center;
+
+        min-height:
+            36px;
 
         padding:
             0 10px;
 
-        font-size: 10px;
+        font-size:
+            9px;
 
     }
 
+    .verify-shell .otp-boxes {
 
-    .verify-box .otp-boxes {
-
-        gap: 7px;
+        gap:
+            7px;
 
     }
 
+    .verify-shell .otp-digit {
 
-    .verify-box .otp-digit {
+        height:
+            50px;
 
-        height: 50px;
-
-        font-size: 19px;
+        font-size:
+            19px;
 
     }
 
@@ -1009,92 +2597,194 @@
 
 @media (max-width: 480px) {
 
-    .verify-shell .verify-box {
+    .auth-card {
 
         padding:
-            12px 9px;
+            24px 16px 20px;
 
     }
 
+    .auth-mobile-brand {
+
+        margin-bottom:
+            25px;
+
+    }
+
+    .auth-mobile-brand .brand-mark {
+
+        width:
+            39px;
+
+        height:
+            39px;
+
+        flex-basis:
+            39px;
+
+    }
+
+    .auth-header h2 {
+
+        font-size:
+            27px;
+
+    }
+
+    .auth-header p {
+
+        font-size:
+            12px;
+
+    }
+
+    .auth-form {
+
+        gap:
+            15px;
+
+    }
+
+    .form-field label {
+
+        font-size:
+            10px;
+
+    }
+
+    .form-control {
+
+        min-height:
+            48px;
+
+        font-size:
+            13px;
+
+    }
+
+    .auth-submit {
+
+        min-height:
+            49px;
+
+    }
+
+    .auth-security {
+
+        margin-top:
+            18px;
+
+    }
+
+
+    /* VERIFY */
+
+    .verify-shell .verify-box {
+
+        padding:
+            12px 8px;
+
+    }
 
     .verify-shell .verify-box .auth-card {
 
         padding:
-            24px 17px;
+            23px 15px;
 
-        border-radius: 16px;
-
-    }
-
-
-    .verify-box .auth-header h1 {
-
-        font-size: 25px;
+        border-radius:
+            17px;
 
     }
 
+    .verify-shell .verify-box .auth-header h1,
+    .verify-shell .verify-box .auth-header h2 {
 
-    .verify-box .auth-header p {
-
-        font-size: 12.5px;
-
-    }
-
-
-    .verify-box .verification-method {
-
-        padding: 12px;
+        font-size:
+            24px;
 
     }
 
+    .verify-shell .verify-box .auth-header p {
 
-    .verify-box .verification-method-copy strong {
-
-        font-size: 11.5px;
-
-    }
-
-
-    .verify-box .verification-method-copy span {
-
-        font-size: 10.5px;
+        font-size:
+            11px;
 
     }
 
+    .verify-shell .verification-method {
 
-    .verify-box .verification-method-action {
+        padding:
+            11px;
+
+        gap:
+            9px;
+
+    }
+
+    .verify-shell .verification-method-icon {
+
+        width:
+            37px;
+
+        height:
+            37px;
+
+        flex-basis:
+            37px;
+
+    }
+
+    .verify-shell .verification-method-copy strong {
+
+        font-size:
+            10.5px;
+
+    }
+
+    .verify-shell .verification-method-copy span {
+
+        font-size:
+            9.5px;
+
+    }
+
+    .verify-shell .verification-method-action {
 
         padding:
             0 8px;
 
-        font-size: 9.5px;
+        font-size:
+            8.5px;
 
     }
 
+    .verify-shell .otp-boxes {
 
-    .verify-box .otp-boxes {
-
-        gap: 5px;
-
-    }
-
-
-    .verify-box .otp-digit {
-
-        height: 46px;
-
-        border-radius: 9px;
-
-        font-size: 17px;
+        gap:
+            5px;
 
     }
 
+    .verify-shell .otp-digit {
 
-    .verify-box .otp-resend {
+        height:
+            46px;
 
-        align-items: flex-start;
+        border-radius:
+            9px;
 
-        flex-direction: column;
+        font-size:
+            17px;
+
+    }
+
+    .verify-shell .otp-resend {
+
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
 
     }
 
@@ -1107,26 +2797,52 @@
 
 @media (max-width: 360px) {
 
+    .auth-card {
+
+        padding:
+            21px 13px 18px;
+
+    }
+
+    .auth-header h2 {
+
+        font-size:
+            25px;
+
+    }
+
+    .auth-tab {
+
+        font-size:
+            10px;
+
+    }
+
+
+    /* VERIFY */
+
     .verify-shell .verify-box .auth-card {
 
         padding:
-            20px 13px;
+            20px 12px;
 
     }
 
+    .verify-shell .verify-box .auth-header h1,
+    .verify-shell .verify-box .auth-header h2 {
 
-    .verify-box .auth-header h1 {
-
-        font-size: 22px;
+        font-size:
+            22px;
 
     }
 
+    .verify-shell .otp-digit {
 
-    .verify-box .otp-digit {
+        height:
+            42px;
 
-        height: 42px;
-
-        font-size: 15px;
+        font-size:
+            15px;
 
     }
 
