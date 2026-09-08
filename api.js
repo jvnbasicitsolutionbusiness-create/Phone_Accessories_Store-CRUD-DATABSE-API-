@@ -1,63 +1,94 @@
-/* =========================================================
-   STOCKFLOW — API CONNECTION
-   File: api.js
+/*
+=========================================================
+STOCKFLOW API CLIENT
+Phone Accessories Inventory Management System
+=========================================================
 
-   Frontend
-       ↓
-   StockFlowAPI
-       ↓
-   Google Apps Script
-       ↓
-   Google Sheets + Firebase
-   ========================================================= */
+PURPOSE
+-------
+Frontend communication layer between:
 
-(function (window) {
+    HTML / JavaScript
+          ↓
+       api.js
+          ↓
+Google Apps Script Web App
+          ↓
+ Google Sheets / Firebase
+
+IMPORTANT
+---------
+- api.js DOES NOT generate OTPs.
+- api.js DOES NOT redirect pages.
+- api.js DOES NOT store passwords.
+- OTP generation is handled by the backend.
+- In DEMO_MODE, the backend may return demoOtp.
+=========================================================
+*/
+
+(function () {
 
     "use strict";
 
 
-    /* =========================================================
+    /* =====================================================
        CONFIGURATION
-       ========================================================= */
+       ===================================================== */
 
     const CONFIG =
         window.STOCKFLOW_CONFIG ||
         window.CONFIG ||
         {};
 
+    const API_CONFIG =
+        CONFIG.API || {};
 
-    const API_URL = String(
+    const API_URL =
         CONFIG.API_URL ||
         CONFIG.APPS_SCRIPT_URL ||
         CONFIG.GOOGLE_APPS_SCRIPT_URL ||
         CONFIG.BACKEND_URL ||
-        ""
-    ).trim();
-
+        "";
 
     const REQUEST_TIMEOUT =
         Number(
-            CONFIG.API?.TIMEOUT ||
+            API_CONFIG.TIMEOUT ||
             CONFIG.API_TIMEOUT ||
             30000
         );
 
+    const RETRY_COUNT =
+        Number(
+            API_CONFIG.RETRY_COUNT ||
+            CONFIG.API_RETRY_COUNT ||
+            0
+        );
+
+    const RETRY_DELAY =
+        Number(
+            API_CONFIG.RETRY_DELAY ||
+            CONFIG.API_RETRY_DELAY ||
+            1000
+        );
+
+    const HTTP_METHOD =
+        API_CONFIG.METHOD ||
+        "POST";
 
     const CONTENT_TYPE =
-        CONFIG.API?.CONTENT_TYPE ||
+        API_CONFIG.CONTENT_TYPE ||
         "text/plain;charset=utf-8";
 
 
-    /* =========================================================
-       ERROR CLASS
-       ========================================================= */
+    /* =====================================================
+       CUSTOM ERROR
+       ===================================================== */
 
     class StockFlowAPIError extends Error {
 
         constructor(
             message,
-            code = "API_ERROR",
-            details = null
+            options = {}
         ) {
 
             super(message);
@@ -66,25 +97,192 @@
                 "StockFlowAPIError";
 
             this.code =
-                code;
+                options.code ||
+                "API_ERROR";
 
-            this.details =
-                details;
+            this.status =
+                options.status ||
+                null;
+
+            this.action =
+                options.action ||
+                null;
+
+            this.response =
+                options.response ||
+                null;
+
+            this.data =
+                options.data ||
+                null;
         }
     }
 
 
-    /* =========================================================
-       VALIDATE URL
-       ========================================================= */
+    /* =====================================================
+       BASIC HELPERS
+       ===================================================== */
+
+    function isObject(value) {
+
+        return (
+            value !== null &&
+            typeof value === "object" &&
+            !Array.isArray(value)
+        );
+    }
+
+
+    function cleanValue(value) {
+
+        if (
+            value === null ||
+            typeof value === "undefined"
+        ) {
+            return "";
+        }
+
+        return String(value).trim();
+    }
+
+
+    function firstValue() {
+
+        for (
+            let i = 0;
+            i < arguments.length;
+            i++
+        ) {
+
+            const value =
+                cleanValue(arguments[i]);
+
+            if (value) {
+                return value;
+            }
+        }
+
+        return "";
+    }
+
+
+    /* =====================================================
+       IDENTITY RESOLUTION
+       ===================================================== */
+
+    /*
+     * The backend needs an identity when verifying or
+     * preparing an OTP.
+     *
+     * Priority:
+     *
+     * identity
+     * username
+     * gmail
+     * email
+     * phone
+     * uid
+     */
+
+    function resolveIdentity(data = {}) {
+
+        return firstValue(
+            data.identity,
+            data.username,
+            data.gmail,
+            data.email,
+            data.phone,
+            data.uid
+        );
+    }
+
+
+    /* =====================================================
+       NORMALIZE REQUEST DATA
+       ===================================================== */
+
+    function normalizeOtpData(data = {}) {
+
+        const input =
+            isObject(data)
+                ? { ...data }
+                : {};
+
+        const identity =
+            resolveIdentity(input);
+
+        const username =
+            firstValue(
+                input.username
+            );
+
+        const gmail =
+            firstValue(
+                input.gmail,
+                input.email
+            );
+
+        const email =
+            firstValue(
+                input.email,
+                input.gmail
+            );
+
+        const phone =
+            firstValue(
+                input.phone,
+                input.phoneNumber,
+                input.mobile,
+                input.mobileNumber
+            );
+
+        const uid =
+            firstValue(
+                input.uid,
+                input.userId,
+                input.UID
+            );
+
+        const channel =
+            firstValue(
+                input.channel,
+                input.otpChannel
+            );
+
+        return {
+
+            ...input,
+
+            identity,
+
+            username,
+
+            gmail,
+
+            email,
+
+            phone,
+
+            uid,
+
+            channel
+        };
+    }
+
+
+    /* =====================================================
+       API URL VALIDATION
+       ===================================================== */
 
     function validateApiUrl() {
 
         if (!API_URL) {
 
             throw new StockFlowAPIError(
-                "StockFlow API URL is not configured.",
-                "MISSING_API_URL"
+                "API URL is not configured.",
+                {
+                    code: "API_URL_MISSING"
+                }
             );
         }
 
@@ -95,85 +293,180 @@
             )
         ) {
 
-            console.warn(
-                "STOCKFLOW: API URL does not look like a Google Apps Script Web App."
+            throw new StockFlowAPIError(
+                "The configured API URL is not a valid Google Apps Script Web App URL.",
+                {
+                    code: "API_URL_INVALID"
+                }
             );
         }
     }
 
 
-    /* =========================================================
-       RESPONSE PARSER
-       ========================================================= */
+    /* =====================================================
+       JSON PARSER
+       ===================================================== */
 
-    async function parseResponse(response) {
+    function parseJson(text) {
 
-        const text =
-            await response.text();
+        const raw =
+            cleanValue(text);
 
-        let data = {};
+        if (!raw) {
+
+            throw new StockFlowAPIError(
+                "The server returned an empty response.",
+                {
+                    code: "EMPTY_RESPONSE"
+                }
+            );
+        }
 
 
         try {
 
-            data =
-                text
-                    ? JSON.parse(text)
-                    : {};
+            return JSON.parse(raw);
 
         } catch (error) {
 
-            throw new StockFlowAPIError(
-                "The server returned an invalid JSON response.",
-                "INVALID_JSON",
-                text
+            console.error(
+                "[STOCKFLOW API] Invalid JSON response:",
+                raw
             );
+
+            throw new StockFlowAPIError(
+                "The server returned an invalid response.",
+                {
+                    code: "INVALID_JSON",
+                    response: raw
+                }
+            );
+        }
+    }
+
+
+    /* =====================================================
+       RESPONSE NORMALIZATION
+       ===================================================== */
+
+    function normalizeResponse(result) {
+
+        if (!isObject(result)) {
+
+            return {
+                success: true,
+                data: result
+            };
         }
 
 
-        if (!response.ok) {
+        /*
+         * Some Apps Script responses may return:
+         *
+         * {
+         *     success: true,
+         *     data: {...}
+         * }
+         *
+         * Others may return the useful fields directly.
+         *
+         * Keep the original object intact.
+         */
 
-            throw new StockFlowAPIError(
-                data.message ||
-                data.error ||
-                `Server returned HTTP ${response.status}.`,
-                data.code ||
-                "HTTP_ERROR",
-                data
-            );
+        return result;
+    }
+
+
+    /* =====================================================
+       RESPONSE SUCCESS CHECK
+       ===================================================== */
+
+    function isSuccessfulResponse(result) {
+
+        if (!isObject(result)) {
+            return true;
         }
 
 
         if (
-            data &&
-            (
-                data.success === false ||
-                data.ok === false
-            )
+            result.success === false ||
+            result.ok === false
         ) {
-
-            throw new StockFlowAPIError(
-                data.message ||
-                data.error ||
-                "The server rejected the request.",
-                data.code ||
-                "REQUEST_FAILED",
-                data
-            );
+            return false;
         }
 
 
-        return data;
+        if (
+            result.status &&
+            String(result.status)
+                .toLowerCase() === "error"
+        ) {
+            return false;
+        }
+
+
+        return true;
     }
 
 
-    /* =========================================================
-       GENERIC REQUEST
-       ========================================================= */
+    /* =====================================================
+       ERROR MESSAGE EXTRACTION
+       ===================================================== */
+
+    function getServerErrorMessage(result) {
+
+        if (!result) {
+
+            return "The server returned an error.";
+        }
+
+
+        if (typeof result === "string") {
+
+            return result;
+        }
+
+
+        return firstValue(
+
+            result.message,
+
+            result.error,
+
+            result.details,
+
+            result.data &&
+            result.data.message,
+
+            result.data &&
+            result.data.error,
+
+            "The server rejected the request."
+        );
+    }
+
+
+    /* =====================================================
+       DELAY
+       ===================================================== */
+
+    function delay(ms) {
+
+        return new Promise(
+            resolve =>
+                setTimeout(resolve, ms)
+        );
+    }
+
+
+    /* =====================================================
+       REQUEST
+       ===================================================== */
 
     async function request(
         action,
-        payload = {}
+        payload = {},
+        options = {}
     ) {
 
         validateApiUrl();
@@ -183,7 +476,9 @@
 
             throw new StockFlowAPIError(
                 "API action is required.",
-                "MISSING_ACTION"
+                {
+                    code: "ACTION_MISSING"
+                }
             );
         }
 
@@ -192,904 +487,1074 @@
 
             action,
 
-            ...payload
+            ...(isObject(payload)
+                ? payload
+                : {})
         };
 
 
-        const controller =
-            new AbortController();
-
-
-        const timeout =
-            setTimeout(
-                () => controller.abort(),
-                REQUEST_TIMEOUT
+        const attempts =
+            Math.max(
+                0,
+                Number(
+                    options.retryCount ??
+                    RETRY_COUNT
+                )
             );
 
 
-        try {
+        let lastError = null;
 
-            const response =
-                await fetch(
-                    API_URL,
-                    {
-                        method: "POST",
 
-                        headers: {
-                            "Content-Type":
-                                CONTENT_TYPE
-                        },
+        for (
+            let attempt = 0;
+            attempt <= attempts;
+            attempt++
+        ) {
 
-                        body:
-                            JSON.stringify(body),
+            const controller =
+                new AbortController();
 
-                        redirect:
-                            "follow",
+            const timeoutId =
+                setTimeout(
+                    () =>
+                        controller.abort(),
+                    REQUEST_TIMEOUT
+                );
 
-                        signal:
-                            controller.signal
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL,
+                        {
+                            method:
+                                HTTP_METHOD,
+
+                            headers: {
+                                "Content-Type":
+                                    CONTENT_TYPE
+                            },
+
+                            body:
+                                JSON.stringify(body),
+
+                            redirect:
+                                "follow",
+
+                            signal:
+                                controller.signal
+                        }
+                    );
+
+
+                clearTimeout(timeoutId);
+
+
+                const text =
+                    await response.text();
+
+
+                let result;
+
+                try {
+
+                    result =
+                        parseJson(text);
+
+                } catch (parseError) {
+
+                    /*
+                     * HTTP response succeeded but the
+                     * response body was not JSON.
+                     */
+
+                    if (
+                        !response.ok
+                    ) {
+
+                        throw new StockFlowAPIError(
+                            "The server returned HTTP " +
+                            response.status +
+                            ".",
+                            {
+                                code:
+                                    "HTTP_ERROR",
+
+                                status:
+                                    response.status,
+
+                                action,
+
+                                response:
+                                    text
+                            }
+                        );
                     }
-                );
+
+                    throw parseError;
+                }
 
 
-            return await parseResponse(
-                response
-            );
+                result =
+                    normalizeResponse(result);
 
-        } catch (error) {
 
-            if (
-                error?.name ===
-                "AbortError"
-            ) {
+                /* -----------------------------------------
+                   SERVER ERROR
+                   ----------------------------------------- */
 
-                throw new StockFlowAPIError(
-                    "The StockFlow server took too long to respond.",
-                    "TIMEOUT"
-                );
+                if (
+                    !isSuccessfulResponse(result)
+                ) {
+
+                    throw new StockFlowAPIError(
+                        getServerErrorMessage(
+                            result
+                        ),
+                        {
+                            code:
+                                result.code ||
+                                "SERVER_ERROR",
+
+                            status:
+                                response.status,
+
+                            action,
+
+                            response:
+                                result,
+
+                            data:
+                                result.data ||
+                                null
+                        }
+                    );
+                }
+
+
+                /* -----------------------------------------
+                   HTTP ERROR
+                   ----------------------------------------- */
+
+                if (!response.ok) {
+
+                    throw new StockFlowAPIError(
+                        getServerErrorMessage(
+                            result
+                        ),
+                        {
+                            code:
+                                "HTTP_ERROR",
+
+                            status:
+                                response.status,
+
+                            action,
+
+                            response:
+                                result
+                        }
+                    );
+                }
+
+
+                return result;
+
+
+            } catch (error) {
+
+                clearTimeout(timeoutId);
+
+
+                /*
+                 * Preserve our own API errors.
+                 */
+
+                if (
+                    error instanceof
+                    StockFlowAPIError
+                ) {
+
+                    lastError =
+                        error;
+
+                } else if (
+                    error &&
+                    error.name ===
+                    "AbortError"
+                ) {
+
+                    lastError =
+                        new StockFlowAPIError(
+                            "The request timed out. Please try again.",
+                            {
+                                code:
+                                    "TIMEOUT",
+
+                                action
+                            }
+                        );
+
+                } else {
+
+                    console.error(
+                        "[STOCKFLOW API NETWORK ERROR]",
+                        error
+                    );
+
+                    lastError =
+                        new StockFlowAPIError(
+                            "Unable to connect to the verification service.",
+                            {
+                                code:
+                                    "NETWORK_ERROR",
+
+                                action
+                            }
+                        );
+                }
+
+
+                /*
+                 * Retry only when another attempt
+                 * is available.
+                 */
+
+                if (
+                    attempt < attempts
+                ) {
+
+                    await delay(
+                        RETRY_DELAY
+                    );
+
+                    continue;
+                }
+
+
+                throw lastError;
             }
+        }
 
 
-            if (
-                error instanceof
-                StockFlowAPIError
-            ) {
+        throw new StockFlowAPIError(
+            "Unable to complete the request.",
+            {
+                code:
+                    "REQUEST_FAILED",
 
-                throw error;
+                action
             }
-
-
-            throw new StockFlowAPIError(
-                "Unable to connect to the StockFlow server.",
-                "NETWORK_ERROR",
-                error
-            );
-
-        } finally {
-
-            clearTimeout(timeout);
-        }
+        );
     }
 
 
-    /* =========================================================
-       RESULT NORMALIZATION
-       ========================================================= */
-
-    function normalizeResult(result) {
-
-        if (!result) {
-
-            return {
-
-                success:
-                    false,
-
-                message:
-                    "Empty server response."
-            };
-        }
-
-
-        return result;
-    }
-
-
-    /* =========================================================
-       IDENTITY BUILDER
-       ========================================================= */
-
-    function buildIdentity(data = {}) {
-
-        return String(
-            data.identity ||
-            data.username ||
-            data.gmail ||
-            data.email ||
-            data.phone ||
-            data.uid ||
-            ""
-        ).trim();
-    }
-
-
-    /* =========================================================
-       AUTHENTICATION
-       ========================================================= */
+    /* =====================================================
+       REGISTER
+       ===================================================== */
 
     async function register(data = {}) {
 
-        return normalizeResult(
-            await request(
-                "register",
-                {
+        return request(
+            "register",
+            {
+                ...data,
 
-                    name:
-                        data.name || "",
-
-                    username:
-                        data.username || "",
-
-                    age:
-                        data.age || "",
-
-                    gmail:
-                        data.gmail ||
-                        data.email ||
-                        "",
-
-                    phone:
-                        data.phone || "",
-
-                    password:
-                        data.password || "",
-
-                    role:
-                        data.role ||
-                        "Employee"
-                }
-            )
+                role:
+                    data.role ||
+                    "Employee"
+            }
         );
     }
 
+
+    /* =====================================================
+       LOGIN
+       ===================================================== */
 
     async function login(data = {}) {
 
-        return normalizeResult(
-            await request(
-                "login",
-                {
+        const identity =
+            resolveIdentity(data);
 
-                    identity:
-                        buildIdentity(data),
+        return request(
+            "login",
+            {
+                ...data,
 
-                    username:
-                        data.username || "",
-
-                    email:
-                        data.email || "",
-
-                    gmail:
-                        data.gmail || "",
-
-                    phone:
-                        data.phone || "",
-
-                    password:
-                        data.password || ""
-                }
-            )
+                identity
+            }
         );
     }
 
 
-    /* =========================================================
-       OTP
-       ========================================================= */
-
-    async function verifyOtp(data = {}) {
-
-        return normalizeResult(
-            await request(
-                "verifyOtp",
-                {
-
-                    uid:
-                        data.uid || "",
-
-                    identity:
-                        buildIdentity(data),
-
-                    username:
-                        data.username || "",
-
-                    email:
-                        data.email || "",
-
-                    gmail:
-                        data.gmail ||
-                        data.email ||
-                        "",
-
-                    phone:
-                        data.phone || "",
-
-                    channel:
-                        data.channel ||
-                        data.otpChannel ||
-                        "email",
-
-                    otpChannel:
-                        data.otpChannel ||
-                        data.channel ||
-                        "email",
-
-                    otp:
-                        String(
-                            data.otp || ""
-                        ).trim()
-                }
-            )
-        );
-    }
-
+    /* =====================================================
+       PREPARE OTP
+       ===================================================== */
 
     /*
-     * PREPARE OTP
+     * IMPORTANT:
      *
-     * Initial verification-code generation.
+     * This does NOT generate the OTP locally.
+     *
+     * The backend generates the OTP and stores it in:
+     *
+     * Google Sheets
+     * Firebase
+     *
+     * In DEMO_MODE the backend may return:
+     *
+     * demoOtp
      */
 
     async function prepareOtp(data = {}) {
 
-        const payload = {
-
-            uid:
-                data.uid || "",
-
-            identity:
-                buildIdentity(data),
-
-            username:
-                data.username || "",
-
-            email:
-                data.email || "",
-
-            gmail:
-                data.gmail ||
-                data.email ||
-                "",
-
-            phone:
-                data.phone || "",
-
-            channel:
-                data.channel ||
-                data.otpChannel ||
-                "email",
-
-            otpChannel:
-                data.otpChannel ||
-                data.channel ||
-                "email"
-        };
+        const otpData =
+            normalizeOtpData(data);
 
 
-        try {
+        if (!otpData.identity) {
 
-            return normalizeResult(
-                await request(
-                    "prepareOtp",
-                    payload
-                )
-            );
+            throw new StockFlowAPIError(
+                "Username or Gmail is required.",
+                {
+                    code:
+                        "OTP_IDENTITY_MISSING",
 
-        } catch (error) {
-
-            /*
-             * Older backend compatibility.
-             *
-             * If prepareOtp is not yet implemented,
-             * use resendOtp as the initial generator.
-             */
-
-            const message =
-                String(
-                    error?.message ||
-                    ""
-                ).toLowerCase();
-
-            const isMissingAction =
-                message.includes(
-                    "unknown action"
-                ) ||
-                message.includes(
-                    "unsupported action"
-                ) ||
-                message.includes(
-                    "action not found"
-                ) ||
-                error?.code ===
-                    "UNKNOWN_ACTION";
-
-
-            if (!isMissingAction) {
-
-                throw error;
-            }
-
-
-            return normalizeResult(
-                await request(
-                    "resendOtp",
-                    payload
-                )
+                    action:
+                        "prepareOtp"
+                }
             );
         }
-    }
 
 
-    async function resendOtp(data = {}) {
-
-        return normalizeResult(
-            await request(
-                "resendOtp",
-                {
-
-                    uid:
-                        data.uid || "",
-
-                    identity:
-                        buildIdentity(data),
-
-                    username:
-                        data.username || "",
-
-                    email:
-                        data.email || "",
-
-                    gmail:
-                        data.gmail ||
-                        data.email ||
-                        "",
-
-                    phone:
-                        data.phone || "",
-
-                    channel:
-                        data.channel ||
-                        data.otpChannel ||
-                        "email",
-
-                    otpChannel:
-                        data.otpChannel ||
-                        data.channel ||
-                        "email"
-                }
-            )
+        return request(
+            "prepareOtp",
+            otpData
         );
     }
 
 
-    async function updateOtp(data = {}) {
+    /* =====================================================
+       GENERATE OTP
+       ===================================================== */
+
+    /*
+     * Backend compatibility alias.
+     *
+     * Some versions of Code.gs use:
+     *
+     * generateOtp
+     *
+     * while the frontend uses:
+     *
+     * prepareOtp
+     */
+
+    async function generateOtp(data = {}) {
+
+        const otpData =
+            normalizeOtpData(data);
+
+
+        if (!otpData.identity) {
+
+            throw new StockFlowAPIError(
+                "Username or Gmail is required.",
+                {
+                    code:
+                        "OTP_IDENTITY_MISSING",
+
+                    action:
+                        "generateOtp"
+                }
+            );
+        }
+
+
+        return request(
+            "generateOtp",
+            otpData
+        );
+    }
+
+
+    /* =====================================================
+       VERIFY OTP
+       ===================================================== */
+
+    async function verifyOtp(data = {}) {
+
+        const otpData =
+            normalizeOtpData(data);
+
+
+        const otp =
+            firstValue(
+                otpData.otp,
+                otpData.code,
+                otpData.OTP
+            );
+
+
+        if (!otpData.identity) {
+
+            throw new StockFlowAPIError(
+                "Username or Gmail is required.",
+                {
+                    code:
+                        "OTP_IDENTITY_MISSING",
+
+                    action:
+                        "verifyOtp"
+                }
+            );
+        }
+
+
+        if (!otp) {
+
+            throw new StockFlowAPIError(
+                "Please enter the verification code.",
+                {
+                    code:
+                        "OTP_MISSING",
+
+                    action:
+                        "verifyOtp"
+                }
+            );
+        }
+
+
+        return request(
+            "verifyOtp",
+            {
+                ...otpData,
+
+                otp
+            }
+        );
+    }
+
+
+    /* =====================================================
+       RESEND OTP
+       ===================================================== */
+
+    async function resendOtp(
+        data = {}
+    ) {
+
+        const otpData =
+            normalizeOtpData(data);
+
+
+        if (!otpData.identity) {
+
+            throw new StockFlowAPIError(
+                "Username or Gmail is required.",
+                {
+                    code:
+                        "OTP_IDENTITY_MISSING",
+
+                    action:
+                        "resendOtp"
+                }
+            );
+        }
+
+
+        return request(
+            "resendOtp",
+            otpData
+        );
+    }
+
+
+    /* =====================================================
+       UPDATE OTP
+       ===================================================== */
+
+    async function updateOtp(
+        data = {}
+    ) {
+
+        /*
+         * Backend compatibility alias.
+         *
+         * Existing frontend code may call updateOtp().
+         * The backend's resend operation is the actual
+         * OTP regeneration operation.
+         */
 
         return resendOtp(data);
     }
 
 
-    /* =========================================================
+    /* =====================================================
        SESSION
-       ========================================================= */
+       ===================================================== */
 
-    async function session(data = {}) {
+    async function session(
+        data = {}
+    ) {
 
-        return normalizeResult(
-            await request(
-                "session",
-                {
-
-                    token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
-                }
-            )
+        return request(
+            "session",
+            data
         );
     }
 
 
-    async function requireSession(data = {}) {
+    /* =====================================================
+       REQUIRE SESSION
+       ===================================================== */
 
-        return normalizeResult(
-            await request(
-                "requireSession",
-                {
+    async function requireSession(
+        data = {}
+    ) {
 
-                    token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
-                }
-            )
+        return request(
+            "session",
+            data
         );
     }
 
 
-    async function logout(data = {}) {
+    /* =====================================================
+       LOGOUT
+       ===================================================== */
 
-        return normalizeResult(
-            await request(
-                "logout",
-                {
+    async function logout(
+        data = {}
+    ) {
 
-                    token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
-                }
-            )
+        return request(
+            "logout",
+            data
         );
     }
 
 
-    /* =========================================================
-       PASSWORD RECOVERY
-       ========================================================= */
+    /* =====================================================
+       FORGOT PASSWORD
+       ===================================================== */
 
     async function forgotPassword(
         data = {}
     ) {
 
-        return normalizeResult(
-            await request(
-                "forgotPassword",
+        const identity =
+            resolveIdentity(data);
+
+
+        if (!identity) {
+
+            throw new StockFlowAPIError(
+                "Username, Gmail, or phone number is required.",
                 {
+                    code:
+                        "RECOVERY_IDENTITY_MISSING",
 
-                    identity:
-                        buildIdentity(data),
-
-                    email:
-                        data.email || "",
-
-                    gmail:
-                        data.gmail ||
-                        data.email ||
-                        "",
-
-                    phone:
-                        data.phone || ""
+                    action:
+                        "forgotPassword"
                 }
-            )
+            );
+        }
+
+
+        return request(
+            "forgotPassword",
+            {
+                ...data,
+
+                identity
+            }
         );
     }
 
+
+    /* =====================================================
+       VERIFY RECOVERY OTP
+       ===================================================== */
 
     async function verifyRecoveryOtp(
         data = {}
     ) {
 
-        return normalizeResult(
-            await request(
-                "verifyRecoveryOtp",
+        const otpData =
+            normalizeOtpData(data);
+
+
+        const otp =
+            firstValue(
+                otpData.otp,
+                otpData.code,
+                otpData.OTP
+            );
+
+
+        if (!otpData.identity) {
+
+            throw new StockFlowAPIError(
+                "Username, Gmail, or phone number is required.",
                 {
+                    code:
+                        "RECOVERY_IDENTITY_MISSING",
 
-                    identity:
-                        buildIdentity(data),
-
-                    email:
-                        data.email || "",
-
-                    gmail:
-                        data.gmail ||
-                        data.email ||
-                        "",
-
-                    phone:
-                        data.phone || "",
-
-                    otp:
-                        String(
-                            data.otp || ""
-                        ).trim()
+                    action:
+                        "verifyRecoveryOtp"
                 }
-            )
+            );
+        }
+
+
+        if (!otp) {
+
+            throw new StockFlowAPIError(
+                "Please enter the recovery verification code.",
+                {
+                    code:
+                        "RECOVERY_OTP_MISSING",
+
+                    action:
+                        "verifyRecoveryOtp"
+                }
+            );
+        }
+
+
+        return request(
+            "verifyRecoveryOtp",
+            {
+                ...otpData,
+
+                otp
+            }
         );
     }
 
+
+    /* =====================================================
+       RESET PASSWORD
+       ===================================================== */
 
     async function resetPassword(
         data = {}
     ) {
 
-        return normalizeResult(
-            await request(
-                "resetPassword",
-                {
-
-                    identity:
-                        buildIdentity(data),
-
-                    token:
-                        data.token || "",
-
-                    password:
-                        data.password ||
-                        data.newPassword ||
-                        "",
-
-                    newPassword:
-                        data.newPassword ||
-                        data.password ||
-                        ""
-                }
-            )
+        return request(
+            "resetPassword",
+            data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        ACTIVITY
-       ========================================================= */
+       ===================================================== */
 
     async function listActivity(
         data = {}
     ) {
 
-        return normalizeResult(
-            await request(
-                "listActivity",
-                {
-
-                    token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        "",
-
-                    limit:
-                        data.limit ||
-                        100
-                }
-            )
+        return request(
+            "listActivity",
+            data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        INVENTORY
-       ========================================================= */
+       ===================================================== */
 
     async function inventory(
-        action,
         data = {}
     ) {
 
-        if (!action) {
-
-            throw new StockFlowAPIError(
-                "Inventory action is required.",
-                "MISSING_INVENTORY_ACTION"
-            );
-        }
-
-
-        return normalizeResult(
-            await request(
-                action,
-                {
-
-                    token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        "",
-
-                    ...data
-                }
-            )
+        return request(
+            "inventory",
+            data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        PRODUCTS
-       ========================================================= */
+       ===================================================== */
 
-    async function listProducts(data = {}) {
-        return inventory(
+    async function listProducts(
+        data = {}
+    ) {
+
+        return request(
             "listProducts",
             data
         );
     }
 
-    async function createProduct(data = {}) {
-        return inventory(
+
+    async function createProduct(
+        data = {}
+    ) {
+
+        return request(
             "createProduct",
             data
         );
     }
 
-    async function updateProduct(data = {}) {
-        return inventory(
+
+    async function updateProduct(
+        data = {}
+    ) {
+
+        return request(
             "updateProduct",
             data
         );
     }
 
-    async function deleteProduct(data = {}) {
-        return inventory(
+
+    async function deleteProduct(
+        data = {}
+    ) {
+
+        return request(
             "deleteProduct",
             data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        CATEGORIES
-       ========================================================= */
+       ===================================================== */
 
-    async function listCategories(data = {}) {
-        return inventory(
+    async function listCategories(
+        data = {}
+    ) {
+
+        return request(
             "listCategories",
             data
         );
     }
 
-    async function createCategory(data = {}) {
-        return inventory(
+
+    async function createCategory(
+        data = {}
+    ) {
+
+        return request(
             "createCategory",
             data
         );
     }
 
-    async function updateCategory(data = {}) {
-        return inventory(
+
+    async function updateCategory(
+        data = {}
+    ) {
+
+        return request(
             "updateCategory",
             data
         );
     }
 
-    async function deleteCategory(data = {}) {
-        return inventory(
+
+    async function deleteCategory(
+        data = {}
+    ) {
+
+        return request(
             "deleteCategory",
             data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        SUPPLIERS
-       ========================================================= */
+       ===================================================== */
 
-    async function listSuppliers(data = {}) {
-        return inventory(
+    async function listSuppliers(
+        data = {}
+    ) {
+
+        return request(
             "listSuppliers",
             data
         );
     }
 
-    async function createSupplier(data = {}) {
-        return inventory(
+
+    async function createSupplier(
+        data = {}
+    ) {
+
+        return request(
             "createSupplier",
             data
         );
     }
 
-    async function updateSupplier(data = {}) {
-        return inventory(
+
+    async function updateSupplier(
+        data = {}
+    ) {
+
+        return request(
             "updateSupplier",
             data
         );
     }
 
-    async function deleteSupplier(data = {}) {
-        return inventory(
+
+    async function deleteSupplier(
+        data = {}
+    ) {
+
+        return request(
             "deleteSupplier",
             data
         );
     }
 
 
-    /* =========================================================
-       STOCK
-       ========================================================= */
+    /* =====================================================
+       STOCK IN
+       ===================================================== */
 
-    async function listStockIn(data = {}) {
-        return inventory(
+    async function listStockIn(
+        data = {}
+    ) {
+
+        return request(
             "listStockIn",
             data
         );
     }
 
-    async function createStockIn(data = {}) {
-        return inventory(
+
+    async function createStockIn(
+        data = {}
+    ) {
+
+        return request(
             "createStockIn",
             data
         );
     }
 
-    async function listStockOut(data = {}) {
-        return inventory(
+
+    /* =====================================================
+       STOCK OUT
+       ===================================================== */
+
+    async function listStockOut(
+        data = {}
+    ) {
+
+        return request(
             "listStockOut",
             data
         );
     }
 
-    async function createStockOut(data = {}) {
-        return inventory(
+
+    async function createStockOut(
+        data = {}
+    ) {
+
+        return request(
             "createStockOut",
             data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        TRANSACTIONS
-       ========================================================= */
+       ===================================================== */
 
-    async function listTransactions(data = {}) {
-        return inventory(
+    async function listTransactions(
+        data = {}
+    ) {
+
+        return request(
             "listTransactions",
             data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        DASHBOARD
-       ========================================================= */
+       ===================================================== */
 
-    async function dashboard(data = {}) {
-        return inventory(
+    async function dashboard(
+        data = {}
+    ) {
+
+        return request(
             "dashboard",
             data
         );
     }
 
 
-    /* =========================================================
+    /* =====================================================
        HEALTH CHECK
-       ========================================================= */
+       ===================================================== */
 
-    async function health() {
+    async function health(
+        data = {}
+    ) {
 
-        validateApiUrl();
-
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method:
-                        "GET",
-
-                    redirect:
-                        "follow"
-                }
-            );
-
-
-        const text =
-            await response.text();
-
-
-        try {
-
-            return text
-                ? JSON.parse(text)
-                : {};
-
-        } catch {
-
-            return {
-
-                success:
-                    response.ok,
-
-                raw:
-                    text
-            };
-        }
+        return request(
+            "health",
+            data
+        );
     }
 
 
-    /* =========================================================
-       PUBLIC API
-       ========================================================= */
+    /* =====================================================
+       API OBJECT
+       ===================================================== */
 
     const StockFlowAPI = {
 
+        /* Core */
         request,
 
-        health,
-
+        /* Authentication */
         register,
         login,
-
-        verifyOtp,
-        prepareOtp,
-        resendOtp,
-        updateOtp,
-
         session,
         requireSession,
         logout,
 
+        /* OTP */
+        prepareOtp,
+        generateOtp,
+        verifyOtp,
+        resendOtp,
+        updateOtp,
+
+        /* Password Recovery */
         forgotPassword,
         verifyRecoveryOtp,
         resetPassword,
 
+        /* Activity */
         listActivity,
 
+        /* Inventory */
         inventory,
 
+        /* Products */
         listProducts,
         createProduct,
         updateProduct,
         deleteProduct,
 
+        /* Categories */
         listCategories,
         createCategory,
         updateCategory,
         deleteCategory,
 
+        /* Suppliers */
         listSuppliers,
         createSupplier,
         updateSupplier,
         deleteSupplier,
 
+        /* Stock */
         listStockIn,
         createStockIn,
-
         listStockOut,
         createStockOut,
 
+        /* Transactions */
         listTransactions,
 
+        /* Dashboard */
         dashboard,
 
+        /* Health */
+        health,
+
+        /* Utilities */
+        resolveIdentity,
+
+        /* Error */
         StockFlowAPIError
     };
 
 
-    /* =========================================================
+    /* =====================================================
        GLOBAL EXPORT
-       ========================================================= */
+       ===================================================== */
 
     window.StockFlowAPI =
         StockFlowAPI;
 
 
     /*
-     * Legacy compatibility.
+     * Backward compatibility.
+     *
+     * Some older files may reference:
+     *
+     * window.API
      */
 
     window.API =
         StockFlowAPI;
 
 
-    /* =========================================================
-       DEBUG
-       ========================================================= */
+    /* =====================================================
+       DEBUG INFORMATION
+       ===================================================== */
 
-    console.log(
-        "%cStockFlow API loaded",
-        "font-weight:bold;"
-    );
+    if (
+        CONFIG.DEBUG === true
+    ) {
 
-    console.log(
-        "API endpoint:",
-        API_URL || "(not configured)"
-    );
+        console.log(
+            "[STOCKFLOW API] Loaded."
+        );
 
+        console.log(
+            "[STOCKFLOW API] Endpoint:",
+            API_URL
+        );
 
-})(window);
+        console.log(
+            "[STOCKFLOW API] Method:",
+            HTTP_METHOD
+        );
+
+        console.log(
+            "[STOCKFLOW API] Timeout:",
+            REQUEST_TIMEOUT + "ms"
+        );
+
+        console.log(
+            "[STOCKFLOW API] Retry Count:",
+            RETRY_COUNT
+        );
+
+        console.log(
+            "[STOCKFLOW API] Demo Mode:",
+            CONFIG.DEMO_MODE === true
+        );
+    }
+
+})();
