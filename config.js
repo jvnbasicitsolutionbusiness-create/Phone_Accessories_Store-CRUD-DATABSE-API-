@@ -2,20 +2,16 @@
    STOCKFLOW — SYSTEM CONFIGURATION
    File: config.js
 
-   PURPOSE:
-   Central configuration for the STOCKFLOW system.
-
-   RESPONSIBILITIES:
+   Purpose:
+   - Central system configuration
    - Google Apps Script API
    - Firebase
-   - Authentication
-   - OTP
    - Routes
+   - Authentication / OTP
    - Inventory
-   - Storage
    ========================================================= */
 
-(function (window) {
+(function () {
 
     "use strict";
 
@@ -45,32 +41,17 @@
         /*
          * Midterm / demonstration mode.
          *
-         * The backend remains responsible for generating
-         * the authoritative OTP.
-         *
-         * The frontend may receive the generated OTP only
-         * for this demonstration flow.
+         * The BACKEND generates the real OTP.
+         * The frontend only displays the returned OTP
+         * after the configured delay.
          */
         DEMO_MODE:
-            true,
-
-        DEBUG:
             true,
 
 
         /* =====================================================
            GOOGLE APPS SCRIPT
            ===================================================== */
-
-        /*
-         * IMPORTANT:
-         * This MUST be a plain URL.
-         *
-         * Do NOT place:
-         * [URL](URL)
-         *
-         * around it.
-         */
 
         API_URL:
             "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65qL4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
@@ -85,7 +66,7 @@
 
 
         /* =====================================================
-           FIREBASE REALTIME DATABASE
+           FIREBASE
            ===================================================== */
 
         FIREBASE: {
@@ -93,10 +74,6 @@
             DATABASE_URL:
                 "https://midtermexamproject-default-rtdb.firebaseio.com/",
 
-            /*
-             * Leave empty for the current midterm setup
-             * if Firebase rules permit backend REST access.
-             */
             AUTH_TOKEN:
                 ""
         },
@@ -126,25 +103,32 @@
             OTP_UID_KEY:
                 "STOCKFLOW_OTP_UID",
 
-            OTP_IDENTITY_KEY:
-                "STOCKFLOW_OTP_IDENTITY",
-
             OTP_EMAIL_KEY:
                 "STOCKFLOW_OTP_EMAIL",
 
             OTP_PHONE_KEY:
                 "STOCKFLOW_OTP_PHONE",
 
+            OTP_USERNAME_KEY:
+                "STOCKFLOW_OTP_USERNAME",
+
+            OTP_IDENTITY_KEY:
+                "STOCKFLOW_OTP_IDENTITY",
+
             OTP_CHANNEL_KEY:
                 "STOCKFLOW_OTP_CHANNEL",
 
+            OTP_CODE_KEY:
+                "STOCKFLOW_OTP_CODE",
 
-            /* -------------------------------------------------
-               LOGIN REDIRECT
-               ------------------------------------------------- */
+            OTP_READY_KEY:
+                "STOCKFLOW_OTP_CODE_READY",
 
-            REDIRECT_KEY:
-                "STOCKFLOW_REDIRECT_AFTER_LOGIN",
+            OTP_EMAIL_SENT_KEY:
+                "STOCKFLOW_OTP_EMAIL_SENT",
+
+            OTP_PHONE_SENT_KEY:
+                "STOCKFLOW_OTP_PHONE_SENT",
 
 
             /* -------------------------------------------------
@@ -168,7 +152,7 @@
 
 
             /* -------------------------------------------------
-               DEMO OTP
+               DEMO AUTO-FILL
                ------------------------------------------------- */
 
             DEMO_AUTO_FILL:
@@ -183,7 +167,7 @@
 
 
         /* =====================================================
-           API REQUEST CONFIGURATION
+           API CONFIGURATION
            ===================================================== */
 
         API: {
@@ -198,7 +182,7 @@
                 30000,
 
             RETRY_COUNT:
-                2,
+                1,
 
             RETRY_DELAY:
                 1000
@@ -206,7 +190,7 @@
 
 
         /* =====================================================
-           APPLICATION ROUTES
+           ROUTES
            ===================================================== */
 
         ROUTES: {
@@ -234,11 +218,6 @@
 
             FORGOT_PASSWORD_LEGACY:
                 "forgotpassword.html",
-
-
-            /* -------------------------------------------------
-               MAIN SYSTEM
-               ------------------------------------------------- */
 
             DASHBOARD:
                 "dashboard.html",
@@ -302,7 +281,7 @@
 
 
         /* =====================================================
-           USER ROLES
+           ROLES
            ===================================================== */
 
         ROLES: {
@@ -390,17 +369,32 @@
             OTP_UID:
                 "STOCKFLOW_OTP_UID",
 
-            OTP_IDENTITY:
-                "STOCKFLOW_OTP_IDENTITY",
-
             OTP_EMAIL:
                 "STOCKFLOW_OTP_EMAIL",
 
             OTP_PHONE:
                 "STOCKFLOW_OTP_PHONE",
 
+            OTP_USERNAME:
+                "STOCKFLOW_OTP_USERNAME",
+
+            OTP_IDENTITY:
+                "STOCKFLOW_OTP_IDENTITY",
+
             OTP_CHANNEL:
                 "STOCKFLOW_OTP_CHANNEL",
+
+            OTP_CODE:
+                "STOCKFLOW_OTP_CODE",
+
+            OTP_READY:
+                "STOCKFLOW_OTP_CODE_READY",
+
+            OTP_EMAIL_SENT:
+                "STOCKFLOW_OTP_EMAIL_SENT",
+
+            OTP_PHONE_SENT:
+                "STOCKFLOW_OTP_PHONE_SENT",
 
             REDIRECT_AFTER_LOGIN:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
@@ -431,7 +425,15 @@
             "forgot-password.html",
 
             "forgotpassword.html"
-        ]
+        ],
+
+
+        /* =====================================================
+           DEBUG
+           ===================================================== */
+
+        DEBUG:
+            true
     };
 
 
@@ -444,26 +446,9 @@
         const errors = [];
 
 
-        /* -----------------------------------------------------
-           API
-           ----------------------------------------------------- */
-
         if (
-            typeof STOCKFLOW_CONFIG.API_URL !== "string" ||
-            !STOCKFLOW_CONFIG.API_URL.trim()
-        ) {
-
-            errors.push(
-                "Google Apps Script API URL is missing."
-            );
-
-        } else if (
-            !STOCKFLOW_CONFIG.API_URL.includes(
-                "script.google.com/macros/s/"
-            ) ||
-            !STOCKFLOW_CONFIG.API_URL.endsWith(
-                "/exec"
-            )
+            !STOCKFLOW_CONFIG.API_URL ||
+            !STOCKFLOW_CONFIG.API_URL.includes("/exec")
         ) {
 
             errors.push(
@@ -471,10 +456,6 @@
             );
         }
 
-
-        /* -----------------------------------------------------
-           GOOGLE SHEETS
-           ----------------------------------------------------- */
 
         if (
             !STOCKFLOW_CONFIG.GOOGLE_SHEET_ID
@@ -485,10 +466,6 @@
             );
         }
 
-
-        /* -----------------------------------------------------
-           FIREBASE
-           ----------------------------------------------------- */
 
         if (
             !STOCKFLOW_CONFIG.FIREBASE ||
@@ -501,15 +478,10 @@
         }
 
 
-        /* -----------------------------------------------------
-           OTP
-           ----------------------------------------------------- */
-
-        const auth =
-            STOCKFLOW_CONFIG.AUTH;
-
         if (
-            auth.OTP_LENGTH !== 6
+            Number(
+                STOCKFLOW_CONFIG.AUTH.OTP_LENGTH
+            ) !== 6
         ) {
 
             errors.push(
@@ -517,47 +489,38 @@
             );
         }
 
+
         if (
-            auth.MAX_OTP_ATTEMPTS < 1
+            Number(
+                STOCKFLOW_CONFIG.AUTH.MAX_OTP_ATTEMPTS
+            ) < 1
         ) {
 
             errors.push(
-                "OTP attempt limit must be at least 1."
-            );
-        }
-
-        if (
-            auth.OTP_EXPIRATION_MINUTES < 1
-        ) {
-
-            errors.push(
-                "OTP expiration must be at least 1 minute."
+                "OTP attempt limit is invalid."
             );
         }
 
 
-        /* -----------------------------------------------------
-           API TIMEOUT
-           ----------------------------------------------------- */
-
         if (
-            STOCKFLOW_CONFIG.API.TIMEOUT < 5000
+            Number(
+                STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN
+            ) >
+            Number(
+                STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MAX
+            )
         ) {
 
             errors.push(
-                "API timeout is too short."
+                "OTP auto-fill delay configuration is invalid."
             );
         }
 
-
-        /* -----------------------------------------------------
-           RESULT
-           ----------------------------------------------------- */
 
         if (errors.length) {
 
             console.error(
-                "STOCKFLOW CONFIGURATION ERROR:"
+                "STOCKFLOW CONFIGURATION ERROR"
             );
 
             errors.forEach(
@@ -568,6 +531,7 @@
 
             return false;
         }
+
 
         return true;
     }
@@ -593,26 +557,9 @@
 
     function getRoute(routeName) {
 
-        if (
-            routeName &&
-            STOCKFLOW_CONFIG.ROUTES[routeName]
-        ) {
-
-            return STOCKFLOW_CONFIG
-                .ROUTES[routeName];
-        }
-
-        return STOCKFLOW_CONFIG
-            .ROUTES
-            .DASHBOARD;
-    }
-
-
-    function isProduction() {
-
         return (
-            STOCKFLOW_CONFIG.ENVIRONMENT ===
-            "production"
+            STOCKFLOW_CONFIG.ROUTES[routeName] ||
+            STOCKFLOW_CONFIG.ROUTES.DASHBOARD
         );
     }
 
@@ -621,6 +568,15 @@
 
         return (
             STOCKFLOW_CONFIG.DEMO_MODE === true
+        );
+    }
+
+
+    function isProduction() {
+
+        return (
+            STOCKFLOW_CONFIG.ENVIRONMENT ===
+            "production"
         );
     }
 
@@ -640,16 +596,9 @@
     window.STOCKFLOW_CONFIG =
         STOCKFLOW_CONFIG;
 
-    /*
-     * Backward compatibility.
-     */
     window.CONFIG =
         STOCKFLOW_CONFIG;
 
-
-    /* =========================================================
-       HELPER API
-       ========================================================= */
 
     window.StockFlowConfig = {
 
@@ -668,11 +617,11 @@
         validate:
             validateConfig,
 
-        isProduction:
-            isProduction,
-
         isDemoMode:
             isDemoMode,
+
+        isProduction:
+            isProduction,
 
         isDebug:
             isDebug
@@ -680,7 +629,7 @@
 
 
     /* =========================================================
-       INITIAL VALIDATION
+       VALIDATE
        ========================================================= */
 
     const valid =
@@ -716,12 +665,7 @@
             "API:",
             STOCKFLOW_CONFIG.API_URL
         );
-
-        console.log(
-            "Firebase:",
-            STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL
-        );
     }
 
 
-})(window);
+})();
