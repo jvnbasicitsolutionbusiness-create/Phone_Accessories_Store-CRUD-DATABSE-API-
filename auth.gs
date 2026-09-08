@@ -1,67 +1,74 @@
 // ============================================================
-// STOCKFLOW — AUTHENTICATION
-// File: auth.gs
-// Register / Login / Session / Logout
+// STOCKFLOW — AUTHENTICATION BACKEND
+// File: Auth.gs
+//
+// Handles:
+//   - Employee registration
+//   - Admin registration
+//   - Login
+//   - Session
+//   - Logout
+//   - Forgot password
+//   - Recovery OTP
+//   - Password reset
 // ============================================================
 
 
-// ------------------------------------------------------------
+// ============================================================
 // REGISTER EMPLOYEE
-// ------------------------------------------------------------
+// ============================================================
 
-function register(
+function sfRegister(
   data,
   role
 ) {
 
   data =
-    sfSafeObject(data);
+    data || {};
 
 
-  const name =
+  var name =
     sfClean(
-      data.name ||
-      (
-        sfClean(data.firstName) +
-        " " +
-        sfClean(data.lastName)
-      )
+      data.name
     );
 
 
-  const username =
+  var username =
     sfClean(
       data.username
     );
 
 
-  const password =
+  var password =
     String(
-      data.password || ""
+      data.password ||
+      ""
     );
 
 
-  const age =
+  var age =
     Number(
       data.age
     );
 
 
-  const gmail =
-    sfEmail(
+  var gmail =
+    sfNormalizeEmail(
       data.gmail ||
       data.email
     );
 
 
-  const userPhone =
-    sfPhone(
-      data.phone
+  var phone =
+    sfNormalizePhone(
+      data.phone ||
+      data.mobile ||
+      data.mobileNumber
     );
 
 
   // ----------------------------------------------------------
-  // VALIDATION
+  // Validation
   // ----------------------------------------------------------
 
   if (
@@ -69,16 +76,17 @@ function register(
     !username ||
     !password ||
     !age ||
-    !sfValidEmail(gmail) ||
-    !sfValidPhone(userPhone)
+    !gmail ||
+    !phone
   ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
-        "Complete all required fields using a valid Gmail address and Philippine mobile number."
+        "Please complete all required fields."
 
     };
 
@@ -92,7 +100,8 @@ function register(
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Username must be 4–30 characters."
@@ -109,10 +118,49 @@ function register(
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Age must be between 18 and 100."
+
+    };
+
+  }
+
+
+  if (
+    !sfValidEmail(
+      gmail
+    )
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Please enter a valid Gmail/email address."
+
+    };
+
+  }
+
+
+  if (
+    !sfValidPhone(
+      phone
+    )
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Please enter a valid Philippine mobile number."
 
     };
 
@@ -125,7 +173,8 @@ function register(
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Password must be at least 8 characters."
@@ -136,16 +185,19 @@ function register(
 
 
   // ----------------------------------------------------------
-  // DUPLICATE CHECK
+  // Duplicate check
   // ----------------------------------------------------------
 
   if (
-    sfUsernameExists(username)
+    sfFindUser(
+      username
+    )
   ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Username is already registered."
@@ -156,15 +208,18 @@ function register(
 
 
   if (
-    sfEmailExists(gmail)
+    sfFindUser(
+      gmail
+    )
   ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
-        "Email address is already registered."
+        "Email is already registered."
 
     };
 
@@ -172,12 +227,15 @@ function register(
 
 
   if (
-    sfPhoneExists(userPhone)
+    sfFindUser(
+      phone
+    )
   ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Phone number is already registered."
@@ -188,83 +246,150 @@ function register(
 
 
   // ----------------------------------------------------------
-  // CREATE USER
+  // Create account
   // ----------------------------------------------------------
 
-  const sheet =
-    sfUserSheet();
+  var sheet =
+    sfGetUserSheet();
 
 
-  const userUid =
-    sfUid();
+  var accountUid =
+    sfGenerateUid();
 
 
-  const now =
+  var now =
     new Date();
 
 
-  const accountRole =
-    role ||
-    "Employee";
+  var rowNumber =
+    sheet.getLastRow() + 1;
 
 
-  sheet.appendRow([
+  var values = {
 
-    userUid,
+    UID:
+      accountUid,
 
-    name,
+    NAME:
+      name,
 
-    username,
+    USERNAME:
+      username,
 
-    sfHashPassword(
-      password
-    ),
+    PASSWORD:
+      sfHashPassword(
+        password
+      ),
 
-    age,
+    AGE:
+      age,
 
-    "PENDING",
+    ACCOUNT_S:
+      "PENDING",
 
-    gmail,
+    GMAIL:
+      gmail,
 
-    userPhone,
+    "PHONE NO.":
+      phone,
 
-    accountRole,
+    ROLE:
+      role ||
+      "Employee",
 
-    false,
+    VERIFIED:
+      false,
 
-    "",
+    OTP:
+      "",
 
-    "",
+    "OTP EXPIRES":
+      "",
 
-    0,
+    "OTP ATTEMPTS":
+      0,
 
-    "",
+    "OTP LOCK UNTIL":
+      "",
 
-    "BOTH",
+    "OTP CHANNEL":
+      "BOTH",
 
-    now,
+    "CREATED AT":
+      now,
 
-    "",
+    "VERIFIED AT":
+      "",
 
-    "",
+    "LAST OTP SENT":
+      "",
 
-    ""
+    "LAST LOGIN":
+      ""
 
-  ]);
-
-
-  const record =
-    sfFindUser(username);
+  };
 
 
-  if (!record) {
+  sfWriteUserRow(
+    sheet,
+    rowNumber,
+    values
+  );
+
+
+  var record = {
+
+    sheet:
+      sheet,
+
+    row:
+      rowNumber
+
+  };
+
+
+  // ----------------------------------------------------------
+  // Create initial OTP
+  // ----------------------------------------------------------
+
+  var otpResult;
+
+
+  try {
+
+    otpResult =
+      sfCreateOtp(
+        record,
+        "BOTH"
+      );
+
+  } catch (otpError) {
+
+    // Roll back account if OTP generation fails.
+
+    try {
+
+      sheet.deleteRow(
+        rowNumber
+      );
+
+    } catch (deleteError) {
+
+      console.error(
+        "Registration rollback failed:",
+        deleteError
+      );
+
+    }
+
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
-        "Unable to create the account."
+        "Registration failed while creating the verification code."
 
     };
 
@@ -272,64 +397,22 @@ function register(
 
 
   // ----------------------------------------------------------
-  // FIREBASE USER MIRROR
+  // Return registration result
   // ----------------------------------------------------------
-
-  sfFirebaseSaveUser({
-
-    uid:
-      userUid,
-
-    name:
-      name,
-
-    username:
-      username,
-
-    age:
-      age,
-
-    accountStatus:
-      "PENDING",
-
-    gmail:
-      gmail,
-
-    phone:
-      userPhone,
-
-    role:
-      accountRole,
-
-    verified:
-      false,
-
-    createdAt:
-      now.toISOString()
-
-  });
-
-
-  // ----------------------------------------------------------
-  // GENERATE OTP
-  // ----------------------------------------------------------
-
-  const otpResult =
-    sfCreateOtp(
-      record,
-      "BOTH"
-    );
-
 
   return {
 
-    success: true,
+    success:
+      true,
 
     uid:
-      userUid,
+      accountUid,
 
     username:
       username,
+
+    name:
+      name,
 
     email:
       gmail,
@@ -338,39 +421,154 @@ function register(
       gmail,
 
     phone:
-      userPhone,
+      phone,
 
     role:
-      accountRole,
+      role ||
+      "Employee",
 
     verified:
       false,
 
-    otpReady:
+    accountStatus:
+      "PENDING",
+
+    otpSent:
       true,
 
+    demoMode:
+      SF_CONFIG.DEMO_MODE,
+
+    otp:
+      otpResult.otp,
+
     demoOtp:
-      otpResult.demoOtp || "",
+      otpResult.demoOtp,
+
+    expiresAt:
+      otpResult.expiresAt,
 
     message:
-      "Registration successful. Your demo verification code is being prepared."
+      "Registration successful. Please verify your account."
 
   };
 
 }
 
 
-// ------------------------------------------------------------
-// LOGIN
-// ------------------------------------------------------------
+// ============================================================
+// WRITE USER ROW
+// ============================================================
 
-function login(data) {
+function sfWriteUserRow(
+  sheet,
+  rowNumber,
+  values
+) {
+
+  var map =
+    sfGetHeaderMap(
+      sheet
+    );
+
+
+  Object.keys(
+    values
+  ).forEach(
+    function (
+      header
+    ) {
+
+      var column =
+        map[
+          header.toUpperCase()
+        ];
+
+
+      if (
+        column
+      ) {
+
+        sheet
+          .getRange(
+            rowNumber,
+            column
+          )
+          .setValue(
+            values[header]
+          );
+
+      }
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// ADMIN REGISTRATION
+// ============================================================
+
+function sfRegisterAdmin(
+  data
+) {
 
   data =
-    sfSafeObject(data);
+    data || {};
 
 
-  const identity =
+  var suppliedKey =
+    sfClean(
+      data.adminRegistrationKey
+    );
+
+
+  var storedKey =
+    sfScriptProperty(
+      "ADMIN_REGISTRATION_KEY"
+    );
+
+
+  if (
+    !storedKey ||
+    suppliedKey !== storedKey
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Admin registration is restricted."
+
+    };
+
+  }
+
+
+  return sfRegister(
+    data,
+    "Admin"
+  );
+
+}
+
+
+// ============================================================
+// LOGIN
+// ============================================================
+
+function sfLogin(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var identity =
     data.identity ||
     data.username ||
     data.email ||
@@ -378,15 +576,18 @@ function login(data) {
     data.phone;
 
 
-  const record =
-    sfFindUser(identity);
+  var record =
+    sfFindUser(
+      identity
+    );
 
 
   if (!record) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Invalid username/email or password."
@@ -396,38 +597,63 @@ function login(data) {
   }
 
 
-  const row =
-    record.values;
-
-
-  const suppliedPassword =
+  var suppliedPassword =
     String(
-      data.password || ""
+      data.password ||
+      ""
     );
 
 
-  const storedPassword =
-    String(
-      row[3] || ""
+  var storedPassword =
+    sfClean(
+      sfGetUserValue(
+        record,
+        "PASSWORD"
+      )
     );
 
 
-  const hashedPassword =
+  var hashed =
     sfHashPassword(
       suppliedPassword
     );
 
 
-  const passwordCorrect =
+  var valid =
     storedPassword ===
-    hashedPassword;
+    hashed;
 
 
-  if (!passwordCorrect) {
+  // ----------------------------------------------------------
+  // Legacy plaintext compatibility
+  // ----------------------------------------------------------
+
+  if (
+    !valid &&
+    storedPassword ===
+    suppliedPassword
+  ) {
+
+    valid =
+      true;
+
+    // Upgrade legacy password to SHA-256.
+
+    sfSetUserValue(
+      record,
+      "PASSWORD",
+      hashed
+    );
+
+  }
+
+
+  if (!valid) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Invalid username/email or password."
@@ -437,27 +663,25 @@ function login(data) {
   }
 
 
-  const status =
+  var status =
     sfClean(
-      row[5]
+      sfGetUserValue(
+        record,
+        "ACCOUNT_S"
+      )
     ).toUpperCase();
 
 
-  const verified =
-    row[9] === true ||
-    String(
-      row[9]
-    ).toUpperCase() === "TRUE";
-
-
   if (
+    status === "DISABLED" ||
     status === "SUSPENDED" ||
-    status === "DISABLED"
+    status === "BLOCKED"
   ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "This account is " +
@@ -469,41 +693,51 @@ function login(data) {
   }
 
 
+  var user =
+    sfUserObject(
+      record
+    );
+
+
   // ----------------------------------------------------------
-  // NOT VERIFIED
+  // UNVERIFIED ACCOUNT
   // ----------------------------------------------------------
 
-  if (!verified) {
+  if (
+    !user.verified
+  ) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
-      successCode:
-        "UNVERIFIED",
+      verified:
+        false,
 
-      verified: false,
-
-      identity:
-        row[2],
+      requiresVerification:
+        true,
 
       uid:
-        row[0],
-
-      email:
-        row[6],
-
-      gmail:
-        row[6],
-
-      phone:
-        row[7],
+        user.uid,
 
       username:
-        row[2],
+        user.username,
+
+      email:
+        user.gmail,
+
+      gmail:
+        user.gmail,
+
+      phone:
+        user.phone,
+
+      role:
+        user.role,
 
       message:
-        "Account is not verified. Please complete OTP verification."
+        "Account is not verified. Please verify your account first."
 
     };
 
@@ -511,71 +745,116 @@ function login(data) {
 
 
   // ----------------------------------------------------------
-  // SESSION
+  // VERIFIED LOGIN
   // ----------------------------------------------------------
 
-  const token =
-    Utilities.getUuid() +
-    "." +
-    Utilities.getUuid();
-
-
-  const user =
-    sfUserObject(
-      row
+  var token =
+    sfCreateSession(
+      user
     );
 
 
-  CacheService
-    .getScriptCache()
-    .put(
-      "session_" + token,
-
-      JSON.stringify(
-        user
-      ),
-
-      SF_SESSION_TTL_MINUTES *
-      60
-    );
-
-
-  record.sheet
-    .getRange(
-      record.row,
-      19
-    )
-    .setValue(
-      new Date()
-    );
+  sfRecordLogin(
+    record
+  );
 
 
   return {
 
-    success: true,
+    success:
+      true,
+
+    verified:
+      true,
 
     token:
-
       token,
 
     user:
+      user,
 
-      user
+    message:
+      "Login successful."
 
   };
 
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
+// CREATE SESSION
+// ============================================================
+
+function sfCreateSession(
+  user
+) {
+
+  var token =
+    Utilities.getUuid() +
+    "." +
+    Utilities.getUuid();
+
+
+  var payload = {
+
+    uid:
+      user.uid,
+
+    username:
+      user.username,
+
+    role:
+      user.role,
+
+    name:
+      user.name,
+
+    gmail:
+      user.gmail,
+
+    phone:
+      user.phone
+
+  };
+
+
+  CacheService
+    .getScriptCache()
+    .put(
+
+      "stockflow_session_" +
+      token,
+
+      JSON.stringify(
+        payload
+      ),
+
+      SF_CONFIG
+        .SESSION_TTL_MINUTES *
+      60
+
+    );
+
+
+  return token;
+
+}
+
+
+// ============================================================
 // SESSION
-// ------------------------------------------------------------
+// ============================================================
 
-function session(data) {
+function sfSession(
+  data
+) {
 
-  const token =
+  data =
+    data || {};
+
+
+  var token =
     sfClean(
-      data &&
       data.token
     );
 
@@ -584,7 +863,8 @@ function session(data) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Session expired."
@@ -594,11 +874,11 @@ function session(data) {
   }
 
 
-  const raw =
+  var raw =
     CacheService
       .getScriptCache()
       .get(
-        "session_" +
+        "stockflow_session_" +
         token
       );
 
@@ -607,7 +887,8 @@ function session(data) {
 
     return {
 
-      success: false,
+      success:
+        false,
 
       message:
         "Session expired."
@@ -617,60 +898,49 @@ function session(data) {
   }
 
 
-  return {
+  try {
 
-    success: true,
+    return {
 
-    user:
-      JSON.parse(raw)
+      success:
+        true,
 
-  };
+      user:
+        JSON.parse(
+          raw
+        )
 
-}
+    };
 
+  } catch (error) {
 
-// ------------------------------------------------------------
-// LOGOUT
-// ------------------------------------------------------------
+    return {
 
-function logout(data) {
+      success:
+        false,
 
-  const token =
-    sfClean(
-      data &&
-      data.token
-    );
+      message:
+        "Invalid session."
 
-
-  if (token) {
-
-    CacheService
-      .getScriptCache()
-      .remove(
-        "session_" +
-        token
-      );
+    };
 
   }
 
-
-  return {
-
-    success: true
-
-  };
-
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // REQUIRE SESSION
-// ------------------------------------------------------------
+// ============================================================
 
-function requireSession(data) {
+function sfRequireSession(
+  data
+) {
 
-  const result =
-    session(data);
+  var result =
+    sfSession(
+      data
+    );
 
 
   if (
@@ -685,5 +955,754 @@ function requireSession(data) {
 
 
   return result.user;
+
+}
+
+
+// ============================================================
+// LOGOUT
+// ============================================================
+
+function sfLogout(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var token =
+    sfClean(
+      data.token
+    );
+
+
+  if (token) {
+
+    CacheService
+      .getScriptCache()
+      .remove(
+        "stockflow_session_" +
+        token
+      );
+
+  }
+
+
+  return {
+
+    success:
+      true,
+
+    message:
+      "Logged out successfully."
+
+  };
+
+}
+
+
+// ============================================================
+// GET USER
+// ============================================================
+
+function sfGetUser(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var identity =
+    data.identity ||
+    data.username ||
+    data.email ||
+    data.gmail ||
+    data.phone ||
+    data.uid;
+
+
+  var record =
+    sfFindUser(
+      identity
+    );
+
+
+  if (!record) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "User not found."
+
+    };
+
+  }
+
+
+  return {
+
+    success:
+      true,
+
+    user:
+      sfUserObject(
+        record
+      )
+
+  };
+
+}
+
+
+// ============================================================
+// UPDATE STATUS
+// ============================================================
+
+function sfUpdateStatus(
+  data
+) {
+
+  sfRequireSession(
+    data
+  );
+
+
+  var record =
+    sfFindUser(
+      data.username ||
+      data.identity
+    );
+
+
+  if (!record) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "User not found."
+
+    };
+
+  }
+
+
+  var status =
+    sfClean(
+      data.status
+    ).toUpperCase();
+
+
+  sfSetUserValue(
+    record,
+    "ACCOUNT_S",
+    status
+  );
+
+
+  return {
+
+    success:
+      true,
+
+    message:
+      "Account status updated."
+
+  };
+
+}
+
+
+// ============================================================
+// LIST USERS
+// ============================================================
+
+function sfListUsers(
+  data
+) {
+
+  sfRequireSession(
+    data
+  );
+
+
+  return {
+
+    success:
+      true,
+
+    users:
+      sfListAllUsers()
+
+  };
+
+}
+
+
+// ============================================================
+// FORGOT PASSWORD
+// ============================================================
+//
+// Demo flow:
+//
+// forgotPassword
+//      ↓
+// Find account
+//      ↓
+// Generate recovery OTP
+//      ↓
+// Save to Sheets
+//      ↓
+// Firebase
+//      ↓
+// Return demoOtp
+//      ↓
+// recovery.html
+// ============================================================
+
+function sfForgotPassword(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var identity =
+    sfGetOtpIdentity(
+      data
+    );
+
+
+  var record =
+    sfFindUser(
+      identity
+    );
+
+
+  // ----------------------------------------------------------
+  // Do not expose whether account exists in production.
+  // For this midterm demo, the response includes demoOtp only
+  // when an account actually exists.
+  // ----------------------------------------------------------
+
+  if (!record) {
+
+    return {
+
+      success:
+        false,
+
+      code:
+        "ACCOUNT_NOT_FOUND",
+
+      message:
+        "No registered account was found."
+
+    };
+
+  }
+
+
+  var user =
+    sfUserObject(
+      record
+    );
+
+
+  var result =
+    sfCreateOtp(
+      record,
+      data.channel ||
+      "BOTH"
+    );
+
+
+  return {
+
+    success:
+      true,
+
+    uid:
+      user.uid,
+
+    username:
+      user.username,
+
+    email:
+      user.gmail,
+
+    gmail:
+      user.gmail,
+
+    phone:
+      user.phone,
+
+    channel:
+      result.channel,
+
+    expiresAt:
+      result.expiresAt,
+
+    demoMode:
+      SF_CONFIG.DEMO_MODE,
+
+    otp:
+      result.otp,
+
+    demoOtp:
+      result.demoOtp,
+
+    message:
+      "Recovery code prepared."
+
+  };
+
+}
+
+
+// ============================================================
+// VERIFY RECOVERY OTP
+// ============================================================
+//
+// This verifies the code but DOES NOT mark the account itself
+// as newly registered. It simply confirms the recovery request.
+// ============================================================
+
+function sfVerifyRecoveryOtp(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var identity =
+    sfGetOtpIdentity(
+      data
+    );
+
+
+  var record =
+    sfFindUser(
+      identity
+    );
+
+
+  if (!record) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Account not found."
+
+    };
+
+  }
+
+
+  var expires =
+    sfParseDate(
+      sfGetUserValue(
+        record,
+        "OTP EXPIRES"
+      )
+    );
+
+
+  var storedOtp =
+    sfClean(
+      sfGetUserValue(
+        record,
+        "OTP"
+      )
+    );
+
+
+  var submittedOtp =
+    sfClean(
+      data.otp
+    );
+
+
+  if (
+    !expires ||
+    Date.now() >
+      expires.getTime()
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      expired:
+        true,
+
+      message:
+        "Recovery code has expired."
+
+    };
+
+  }
+
+
+  if (
+    submittedOtp !==
+    storedOtp
+  ) {
+
+    var attempts =
+      Number(
+        sfGetUserValue(
+          record,
+          "OTP ATTEMPTS"
+        )
+      ) || 0;
+
+
+    attempts++;
+
+
+    sfSetUserValue(
+      record,
+      "OTP ATTEMPTS",
+      attempts
+    );
+
+
+    if (
+      attempts >=
+      SF_CONFIG.OTP_MAX_ATTEMPTS
+    ) {
+
+      sfSetUserValue(
+
+        record,
+
+        "OTP LOCK UNTIL",
+
+        sfMinutesFromNow(
+          SF_CONFIG.OTP_LOCK_MINUTES
+        )
+
+      );
+
+
+      return {
+
+        success:
+          false,
+
+        locked:
+          true,
+
+        message:
+          "Too many incorrect recovery attempts. Try again later."
+
+      };
+
+    }
+
+
+    return {
+
+      success:
+        false,
+
+      remainingAttempts:
+        SF_CONFIG.OTP_MAX_ATTEMPTS -
+        attempts,
+
+      message:
+        "Invalid recovery code."
+
+    };
+
+  }
+
+
+  // ----------------------------------------------------------
+  // Correct recovery OTP
+  // ----------------------------------------------------------
+
+  return {
+
+    success:
+      true,
+
+    verified:
+      true,
+
+    recoveryVerified:
+      true,
+
+    uid:
+      sfGetUserValue(
+        record,
+        "UID"
+      ),
+
+    username:
+      sfGetUserValue(
+        record,
+        "USERNAME"
+      ),
+
+    message:
+      "Recovery code verified."
+
+  };
+
+}
+
+
+// ============================================================
+// RESET PASSWORD
+// ============================================================
+
+function sfResetPassword(
+  data
+) {
+
+  data =
+    data || {};
+
+
+  var identity =
+    sfGetOtpIdentity(
+      data
+    );
+
+
+  var record =
+    sfFindUser(
+      identity
+    );
+
+
+  if (!record) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Unable to reset password."
+
+    };
+
+  }
+
+
+  var submittedOtp =
+    sfClean(
+      data.otp
+    );
+
+
+  var storedOtp =
+    sfClean(
+      sfGetUserValue(
+        record,
+        "OTP"
+      )
+    );
+
+
+  var expires =
+    sfParseDate(
+      sfGetUserValue(
+        record,
+        "OTP EXPIRES"
+      )
+    );
+
+
+  if (
+    !expires ||
+    Date.now() >
+      expires.getTime()
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Recovery code has expired."
+
+    };
+
+  }
+
+
+  if (
+    !submittedOtp ||
+    submittedOtp !==
+    storedOtp
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Invalid recovery code."
+
+    };
+
+  }
+
+
+  var newPassword =
+    String(
+      data.newPassword ||
+      ""
+    );
+
+
+  if (
+    newPassword.length < 8
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Password must be at least 8 characters."
+
+    };
+
+  }
+
+
+  var confirmPassword =
+    String(
+      data.confirmPassword ||
+      data.confirmNewPassword ||
+      ""
+    );
+
+
+  if (
+    confirmPassword &&
+    confirmPassword !==
+    newPassword
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Passwords do not match."
+
+    };
+
+  }
+
+
+  sfSetUserValue(
+    record,
+    "PASSWORD",
+    sfHashPassword(
+      newPassword
+    )
+  );
+
+
+  sfSetUserValue(
+    record,
+    "OTP",
+    ""
+  );
+
+
+  sfSetUserValue(
+    record,
+    "OTP EXPIRES",
+    ""
+  );
+
+
+  sfSetUserValue(
+    record,
+    "OTP ATTEMPTS",
+    0
+  );
+
+
+  sfSetUserValue(
+    record,
+    "OTP LOCK UNTIL",
+    ""
+  );
+
+
+  try {
+
+    sfFirebasePatch(
+
+      "otp/" +
+      sfGetUserValue(
+        record,
+        "UID"
+      ),
+
+      {
+
+        otp:
+          null,
+
+        otpExpires:
+          null,
+
+        recoveryCompleted:
+          true,
+
+        updatedAt:
+          new Date()
+            .toISOString()
+
+      }
+
+    );
+
+  } catch (firebaseError) {
+
+    console.error(
+      "Firebase recovery cleanup failed:",
+      firebaseError
+    );
+
+  }
+
+
+  return {
+
+    success:
+      true,
+
+    message:
+      "Password reset successfully. You can now sign in."
+
+  };
 
 }
