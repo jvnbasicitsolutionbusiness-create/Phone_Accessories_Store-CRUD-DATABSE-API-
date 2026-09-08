@@ -2,26 +2,13 @@
    STOCKFLOW — API CONNECTION
    File: api.js
 
-   PURPOSE:
-   Frontend ↔ Google Apps Script Web App
-
-   FLOW:
-
-   HTML / JS
-        ↓
+   Frontend
+       ↓
    StockFlowAPI
-        ↓
+       ↓
    Google Apps Script
-        ↓
-   Google Sheets
-        ↓
-   Firebase
-
-   IMPORTANT:
-   - api.js does NOT generate OTPs.
-   - api.js does NOT control OTP boxes.
-   - api.js does NOT redirect pages.
-   - Backend generates the authoritative OTP.
+       ↓
+   Google Sheets + Firebase
    ========================================================= */
 
 (function (window) {
@@ -38,31 +25,26 @@
         window.CONFIG ||
         {};
 
-    const API_CONFIG =
-        CONFIG.API ||
-        {};
 
-
-    const API_URL =
-        String(
-            CONFIG.API_URL ||
-            CONFIG.APPS_SCRIPT_URL ||
-            CONFIG.GOOGLE_APPS_SCRIPT_URL ||
-            CONFIG.BACKEND_URL ||
-            ""
-        ).trim();
+    const API_URL = String(
+        CONFIG.API_URL ||
+        CONFIG.APPS_SCRIPT_URL ||
+        CONFIG.GOOGLE_APPS_SCRIPT_URL ||
+        CONFIG.BACKEND_URL ||
+        ""
+    ).trim();
 
 
     const REQUEST_TIMEOUT =
         Number(
-            API_CONFIG.TIMEOUT ||
+            CONFIG.API?.TIMEOUT ||
             CONFIG.API_TIMEOUT ||
             30000
         );
 
 
     const CONTENT_TYPE =
-        API_CONFIG.CONTENT_TYPE ||
+        CONFIG.API?.CONTENT_TYPE ||
         "text/plain;charset=utf-8";
 
 
@@ -93,7 +75,7 @@
 
 
     /* =========================================================
-       API URL VALIDATION
+       VALIDATE URL
        ========================================================= */
 
     function validateApiUrl() {
@@ -101,9 +83,8 @@
         if (!API_URL) {
 
             throw new StockFlowAPIError(
-                "StockFlow API URL is not configured. " +
-                "Please check config.js.",
-                "API_NOT_CONFIGURED"
+                "StockFlow API URL is not configured.",
+                "MISSING_API_URL"
             );
         }
 
@@ -114,21 +95,8 @@
             )
         ) {
 
-            throw new StockFlowAPIError(
-                "The configured API URL is not a valid " +
-                "Google Apps Script Web App URL.",
-                "INVALID_API_URL"
-            );
-        }
-
-
-        if (
-            !API_URL.endsWith("/exec")
-        ) {
-
-            throw new StockFlowAPIError(
-                "The Google Apps Script URL must end with /exec.",
-                "INVALID_API_ENDPOINT"
+            console.warn(
+                "STOCKFLOW: API URL does not look like a Google Apps Script Web App."
             );
         }
     }
@@ -138,15 +106,12 @@
        RESPONSE PARSER
        ========================================================= */
 
-    async function parseResponse(
-        response
-    ) {
+    async function parseResponse(response) {
 
         const text =
             await response.text();
 
-
-        let data;
+        let data = {};
 
 
         try {
@@ -159,16 +124,12 @@
         } catch (error) {
 
             throw new StockFlowAPIError(
-                "The server returned an invalid response.",
+                "The server returned an invalid JSON response.",
                 "INVALID_JSON",
                 text
             );
         }
 
-
-        /* -----------------------------------------------------
-           HTTP FAILURE
-           ----------------------------------------------------- */
 
         if (!response.ok) {
 
@@ -182,10 +143,6 @@
             );
         }
 
-
-        /* -----------------------------------------------------
-           APPLICATION FAILURE
-           ----------------------------------------------------- */
 
         if (
             data &&
@@ -256,12 +213,9 @@
                 await fetch(
                     API_URL,
                     {
-                        method:
-                            API_CONFIG.METHOD ||
-                            "POST",
+                        method: "POST",
 
                         headers: {
-
                             "Content-Type":
                                 CONTENT_TYPE
                         },
@@ -284,27 +238,17 @@
 
         } catch (error) {
 
-            /* -------------------------------------------------
-               TIMEOUT
-               ------------------------------------------------- */
-
             if (
-                error &&
-                error.name ===
+                error?.name ===
                 "AbortError"
             ) {
 
                 throw new StockFlowAPIError(
-                    "The StockFlow server took too long " +
-                    "to respond.",
+                    "The StockFlow server took too long to respond.",
                     "TIMEOUT"
                 );
             }
 
-
-            /* -------------------------------------------------
-               OUR ERROR
-               ------------------------------------------------- */
 
             if (
                 error instanceof
@@ -315,14 +259,8 @@
             }
 
 
-            /* -------------------------------------------------
-               NETWORK / CORS
-               ------------------------------------------------- */
-
             throw new StockFlowAPIError(
-                "Unable to connect to the StockFlow server. " +
-                "Please check your internet connection " +
-                "and Apps Script deployment.",
+                "Unable to connect to the StockFlow server.",
                 "NETWORK_ERROR",
                 error
             );
@@ -335,12 +273,10 @@
 
 
     /* =========================================================
-       NORMALIZE RESULT
+       RESULT NORMALIZATION
        ========================================================= */
 
-    function normalizeResult(
-        result
-    ) {
+    function normalizeResult(result) {
 
         if (!result) {
 
@@ -360,12 +296,28 @@
 
 
     /* =========================================================
+       IDENTITY BUILDER
+       ========================================================= */
+
+    function buildIdentity(data = {}) {
+
+        return String(
+            data.identity ||
+            data.username ||
+            data.gmail ||
+            data.email ||
+            data.phone ||
+            data.uid ||
+            ""
+        ).trim();
+    }
+
+
+    /* =========================================================
        AUTHENTICATION
        ========================================================= */
 
-    async function register(
-        data = {}
-    ) {
+    async function register(data = {}) {
 
         return normalizeResult(
             await request(
@@ -401,9 +353,7 @@
     }
 
 
-    async function login(
-        data = {}
-    ) {
+    async function login(data = {}) {
 
         return normalizeResult(
             await request(
@@ -411,7 +361,7 @@
                 {
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     username:
                         data.username || "",
@@ -437,9 +387,7 @@
        OTP
        ========================================================= */
 
-    async function verifyOtp(
-        data = {}
-    ) {
+    async function verifyOtp(data = {}) {
 
         return normalizeResult(
             await request(
@@ -450,7 +398,7 @@
                         data.uid || "",
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     username:
                         data.username || "",
@@ -459,10 +407,22 @@
                         data.email || "",
 
                     gmail:
-                        data.gmail || "",
+                        data.gmail ||
+                        data.email ||
+                        "",
 
                     phone:
                         data.phone || "",
+
+                    channel:
+                        data.channel ||
+                        data.otpChannel ||
+                        "email",
+
+                    otpChannel:
+                        data.otpChannel ||
+                        data.channel ||
+                        "email",
 
                     otp:
                         String(
@@ -474,41 +434,103 @@
     }
 
 
-    async function prepareOtp(
-        data = {}
-    ) {
+    /*
+     * PREPARE OTP
+     *
+     * Initial verification-code generation.
+     */
 
-        return normalizeResult(
-            await request(
-                "prepareOtp",
-                {
+    async function prepareOtp(data = {}) {
 
-                    uid:
-                        data.uid || "",
+        const payload = {
 
-                    identity:
-                        data.identity || "",
+            uid:
+                data.uid || "",
 
-                    username:
-                        data.username || "",
+            identity:
+                buildIdentity(data),
 
-                    email:
-                        data.email || "",
+            username:
+                data.username || "",
 
-                    gmail:
-                        data.gmail || "",
+            email:
+                data.email || "",
 
-                    phone:
-                        data.phone || ""
-                }
-            )
-        );
+            gmail:
+                data.gmail ||
+                data.email ||
+                "",
+
+            phone:
+                data.phone || "",
+
+            channel:
+                data.channel ||
+                data.otpChannel ||
+                "email",
+
+            otpChannel:
+                data.otpChannel ||
+                data.channel ||
+                "email"
+        };
+
+
+        try {
+
+            return normalizeResult(
+                await request(
+                    "prepareOtp",
+                    payload
+                )
+            );
+
+        } catch (error) {
+
+            /*
+             * Older backend compatibility.
+             *
+             * If prepareOtp is not yet implemented,
+             * use resendOtp as the initial generator.
+             */
+
+            const message =
+                String(
+                    error?.message ||
+                    ""
+                ).toLowerCase();
+
+            const isMissingAction =
+                message.includes(
+                    "unknown action"
+                ) ||
+                message.includes(
+                    "unsupported action"
+                ) ||
+                message.includes(
+                    "action not found"
+                ) ||
+                error?.code ===
+                    "UNKNOWN_ACTION";
+
+
+            if (!isMissingAction) {
+
+                throw error;
+            }
+
+
+            return normalizeResult(
+                await request(
+                    "resendOtp",
+                    payload
+                )
+            );
+        }
     }
 
 
-    async function resendOtp(
-        data = {}
-    ) {
+    async function resendOtp(data = {}) {
 
         return normalizeResult(
             await request(
@@ -519,7 +541,7 @@
                         data.uid || "",
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     username:
                         data.username || "",
@@ -528,23 +550,29 @@
                         data.email || "",
 
                     gmail:
-                        data.gmail || "",
+                        data.gmail ||
+                        data.email ||
+                        "",
 
                     phone:
                         data.phone || "",
 
                     channel:
                         data.channel ||
-                        "demo"
+                        data.otpChannel ||
+                        "email",
+
+                    otpChannel:
+                        data.otpChannel ||
+                        data.channel ||
+                        "email"
                 }
             )
         );
     }
 
 
-    async function updateOtp(
-        data = {}
-    ) {
+    async function updateOtp(data = {}) {
 
         return resendOtp(data);
     }
@@ -554,23 +582,7 @@
        SESSION
        ========================================================= */
 
-    function getToken(
-        suppliedToken = ""
-    ) {
-
-        return (
-            suppliedToken ||
-            localStorage.getItem(
-                "STOCKFLOW_TOKEN"
-            ) ||
-            ""
-        );
-    }
-
-
-    async function session(
-        data = {}
-    ) {
+    async function session(data = {}) {
 
         return normalizeResult(
             await request(
@@ -578,18 +590,18 @@
                 {
 
                     token:
-                        getToken(
-                            data.token
-                        )
+                        data.token ||
+                        localStorage.getItem(
+                            "STOCKFLOW_TOKEN"
+                        ) ||
+                        ""
                 }
             )
         );
     }
 
 
-    async function requireSession(
-        data = {}
-    ) {
+    async function requireSession(data = {}) {
 
         return normalizeResult(
             await request(
@@ -597,18 +609,18 @@
                 {
 
                     token:
-                        getToken(
-                            data.token
-                        )
+                        data.token ||
+                        localStorage.getItem(
+                            "STOCKFLOW_TOKEN"
+                        ) ||
+                        ""
                 }
             )
         );
     }
 
 
-    async function logout(
-        data = {}
-    ) {
+    async function logout(data = {}) {
 
         return normalizeResult(
             await request(
@@ -616,9 +628,11 @@
                 {
 
                     token:
-                        getToken(
-                            data.token
-                        )
+                        data.token ||
+                        localStorage.getItem(
+                            "STOCKFLOW_TOKEN"
+                        ) ||
+                        ""
                 }
             )
         );
@@ -639,13 +653,15 @@
                 {
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     email:
                         data.email || "",
 
                     gmail:
-                        data.gmail || "",
+                        data.gmail ||
+                        data.email ||
+                        "",
 
                     phone:
                         data.phone || ""
@@ -665,13 +681,15 @@
                 {
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     email:
                         data.email || "",
 
                     gmail:
-                        data.gmail || "",
+                        data.gmail ||
+                        data.email ||
+                        "",
 
                     phone:
                         data.phone || "",
@@ -696,16 +714,20 @@
                 {
 
                     identity:
-                        data.identity || "",
+                        buildIdentity(data),
 
                     token:
                         data.token || "",
 
                     password:
-                        data.password || "",
+                        data.password ||
+                        data.newPassword ||
+                        "",
 
                     newPassword:
-                        data.newPassword || ""
+                        data.newPassword ||
+                        data.password ||
+                        ""
                 }
             )
         );
@@ -726,12 +748,15 @@
                 {
 
                     token:
-                        getToken(
-                            data.token
-                        ),
+                        data.token ||
+                        localStorage.getItem(
+                            "STOCKFLOW_TOKEN"
+                        ) ||
+                        "",
 
                     limit:
-                        data.limit || 100
+                        data.limit ||
+                        100
                 }
             )
         );
@@ -739,7 +764,7 @@
 
 
     /* =========================================================
-       GENERIC INVENTORY
+       INVENTORY
        ========================================================= */
 
     async function inventory(
@@ -762,9 +787,11 @@
                 {
 
                     token:
-                        getToken(
-                            data.token
-                        ),
+                        data.token ||
+                        localStorage.getItem(
+                            "STOCKFLOW_TOKEN"
+                        ) ||
+                        "",
 
                     ...data
                 }
@@ -777,43 +804,28 @@
        PRODUCTS
        ========================================================= */
 
-    async function listProducts(
-        data = {}
-    ) {
-
+    async function listProducts(data = {}) {
         return inventory(
             "listProducts",
             data
         );
     }
 
-
-    async function createProduct(
-        data = {}
-    ) {
-
+    async function createProduct(data = {}) {
         return inventory(
             "createProduct",
             data
         );
     }
 
-
-    async function updateProduct(
-        data = {}
-    ) {
-
+    async function updateProduct(data = {}) {
         return inventory(
             "updateProduct",
             data
         );
     }
 
-
-    async function deleteProduct(
-        data = {}
-    ) {
-
+    async function deleteProduct(data = {}) {
         return inventory(
             "deleteProduct",
             data
@@ -825,43 +837,28 @@
        CATEGORIES
        ========================================================= */
 
-    async function listCategories(
-        data = {}
-    ) {
-
+    async function listCategories(data = {}) {
         return inventory(
             "listCategories",
             data
         );
     }
 
-
-    async function createCategory(
-        data = {}
-    ) {
-
+    async function createCategory(data = {}) {
         return inventory(
             "createCategory",
             data
         );
     }
 
-
-    async function updateCategory(
-        data = {}
-    ) {
-
+    async function updateCategory(data = {}) {
         return inventory(
             "updateCategory",
             data
         );
     }
 
-
-    async function deleteCategory(
-        data = {}
-    ) {
-
+    async function deleteCategory(data = {}) {
         return inventory(
             "deleteCategory",
             data
@@ -873,43 +870,28 @@
        SUPPLIERS
        ========================================================= */
 
-    async function listSuppliers(
-        data = {}
-    ) {
-
+    async function listSuppliers(data = {}) {
         return inventory(
             "listSuppliers",
             data
         );
     }
 
-
-    async function createSupplier(
-        data = {}
-    ) {
-
+    async function createSupplier(data = {}) {
         return inventory(
             "createSupplier",
             data
         );
     }
 
-
-    async function updateSupplier(
-        data = {}
-    ) {
-
+    async function updateSupplier(data = {}) {
         return inventory(
             "updateSupplier",
             data
         );
     }
 
-
-    async function deleteSupplier(
-        data = {}
-    ) {
-
+    async function deleteSupplier(data = {}) {
         return inventory(
             "deleteSupplier",
             data
@@ -921,43 +903,28 @@
        STOCK
        ========================================================= */
 
-    async function listStockIn(
-        data = {}
-    ) {
-
+    async function listStockIn(data = {}) {
         return inventory(
             "listStockIn",
             data
         );
     }
 
-
-    async function createStockIn(
-        data = {}
-    ) {
-
+    async function createStockIn(data = {}) {
         return inventory(
             "createStockIn",
             data
         );
     }
 
-
-    async function listStockOut(
-        data = {}
-    ) {
-
+    async function listStockOut(data = {}) {
         return inventory(
             "listStockOut",
             data
         );
     }
 
-
-    async function createStockOut(
-        data = {}
-    ) {
-
+    async function createStockOut(data = {}) {
         return inventory(
             "createStockOut",
             data
@@ -969,10 +936,7 @@
        TRANSACTIONS
        ========================================================= */
 
-    async function listTransactions(
-        data = {}
-    ) {
-
+    async function listTransactions(data = {}) {
         return inventory(
             "listTransactions",
             data
@@ -984,10 +948,7 @@
        DASHBOARD
        ========================================================= */
 
-    async function dashboard(
-        data = {}
-    ) {
-
+    async function dashboard(data = {}) {
         return inventory(
             "dashboard",
             data
@@ -1004,75 +965,39 @@
         validateApiUrl();
 
 
-        const controller =
-            new AbortController();
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method:
+                        "GET",
 
-
-        const timeout =
-            setTimeout(
-                () => controller.abort(),
-                REQUEST_TIMEOUT
+                    redirect:
+                        "follow"
+                }
             );
+
+
+        const text =
+            await response.text();
 
 
         try {
 
-            const response =
-                await fetch(
-                    API_URL,
-                    {
-                        method:
-                            "GET",
+            return text
+                ? JSON.parse(text)
+                : {};
 
-                        redirect:
-                            "follow",
+        } catch {
 
-                        signal:
-                            controller.signal
-                    }
-                );
+            return {
 
+                success:
+                    response.ok,
 
-            const text =
-                await response.text();
-
-
-            let data;
-
-
-            try {
-
-                data =
+                raw:
                     text
-                        ? JSON.parse(text)
-                        : {};
-
-            } catch {
-
-                data = {
-
-                    success:
-                        response.ok,
-
-                    raw:
-                        text
-                };
-            }
-
-
-            return data;
-
-        } catch (error) {
-
-            throw new StockFlowAPIError(
-                "Unable to reach the StockFlow backend.",
-                "HEALTH_CHECK_FAILED",
-                error
-            );
-
-        } finally {
-
-            clearTimeout(timeout);
+            };
         }
     }
 
@@ -1083,68 +1008,55 @@
 
     const StockFlowAPI = {
 
-        /* Core */
         request,
+
         health,
 
-        /* Authentication */
         register,
         login,
 
-        /* OTP */
         verifyOtp,
         prepareOtp,
         resendOtp,
         updateOtp,
 
-        /* Session */
         session,
         requireSession,
         logout,
 
-        /* Password recovery */
         forgotPassword,
         verifyRecoveryOtp,
         resetPassword,
 
-        /* Activity */
         listActivity,
 
-        /* Inventory */
         inventory,
 
-        /* Products */
         listProducts,
         createProduct,
         updateProduct,
         deleteProduct,
 
-        /* Categories */
         listCategories,
         createCategory,
         updateCategory,
         deleteCategory,
 
-        /* Suppliers */
         listSuppliers,
         createSupplier,
         updateSupplier,
         deleteSupplier,
 
-        /* Stock */
         listStockIn,
         createStockIn,
 
         listStockOut,
         createStockOut,
 
-        /* Transactions */
         listTransactions,
 
-        /* Dashboard */
         dashboard,
 
-        /* Error */
         StockFlowAPIError
     };
 
@@ -1158,8 +1070,9 @@
 
 
     /*
-     * Compatibility with older files.
+     * Legacy compatibility.
      */
+
     window.API =
         StockFlowAPI;
 
@@ -1168,25 +1081,15 @@
        DEBUG
        ========================================================= */
 
-    if (
-        CONFIG.DEBUG === true
-    ) {
+    console.log(
+        "%cStockFlow API loaded",
+        "font-weight:bold;"
+    );
 
-        console.log(
-            "%cStockFlow API loaded",
-            "font-weight:bold;"
-        );
-
-        console.log(
-            "API endpoint:",
-            API_URL
-        );
-
-        console.log(
-            "Request timeout:",
-            REQUEST_TIMEOUT + "ms"
-        );
-    }
+    console.log(
+        "API endpoint:",
+        API_URL || "(not configured)"
+    );
 
 
 })(window);
