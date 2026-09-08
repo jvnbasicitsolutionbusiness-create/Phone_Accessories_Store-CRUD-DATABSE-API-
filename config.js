@@ -2,43 +2,33 @@
    STOCKFLOW — SYSTEM CONFIGURATION
    File: config.js
 
-   Purpose:
-   - Central configuration for STOCKFLOW
+   PURPOSE:
+   Central configuration for the STOCKFLOW system.
+
+   RESPONSIBILITIES:
    - Google Apps Script API
-   - Firebase Realtime Database
-   - Application routes
+   - Firebase
    - Authentication
-   - OTP verification
-   - Session storage
-   - Inventory settings
+   - OTP
+   - Routes
+   - Inventory
+   - Storage
+   ========================================================= */
 
-   IMPORTANT:
-   This project is currently running in DEMO / MIDTERM mode.
-
-   OTP FLOW:
-   1. Backend generates the OTP.
-   2. Backend stores OTP in Google Sheets.
-   3. Backend synchronizes OTP to Firebase.
-   4. Backend returns the demo OTP when DEMO_MODE is enabled.
-   5. otp.js displays the six-digit OTP automatically.
-   6. User clicks Verify Account.
-   7. Backend verifies the OTP.
-========================================================= */
-
-(function () {
+(function (window) {
 
     "use strict";
 
 
     /* =========================================================
-       CORE APPLICATION CONFIGURATION
-    ========================================================= */
+       CORE CONFIGURATION
+       ========================================================= */
 
     const STOCKFLOW_CONFIG = {
 
         /* -----------------------------------------------------
            APPLICATION
-        ----------------------------------------------------- */
+           ----------------------------------------------------- */
 
         APP_NAME:
             "STOCKFLOW",
@@ -53,32 +43,34 @@
             "development",
 
         /*
-           Midterm / demonstration mode.
-
-           When true:
-           - Backend-generated OTP may be returned to frontend.
-           - otp.js may automatically fill the six OTP boxes.
-           - No real email delivery is required.
-           - No real SMS delivery is required.
-        */
-
+         * Midterm / demonstration mode.
+         *
+         * The backend remains responsible for generating
+         * the authoritative OTP.
+         *
+         * The frontend may receive the generated OTP only
+         * for this demonstration flow.
+         */
         DEMO_MODE:
+            true,
+
+        DEBUG:
             true,
 
 
         /* =====================================================
            GOOGLE APPS SCRIPT
-        ===================================================== */
+           ===================================================== */
 
         /*
-           IMPORTANT:
-           Keep this as a RAW URL.
-
-           DO NOT paste it as:
-           [https://...](https://...)
-
-           The value must be a normal JavaScript string.
-        */
+         * IMPORTANT:
+         * This MUST be a plain URL.
+         *
+         * Do NOT place:
+         * [URL](URL)
+         *
+         * around it.
+         */
 
         API_URL:
             "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65qL4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
@@ -86,7 +78,7 @@
 
         /* =====================================================
            GOOGLE SHEETS
-        ===================================================== */
+           ===================================================== */
 
         GOOGLE_SHEET_ID:
             "1w3j0sV9rDiBvS4cpHU31iGb4KIeyUPoALZf5vLH2ivY",
@@ -94,7 +86,7 @@
 
         /* =====================================================
            FIREBASE REALTIME DATABASE
-        ===================================================== */
+           ===================================================== */
 
         FIREBASE: {
 
@@ -102,15 +94,9 @@
                 "https://midtermexamproject-default-rtdb.firebaseio.com/",
 
             /*
-               Optional Firebase REST token.
-
-               Leave empty if the Firebase rules currently allow
-               the Apps Script backend to perform the required
-               REST operations.
-
-               For production this should be secured.
-            */
-
+             * Leave empty for the current midterm setup
+             * if Firebase rules permit backend REST access.
+             */
             AUTH_TOKEN:
                 ""
         },
@@ -118,13 +104,13 @@
 
         /* =====================================================
            AUTHENTICATION
-        ===================================================== */
+           ===================================================== */
 
         AUTH: {
 
             /* -------------------------------------------------
                SESSION
-            ------------------------------------------------- */
+               ------------------------------------------------- */
 
             SESSION_KEY:
                 "STOCKFLOW_TOKEN",
@@ -132,22 +118,16 @@
             USER_KEY:
                 "STOCKFLOW_USER",
 
-            SESSION_DURATION_MINUTES:
-                480,
-
 
             /* -------------------------------------------------
-               OTP IDENTITY STORAGE
-            ------------------------------------------------- */
+               OTP STORAGE
+               ------------------------------------------------- */
 
             OTP_UID_KEY:
                 "STOCKFLOW_OTP_UID",
 
             OTP_IDENTITY_KEY:
                 "STOCKFLOW_OTP_IDENTITY",
-
-            OTP_USERNAME_KEY:
-                "STOCKFLOW_OTP_USERNAME",
 
             OTP_EMAIL_KEY:
                 "STOCKFLOW_OTP_EMAIL",
@@ -160,33 +140,16 @@
 
 
             /* -------------------------------------------------
-               OTP DEMO STATE
-            ------------------------------------------------- */
-
-            OTP_CODE_KEY:
-                "STOCKFLOW_OTP_CODE",
-
-            OTP_CODE_READY_KEY:
-                "STOCKFLOW_OTP_CODE_READY",
-
-            OTP_EMAIL_SENT_KEY:
-                "STOCKFLOW_OTP_EMAIL_SENT",
-
-            OTP_PHONE_SENT_KEY:
-                "STOCKFLOW_OTP_PHONE_SENT",
-
-
-            /* -------------------------------------------------
-               REDIRECT
-            ------------------------------------------------- */
+               LOGIN REDIRECT
+               ------------------------------------------------- */
 
             REDIRECT_KEY:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
 
 
-            /* =================================================
-               OTP SETTINGS
-            ================================================= */
+            /* -------------------------------------------------
+               OTP RULES
+               ------------------------------------------------- */
 
             OTP_LENGTH:
                 6,
@@ -205,61 +168,8 @@
 
 
             /* -------------------------------------------------
-               OTP IDENTITY REQUIREMENT
-            ------------------------------------------------- */
-
-            REQUIRE_IDENTITY:
-                true,
-
-            /*
-               The verification request may use:
-
-               - UID
-               - Username
-               - Gmail
-               - Phone number
-
-               Backend decides which identity is authoritative.
-            */
-
-
-            /* -------------------------------------------------
-               OTP CHANNELS
-            ------------------------------------------------- */
-
-            CHANNELS: {
-
-                EMAIL:
-                    "email",
-
-                PHONE:
-                    "phone"
-            },
-
-
-            /* -------------------------------------------------
-               DEFAULT OTP CHANNEL
-            ------------------------------------------------- */
-
-            DEFAULT_CHANNEL:
-                "email",
-
-
-            /* =================================================
-               DEMO OTP AUTO-FILL
-            ================================================= */
-
-            /*
-               The frontend must NEVER generate the authoritative
-               OTP.
-
-               The backend generates it.
-
-               In demo mode, the backend may return the generated
-               OTP to the browser.
-
-               otp.js then fills the six boxes automatically.
-            */
+               DEMO OTP
+               ------------------------------------------------- */
 
             DEMO_AUTO_FILL:
                 true,
@@ -268,40 +178,13 @@
                 3000,
 
             DEMO_AUTO_FILL_DELAY_MAX:
-                5000,
-
-
-            /* -------------------------------------------------
-               OTP PREPARATION
-            ------------------------------------------------- */
-
-            AUTO_PREPARE_OTP:
-                true,
-
-
-            /* -------------------------------------------------
-               OTP INPUT
-            ------------------------------------------------- */
-
-            OTP_INPUT_CLASS:
-                "otp-digit",
-
-            OTP_HIDDEN_INPUT_ID:
-                "otp",
-
-
-            /* -------------------------------------------------
-               VERIFICATION PAGE
-            ------------------------------------------------- */
-
-            VERIFY_PAGE:
-                "verify.html"
+                5000
         },
 
 
         /* =====================================================
            API REQUEST CONFIGURATION
-        ===================================================== */
+           ===================================================== */
 
         API: {
 
@@ -324,25 +207,21 @@
 
         /* =====================================================
            APPLICATION ROUTES
-        ===================================================== */
+           ===================================================== */
 
         ROUTES: {
 
-            /* -------------------------------------------------
-               PUBLIC
-            ------------------------------------------------- */
-
             HOME:
                 "index.html",
-
-            AUTH:
-                "auth.html",
 
             LOGIN:
                 "auth.html#login",
 
             REGISTER:
                 "auth.html#register",
+
+            AUTH:
+                "auth.html",
 
             VERIFY:
                 "verify.html",
@@ -359,7 +238,7 @@
 
             /* -------------------------------------------------
                MAIN SYSTEM
-            ------------------------------------------------- */
+               ------------------------------------------------- */
 
             DASHBOARD:
                 "dashboard.html",
@@ -401,7 +280,7 @@
 
         /* =====================================================
            INVENTORY
-        ===================================================== */
+           ===================================================== */
 
         INVENTORY: {
 
@@ -424,7 +303,7 @@
 
         /* =====================================================
            USER ROLES
-        ===================================================== */
+           ===================================================== */
 
         ROLES: {
 
@@ -438,7 +317,7 @@
 
         /* =====================================================
            ACCOUNT STATUS
-        ===================================================== */
+           ===================================================== */
 
         ACCOUNT_STATUS: {
 
@@ -464,7 +343,7 @@
 
         /* =====================================================
            TRANSACTION TYPES
-        ===================================================== */
+           ===================================================== */
 
         TRANSACTION_TYPES: {
 
@@ -478,7 +357,7 @@
 
         /* =====================================================
            PRODUCT STATUS
-        ===================================================== */
+           ===================================================== */
 
         PRODUCT_STATUS: {
 
@@ -498,7 +377,7 @@
 
         /* =====================================================
            STORAGE
-        ===================================================== */
+           ===================================================== */
 
         STORAGE: {
 
@@ -514,9 +393,6 @@
             OTP_IDENTITY:
                 "STOCKFLOW_OTP_IDENTITY",
 
-            OTP_USERNAME:
-                "STOCKFLOW_OTP_USERNAME",
-
             OTP_EMAIL:
                 "STOCKFLOW_OTP_EMAIL",
 
@@ -525,18 +401,6 @@
 
             OTP_CHANNEL:
                 "STOCKFLOW_OTP_CHANNEL",
-
-            OTP_CODE:
-                "STOCKFLOW_OTP_CODE",
-
-            OTP_CODE_READY:
-                "STOCKFLOW_OTP_CODE_READY",
-
-            OTP_EMAIL_SENT:
-                "STOCKFLOW_OTP_EMAIL_SENT",
-
-            OTP_PHONE_SENT:
-                "STOCKFLOW_OTP_PHONE_SENT",
 
             REDIRECT_AFTER_LOGIN:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
@@ -548,7 +412,7 @@
 
         /* =====================================================
            PUBLIC PAGES
-        ===================================================== */
+           ===================================================== */
 
         PUBLIC_PAGES: [
 
@@ -567,21 +431,13 @@
             "forgot-password.html",
 
             "forgotpassword.html"
-        ],
-
-
-        /* =====================================================
-           DEBUG
-        ===================================================== */
-
-        DEBUG:
-            true
+        ]
     };
 
 
     /* =========================================================
-       CONFIGURATION VALIDATION
-    ========================================================= */
+       VALIDATION
+       ========================================================= */
 
     function validateConfig() {
 
@@ -590,11 +446,11 @@
 
         /* -----------------------------------------------------
            API
-        ----------------------------------------------------- */
+           ----------------------------------------------------- */
 
         if (
-            !STOCKFLOW_CONFIG.API_URL ||
-            typeof STOCKFLOW_CONFIG.API_URL !== "string"
+            typeof STOCKFLOW_CONFIG.API_URL !== "string" ||
+            !STOCKFLOW_CONFIG.API_URL.trim()
         ) {
 
             errors.push(
@@ -602,22 +458,26 @@
             );
 
         } else if (
-            !STOCKFLOW_CONFIG.API_URL.includes("/exec")
+            !STOCKFLOW_CONFIG.API_URL.includes(
+                "script.google.com/macros/s/"
+            ) ||
+            !STOCKFLOW_CONFIG.API_URL.endsWith(
+                "/exec"
+            )
         ) {
 
             errors.push(
-                "Google Apps Script API URL must end with /exec."
+                "Google Apps Script API URL is invalid."
             );
         }
 
 
         /* -----------------------------------------------------
-           GOOGLE SHEET
-        ----------------------------------------------------- */
+           GOOGLE SHEETS
+           ----------------------------------------------------- */
 
         if (
-            !STOCKFLOW_CONFIG.GOOGLE_SHEET_ID ||
-            STOCKFLOW_CONFIG.GOOGLE_SHEET_ID.trim() === ""
+            !STOCKFLOW_CONFIG.GOOGLE_SHEET_ID
         ) {
 
             errors.push(
@@ -628,7 +488,7 @@
 
         /* -----------------------------------------------------
            FIREBASE
-        ----------------------------------------------------- */
+           ----------------------------------------------------- */
 
         if (
             !STOCKFLOW_CONFIG.FIREBASE ||
@@ -638,38 +498,36 @@
             errors.push(
                 "Firebase Database URL is missing."
             );
-
-        } else if (
-            !STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL
-                .startsWith("https://")
-        ) {
-
-            errors.push(
-                "Firebase Database URL must use HTTPS."
-            );
         }
 
 
         /* -----------------------------------------------------
-           OTP LENGTH
-        ----------------------------------------------------- */
+           OTP
+           ----------------------------------------------------- */
+
+        const auth =
+            STOCKFLOW_CONFIG.AUTH;
 
         if (
-            STOCKFLOW_CONFIG.AUTH.OTP_LENGTH !== 6
+            auth.OTP_LENGTH !== 6
         ) {
 
             errors.push(
-                "OTP length must be exactly 6 digits."
+                "OTP length must be exactly 6."
             );
         }
 
+        if (
+            auth.MAX_OTP_ATTEMPTS < 1
+        ) {
 
-        /* -----------------------------------------------------
-           OTP EXPIRATION
-        ----------------------------------------------------- */
+            errors.push(
+                "OTP attempt limit must be at least 1."
+            );
+        }
 
         if (
-            STOCKFLOW_CONFIG.AUTH.OTP_EXPIRATION_MINUTES < 1
+            auth.OTP_EXPIRATION_MINUTES < 1
         ) {
 
             errors.push(
@@ -679,116 +537,51 @@
 
 
         /* -----------------------------------------------------
-           OTP ATTEMPTS
-        ----------------------------------------------------- */
+           API TIMEOUT
+           ----------------------------------------------------- */
 
         if (
-            STOCKFLOW_CONFIG.AUTH.MAX_OTP_ATTEMPTS < 1
+            STOCKFLOW_CONFIG.API.TIMEOUT < 5000
         ) {
 
             errors.push(
-                "Maximum OTP attempts must be at least 1."
-            );
-        }
-
-
-        /* -----------------------------------------------------
-           OTP LOCK
-        ----------------------------------------------------- */
-
-        if (
-            STOCKFLOW_CONFIG.AUTH.OTP_LOCK_MINUTES < 1
-        ) {
-
-            errors.push(
-                "OTP lock duration must be at least 1 minute."
-            );
-        }
-
-
-        /* -----------------------------------------------------
-           DEMO DELAY
-        ----------------------------------------------------- */
-
-        if (
-            STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN < 0
-        ) {
-
-            errors.push(
-                "Demo OTP minimum delay cannot be negative."
-            );
-        }
-
-
-        if (
-            STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MAX <
-            STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN
-        ) {
-
-            errors.push(
-                "Demo OTP maximum delay cannot be smaller than minimum delay."
+                "API timeout is too short."
             );
         }
 
 
         /* -----------------------------------------------------
            RESULT
-        ----------------------------------------------------- */
+           ----------------------------------------------------- */
 
-        if (errors.length > 0) {
+        if (errors.length) {
 
             console.error(
-                "STOCKFLOW CONFIGURATION ERROR"
+                "STOCKFLOW CONFIGURATION ERROR:"
             );
 
-            errors.forEach(function (error) {
-
-                console.error(
+            errors.forEach(
+                error => console.error(
                     "• " + error
-                );
-
-            });
+                )
+            );
 
             return false;
         }
-
 
         return true;
     }
 
 
     /* =========================================================
-       API URL HELPER
-    ========================================================= */
+       HELPERS
+       ========================================================= */
 
     function getApiUrl() {
 
         return STOCKFLOW_CONFIG.API_URL;
     }
 
-
-    /* =========================================================
-       ROUTE HELPER
-    ========================================================= */
-
-    function getRoute(routeName) {
-
-        if (
-            !routeName ||
-            !STOCKFLOW_CONFIG.ROUTES[routeName]
-        ) {
-
-            return STOCKFLOW_CONFIG.ROUTES.DASHBOARD;
-        }
-
-
-        return STOCKFLOW_CONFIG.ROUTES[routeName];
-    }
-
-
-    /* =========================================================
-       FIREBASE URL HELPER
-    ========================================================= */
 
     function getFirebaseUrl() {
 
@@ -798,9 +591,22 @@
     }
 
 
-    /* =========================================================
-       ENVIRONMENT HELPERS
-    ========================================================= */
+    function getRoute(routeName) {
+
+        if (
+            routeName &&
+            STOCKFLOW_CONFIG.ROUTES[routeName]
+        ) {
+
+            return STOCKFLOW_CONFIG
+                .ROUTES[routeName];
+        }
+
+        return STOCKFLOW_CONFIG
+            .ROUTES
+            .DASHBOARD;
+    }
+
 
     function isProduction() {
 
@@ -828,80 +634,22 @@
 
 
     /* =========================================================
-       OTP HELPERS
-    ========================================================= */
-
-    function getOtpLength() {
-
-        return STOCKFLOW_CONFIG
-            .AUTH
-            .OTP_LENGTH;
-    }
-
-
-    function getOtpChannel(channel) {
-
-        const channels =
-            STOCKFLOW_CONFIG.AUTH.CHANNELS;
-
-
-        if (
-            channel === channels.PHONE
-        ) {
-
-            return channels.PHONE;
-        }
-
-
-        return channels.EMAIL;
-    }
-
-
-    function getRandomDemoDelay() {
-
-        const min =
-            STOCKFLOW_CONFIG.AUTH
-                .DEMO_AUTO_FILL_DELAY_MIN;
-
-        const max =
-            STOCKFLOW_CONFIG.AUTH
-                .DEMO_AUTO_FILL_DELAY_MAX;
-
-
-        return Math.floor(
-            Math.random() *
-            (max - min + 1)
-        ) + min;
-    }
-
-
-    /* =========================================================
-       GLOBAL CONFIGURATION
-    ========================================================= */
+       GLOBAL EXPORT
+       ========================================================= */
 
     window.STOCKFLOW_CONFIG =
         STOCKFLOW_CONFIG;
 
-
     /*
-       Backward compatibility.
-
-       Existing files may use:
-
-       CONFIG.API_URL
-       CONFIG.AUTH.OTP_LENGTH
-       CONFIG.ROUTES.DASHBOARD
-
-       Therefore keep CONFIG available.
-    */
-
+     * Backward compatibility.
+     */
     window.CONFIG =
         STOCKFLOW_CONFIG;
 
 
     /* =========================================================
-       STOCKFLOW CONFIG HELPER
-    ========================================================= */
+       HELPER API
+       ========================================================= */
 
     window.StockFlowConfig = {
 
@@ -916,15 +664,6 @@
 
         getRoute:
             getRoute,
-
-        getOtpLength:
-            getOtpLength,
-
-        getOtpChannel:
-            getOtpChannel,
-
-        getRandomDemoDelay:
-            getRandomDemoDelay,
 
         validate:
             validateConfig,
@@ -941,8 +680,8 @@
 
 
     /* =========================================================
-       VALIDATE ON LOAD
-    ========================================================= */
+       INITIAL VALIDATION
+       ========================================================= */
 
     const valid =
         validateConfig();
@@ -974,16 +713,6 @@
         );
 
         console.log(
-            "OTP Length:",
-            STOCKFLOW_CONFIG.AUTH.OTP_LENGTH
-        );
-
-        console.log(
-            "OTP Auto Fill:",
-            STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL
-        );
-
-        console.log(
             "API:",
             STOCKFLOW_CONFIG.API_URL
         );
@@ -995,4 +724,4 @@
     }
 
 
-})();
+})(window);
