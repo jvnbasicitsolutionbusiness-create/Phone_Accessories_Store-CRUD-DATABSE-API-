@@ -1,56 +1,44 @@
-/* =========================================================
-   STOCKFLOW — SYSTEM CONFIGURATION
-   File: config.js
-
-   Purpose:
-   - Central system configuration
-   - Google Apps Script API
-   - Firebase
-   - Routes
-   - Authentication / OTP
-   - Inventory
-   ========================================================= */
-
 (function () {
-
     "use strict";
 
-
     /* =========================================================
-       CORE CONFIGURATION
+       STOCKFLOW CONFIGURATION
+       Phone Accessories Inventory Management System
        ========================================================= */
 
     const STOCKFLOW_CONFIG = {
 
-        /* -----------------------------------------------------
+        /* =====================================================
            APPLICATION
-           ----------------------------------------------------- */
+           ===================================================== */
 
-        APP_NAME:
-            "STOCKFLOW",
+        APP_NAME: "STOCKFLOW",
 
         APP_FULL_NAME:
             "Phone Accessories Inventory Management System",
 
-        VERSION:
-            "1.0.0",
+        VERSION: "1.0.0",
 
-        ENVIRONMENT:
-            "development",
+        ENVIRONMENT: "development",
 
         /*
-         * Midterm / demonstration mode.
+         * MIDTERM / DEMO MODE
          *
-         * The BACKEND generates the real OTP.
-         * The frontend only displays the returned OTP
-         * after the configured delay.
+         * true:
+         * - Backend generates the OTP.
+         * - OTP is stored in Google Sheets.
+         * - OTP is stored/synchronized in Firebase.
+         * - Backend may return the generated OTP for demo
+         *   auto-fill.
+         *
+         * false:
+         * - OTP must not be exposed to the browser.
          */
-        DEMO_MODE:
-            true,
+        DEMO_MODE: true,
 
 
         /* =====================================================
-           GOOGLE APPS SCRIPT
+           GOOGLE APPS SCRIPT WEB APP
            ===================================================== */
 
         API_URL:
@@ -66,7 +54,7 @@
 
 
         /* =====================================================
-           FIREBASE
+           FIREBASE REALTIME DATABASE
            ===================================================== */
 
         FIREBASE: {
@@ -74,8 +62,15 @@
             DATABASE_URL:
                 "https://midtermexamproject-default-rtdb.firebaseio.com/",
 
-            AUTH_TOKEN:
-                ""
+            /*
+             * Leave empty when Firebase does not require
+             * an authentication token for the current
+             * midterm/demo setup.
+             *
+             * For production, use proper Firebase
+             * authentication/security rules.
+             */
+            AUTH_TOKEN: ""
         },
 
 
@@ -85,9 +80,9 @@
 
         AUTH: {
 
-            /* -------------------------------------------------
+            /* -----------------------------------------------
                SESSION
-               ------------------------------------------------- */
+               ----------------------------------------------- */
 
             SESSION_KEY:
                 "STOCKFLOW_TOKEN",
@@ -96,9 +91,9 @@
                 "STOCKFLOW_USER",
 
 
-            /* -------------------------------------------------
-               OTP STORAGE
-               ------------------------------------------------- */
+            /* -----------------------------------------------
+               OTP USER INFORMATION
+               ----------------------------------------------- */
 
             OTP_UID_KEY:
                 "STOCKFLOW_OTP_UID",
@@ -118,6 +113,11 @@
             OTP_CHANNEL_KEY:
                 "STOCKFLOW_OTP_CHANNEL",
 
+
+            /* -----------------------------------------------
+               OTP DEMO STORAGE
+               ----------------------------------------------- */
+
             OTP_CODE_KEY:
                 "STOCKFLOW_OTP_CODE",
 
@@ -131,61 +131,62 @@
                 "STOCKFLOW_OTP_PHONE_SENT",
 
 
-            /* -------------------------------------------------
-               OTP RULES
-               ------------------------------------------------- */
+            /* -----------------------------------------------
+               OTP SETTINGS
+               ----------------------------------------------- */
 
-            OTP_LENGTH:
-                6,
+            OTP_LENGTH: 6,
 
-            OTP_EXPIRATION_MINUTES:
-                10,
+            OTP_EXPIRATION_MINUTES: 10,
 
-            OTP_RESEND_COOLDOWN_SECONDS:
-                60,
+            OTP_RESEND_COOLDOWN_SECONDS: 60,
 
-            MAX_OTP_ATTEMPTS:
-                4,
+            /*
+             * After 4 incorrect attempts:
+             * account/OTP verification is temporarily
+             * locked for 30 minutes.
+             */
+            MAX_OTP_ATTEMPTS: 4,
 
-            OTP_LOCK_MINUTES:
-                30,
+            OTP_LOCK_MINUTES: 30,
 
 
-            /* -------------------------------------------------
+            /* -----------------------------------------------
                DEMO AUTO-FILL
-               ------------------------------------------------- */
+               ----------------------------------------------- */
 
-            DEMO_AUTO_FILL:
-                true,
+            DEMO_AUTO_FILL: true,
 
-            DEMO_AUTO_FILL_DELAY_MIN:
-                3000,
+            /*
+             * OTP should appear automatically somewhere
+             * between 3 and 5 seconds after preparation.
+             */
+            DEMO_AUTO_FILL_DELAY_MIN: 3000,
 
-            DEMO_AUTO_FILL_DELAY_MAX:
-                5000
+            DEMO_AUTO_FILL_DELAY_MAX: 5000
         },
 
 
         /* =====================================================
-           API CONFIGURATION
+           API SETTINGS
            ===================================================== */
 
         API: {
 
-            METHOD:
-                "POST",
+            METHOD: "POST",
 
+            /*
+             * text/plain prevents the browser from triggering
+             * the normal JSON CORS preflight against Apps Script.
+             */
             CONTENT_TYPE:
                 "text/plain;charset=utf-8",
 
-            TIMEOUT:
-                30000,
+            TIMEOUT: 30000,
 
-            RETRY_COUNT:
-                1,
+            RETRY_COUNT: 1,
 
-            RETRY_DELAY:
-                1000
+            RETRY_DELAY: 1000
         },
 
 
@@ -207,15 +208,33 @@
             AUTH:
                 "auth.html",
 
+            /*
+             * Main OTP verification page.
+             */
             VERIFY:
                 "verify.html",
 
+            /*
+             * Backward-compatible OTP route.
+             */
             OTP:
                 "verify.html",
+
+            /*
+             * Recovery page.
+             *
+             * This is the page used when the user clicks:
+             * "Didn't receive the code? Click here"
+             */
+            RECOVERY:
+                "recovery.html",
 
             FORGOT_PASSWORD:
                 "forgot-password.html",
 
+            /*
+             * Legacy route kept for compatibility.
+             */
             FORGOT_PASSWORD_LEGACY:
                 "forgotpassword.html",
 
@@ -258,25 +277,20 @@
 
 
         /* =====================================================
-           INVENTORY
+           INVENTORY SETTINGS
            ===================================================== */
 
         INVENTORY: {
 
-            DEFAULT_REORDER_LEVEL:
-                10,
+            DEFAULT_REORDER_LEVEL: 10,
 
-            MIN_STOCK:
-                0,
+            MIN_STOCK: 0,
 
-            ALLOW_NEGATIVE_STOCK:
-                false,
+            ALLOW_NEGATIVE_STOCK: false,
 
-            CURRENCY:
-                "PHP",
+            CURRENCY: "PHP",
 
-            CURRENCY_SYMBOL:
-                "₱"
+            CURRENCY_SYMBOL: "₱"
         },
 
 
@@ -286,11 +300,9 @@
 
         ROLES: {
 
-            ADMIN:
-                "Admin",
+            ADMIN: "Admin",
 
-            EMPLOYEE:
-                "Employee"
+            EMPLOYEE: "Employee"
         },
 
 
@@ -300,23 +312,17 @@
 
         ACCOUNT_STATUS: {
 
-            ACTIVE:
-                "ACTIVE",
+            ACTIVE: "ACTIVE",
 
-            PENDING:
-                "PENDING",
+            PENDING: "PENDING",
 
-            DISABLED:
-                "DISABLED",
+            DISABLED: "DISABLED",
 
-            BLOCKED:
-                "BLOCKED",
+            BLOCKED: "BLOCKED",
 
-            SUSPENDED:
-                "SUSPENDED",
+            SUSPENDED: "SUSPENDED",
 
-            REJECTED:
-                "REJECTED"
+            REJECTED: "REJECTED"
         },
 
 
@@ -326,11 +332,9 @@
 
         TRANSACTION_TYPES: {
 
-            STOCK_IN:
-                "STOCK-IN",
+            STOCK_IN: "STOCK-IN",
 
-            STOCK_OUT:
-                "STOCK-OUT"
+            STOCK_OUT: "STOCK-OUT"
         },
 
 
@@ -340,31 +344,36 @@
 
         PRODUCT_STATUS: {
 
-            ACTIVE:
-                "ACTIVE",
+            ACTIVE: "ACTIVE",
 
-            INACTIVE:
-                "INACTIVE",
+            INACTIVE: "INACTIVE",
 
-            LOW_STOCK:
-                "LOW STOCK",
+            LOW_STOCK: "LOW STOCK",
 
-            OUT_OF_STOCK:
-                "OUT OF STOCK"
+            OUT_OF_STOCK: "OUT OF STOCK"
         },
 
 
         /* =====================================================
-           STORAGE
+           STORAGE KEYS
            ===================================================== */
 
         STORAGE: {
+
+            /* -----------------------------------------------
+               SESSION
+               ----------------------------------------------- */
 
             TOKEN:
                 "STOCKFLOW_TOKEN",
 
             USER:
                 "STOCKFLOW_USER",
+
+
+            /* -----------------------------------------------
+               OTP
+               ----------------------------------------------- */
 
             OTP_UID:
                 "STOCKFLOW_OTP_UID",
@@ -396,6 +405,11 @@
             OTP_PHONE_SENT:
                 "STOCKFLOW_OTP_PHONE_SENT",
 
+
+            /* -----------------------------------------------
+               OTHER SETTINGS
+               ----------------------------------------------- */
+
             REDIRECT_AFTER_LOGIN:
                 "STOCKFLOW_REDIRECT_AFTER_LOGIN",
 
@@ -422,6 +436,8 @@
 
             "verify-otp.html",
 
+            "recovery.html",
+
             "forgot-password.html",
 
             "forgotpassword.html"
@@ -432,13 +448,12 @@
            DEBUG
            ===================================================== */
 
-        DEBUG:
-            true
+        DEBUG: true
     };
 
 
     /* =========================================================
-       VALIDATION
+       CONFIGURATION VALIDATION
        ========================================================= */
 
     function validateConfig() {
@@ -446,99 +461,157 @@
         const errors = [];
 
 
+        /* -----------------------------------------------
+           API URL
+           ----------------------------------------------- */
+
         if (
             !STOCKFLOW_CONFIG.API_URL ||
-            !STOCKFLOW_CONFIG.API_URL.includes("/exec")
+            typeof STOCKFLOW_CONFIG.API_URL !== "string"
         ) {
-
             errors.push(
-                "Google Apps Script API URL is invalid."
+                "API_URL is missing."
             );
         }
 
+
+        /* -----------------------------------------------
+           API URL FORMAT
+           ----------------------------------------------- */
 
         if (
-            !STOCKFLOW_CONFIG.GOOGLE_SHEET_ID
+            STOCKFLOW_CONFIG.API_URL &&
+            !STOCKFLOW_CONFIG.API_URL.includes(
+                "script.google.com/macros/s/"
+            )
         ) {
-
             errors.push(
-                "Google Sheet ID is missing."
+                "API_URL does not appear to be a valid Google Apps Script Web App URL."
             );
         }
 
+
+        /* -----------------------------------------------
+           FIREBASE URL
+           ----------------------------------------------- */
 
         if (
             !STOCKFLOW_CONFIG.FIREBASE ||
             !STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL
         ) {
-
             errors.push(
-                "Firebase Database URL is missing."
+                "Firebase DATABASE_URL is missing."
             );
         }
 
+
+        /* -----------------------------------------------
+           OTP LENGTH
+           ----------------------------------------------- */
+
+        if (
+            Number(STOCKFLOW_CONFIG.AUTH.OTP_LENGTH) !== 6
+        ) {
+            errors.push(
+                "OTP_LENGTH must be 6."
+            );
+        }
+
+
+        /* -----------------------------------------------
+           OTP EXPIRATION
+           ----------------------------------------------- */
 
         if (
             Number(
-                STOCKFLOW_CONFIG.AUTH.OTP_LENGTH
-            ) !== 6
+                STOCKFLOW_CONFIG.AUTH.OTP_EXPIRATION_MINUTES
+            ) <= 0
         ) {
-
             errors.push(
-                "OTP length must be exactly 6."
+                "OTP expiration must be greater than zero."
             );
         }
 
+
+        /* -----------------------------------------------
+           OTP RESEND COOLDOWN
+           ----------------------------------------------- */
+
+        if (
+            Number(
+                STOCKFLOW_CONFIG.AUTH.OTP_RESEND_COOLDOWN_SECONDS
+            ) < 0
+        ) {
+            errors.push(
+                "OTP resend cooldown cannot be negative."
+            );
+        }
+
+
+        /* -----------------------------------------------
+           OTP ATTEMPTS
+           ----------------------------------------------- */
 
         if (
             Number(
                 STOCKFLOW_CONFIG.AUTH.MAX_OTP_ATTEMPTS
-            ) < 1
+            ) <= 0
         ) {
-
             errors.push(
-                "OTP attempt limit is invalid."
+                "MAX_OTP_ATTEMPTS must be greater than zero."
+            );
+        }
+
+
+        /* -----------------------------------------------
+           DEMO DELAY
+           ----------------------------------------------- */
+
+        if (
+            Number(
+                STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN
+            ) < 0
+        ) {
+            errors.push(
+                "DEMO_AUTO_FILL_DELAY_MIN cannot be negative."
             );
         }
 
 
         if (
             Number(
-                STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN
-            ) >
-            Number(
                 STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MAX
+            ) <
+            Number(
+                STOCKFLOW_CONFIG.AUTH.DEMO_AUTO_FILL_DELAY_MIN
             )
         ) {
-
             errors.push(
-                "OTP auto-fill delay configuration is invalid."
+                "DEMO_AUTO_FILL_DELAY_MAX must be greater than or equal to DEMO_AUTO_FILL_DELAY_MIN."
             );
         }
 
 
-        if (errors.length) {
+        /* -----------------------------------------------
+           RETURN
+           ----------------------------------------------- */
+
+        if (errors.length > 0) {
 
             console.error(
-                "STOCKFLOW CONFIGURATION ERROR"
-            );
-
-            errors.forEach(
-                error => console.error(
-                    "• " + error
-                )
+                "[STOCKFLOW CONFIG ERROR]",
+                errors
             );
 
             return false;
         }
-
 
         return true;
     }
 
 
     /* =========================================================
-       HELPERS
+       API URL HELPER
        ========================================================= */
 
     function getApiUrl() {
@@ -547,15 +620,28 @@
     }
 
 
+    /* =========================================================
+       FIREBASE URL HELPER
+       ========================================================= */
+
     function getFirebaseUrl() {
 
-        return STOCKFLOW_CONFIG
-            .FIREBASE
-            .DATABASE_URL;
+        return STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL;
     }
 
 
+    /* =========================================================
+       ROUTE HELPER
+       ========================================================= */
+
     function getRoute(routeName) {
+
+        if (
+            !routeName ||
+            !STOCKFLOW_CONFIG.ROUTES
+        ) {
+            return STOCKFLOW_CONFIG.ROUTES.DASHBOARD;
+        }
 
         return (
             STOCKFLOW_CONFIG.ROUTES[routeName] ||
@@ -564,6 +650,10 @@
     }
 
 
+    /* =========================================================
+       DEMO MODE HELPER
+       ========================================================= */
+
     function isDemoMode() {
 
         return (
@@ -571,6 +661,10 @@
         );
     }
 
+
+    /* =========================================================
+       PRODUCTION MODE HELPER
+       ========================================================= */
 
     function isProduction() {
 
@@ -581,6 +675,10 @@
     }
 
 
+    /* =========================================================
+       DEBUG MODE HELPER
+       ========================================================= */
+
     function isDebug() {
 
         return (
@@ -590,16 +688,126 @@
 
 
     /* =========================================================
-       GLOBAL EXPORT
+       STORAGE HELPER
        ========================================================= */
 
+    function getStorageKey(keyName) {
+
+        return (
+            STOCKFLOW_CONFIG.STORAGE[keyName] ||
+            ""
+        );
+    }
+
+
+    /* =========================================================
+       OTP SETTINGS HELPER
+       ========================================================= */
+
+    function getOtpSettings() {
+
+        return {
+
+            length:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH.OTP_LENGTH
+                ),
+
+            expirationMinutes:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .OTP_EXPIRATION_MINUTES
+                ),
+
+            resendCooldownSeconds:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .OTP_RESEND_COOLDOWN_SECONDS
+                ),
+
+            maxAttempts:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .MAX_OTP_ATTEMPTS
+                ),
+
+            lockMinutes:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .OTP_LOCK_MINUTES
+                ),
+
+            demoAutoFill:
+                Boolean(
+                    STOCKFLOW_CONFIG.AUTH
+                        .DEMO_AUTO_FILL
+                ),
+
+            demoAutoFillDelayMin:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .DEMO_AUTO_FILL_DELAY_MIN
+                ),
+
+            demoAutoFillDelayMax:
+                Number(
+                    STOCKFLOW_CONFIG.AUTH
+                        .DEMO_AUTO_FILL_DELAY_MAX
+                )
+        };
+    }
+
+
+    /* =========================================================
+       RANDOM DEMO DELAY HELPER
+       ========================================================= */
+
+    function getDemoAutoFillDelay() {
+
+        const min =
+            Number(
+                STOCKFLOW_CONFIG.AUTH
+                    .DEMO_AUTO_FILL_DELAY_MIN
+            );
+
+        const max =
+            Number(
+                STOCKFLOW_CONFIG.AUTH
+                    .DEMO_AUTO_FILL_DELAY_MAX
+            );
+
+        if (max <= min) {
+            return min;
+        }
+
+        return Math.floor(
+            Math.random() *
+            (max - min + 1)
+        ) + min;
+    }
+
+
+    /* =========================================================
+       GLOBAL EXPORTS
+       ========================================================= */
+
+    /*
+     * Main configuration object.
+     */
     window.STOCKFLOW_CONFIG =
         STOCKFLOW_CONFIG;
 
+
+    /*
+     * Backward-compatible configuration alias.
+     */
     window.CONFIG =
         STOCKFLOW_CONFIG;
 
 
+    /*
+     * Helper API.
+     */
     window.StockFlowConfig = {
 
         config:
@@ -613,6 +821,15 @@
 
         getRoute:
             getRoute,
+
+        getStorageKey:
+            getStorageKey,
+
+        getOtpSettings:
+            getOtpSettings,
+
+        getDemoAutoFillDelay:
+            getDemoAutoFillDelay,
 
         validate:
             validateConfig,
@@ -629,12 +846,54 @@
 
 
     /* =========================================================
-       VALIDATE
+       BACKWARD-COMPATIBILITY GLOBALS
+       ========================================================= */
+
+    /*
+     * Some older JavaScript files may look for these
+     * properties directly on CONFIG.
+     *
+     * Keep them available while we update the other files.
+     */
+
+    if (
+        typeof STOCKFLOW_CONFIG.API_TIMEOUT ===
+        "undefined"
+    ) {
+        STOCKFLOW_CONFIG.API_TIMEOUT =
+            STOCKFLOW_CONFIG.API.TIMEOUT;
+    }
+
+
+    if (
+        typeof STOCKFLOW_CONFIG.API_RETRY_COUNT ===
+        "undefined"
+    ) {
+        STOCKFLOW_CONFIG.API_RETRY_COUNT =
+            STOCKFLOW_CONFIG.API.RETRY_COUNT;
+    }
+
+
+    if (
+        typeof STOCKFLOW_CONFIG.API_RETRY_DELAY ===
+        "undefined"
+    ) {
+        STOCKFLOW_CONFIG.API_RETRY_DELAY =
+            STOCKFLOW_CONFIG.API.RETRY_DELAY;
+    }
+
+
+    /* =========================================================
+       VALIDATE CONFIGURATION
        ========================================================= */
 
     const valid =
         validateConfig();
 
+
+    /* =========================================================
+       DEBUG INFORMATION
+       ========================================================= */
 
     if (
         valid &&
@@ -642,8 +901,20 @@
     ) {
 
         console.log(
-            "%cSTOCKFLOW CONFIG LOADED",
-            "font-weight:bold;"
+            "=========================================="
+        );
+
+        console.log(
+            "STOCKFLOW CONFIGURATION"
+        );
+
+        console.log(
+            "=========================================="
+        );
+
+        console.log(
+            "App:",
+            STOCKFLOW_CONFIG.APP_NAME
         );
 
         console.log(
@@ -665,7 +936,68 @@
             "API:",
             STOCKFLOW_CONFIG.API_URL
         );
-    }
 
+        console.log(
+            "Firebase:",
+            STOCKFLOW_CONFIG.FIREBASE.DATABASE_URL
+        );
+
+        console.log(
+            "OTP Length:",
+            STOCKFLOW_CONFIG.AUTH.OTP_LENGTH
+        );
+
+        console.log(
+            "OTP Expiration:",
+            STOCKFLOW_CONFIG.AUTH
+                .OTP_EXPIRATION_MINUTES +
+            " minutes"
+        );
+
+        console.log(
+            "OTP Resend Cooldown:",
+            STOCKFLOW_CONFIG.AUTH
+                .OTP_RESEND_COOLDOWN_SECONDS +
+            " seconds"
+        );
+
+        console.log(
+            "OTP Max Attempts:",
+            STOCKFLOW_CONFIG.AUTH
+                .MAX_OTP_ATTEMPTS
+        );
+
+        console.log(
+            "OTP Lock:",
+            STOCKFLOW_CONFIG.AUTH
+                .OTP_LOCK_MINUTES +
+            " minutes"
+        );
+
+        console.log(
+            "Demo Auto Fill:",
+            STOCKFLOW_CONFIG.AUTH
+                .DEMO_AUTO_FILL
+        );
+
+        console.log(
+            "Demo Auto Fill Delay:",
+            STOCKFLOW_CONFIG.AUTH
+                .DEMO_AUTO_FILL_DELAY_MIN +
+            "ms - " +
+            STOCKFLOW_CONFIG.AUTH
+                .DEMO_AUTO_FILL_DELAY_MAX +
+            "ms"
+        );
+
+        console.log(
+            "Recovery Route:",
+            STOCKFLOW_CONFIG.ROUTES.RECOVERY
+        );
+
+        console.log(
+            "=========================================="
+        );
+    }
 
 })();
