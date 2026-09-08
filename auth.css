@@ -1752,6 +1752,15 @@
     }
 }
 
+/* =========================================================
+Forgot Password — Login page only 
+===========================================================*/
+.forgot-password-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
 
 /* ============================================================
    44. REDUCED MOTION
