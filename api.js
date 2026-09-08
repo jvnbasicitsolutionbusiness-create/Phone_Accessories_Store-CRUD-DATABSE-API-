@@ -6,19 +6,22 @@
    Frontend ↔ Google Apps Script Web App
 
    FLOW:
+
    HTML / JS
         ↓
    StockFlowAPI
         ↓
    Google Apps Script
         ↓
-   Google Sheets / Firebase
+   Google Sheets
+        ↓
+   Firebase
 
    IMPORTANT:
-   - This file does NOT generate OTPs.
-   - This file does NOT handle OTP UI.
-   - This file does NOT redirect pages.
-   - OTP generation/verification belongs to the backend + otp.js.
+   - api.js does NOT generate OTPs.
+   - api.js does NOT control OTP boxes.
+   - api.js does NOT redirect pages.
+   - Backend generates the authoritative OTP.
    ========================================================= */
 
 (function (window) {
@@ -35,51 +38,32 @@
         window.CONFIG ||
         {};
 
-    /*
-       Supports several possible names so this API remains
-       compatible with your existing config.js.
-    */
+    const API_CONFIG =
+        CONFIG.API ||
+        {};
+
 
     const API_URL =
-        CONFIG.API_URL ||
-        CONFIG.APPS_SCRIPT_URL ||
-        CONFIG.GOOGLE_APPS_SCRIPT_URL ||
-        CONFIG.BACKEND_URL ||
-        "";
+        String(
+            CONFIG.API_URL ||
+            CONFIG.APPS_SCRIPT_URL ||
+            CONFIG.GOOGLE_APPS_SCRIPT_URL ||
+            CONFIG.BACKEND_URL ||
+            ""
+        ).trim();
 
-
-    /* =========================================================
-       INTERNAL SETTINGS
-       ========================================================= */
 
     const REQUEST_TIMEOUT =
-        Number(CONFIG.API_TIMEOUT || 30000);
+        Number(
+            API_CONFIG.TIMEOUT ||
+            CONFIG.API_TIMEOUT ||
+            30000
+        );
 
 
-    /* =========================================================
-       VALIDATE API URL
-       ========================================================= */
-
-    function validateApiUrl() {
-
-        if (!API_URL) {
-            throw new Error(
-                "StockFlow API URL is not configured. " +
-                "Please check config.js."
-            );
-        }
-
-        if (
-            !API_URL.includes(
-                "script.google.com/macros/s/"
-            )
-        ) {
-            console.warn(
-                "StockFlow API URL does not look like " +
-                "a Google Apps Script Web App URL."
-            );
-        }
-    }
+    const CONTENT_TYPE =
+        API_CONFIG.CONTENT_TYPE ||
+        "text/plain;charset=utf-8";
 
 
     /* =========================================================
@@ -96,23 +80,74 @@
 
             super(message);
 
-            this.name = "StockFlowAPIError";
-            this.code = code;
-            this.details = details;
+            this.name =
+                "StockFlowAPIError";
+
+            this.code =
+                code;
+
+            this.details =
+                details;
         }
     }
 
 
     /* =========================================================
-       PARSE RESPONSE
+       API URL VALIDATION
        ========================================================= */
 
-    async function parseResponse(response) {
+    function validateApiUrl() {
+
+        if (!API_URL) {
+
+            throw new StockFlowAPIError(
+                "StockFlow API URL is not configured. " +
+                "Please check config.js.",
+                "API_NOT_CONFIGURED"
+            );
+        }
+
+
+        if (
+            !API_URL.includes(
+                "script.google.com/macros/s/"
+            )
+        ) {
+
+            throw new StockFlowAPIError(
+                "The configured API URL is not a valid " +
+                "Google Apps Script Web App URL.",
+                "INVALID_API_URL"
+            );
+        }
+
+
+        if (
+            !API_URL.endsWith("/exec")
+        ) {
+
+            throw new StockFlowAPIError(
+                "The Google Apps Script URL must end with /exec.",
+                "INVALID_API_ENDPOINT"
+            );
+        }
+    }
+
+
+    /* =========================================================
+       RESPONSE PARSER
+       ========================================================= */
+
+    async function parseResponse(
+        response
+    ) {
 
         const text =
             await response.text();
 
+
         let data;
+
 
         try {
 
@@ -131,9 +166,9 @@
         }
 
 
-        /*
-           HTTP-level failure
-        */
+        /* -----------------------------------------------------
+           HTTP FAILURE
+           ----------------------------------------------------- */
 
         if (!response.ok) {
 
@@ -148,9 +183,9 @@
         }
 
 
-        /*
-           Application-level failure
-        */
+        /* -----------------------------------------------------
+           APPLICATION FAILURE
+           ----------------------------------------------------- */
 
         if (
             data &&
@@ -163,7 +198,7 @@
             throw new StockFlowAPIError(
                 data.message ||
                 data.error ||
-                "The request was rejected by the server.",
+                "The server rejected the request.",
                 data.code ||
                 "REQUEST_FAILED",
                 data
@@ -176,7 +211,7 @@
 
 
     /* =========================================================
-       GENERIC API REQUEST
+       GENERIC REQUEST
        ========================================================= */
 
     async function request(
@@ -196,14 +231,9 @@
         }
 
 
-        /*
-           Apps Script Web Apps work well with text/plain
-           because it avoids unnecessary CORS preflight.
-        */
-
         const body = {
 
-            action: action,
+            action,
 
             ...payload
         };
@@ -226,17 +256,21 @@
                 await fetch(
                     API_URL,
                     {
-                        method: "POST",
+                        method:
+                            API_CONFIG.METHOD ||
+                            "POST",
 
                         headers: {
+
                             "Content-Type":
-                                "text/plain;charset=utf-8"
+                                CONTENT_TYPE
                         },
 
                         body:
                             JSON.stringify(body),
 
-                        redirect: "follow",
+                        redirect:
+                            "follow",
 
                         signal:
                             controller.signal
@@ -250,25 +284,27 @@
 
         } catch (error) {
 
-            /*
-               Request timeout
-            */
+            /* -------------------------------------------------
+               TIMEOUT
+               ------------------------------------------------- */
 
             if (
                 error &&
-                error.name === "AbortError"
+                error.name ===
+                "AbortError"
             ) {
 
                 throw new StockFlowAPIError(
-                    "The server took too long to respond.",
+                    "The StockFlow server took too long " +
+                    "to respond.",
                     "TIMEOUT"
                 );
             }
 
 
-            /*
-               Already our custom error
-            */
+            /* -------------------------------------------------
+               OUR ERROR
+               ------------------------------------------------- */
 
             if (
                 error instanceof
@@ -279,14 +315,14 @@
             }
 
 
-            /*
-               Network / CORS / connection error
-            */
+            /* -------------------------------------------------
+               NETWORK / CORS
+               ------------------------------------------------- */
 
             throw new StockFlowAPIError(
                 "Unable to connect to the StockFlow server. " +
                 "Please check your internet connection " +
-                "and Google Apps Script deployment.",
+                "and Apps Script deployment.",
                 "NETWORK_ERROR",
                 error
             );
@@ -302,14 +338,22 @@
        NORMALIZE RESULT
        ========================================================= */
 
-    function normalizeResult(result) {
+    function normalizeResult(
+        result
+    ) {
 
         if (!result) {
+
             return {
-                success: false,
-                message: "Empty server response."
+
+                success:
+                    false,
+
+                message:
+                    "Empty server response."
             };
         }
+
 
         return result;
     }
@@ -319,28 +363,15 @@
        AUTHENTICATION
        ========================================================= */
 
-
-    /**
-     * REGISTER
-     *
-     * Backend action:
-     * register
-     *
-     * Sends registration information to Apps Script.
-     *
-     * The backend is responsible for:
-     * - creating UID
-     * - generating OTP
-     * - saving user to Google Sheets
-     * - saving OTP to Google Sheets
-     * - syncing OTP/user data to Firebase
-     */
-    async function register(data = {}) {
+    async function register(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "register",
                 {
+
                     name:
                         data.name || "",
 
@@ -370,18 +401,15 @@
     }
 
 
-    /**
-     * LOGIN
-     *
-     * Backend action:
-     * login
-     */
-    async function login(data = {}) {
+    async function login(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "login",
                 {
+
                     identity:
                         data.identity || "",
 
@@ -390,6 +418,9 @@
 
                     email:
                         data.email || "",
+
+                    gmail:
+                        data.gmail || "",
 
                     phone:
                         data.phone || "",
@@ -402,24 +433,19 @@
     }
 
 
-    /**
-     * VERIFY OTP
-     *
-     * Backend action:
-     * verifyOtp
-     *
-     * IMPORTANT:
-     * api.js does NOT generate the OTP.
-     *
-     * The backend verifies the authoritative OTP
-     * stored in Google Sheets.
-     */
-    async function verifyOtp(data = {}) {
+    /* =========================================================
+       OTP
+       ========================================================= */
+
+    async function verifyOtp(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "verifyOtp",
                 {
+
                     uid:
                         data.uid || "",
 
@@ -448,27 +474,15 @@
     }
 
 
-    /**
-     * PREPARE OTP
-     *
-     * Backend action:
-     * prepareOtp
-     *
-     * This is specifically useful for your
-     * midterm demo.
-     *
-     * The backend can return the currently stored
-     * OTP when DEMO_MODE is enabled.
-     *
-     * otp.js can then wait 3–5 seconds and display
-     * that backend-generated OTP inside the six boxes.
-     */
-    async function prepareOtp(data = {}) {
+    async function prepareOtp(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "prepareOtp",
                 {
+
                     uid:
                         data.uid || "",
 
@@ -492,20 +506,15 @@
     }
 
 
-    /**
-     * RESEND OTP
-     *
-     * Backend action:
-     * resendOtp
-     *
-     * The backend generates a NEW OTP.
-     */
-    async function resendOtp(data = {}) {
+    async function resendOtp(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "resendOtp",
                 {
+
                     uid:
                         data.uid || "",
 
@@ -533,11 +542,9 @@
     }
 
 
-    /*
-       Alias for older frontend code.
-    */
-
-    async function updateOtp(data = {}) {
+    async function updateOtp(
+        data = {}
+    ) {
 
         return resendOtp(data);
     }
@@ -547,37 +554,39 @@
        SESSION
        ========================================================= */
 
+    function getToken(
+        suppliedToken = ""
+    ) {
 
-    /**
-     * CHECK SESSION
-     *
-     * Backend action:
-     * session
-     */
-    async function session(data = {}) {
+        return (
+            suppliedToken ||
+            localStorage.getItem(
+                "STOCKFLOW_TOKEN"
+            ) ||
+            ""
+        );
+    }
+
+
+    async function session(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "session",
                 {
+
                     token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
+                        getToken(
+                            data.token
+                        )
                 }
             )
         );
     }
 
 
-    /**
-     * REQUIRE SESSION
-     *
-     * Backend action:
-     * requireSession
-     */
     async function requireSession(
         data = {}
     ) {
@@ -586,36 +595,30 @@
             await request(
                 "requireSession",
                 {
+
                     token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
+                        getToken(
+                            data.token
+                        )
                 }
             )
         );
     }
 
 
-    /**
-     * LOGOUT
-     *
-     * Backend action:
-     * logout
-     */
-    async function logout(data = {}) {
+    async function logout(
+        data = {}
+    ) {
 
         return normalizeResult(
             await request(
                 "logout",
                 {
+
                     token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        ""
+                        getToken(
+                            data.token
+                        )
                 }
             )
         );
@@ -626,13 +629,6 @@
        PASSWORD RECOVERY
        ========================================================= */
 
-
-    /**
-     * FORGOT PASSWORD
-     *
-     * Backend action:
-     * forgotPassword
-     */
     async function forgotPassword(
         data = {}
     ) {
@@ -641,6 +637,7 @@
             await request(
                 "forgotPassword",
                 {
+
                     identity:
                         data.identity || "",
 
@@ -658,12 +655,6 @@
     }
 
 
-    /**
-     * VERIFY RECOVERY OTP
-     *
-     * Backend action:
-     * verifyRecoveryOtp
-     */
     async function verifyRecoveryOtp(
         data = {}
     ) {
@@ -672,6 +663,7 @@
             await request(
                 "verifyRecoveryOtp",
                 {
+
                     identity:
                         data.identity || "",
 
@@ -694,12 +686,6 @@
     }
 
 
-    /**
-     * RESET PASSWORD
-     *
-     * Backend action:
-     * resetPassword
-     */
     async function resetPassword(
         data = {}
     ) {
@@ -708,6 +694,7 @@
             await request(
                 "resetPassword",
                 {
+
                     identity:
                         data.identity || "",
 
@@ -726,18 +713,9 @@
 
 
     /* =========================================================
-       ACTIVITY LOG
+       ACTIVITY
        ========================================================= */
 
-
-    /**
-     * LIST ACTIVITY
-     *
-     * Backend action:
-     * listActivity
-     *
-     * Used by activity.html / activity.js
-     */
     async function listActivity(
         data = {}
     ) {
@@ -746,12 +724,11 @@
             await request(
                 "listActivity",
                 {
+
                     token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        "",
+                        getToken(
+                            data.token
+                        ),
 
                     limit:
                         data.limit || 100
@@ -762,23 +739,9 @@
 
 
     /* =========================================================
-       INVENTORY API
+       GENERIC INVENTORY
        ========================================================= */
 
-
-    /**
-     * Generic inventory action.
-     *
-     * This allows future modules such as:
-     *
-     * Products
-     * Categories
-     * Suppliers
-     * Stock In
-     * Stock Out
-     * Transactions
-     * Inventory Dashboard
-     */
     async function inventory(
         action,
         data = {}
@@ -797,12 +760,11 @@
             await request(
                 action,
                 {
+
                     token:
-                        data.token ||
-                        localStorage.getItem(
-                            "STOCKFLOW_TOKEN"
-                        ) ||
-                        "",
+                        getToken(
+                            data.token
+                        ),
 
                     ...data
                 }
@@ -812,9 +774,8 @@
 
 
     /* =========================================================
-       PRODUCT METHODS
+       PRODUCTS
        ========================================================= */
-
 
     async function listProducts(
         data = {}
@@ -861,9 +822,8 @@
 
 
     /* =========================================================
-       CATEGORY METHODS
+       CATEGORIES
        ========================================================= */
-
 
     async function listCategories(
         data = {}
@@ -910,9 +870,8 @@
 
 
     /* =========================================================
-       SUPPLIER METHODS
+       SUPPLIERS
        ========================================================= */
-
 
     async function listSuppliers(
         data = {}
@@ -959,9 +918,8 @@
 
 
     /* =========================================================
-       STOCK IN
+       STOCK
        ========================================================= */
-
 
     async function listStockIn(
         data = {}
@@ -983,11 +941,6 @@
             data
         );
     }
-
-
-    /* =========================================================
-       STOCK OUT
-       ========================================================= */
 
 
     async function listStockOut(
@@ -1016,7 +969,6 @@
        TRANSACTIONS
        ========================================================= */
 
-
     async function listTransactions(
         data = {}
     ) {
@@ -1031,7 +983,6 @@
     /* =========================================================
        DASHBOARD
        ========================================================= */
-
 
     async function dashboard(
         data = {}
@@ -1048,13 +999,6 @@
        HEALTH CHECK
        ========================================================= */
 
-
-    /**
-     * Test whether the Apps Script backend
-     * is reachable.
-     *
-     * Uses GET instead of POST.
-     */
     async function health() {
 
         validateApiUrl();
@@ -1077,9 +1021,11 @@
                 await fetch(
                     API_URL,
                     {
-                        method: "GET",
+                        method:
+                            "GET",
 
-                        redirect: "follow",
+                        redirect:
+                            "follow",
 
                         signal:
                             controller.signal
@@ -1093,6 +1039,7 @@
 
             let data;
 
+
             try {
 
                 data =
@@ -1103,6 +1050,7 @@
             } catch {
 
                 data = {
+
                     success:
                         response.ok,
 
@@ -1130,7 +1078,7 @@
 
 
     /* =========================================================
-       API OBJECT
+       PUBLIC API
        ========================================================= */
 
     const StockFlowAPI = {
@@ -1162,7 +1110,7 @@
         /* Activity */
         listActivity,
 
-        /* Generic inventory */
+        /* Inventory */
         inventory,
 
         /* Products */
@@ -1196,7 +1144,7 @@
         /* Dashboard */
         dashboard,
 
-        /* Error class */
+        /* Error */
         StockFlowAPIError
     };
 
@@ -1210,42 +1158,33 @@
 
 
     /*
-       Backward compatibility.
-
-       Some of your older files may use:
-       API.verifyOtp()
-       API.login()
-       API.register()
-
-       This allows those files to continue working while
-       we gradually update them to StockFlowAPI.
-    */
-
+     * Compatibility with older files.
+     */
     window.API =
         StockFlowAPI;
 
 
     /* =========================================================
-       DEBUG INFORMATION
+       DEBUG
        ========================================================= */
 
-    console.log(
-        "%cStockFlow API loaded",
-        "font-weight:bold;"
-    );
-
-    if (API_URL) {
+    if (
+        CONFIG.DEBUG === true
+    ) {
 
         console.log(
-            "StockFlow API endpoint:",
+            "%cStockFlow API loaded",
+            "font-weight:bold;"
+        );
+
+        console.log(
+            "API endpoint:",
             API_URL
         );
 
-    } else {
-
-        console.warn(
-            "StockFlow API URL is currently empty. " +
-            "Configure it in config.js."
+        console.log(
+            "Request timeout:",
+            REQUEST_TIMEOUT + "ms"
         );
     }
 
