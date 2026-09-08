@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
+
 <head>
+
     <meta charset="utf-8">
 
     <meta
@@ -10,7 +12,7 @@
 
     <meta
         name="description"
-        content="STOCKFLOW — Create an account for the Phone Accessories Inventory Management System"
+        content="STOCKFLOW — Create an employee account for the Phone Accessories Inventory Management System"
     >
 
     <meta
@@ -20,277 +22,695 @@
 
     <title>STOCKFLOW | Create Account</title>
 
-    <link rel="stylesheet" href="style.css">
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    <!-- =====================================================
+         GLOBAL STYLES
+         ===================================================== -->
 
-        html,
-        body {
-            margin: 0;
-            min-height: 100%;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: #0b0f14;
-            color: #ffffff;
-            font-family:
-                Inter,
-                "Segoe UI",
-                Arial,
-                Helvetica,
-                sans-serif;
-        }
-
-        .stockflow-register-redirect {
-            width: min(100%, 460px);
-            text-align: center;
-            padding: 48px 36px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.035);
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(12px);
-        }
-
-        .stockflow-brand {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-
-        .stockflow-mark {
-            width: 46px;
-            height: 46px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            background: #ffffff;
-            color: #0b0f14;
-            font-size: 14px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-        }
-
-        .stockflow-name {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            text-align: left;
-        }
-
-        .stockflow-name strong {
-            font-size: 20px;
-            line-height: 1;
-            letter-spacing: 0.08em;
-        }
-
-        .stockflow-name span {
-            margin-top: 5px;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .stockflow-register-redirect h1 {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.2;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .stockflow-register-redirect p {
-            max-width: 350px;
-            margin: 14px auto 0;
-            color: rgba(255, 255, 255, 0.58);
-            font-size: 14px;
-            line-height: 1.7;
-        }
-
-        .stockflow-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 28px;
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .stockflow-spinner {
-            width: 15px;
-            height: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.18);
-            border-top-color: #ffffff;
-            border-radius: 50%;
-            animation: stockflow-spin 0.8s linear infinite;
-        }
-
-        @keyframes stockflow-spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .stockflow-continue {
-            display: inline-block;
-            margin-top: 24px;
-            padding: 11px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 9px;
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.06);
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            transition:
-                background 0.2s ease,
-                border-color 0.2s ease;
-        }
-
-        .stockflow-continue:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .stockflow-footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.07);
-            color: rgba(255, 255, 255, 0.35);
-            font-size: 10px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        @media (max-width: 520px) {
-            body {
-                padding: 18px;
-            }
-
-            .stockflow-register-redirect {
-                padding: 38px 24px;
-                border-radius: 16px;
-            }
-
-            .stockflow-register-redirect h1 {
-                font-size: 26px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <main
-        class="stockflow-register-redirect"
-        aria-label="STOCKFLOW registration"
+    <link
+        rel="stylesheet"
+        href="style.css"
     >
 
-        <!-- BRAND -->
 
-        <div class="stockflow-brand">
+    <!-- =====================================================
+         REGISTER PAGE STYLES
+         ===================================================== -->
 
-            <div
-                class="stockflow-mark"
-                aria-hidden="true"
-            >
-                SF
-            </div>
+    <link
+        rel="stylesheet"
+        href="register.css"
+    >
 
-            <div class="stockflow-name">
-
-                <strong>
-                    STOCKFLOW
-                </strong>
-
-                <span>
-                    Inventory Management System
-                </span>
-
-            </div>
-
-        </div>
+</head>
 
 
-        <!-- MESSAGE -->
-
-        <h1>
-            Create your account
-        </h1>
-
-        <p>
-            Opening the STOCKFLOW registration page
-            for the Phone Accessories Inventory Management System.
-        </p>
+<body class="register-body">
 
 
-        <!-- LOADING -->
+    <main class="register-page">
 
-        <div
-            class="stockflow-loading"
-            role="status"
-            aria-live="polite"
+
+        <!-- =================================================
+             LEFT INFORMATION PANEL
+             ================================================= -->
+
+        <section
+            class="register-visual"
+            aria-label="STOCKFLOW information"
         >
 
-            <span
-                class="stockflow-spinner"
-                aria-hidden="true"
-            ></span>
-
-            <span>
-                Opening registration...
-            </span>
-
-        </div>
+            <div class="register-visual-content">
 
 
-        <!-- FALLBACK LINK -->
+                <!-- BRAND -->
 
-        <a
-            href="auth.html#register"
-            class="stockflow-continue"
-        >
-            Continue to Registration
-        </a>
+                <div class="register-brand">
+
+                    <span
+                        class="register-brand-mark"
+                        aria-hidden="true"
+                    >
+                        SF
+                    </span>
+
+                    <div class="register-brand-text">
+
+                        <strong>
+                            STOCKFLOW
+                        </strong>
+
+                        <small>
+                            INVENTORY MANAGEMENT SYSTEM
+                        </small>
+
+                    </div>
+
+                </div>
 
 
-        <!-- FOOTER -->
+                <!-- HERO -->
 
-        <footer class="stockflow-footer">
+                <div class="register-hero">
 
-            STOCKFLOW • Phone Accessories Inventory
+                    <span class="register-eyebrow">
+                        PHONE ACCESSORIES INVENTORY
+                    </span>
 
-        </footer>
+                    <h1>
+
+                        Create your
+                        <span>
+                            employee account.
+                        </span>
+
+                    </h1>
+
+                    <p>
+
+                        Join STOCKFLOW and gain secure access to
+                        inventory management, stock movement,
+                        suppliers, categories, and transaction records.
+
+                    </p>
+
+                </div>
+
+
+                <!-- FEATURES -->
+
+                <div class="register-features">
+
+
+                    <div class="register-feature">
+
+                        <span
+                            class="register-feature-icon"
+                            aria-hidden="true"
+                        >
+                            ✓
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Secure Access
+                            </strong>
+
+                            <small>
+                                Employee accounts are protected
+                                with authentication and verification.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="register-feature">
+
+                        <span
+                            class="register-feature-icon"
+                            aria-hidden="true"
+                        >
+                            ↕
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Inventory Management
+                            </strong>
+
+                            <small>
+                                Monitor phone accessories,
+                                stock levels, and movement.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="register-feature">
+
+                        <span
+                            class="register-feature-icon"
+                            aria-hidden="true"
+                        >
+                            ▣
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Organized Records
+                            </strong>
+
+                            <small>
+                                Keep products, suppliers,
+                                categories, and transactions organized.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- FOOTER -->
+
+                <div class="register-visual-footer">
+
+                    <span>
+                        STOCKFLOW
+                    </span>
+
+                    <span>
+                        •
+                    </span>
+
+                    <span>
+                        Phone Accessories Inventory
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             REGISTRATION AREA
+             ================================================= -->
+
+        <section class="register-box">
+
+
+            <div class="register-card">
+
+
+                <!-- MOBILE BRAND -->
+
+                <div class="register-mobile-brand">
+
+                    <span
+                        class="register-brand-mark"
+                        aria-hidden="true"
+                    >
+                        SF
+                    </span>
+
+                    <div class="register-brand-text">
+
+                        <strong>
+                            STOCKFLOW
+                        </strong>
+
+                        <small>
+                            INVENTORY MANAGEMENT
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- HEADER -->
+
+                <header class="register-header">
+
+                    <span class="register-kicker">
+                        CREATE ACCOUNT
+                    </span>
+
+                    <h2>
+                        Create an employee account
+                    </h2>
+
+                    <p>
+                        Enter your information to create your
+                        STOCKFLOW employee account.
+                    </p>
+
+                </header>
+
+
+                <!-- =================================================
+                     REGISTRATION FORM
+                     ================================================= -->
+
+                <form
+                    id="registerForm"
+                    class="register-form"
+                    novalidate
+                >
+
+
+                    <!-- =================================================
+                         PERSONAL INFORMATION
+                         ================================================= -->
+
+                    <div class="register-section-heading">
+
+                        <span>
+                            01
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Personal Information
+                            </strong>
+
+                            <small>
+                                Enter your basic account information.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="register-grid">
+
+
+                        <!-- FIRST NAME -->
+
+                        <div class="register-field">
+
+                            <label for="registerFirstName">
+                                First Name
+                            </label>
+
+                            <input
+                                id="registerFirstName"
+                                name="firstName"
+                                type="text"
+                                class="register-control"
+                                placeholder="Enter first name"
+                                autocomplete="given-name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- LAST NAME -->
+
+                        <div class="register-field">
+
+                            <label for="registerLastName">
+                                Last Name
+                            </label>
+
+                            <input
+                                id="registerLastName"
+                                name="lastName"
+                                type="text"
+                                class="register-control"
+                                placeholder="Enter last name"
+                                autocomplete="family-name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- USERNAME -->
+
+                        <div class="register-field">
+
+                            <label for="registerUsername">
+                                Username
+                            </label>
+
+                            <input
+                                id="registerUsername"
+                                name="username"
+                                type="text"
+                                class="register-control"
+                                placeholder="Create username"
+                                autocomplete="username"
+                                spellcheck="false"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- AGE -->
+
+                        <div class="register-field">
+
+                            <label for="registerAge">
+                                Age
+                            </label>
+
+                            <input
+                                id="registerAge"
+                                name="age"
+                                type="number"
+                                class="register-control"
+                                placeholder="Enter age"
+                                min="1"
+                                max="120"
+                                inputmode="numeric"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+
+                        <div class="register-field register-full">
+
+                            <label for="registerEmail">
+                                Email / Gmail
+                            </label>
+
+                            <input
+                                id="registerEmail"
+                                name="email"
+                                type="email"
+                                class="register-control"
+                                placeholder="Enter your email address"
+                                autocomplete="email"
+                                spellcheck="false"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- PHONE -->
+
+                        <div class="register-field register-full">
+
+                            <label for="registerPhone">
+                                Mobile Number
+                            </label>
+
+                            <input
+                                id="registerPhone"
+                                name="phone"
+                                type="tel"
+                                class="register-control"
+                                placeholder="09XXXXXXXXX"
+                                autocomplete="tel"
+                                inputmode="tel"
+                                maxlength="11"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         PASSWORD SECTION
+                         ================================================= -->
+
+                    <div class="register-section-heading register-section-password">
+
+                        <span>
+                            02
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                Account Security
+                            </strong>
+
+                            <small>
+                                Create a secure password for your account.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="register-grid">
+
+
+                        <!-- PASSWORD -->
+
+                        <div class="register-field">
+
+                            <label for="registerPassword">
+                                Password
+                            </label>
+
+                            <div class="register-password-field">
+
+                                <input
+                                    id="registerPassword"
+                                    name="password"
+                                    type="password"
+                                    class="register-control"
+                                    placeholder="Create password"
+                                    autocomplete="new-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="register-password-toggle"
+                                    data-toggle-password="registerPassword"
+                                    data-target="registerPassword"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    Show
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CONFIRM PASSWORD -->
+
+                        <div class="register-field">
+
+                            <label for="registerConfirmPassword">
+                                Confirm Password
+                            </label>
+
+                            <div class="register-password-field">
+
+                                <input
+                                    id="registerConfirmPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    class="register-control"
+                                    placeholder="Confirm password"
+                                    autocomplete="new-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="register-password-toggle"
+                                    data-toggle-password="registerConfirmPassword"
+                                    data-target="registerConfirmPassword"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    Show
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         VERIFICATION NOTICE
+                         ================================================= -->
+
+                    <div class="register-note">
+
+                        <div
+                            class="register-note-icon"
+                            aria-hidden="true"
+                        >
+                            ✓
+                        </div>
+
+                        <div class="register-note-content">
+
+                            <strong>
+                                Account Verification
+                            </strong>
+
+                            <p>
+                                After registration, your account will
+                                continue to the verification page before
+                                you can access STOCKFLOW.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         MESSAGE
+                         ================================================= -->
+
+                    <div
+                        id="registerMessage"
+                        class="register-message"
+                        role="alert"
+                        aria-live="polite"
+                    ></div>
+
+
+                    <!-- =================================================
+                         CREATE ACCOUNT BUTTON
+                         ================================================= -->
+
+                    <button
+                        type="submit"
+                        id="registerButton"
+                        class="register-submit"
+                    >
+
+                        <span class="button-text">
+                            Create Employee Account
+                        </span>
+
+                        <span
+                            class="button-loader"
+                            hidden
+                        >
+                            Creating account...
+                        </span>
+
+                    </button>
+
+
+                </form>
+
+
+                <!-- =================================================
+                     BACK TO LOGIN
+                     ================================================= -->
+
+                <div class="register-switch">
+
+                    <span>
+                        Already have an account?
+                    </span>
+
+                    <a
+                        href="login.html"
+                        class="register-text-link"
+                    >
+                        Sign in
+                    </a>
+
+                </div>
+
+
+                <!-- =================================================
+                     SECURITY
+                     ================================================= -->
+
+                <div class="register-security">
+
+                    <span
+                        class="register-security-icon"
+                        aria-hidden="true"
+                    >
+                        🔒
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Secure Inventory Access
+                        </strong>
+
+                        <small>
+                            Your account information is protected
+                            through authenticated access and verification.
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     FOOTER
+                     ================================================= -->
+
+                <footer class="register-footer">
+
+                    <span>
+                        STOCKFLOW Inventory Management System
+                    </span>
+
+                    <span>
+                        Phone Accessories Inventory
+                    </span>
+
+                </footer>
+
+
+            </div>
+
+        </section>
+
 
     </main>
 
 
-    <script>
-        (() => {
-            "use strict";
+    <!-- =========================================================
+         STOCKFLOW JAVASCRIPT
+         ========================================================= -->
 
-            const REGISTER_PAGE = "auth.html#register";
+    <script src="config.js"></script>
 
-            window.setTimeout(() => {
-                window.location.replace(REGISTER_PAGE);
-            }, 350);
-        })();
-    </script>
+    <script src="api.js"></script>
+
+    <script src="auth.js"></script>
+
+    <script src="register.js"></script>
+
 
 </body>
+
 </html>
