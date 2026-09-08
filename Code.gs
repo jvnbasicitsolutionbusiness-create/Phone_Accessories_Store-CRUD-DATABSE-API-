@@ -13,33 +13,9 @@
 // NO REAL SMS OTP
 // NO TWILIO REQUIRED
 //
-// The backend generates the OTP and returns it as demoOtp.
-// The frontend can then auto-fill the OTP boxes in demo mode.
-//
-// ============================================================
-//
-// FEATURES
-// ------------------------------------------------------------
-// 1. Employee registration
-// 2. Admin-only registration
-// 3. Unique UID generation
-// 4. UID collision protection
-// 5. Exact row tracking
-// 6. Google Sheets USER storage
-// 7. Firebase OTP/user mirror
-// 8. Demo 6-digit OTP
-// 9. OTP expires after 10 minutes
-// 10. OTP is single-use
-// 11. Maximum 4 OTP attempts
-// 12. 30-minute OTP lock
-// 13. 60-second resend cooldown
-// 14. Login
-// 15. Account status
-// 16. Role support
-// 17. Forgot password
-// 18. Recovery OTP
-// 19. Password reset
-// 20. API dispatcher
+// DEMO MODE:
+// Backend generates a random 6-digit OTP.
+// Frontend receives demoOtp and can auto-fill the OTP boxes.
 //
 // ============================================================
 
@@ -60,18 +36,6 @@ const APP_NAME =
 
 // ============================================================
 // DEMO MODE
-// ============================================================
-//
-// TRUE = OTP is returned to frontend as demoOtp.
-//
-// For your midterm this remains TRUE.
-//
-// You do NOT need:
-// - Gmail API
-// - MailApp
-// - Twilio
-// - SMS provider
-//
 // ============================================================
 
 const DEMO_MODE =
@@ -110,33 +74,53 @@ const SESSION_TTL_MINUTES =
 // USER SHEET HEADERS
 // ============================================================
 //
-// DO NOT change the order casually.
+// FINAL DATABASE STRUCTURE:
 //
-// Column A = UID
+// A  ID
+// B  UID
+// C  NAME
+// D  USERNAME
+// E  PASSWORD
+// F  AGE
+// G  ACCOUNT_S
+// H  GMAIL
+// I  PHONE NO.
+// J  ROLE
+// K  VERIFIED
+// L  OTP
+// M  OTP EXPIRES
+// N  OTP ATTEMPTS
+// O  OTP LOCK UNTIL
+// P  OTP CHANNEL
+// Q  CREATED AT
+// R  VERIFIED AT
+// S  LAST OTP SENT
+// T  LAST LOGIN
 //
 // ============================================================
 
 const HEADERS = [
 
-  "UID",             // A
-  "NAME",            // B
-  "USERNAME",        // C
-  "PASSWORD",        // D
-  "AGE",             // E
-  "ACCOUNT_S",       // F
-  "GMAIL",           // G
-  "PHONE NO.",       // H
-  "ROLE",            // I
-  "VERIFIED",        // J
-  "OTP",             // K
-  "OTP EXPIRES",     // L
-  "OTP ATTEMPTS",    // M
-  "OTP LOCK UNTIL",  // N
-  "OTP CHANNEL",     // O
-  "CREATED AT",      // P
-  "VERIFIED AT",     // Q
-  "LAST OTP SENT",   // R
-  "LAST LOGIN"       // S
+  "ID",
+  "UID",
+  "NAME",
+  "USERNAME",
+  "PASSWORD",
+  "AGE",
+  "ACCOUNT_S",
+  "GMAIL",
+  "PHONE NO.",
+  "ROLE",
+  "VERIFIED",
+  "OTP",
+  "OTP EXPIRES",
+  "OTP ATTEMPTS",
+  "OTP LOCK UNTIL",
+  "OTP CHANNEL",
+  "CREATED AT",
+  "VERIFIED AT",
+  "LAST OTP SENT",
+  "LAST LOGIN"
 
 ];
 
@@ -159,7 +143,7 @@ function response(data) {
 
 
 // ============================================================
-// NORMALIZE GENERAL VALUE
+// NORMALIZE
 // ============================================================
 
 function normalize(value) {
@@ -174,7 +158,7 @@ function normalize(value) {
 
 
 // ============================================================
-// NORMALIZE EMAIL
+// EMAIL
 // ============================================================
 
 function normalizeEmail(value) {
@@ -185,8 +169,18 @@ function normalizeEmail(value) {
 }
 
 
+function validEmail(email) {
+
+  return /^\S+@\S+\.\S+$/
+    .test(
+      normalizeEmail(email)
+    );
+
+}
+
+
 // ============================================================
-// NORMALIZE PHILIPPINE PHONE
+// PHILIPPINE PHONE
 // ============================================================
 
 function normalizePhone(value) {
@@ -237,24 +231,6 @@ function normalizePhone(value) {
 }
 
 
-// ============================================================
-// VALIDATE EMAIL
-// ============================================================
-
-function validEmail(email) {
-
-  return /^\S+@\S+\.\S+$/
-    .test(
-      normalizeEmail(email)
-    );
-
-}
-
-
-// ============================================================
-// VALIDATE PHILIPPINE PHONE
-// ============================================================
-
 function validPhone(phone) {
 
   return /^\+639\d{9}$/
@@ -266,7 +242,7 @@ function validPhone(phone) {
 
 
 // ============================================================
-// GET SCRIPT PROPERTY
+// SCRIPT PROPERTIES
 // ============================================================
 
 function getProperty(name) {
@@ -278,47 +254,45 @@ function getProperty(name) {
 }
 
 
-// ============================================================
-// ESCAPE HTML
+// Firebase compatibility helper.
+//
+// Your firebase.gs expects sfProp().
+//
 // ============================================================
 
-function escapeHtml(value) {
+function sfProp(name) {
+
+  return getProperty(name);
+
+}
+
+
+// Firebase compatibility helper.
+//
+// ============================================================
+
+function sfErrorMessage(error) {
+
+  if (
+    error &&
+    error.message
+  ) {
+
+    return String(
+      error.message
+    );
+
+  }
 
   return String(
-    value == null
-      ? ""
-      : value
-  )
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    error || "Unknown error."
+  );
 
 }
 
 
 // ============================================================
-// HASH PASSWORD
-// ============================================================
-//
-// Passwords are stored as SHA-256 Base64.
-//
+// PASSWORD HASH
 // ============================================================
 
 function hashPassword(password) {
@@ -336,16 +310,32 @@ function hashPassword(password) {
 
 
 // ============================================================
-// GENERATE OTP
+// OTP
 // ============================================================
 
 function generateOTP() {
 
+  const minimum =
+    Math.pow(
+      10,
+      OTP_LENGTH - 1
+    );
+
+  const maximum =
+    Math.pow(
+      10,
+      OTP_LENGTH
+    ) - 1;
+
   return String(
     Math.floor(
-      100000 +
+      minimum +
       Math.random() *
-      900000
+      (
+        maximum -
+        minimum +
+        1
+      )
     )
   );
 
@@ -353,17 +343,15 @@ function generateOTP() {
 
 
 // ============================================================
-// GENERATE UNIQUE UID
+// UID GENERATION
 // ============================================================
 //
-// IMPORTANT:
+// UID is NOT the numeric ID.
 //
-// This function does NOT simply trust Date.now().
+// Example:
 //
-// It checks the USER sheet for an existing UID.
-//
-// A second safety layer is also provided by the registration
-// Script Lock.
+// ID  = 1
+// UID = sf_20260903...
 //
 // ============================================================
 
@@ -372,16 +360,15 @@ function generateUID() {
   const sheet =
     getSheet();
 
-  let candidate = "";
-
-  let attempts = 0;
-
-  const maximumAttempts = 100;
+  const maximumAttempts =
+    100;
 
 
-  do {
-
-    attempts++;
+  for (
+    let attempt = 0;
+    attempt < maximumAttempts;
+    attempt++
+  ) {
 
     const timestamp =
       Utilities.formatDate(
@@ -389,6 +376,7 @@ function generateUID() {
         Session.getScriptTimeZone(),
         "yyyyMMddHHmmssSSS"
       );
+
 
     const randomPart =
       Utilities
@@ -403,7 +391,8 @@ function generateUID() {
         )
         .toUpperCase();
 
-    candidate =
+
+    const candidate =
       "sf_" +
       timestamp +
       "_" +
@@ -421,10 +410,7 @@ function generateUID() {
 
     }
 
-  } while (
-    attempts <
-    maximumAttempts
-  );
+  }
 
 
   throw new Error(
@@ -435,7 +421,15 @@ function generateUID() {
 
 
 // ============================================================
-// CHECK UID EXISTS
+// UID EXISTS
+// ============================================================
+//
+// IMPORTANT:
+//
+// UID is now COLUMN B.
+//
+// Do NOT check column A because A is numeric ID.
+//
 // ============================================================
 
 function uidExists(
@@ -443,8 +437,25 @@ function uidExists(
   candidate
 ) {
 
+  const uidColumn =
+    getColumnIndex(
+      sheet,
+      "UID"
+    );
+
+
+  if (
+    !uidColumn
+  ) {
+
+    return false;
+
+  }
+
+
   const lastRow =
     sheet.getLastRow();
+
 
   if (
     lastRow < 2
@@ -459,7 +470,7 @@ function uidExists(
     sheet
       .getRange(
         2,
-        1,
+        uidColumn,
         lastRow - 1,
         1
       )
@@ -504,6 +515,118 @@ function uidExists(
 
 
 // ============================================================
+// AUTO-INCREMENT ID
+// ============================================================
+//
+// IMPORTANT:
+//
+// ID is never generated using lastRow + 1.
+//
+// Instead:
+//
+// MAX(existing numeric ID) + 1
+//
+// This means deleting ID 3 will NOT cause the next account
+// to reuse ID 3.
+//
+// Example:
+//
+// 1
+// 2
+// 5
+//
+// next = 6
+//
+// ============================================================
+
+function generateNextID(
+  sheet
+) {
+
+  const idColumn =
+    getColumnIndex(
+      sheet,
+      "ID"
+    );
+
+
+  if (
+    !idColumn
+  ) {
+
+    throw new Error(
+      "ID column was not found."
+    );
+
+  }
+
+
+  const lastRow =
+    sheet.getLastRow();
+
+
+  if (
+    lastRow < 2
+  ) {
+
+    return 1;
+
+  }
+
+
+  const values =
+    sheet
+      .getRange(
+        2,
+        idColumn,
+        lastRow - 1,
+        1
+      )
+      .getValues();
+
+
+  let maximumID =
+    0;
+
+
+  values.forEach(
+    function(row) {
+
+      const value =
+        row[0];
+
+
+      const numeric =
+        Number(
+          value
+        );
+
+
+      if (
+        Number.isInteger(
+          numeric
+        ) &&
+        numeric > maximumID
+      ) {
+
+        maximumID =
+          numeric;
+
+      }
+
+    }
+  );
+
+
+  return (
+    maximumID +
+    1
+  );
+
+}
+
+
+// ============================================================
 // GET SHEET
 // ============================================================
 
@@ -514,13 +637,16 @@ function getSheet() {
       SHEET_ID
     );
 
+
   let sheet =
     spreadsheet.getSheetByName(
       SHEET_NAME
     );
 
 
-  if (!sheet) {
+  if (
+    !sheet
+  ) {
 
     sheet =
       spreadsheet.insertSheet(
@@ -541,32 +667,41 @@ function getSheet() {
 
 
 // ============================================================
+// NORMALIZE HEADER
+// ============================================================
+
+function normalizeHeader(
+  value
+) {
+
+  return normalize(
+    value
+  )
+    .toUpperCase()
+    .replace(
+      /[^A-Z0-9]+/g,
+      " "
+    )
+    .trim();
+
+}
+
+
+// ============================================================
 // ENSURE HEADERS
 // ============================================================
 //
-// IMPORTANT:
+// This version does NOT treat ID as an alias for UID.
 //
-// The old implementation blindly rewrote the first 19
-// headers. This version protects existing data.
-//
-// If the sheet is empty, it creates the correct headers.
-//
-// If the correct headers already exist, nothing is changed.
-//
-// If there are legacy names such as:
-// ID
-// ACCOUNT_S
-// OTP ATTEMPT
-//
-// they are preserved.
-//
-// Missing required columns are added only when necessary.
+// ID and UID are separate fields.
 //
 // ============================================================
 
-function ensureHeaders(sheet) {
+function ensureHeaders(
+  sheet
+) {
 
-  const currentLastColumn =
+  const lastColumn =
     Math.max(
       sheet.getLastColumn(),
       1
@@ -579,17 +714,17 @@ function ensureHeaders(sheet) {
         1,
         1,
         1,
-        currentLastColumn
+        lastColumn
       )
       .getValues()[0];
 
 
   const hasAnyHeader =
     currentHeaders.some(
-      function(header) {
+      function(value) {
 
         return normalize(
-          header
+          value
         ) !== "";
 
       }
@@ -600,7 +735,9 @@ function ensureHeaders(sheet) {
   // EMPTY SHEET
   // ----------------------------------------------------------
 
-  if (!hasAnyHeader) {
+  if (
+    !hasAnyHeader
+  ) {
 
     if (
       sheet.getMaxColumns() <
@@ -608,12 +745,9 @@ function ensureHeaders(sheet) {
     ) {
 
       sheet.insertColumnsAfter(
-
         sheet.getMaxColumns(),
-
         HEADERS.length -
         sheet.getMaxColumns()
-
       );
 
     }
@@ -652,251 +786,84 @@ function ensureHeaders(sheet) {
   // EXISTING SHEET
   // ----------------------------------------------------------
 
-  const normalizedExisting =
+  const existing =
     currentHeaders.map(
-      function(header) {
+      normalizeHeader
+    );
 
-        return normalizeHeader(
-          header
+
+  HEADERS.forEach(
+    function(required) {
+
+      const wanted =
+        normalizeHeader(
+          required
+        );
+
+
+      if (
+        existing.indexOf(
+          wanted
+        ) !== -1
+      ) {
+
+        return;
+
+      }
+
+
+      const nextColumn =
+        sheet.getLastColumn() +
+        1;
+
+
+      if (
+        nextColumn >
+        sheet.getMaxColumns()
+      ) {
+
+        sheet.insertColumnAfter(
+          sheet.getMaxColumns()
         );
 
       }
-    );
 
 
-  for (
-    let i = 0;
-    i < HEADERS.length;
-    i++
-  ) {
-
-    const required =
-      HEADERS[i];
-
-
-    const normalizedRequired =
-      normalizeHeader(
-        required
-      );
+      sheet
+        .getRange(
+          1,
+          nextColumn
+        )
+        .setValue(
+          required
+        );
 
 
-    if (
-      normalizedExisting
-        .indexOf(
-          normalizedRequired
-        ) !== -1
-    ) {
-
-      continue;
-
-    }
+      sheet
+        .getRange(
+          1,
+          nextColumn
+        )
+        .setFontWeight(
+          "bold"
+        );
 
 
-    // --------------------------------------------------------
-    // LEGACY ALIASES
-    // --------------------------------------------------------
-
-    const aliases =
-      getHeaderAliases(
-        required
-      );
-
-
-    let aliasFound =
-      false;
-
-
-    for (
-      let a = 0;
-      a < aliases.length;
-      a++
-    ) {
-
-      if (
-        normalizedExisting
-          .indexOf(
-            normalizeHeader(
-              aliases[a]
-            )
-          ) !== -1
-      ) {
-
-        aliasFound =
-          true;
-
-        break;
-
-      }
-
-    }
-
-
-    if (
-      aliasFound
-    ) {
-
-      continue;
-
-    }
-
-
-    // --------------------------------------------------------
-    // APPEND MISSING HEADER
-    // --------------------------------------------------------
-
-    const nextColumn =
-      sheet.getLastColumn() +
-      1;
-
-
-    if (
-      nextColumn >
-      sheet.getMaxColumns()
-    ) {
-
-      sheet.insertColumnAfter(
-        sheet.getMaxColumns()
+      existing.push(
+        wanted
       );
 
     }
-
-
-    sheet
-      .getRange(
-        1,
-        nextColumn
-      )
-      .setValue(
-        required
-      );
-
-
-    sheet
-      .getRange(
-        1,
-        nextColumn
-      )
-      .setFontWeight(
-        "bold"
-      );
-
-
-    normalizedExisting.push(
-      normalizedRequired
-    );
-
-  }
+  );
 
 }
 
 
 // ============================================================
-// NORMALIZE HEADER
-// ============================================================
-
-function normalizeHeader(
-  value
-) {
-
-  return normalize(
-    value
-  )
-    .toUpperCase()
-    .replace(
-      /[^A-Z0-9]+/g,
-      " "
-    )
-    .trim();
-
-}
-
-
-// ============================================================
-// HEADER ALIASES
-// ============================================================
-
-function getHeaderAliases(
-  header
-) {
-
-  const key =
-    normalizeHeader(
-      header
-    );
-
-
-  const aliases = {
-
-    "UID": [
-      "ID",
-      "USER ID",
-      "USER_ID"
-    ],
-
-    "ACCOUNT S": [
-      "ACCOUNT STATUS",
-      "STATUS",
-      "ACCOUNT_STATUS"
-    ],
-
-    "PHONE NO": [
-      "PHONE",
-      "MOBILE",
-      "MOBILE NUMBER",
-      "PHONE NUMBER"
-    ],
-
-    "OTP ATTEMPTS": [
-      "OTP ATTEMPT",
-      "ATTEMPT",
-      "ATTEMPTS"
-    ],
-
-    "OTP LOCK UNTIL": [
-      "OTP LOCK",
-      "LOCK UNTIL"
-    ],
-
-    "OTP EXPIRES": [
-      "OTP EXPIRY",
-      "OTP EXPIRATION",
-      "OTP EXPIRE"
-    ],
-
-    "LAST OTP SENT": [
-      "OTP SENT",
-      "LAST SENT"
-    ],
-
-    "CREATED AT": [
-      "CREATED",
-      "DATE CREATED"
-    ],
-
-    "VERIFIED AT": [
-      "VERIFIED DATE",
-      "DATE VERIFIED"
-    ],
-
-    "LAST LOGIN": [
-      "LOGIN DATE",
-      "LAST LOGIN DATE"
-    ]
-
-  };
-
-
-  return aliases[key] ||
-    [];
-
-}
-
-
-// ============================================================
-// GET COLUMN INDEX
+// COLUMN INDEX
 // ============================================================
 //
-// Returns 1-based spreadsheet column number.
+// Returns a 1-based column number.
 //
 // ============================================================
 
@@ -907,6 +874,15 @@ function getColumnIndex(
 
   const lastColumn =
     sheet.getLastColumn();
+
+
+  if (
+    lastColumn < 1
+  ) {
+
+    return 0;
+
+  }
 
 
   const headers =
@@ -945,55 +921,18 @@ function getColumnIndex(
   }
 
 
-  const aliases =
-    getHeaderAliases(
-      field
-    );
-
-
-  for (
-    let a = 0;
-    a < aliases.length;
-    a++
-  ) {
-
-    const alias =
-      normalizeHeader(
-        aliases[a]
-      );
-
-
-    for (
-      let i = 0;
-      i < headers.length;
-      i++
-    ) {
-
-      if (
-        normalizeHeader(
-          headers[i]
-        ) === alias
-      ) {
-
-        return i + 1;
-
-      }
-
-    }
-
-  }
-
-
   return 0;
 
 }
 
 
 // ============================================================
-// GET ALL USER ROWS
+// GET ROWS
 // ============================================================
 
-function getRows(sheet) {
+function getRows(
+  sheet
+) {
 
   const lastRow =
     sheet.getLastRow();
@@ -1021,6 +960,81 @@ function getRows(sheet) {
 
 
 // ============================================================
+// GET ROW FIELD
+// ============================================================
+
+function getRowField(
+  sheet,
+  row,
+  field
+) {
+
+  const column =
+    getColumnIndex(
+      sheet,
+      field
+    );
+
+
+  if (
+    !column
+  ) {
+
+    return "";
+
+  }
+
+
+  return row[
+    column - 1
+  ];
+
+}
+
+
+// ============================================================
+// SET USER FIELD
+// ============================================================
+
+function setUserField(
+  sheet,
+  rowNumber,
+  field,
+  value
+) {
+
+  const column =
+    getColumnIndex(
+      sheet,
+      field
+    );
+
+
+  if (
+    !column
+  ) {
+
+    throw new Error(
+      "Required column not found: " +
+      field
+    );
+
+  }
+
+
+  sheet
+    .getRange(
+      rowNumber,
+      column
+    )
+    .setValue(
+      value
+    );
+
+}
+
+
+// ============================================================
 // FIND USER
 // ============================================================
 
@@ -1030,6 +1044,7 @@ function findUser(
 
   const sheet =
     getSheet();
+
 
   const rows =
     getRows(
@@ -1043,7 +1058,9 @@ function findUser(
     );
 
 
-  if (!targetRaw) {
+  if (
+    !targetRaw
+  ) {
 
     return null;
 
@@ -1063,6 +1080,17 @@ function findUser(
 
     const row =
       rows[i];
+
+
+    const id =
+      normalize(
+        getRowField(
+          sheet,
+          row,
+          "ID"
+        )
+      )
+        .toLowerCase();
 
 
     const uid =
@@ -1109,6 +1137,7 @@ function findUser(
 
 
     if (
+      target === id ||
       target === uid ||
       target === username ||
       target === gmail ||
@@ -1154,118 +1183,6 @@ function findUserByUsername(
 
 
 // ============================================================
-// GET FIELD FROM ROW
-// ============================================================
-
-function getRowField(
-  sheet,
-  row,
-  field
-) {
-
-  const column =
-    getColumnIndex(
-      sheet,
-      field
-    );
-
-
-  if (
-    !column
-  ) {
-
-    return "";
-
-  }
-
-
-  return row[
-    column - 1
-  ];
-
-}
-
-
-// ============================================================
-// SET FIELD ON EXACT USER ROW
-// ============================================================
-
-function setUserField(
-  sheet,
-  rowNumber,
-  field,
-  value
-) {
-
-  let column =
-    getColumnIndex(
-      sheet,
-      field
-    );
-
-
-  // ----------------------------------------------------------
-  // If missing, append it.
-  // ----------------------------------------------------------
-
-  if (!column) {
-
-    const nextColumn =
-      sheet.getLastColumn() +
-      1;
-
-
-    if (
-      nextColumn >
-      sheet.getMaxColumns()
-    ) {
-
-      sheet.insertColumnAfter(
-        sheet.getMaxColumns()
-      );
-
-    }
-
-
-    sheet
-      .getRange(
-        1,
-        nextColumn
-      )
-      .setValue(
-        field
-      );
-
-
-    sheet
-      .getRange(
-        1,
-        nextColumn
-      )
-      .setFontWeight(
-        "bold"
-      );
-
-
-    column =
-      nextColumn;
-
-  }
-
-
-  sheet
-    .getRange(
-      rowNumber,
-      column
-    )
-    .setValue(
-      value
-    );
-
-}
-
-
-// ============================================================
 // USER OBJECT
 // ============================================================
 
@@ -1283,6 +1200,15 @@ function userObject(
 
 
   return {
+
+    id:
+      Number(
+        getRowField(
+          sheet,
+          row,
+          "ID"
+        )
+      ) || null,
 
     uid:
       normalize(
@@ -1378,7 +1304,7 @@ function userObject(
 
 
 // ============================================================
-// GENERATE SESSION
+// SESSION
 // ============================================================
 
 function createSession(
@@ -1399,6 +1325,9 @@ function createSession(
       token,
 
       JSON.stringify({
+
+        id:
+          user.id,
 
         uid:
           user.uid,
@@ -1426,7 +1355,7 @@ function createSession(
 
 
 // ============================================================
-// GET OTP IDENTITY
+// OTP IDENTITY
 // ============================================================
 
 function getOtpIdentity(
@@ -1446,6 +1375,7 @@ function getOtpIdentity(
     data.phone ||
     data.phoneNumber ||
     data.mobile ||
+    data.mobileNumber ||
     ""
   );
 
@@ -1453,11 +1383,7 @@ function getOtpIdentity(
 
 
 // ============================================================
-// CREATE OTP
-// ============================================================
-//
-// This function stores the OTP on the EXACT user row.
-//
+// CREATE OTP FOR USER
 // ============================================================
 
 function createOTPForUser(
@@ -1505,7 +1431,7 @@ function createOTPForUser(
 
 
   // ----------------------------------------------------------
-  // SAVE TO EXACT ROW
+  // WRITE TO EXACT USER ROW
   // ----------------------------------------------------------
 
   setUserField(
@@ -1556,6 +1482,38 @@ function createOTPForUser(
   );
 
 
+  const uid =
+    getRowField(
+      found.sheet,
+      found.values,
+      "UID"
+    );
+
+
+  const username =
+    getRowField(
+      found.sheet,
+      found.values,
+      "USERNAME"
+    );
+
+
+  const gmail =
+    getRowField(
+      found.sheet,
+      found.values,
+      "GMAIL"
+    );
+
+
+  const phone =
+    getRowField(
+      found.sheet,
+      found.values,
+      "PHONE NO."
+    );
+
+
   // ----------------------------------------------------------
   // FIREBASE OTP MIRROR
   // ----------------------------------------------------------
@@ -1570,32 +1528,16 @@ function createOTPForUser(
       sfFirebaseSaveOtp({
 
         uid:
-          getRowField(
-            found.sheet,
-            found.values,
-            "UID"
-          ),
+          uid,
 
         username:
-          getRowField(
-            found.sheet,
-            found.values,
-            "USERNAME"
-          ),
+          username,
 
         gmail:
-          getRowField(
-            found.sheet,
-            found.values,
-            "GMAIL"
-          ),
+          gmail,
 
         phone:
-          getRowField(
-            found.sheet,
-            found.values,
-            "PHONE NO."
-          ),
+          phone,
 
         otp:
           code,
@@ -1613,7 +1555,9 @@ function createOTPForUser(
 
     }
 
-  } catch (firebaseError) {
+  } catch (
+    firebaseError
+  ) {
 
     console.error(
       "Firebase OTP mirror failed:",
@@ -1627,46 +1571,38 @@ function createOTPForUser(
 
     success: true,
 
+    id:
+      Number(
+        getRowField(
+          found.sheet,
+          found.values,
+          "ID"
+        )
+      ) || null,
+
     uid:
-      getRowField(
-        found.sheet,
-        found.values,
-        "UID"
-      ),
+      uid,
 
     username:
-      getRowField(
-        found.sheet,
-        found.values,
-        "USERNAME"
-      ),
+      username,
 
     gmail:
-      getRowField(
-        found.sheet,
-        found.values,
-        "GMAIL"
-      ),
+      gmail,
 
     email:
-      getRowField(
-        found.sheet,
-        found.values,
-        "GMAIL"
-      ),
+      gmail,
 
     phone:
-      getRowField(
-        found.sheet,
-        found.values,
-        "PHONE NO."
-      ),
+      phone,
 
     channel:
       normalizedChannel,
 
     expiresAt:
       expires.toISOString(),
+
+    otpReady:
+      true,
 
     otpSent:
       true,
@@ -1677,15 +1613,14 @@ function createOTPForUser(
     smsSent:
       false,
 
+    demo:
+      DEMO_MODE,
+
     message:
       "Verification code prepared."
 
   };
 
-
-  // ----------------------------------------------------------
-  // DEMO OTP
-  // ----------------------------------------------------------
 
   if (
     DEMO_MODE
@@ -1706,7 +1641,7 @@ function createOTPForUser(
 
 
 // ============================================================
-// GET EXISTING OTP IF VALID
+// EXISTING OTP
 // ============================================================
 
 function getExistingOtp(
@@ -1789,18 +1724,6 @@ function getExistingOtp(
 // ============================================================
 // REGISTER EMPLOYEE
 // ============================================================
-//
-// UNIQUE UID SAFETY:
-// ------------------------------------------------------------
-// A Script Lock prevents two simultaneous registrations from
-// calculating the same last row / interfering with one another.
-//
-// The UID is checked before insertion.
-//
-// appendRow() is followed by the exact row number calculated
-// from the locked sheet state.
-//
-// ============================================================
 
 function registerUser(
   data
@@ -1865,7 +1788,8 @@ function registerUser(
       normalizePhone(
         data.phone ||
         data.phoneNumber ||
-        data.mobile
+        data.mobile ||
+        data.mobileNumber
       );
 
 
@@ -1999,7 +1923,7 @@ function registerUser(
 
 
     // --------------------------------------------------------
-    // DUPLICATE CHECK
+    // DUPLICATES
     // --------------------------------------------------------
 
     if (
@@ -2057,8 +1981,14 @@ function registerUser(
 
 
     // --------------------------------------------------------
-    // UNIQUE UID
+    // GENERATE IDs
     // --------------------------------------------------------
+
+    const nextID =
+      generateNextID(
+        sheet
+      );
+
 
     const accountUid =
       generateUID();
@@ -2069,15 +1999,12 @@ function registerUser(
 
 
     // --------------------------------------------------------
-    // APPEND ACCOUNT
-    // --------------------------------------------------------
-    //
-    // IMPORTANT:
-    // Password is hashed before storage.
-    //
+    // APPEND NEW ACCOUNT
     // --------------------------------------------------------
 
     const rowData = [
+
+      nextID,
 
       accountUid,
 
@@ -2122,18 +2049,25 @@ function registerUser(
     ];
 
 
+    if (
+      rowData.length !==
+      HEADERS.length
+    ) {
+
+      throw new Error(
+        "Registration data/header count mismatch."
+      );
+
+    }
+
+
     sheet.appendRow(
       rowData
     );
 
 
     // --------------------------------------------------------
-    // EXACT ROW NUMBER
-    // --------------------------------------------------------
-    //
-    // Because we hold the Script Lock, another registration
-    // cannot insert between appendRow() and this calculation.
-    //
+    // EXACT ROW
     // --------------------------------------------------------
 
     const rowNumber =
@@ -2141,7 +2075,37 @@ function registerUser(
 
 
     // --------------------------------------------------------
-    // VERIFY UID WAS WRITTEN TO THE EXPECTED ROW
+    // VERIFY ID
+    // --------------------------------------------------------
+
+    const storedID =
+      Number(
+        sheet
+          .getRange(
+            rowNumber,
+            getColumnIndex(
+              sheet,
+              "ID"
+            )
+          )
+          .getValue()
+      );
+
+
+    if (
+      storedID !==
+      nextID
+    ) {
+
+      throw new Error(
+        "ID row verification failed."
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // VERIFY UID
     // --------------------------------------------------------
 
     const storedUid =
@@ -2149,7 +2113,10 @@ function registerUser(
         sheet
           .getRange(
             rowNumber,
-            1
+            getColumnIndex(
+              sheet,
+              "UID"
+            )
           )
           .getValue()
       );
@@ -2168,7 +2135,7 @@ function registerUser(
 
 
     // --------------------------------------------------------
-    // FIND THE EXACT CREATED USER
+    // FIND EXACT USER
     // --------------------------------------------------------
 
     const found =
@@ -2177,7 +2144,9 @@ function registerUser(
       );
 
 
-    if (!found) {
+    if (
+      !found
+    ) {
 
       throw new Error(
         "Created account could not be located."
@@ -2225,6 +2194,9 @@ function registerUser(
           uid:
             accountUid,
 
+          id:
+            nextID,
+
           name:
             name,
 
@@ -2253,7 +2225,9 @@ function registerUser(
 
       }
 
-    } catch (firebaseError) {
+    } catch (
+      firebaseError
+    ) {
 
       console.error(
         "Firebase user mirror failed:",
@@ -2270,6 +2244,9 @@ function registerUser(
     return {
 
       success: true,
+
+      id:
+        nextID,
 
       uid:
         accountUid,
@@ -2313,6 +2290,9 @@ function registerUser(
       expiresAt:
         otpResult.expiresAt,
 
+      otpReady:
+        true,
+
       demo:
         DEMO_MODE,
 
@@ -2331,7 +2311,9 @@ function registerUser(
 
     };
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     console.error(
       "registerUser error:",
@@ -2357,7 +2339,9 @@ function registerUser(
 
       lock.releaseLock();
 
-    } catch (lockError) {
+    } catch (
+      lockError
+    ) {
 
       console.error(
         "Unable to release registration lock:",
@@ -2373,16 +2357,6 @@ function registerUser(
 
 // ============================================================
 // ADMIN REGISTRATION
-// ============================================================
-//
-// Admin registration requires:
-//
-// Script Property:
-// ADMIN_REGISTRATION_KEY
-//
-// The normal registration form cannot create Admin accounts
-// unless this endpoint is explicitly called with the key.
-//
 // ============================================================
 
 function registerAdmin(
@@ -2473,7 +2447,8 @@ function registerAdmin(
 
     const phone =
       normalizePhone(
-        data.phone
+        data.phone ||
+        data.phoneNumber
       );
 
 
@@ -2638,6 +2613,12 @@ function registerAdmin(
     }
 
 
+    const nextID =
+      generateNextID(
+        sheet
+      );
+
+
     const accountUid =
       generateUID();
 
@@ -2647,6 +2628,8 @@ function registerAdmin(
 
 
     sheet.appendRow([
+
+      nextID,
 
       accountUid,
 
@@ -2695,12 +2678,41 @@ function registerAdmin(
       sheet.getLastRow();
 
 
+    const storedID =
+      Number(
+        sheet
+          .getRange(
+            rowNumber,
+            getColumnIndex(
+              sheet,
+              "ID"
+            )
+          )
+          .getValue()
+      );
+
+
+    if (
+      storedID !==
+      nextID
+    ) {
+
+      throw new Error(
+        "Admin ID row verification failed."
+      );
+
+    }
+
+
     const storedUid =
       normalize(
         sheet
           .getRange(
             rowNumber,
-            1
+            getColumnIndex(
+              sheet,
+              "UID"
+            )
           )
           .getValue()
       );
@@ -2724,7 +2736,9 @@ function registerAdmin(
       );
 
 
-    if (!found) {
+    if (
+      !found
+    ) {
 
       throw new Error(
         "Created admin account could not be located."
@@ -2763,6 +2777,9 @@ function registerAdmin(
           uid:
             accountUid,
 
+          id:
+            nextID,
+
           name:
             name,
 
@@ -2791,7 +2808,9 @@ function registerAdmin(
 
       }
 
-    } catch (firebaseError) {
+    } catch (
+      firebaseError
+    ) {
 
       console.error(
         "Firebase admin mirror failed:",
@@ -2805,6 +2824,9 @@ function registerAdmin(
 
       success: true,
 
+      id:
+        nextID,
+
       uid:
         accountUid,
 
@@ -2815,6 +2837,9 @@ function registerAdmin(
         username,
 
       gmail:
+        gmail,
+
+      email:
         gmail,
 
       phone:
@@ -2841,6 +2866,9 @@ function registerAdmin(
       expiresAt:
         otpResult.expiresAt,
 
+      otpReady:
+        true,
+
       demo:
         DEMO_MODE,
 
@@ -2859,7 +2887,9 @@ function registerAdmin(
 
     };
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     console.error(
       "registerAdmin error:",
@@ -2885,7 +2915,9 @@ function registerAdmin(
 
       lock.releaseLock();
 
-    } catch (lockError) {
+    } catch (
+      lockError
+    ) {
 
       console.error(
         "Admin registration lock release failed:",
@@ -2952,7 +2984,9 @@ function loginUser(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -2966,15 +3000,11 @@ function loginUser(
   }
 
 
-  const row =
-    found.values;
-
-
   const savedPassword =
     String(
       getRowField(
         found.sheet,
-        row,
+        found.values,
         "PASSWORD"
       ) ||
       ""
@@ -2986,10 +3016,6 @@ function loginUser(
       password
     );
 
-
-  // ----------------------------------------------------------
-  // Support old plaintext records AND new hashed records.
-  // ----------------------------------------------------------
 
   if (
     savedPassword !==
@@ -3014,7 +3040,7 @@ function loginUser(
     normalize(
       getRowField(
         found.sheet,
-        row,
+        found.values,
         "ACCOUNT_S"
       )
     )
@@ -3024,7 +3050,7 @@ function loginUser(
   const verifiedValue =
     getRowField(
       found.sheet,
-      row,
+      found.values,
       "VERIFIED"
     );
 
@@ -3039,7 +3065,7 @@ function loginUser(
 
 
   // ----------------------------------------------------------
-  // STATUS
+  // ACCOUNT STATUS
   // ----------------------------------------------------------
 
   if (
@@ -3097,7 +3123,9 @@ function loginUser(
   // UNVERIFIED
   // ----------------------------------------------------------
 
-  if (!verified) {
+  if (
+    !verified
+  ) {
 
     const existingOtp =
       getExistingOtp(
@@ -3114,52 +3142,61 @@ function loginUser(
       requiresVerification:
         true,
 
+      id:
+        Number(
+          getRowField(
+            found.sheet,
+            found.values,
+            "ID"
+          )
+        ) || null,
+
       uid:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "UID"
         ),
 
       name:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "NAME"
         ),
 
       username:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "USERNAME"
         ),
 
       gmail:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "GMAIL"
         ),
 
       email:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "GMAIL"
         ),
 
       phone:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "PHONE NO."
         ),
 
       role:
         getRowField(
           found.sheet,
-          row,
+          found.values,
           "ROLE"
         ) ||
         "Employee",
@@ -3196,15 +3233,19 @@ function loginUser(
 
 
   // ----------------------------------------------------------
-  // SESSION
+  // USER OBJECT
   // ----------------------------------------------------------
 
   const user =
     userObject(
-      row,
+      found.values,
       found.sheet
     );
 
+
+  // ----------------------------------------------------------
+  // SESSION
+  // ----------------------------------------------------------
 
   const token =
     createSession(
@@ -3262,7 +3303,9 @@ function session(
     );
 
 
-  if (!token) {
+  if (
+    !token
+  ) {
 
     return {
 
@@ -3285,7 +3328,9 @@ function session(
       );
 
 
-  if (!raw) {
+  if (
+    !raw
+  ) {
 
     return {
 
@@ -3312,7 +3357,9 @@ function session(
 
     };
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     return {
 
@@ -3346,7 +3393,9 @@ function logout(
     );
 
 
-  if (token) {
+  if (
+    token
+  ) {
 
     CacheService
       .getScriptCache()
@@ -3372,19 +3421,6 @@ function logout(
 
 // ============================================================
 // VERIFY OTP
-// ============================================================
-//
-// Successful account verification:
-//
-// ACCOUNT_S = VERIFIED
-// VERIFIED = TRUE
-// OTP cleared
-// Attempts reset
-// Lock cleared
-//
-// A new login session is also returned so the frontend can
-// immediately redirect to dashboard.html.
-//
 // ============================================================
 
 function verifyOTP(
@@ -3448,7 +3484,9 @@ function verifyOTP(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -3471,7 +3509,7 @@ function verifyOTP(
 
 
   // ----------------------------------------------------------
-  // LOCK CHECK
+  // LOCK
   // ----------------------------------------------------------
 
   const lockValue =
@@ -3496,7 +3534,7 @@ function verifyOTP(
       lockUntil.getTime()
     ) &&
     Date.now() <
-      lockUntil.getTime()
+    lockUntil.getTime()
   ) {
 
     const remaining =
@@ -3593,7 +3631,7 @@ function verifyOTP(
 
 
   // ----------------------------------------------------------
-  // COMPARE OTP
+  // COMPARE
   // ----------------------------------------------------------
 
   const storedOTP =
@@ -3631,10 +3669,6 @@ function verifyOTP(
       attempts
     );
 
-
-    // --------------------------------------------------------
-    // FOURTH FAILURE = 30 MINUTE LOCK
-    // --------------------------------------------------------
 
     if (
       attempts >=
@@ -3705,9 +3739,9 @@ function verifyOTP(
   }
 
 
-  // ==========================================================
+  // ----------------------------------------------------------
   // CORRECT OTP
-  // ==========================================================
+  // ----------------------------------------------------------
 
   setUserField(
     sheet,
@@ -3765,10 +3799,6 @@ function verifyOTP(
   );
 
 
-  // ----------------------------------------------------------
-  // FIREBASE
-  // ----------------------------------------------------------
-
   const verifiedUid =
     getRowField(
       sheet,
@@ -3776,6 +3806,10 @@ function verifyOTP(
       "UID"
     );
 
+
+  // ----------------------------------------------------------
+  // FIREBASE
+  // ----------------------------------------------------------
 
   try {
 
@@ -3790,7 +3824,9 @@ function verifyOTP(
 
     }
 
-  } catch (firebaseError) {
+  } catch (
+    firebaseError
+  ) {
 
     console.error(
       "Firebase verification mirror failed:",
@@ -3801,7 +3837,7 @@ function verifyOTP(
 
 
   // ----------------------------------------------------------
-  // READ UPDATED USER
+  // UPDATED USER
   // ----------------------------------------------------------
 
   const updated =
@@ -3810,7 +3846,9 @@ function verifyOTP(
     );
 
 
-  if (!updated) {
+  if (
+    !updated
+  ) {
 
     return {
 
@@ -3832,10 +3870,6 @@ function verifyOTP(
       updated.sheet
     );
 
-
-  // ----------------------------------------------------------
-  // CREATE SESSION
-  // ----------------------------------------------------------
 
   const token =
     createSession(
@@ -3884,7 +3918,9 @@ function resendOTP(
     );
 
 
-  if (!identity) {
+  if (
+    !identity
+  ) {
 
     return {
 
@@ -3904,7 +3940,9 @@ function resendOTP(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -3921,10 +3959,6 @@ function resendOTP(
   const row =
     found.values;
 
-
-  // ----------------------------------------------------------
-  // ALREADY VERIFIED
-  // ----------------------------------------------------------
 
   const verifiedValue =
     getRowField(
@@ -3943,7 +3977,9 @@ function resendOTP(
       "TRUE";
 
 
-  if (verified) {
+  if (
+    verified
+  ) {
 
     return {
 
@@ -3960,7 +3996,7 @@ function resendOTP(
 
 
   // ----------------------------------------------------------
-  // LOCK CHECK
+  // LOCK
   // ----------------------------------------------------------
 
   const lockValue =
@@ -3985,7 +4021,7 @@ function resendOTP(
       lockUntil.getTime()
     ) &&
     Date.now() <
-      lockUntil.getTime()
+    lockUntil.getTime()
   ) {
 
     return {
@@ -3995,9 +4031,7 @@ function resendOTP(
       locked: true,
 
       message:
-        "OTP verification is temporarily locked for " +
-        OTP_LOCK_MINUTES +
-        " minutes."
+        "OTP verification is temporarily locked."
 
     };
 
@@ -4071,10 +4105,6 @@ function resendOTP(
   }
 
 
-  // ----------------------------------------------------------
-  // CREATE NEW OTP
-  // ----------------------------------------------------------
-
   const result =
     createOTPForUser(
 
@@ -4106,6 +4136,9 @@ function resendOTP(
 
     smsSent: false,
 
+    id:
+      result.id,
+
     uid:
       result.uid,
 
@@ -4126,6 +4159,9 @@ function resendOTP(
 
     channel:
       result.channel,
+
+    otpReady:
+      true,
 
     demo:
       DEMO_MODE,
@@ -4151,10 +4187,6 @@ function resendOTP(
 // ============================================================
 // REQUEST OTP
 // ============================================================
-//
-// Compatibility endpoint used by some existing auth.js code.
-//
-// ============================================================
 
 function requestOtp(
   data
@@ -4171,22 +4203,9 @@ function requestOtp(
 // PREPARE OTP
 // ============================================================
 //
-// This is intentionally different from resend.
+// If an active OTP exists, reuse it.
 //
-// If a valid OTP already exists, it returns that OTP instead
-// of creating a second OTP.
-//
-// This is important after registration:
-//
-// register
-//    ↓
-// OTP already exists
-//    ↓
-// verify.html
-//    ↓
-// prepareOtp
-//    ↓
-// same OTP is returned
+// Otherwise generate a new OTP.
 //
 // ============================================================
 
@@ -4204,7 +4223,9 @@ function prepareOtp(
     );
 
 
-  if (!identity) {
+  if (
+    !identity
+  ) {
 
     return {
 
@@ -4224,7 +4245,9 @@ function prepareOtp(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -4259,7 +4282,9 @@ function prepareOtp(
       "TRUE";
 
 
-  if (verified) {
+  if (
+    verified
+  ) {
 
     return {
 
@@ -4281,11 +4306,22 @@ function prepareOtp(
     );
 
 
-  if (existing) {
+  if (
+    existing
+  ) {
 
     return {
 
       success: true,
+
+      id:
+        Number(
+          getRowField(
+            found.sheet,
+            row,
+            "ID"
+          )
+        ) || null,
 
       uid:
         getRowField(
@@ -4357,7 +4393,6 @@ function prepareOtp(
   }
 
 
-  // If no active OTP exists, generate one.
   return createOTPForUser(
     found,
     data.channel ||
@@ -4369,11 +4404,7 @@ function prepareOtp(
 
 
 // ============================================================
-// GENERATE OTP
-// ============================================================
-//
-// Alias used by api.js.
-//
+// GENERATE OTP ALIAS
 // ============================================================
 
 function generateOtp(
@@ -4405,7 +4436,9 @@ function getUser(
     );
 
 
-  if (!identity) {
+  if (
+    !identity
+  ) {
 
     return {
 
@@ -4425,7 +4458,9 @@ function getUser(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -4483,15 +4518,10 @@ function updateAccountStatus(
   const allowedStatuses = [
 
     "PENDING",
-
     "VERIFIED",
-
     "ACTIVE",
-
     "SUSPENDED",
-
     "DISABLED",
-
     "BLOCKED"
 
   ];
@@ -4521,7 +4551,9 @@ function updateAccountStatus(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -4567,14 +4599,6 @@ function updateAccountStatus(
 // ============================================================
 // FORGOT PASSWORD
 // ============================================================
-//
-// DEMO VERSION:
-//
-// Generates a recovery OTP and returns demoOtp.
-//
-// No Gmail/SMS is actually sent.
-//
-// ============================================================
 
 function forgotPassword(
   data
@@ -4590,7 +4614,9 @@ function forgotPassword(
     );
 
 
-  if (!identity) {
+  if (
+    !identity
+  ) {
 
     return {
 
@@ -4611,10 +4637,12 @@ function forgotPassword(
 
 
   // ----------------------------------------------------------
-  // Do not reveal account existence.
+  // SECURITY: DO NOT REVEAL WHETHER ACCOUNT EXISTS
   // ----------------------------------------------------------
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -4659,6 +4687,9 @@ function forgotPassword(
 
     found: true,
 
+    id:
+      result.id,
+
     uid:
       result.uid,
 
@@ -4676,6 +4707,9 @@ function forgotPassword(
 
     expiresAt:
       result.expiresAt,
+
+    otpReady:
+      true,
 
     demo:
       DEMO_MODE,
@@ -4700,18 +4734,6 @@ function forgotPassword(
 
 // ============================================================
 // VERIFY RECOVERY OTP
-// ============================================================
-//
-// IMPORTANT:
-//
-// Recovery OTP verification does NOT mark the account as
-// verified.
-//
-// It only confirms that the recovery code is correct.
-//
-// The password reset endpoint verifies the OTP again before
-// changing the password.
-//
 // ============================================================
 
 function verifyRecoveryOtp(
@@ -4751,13 +4773,33 @@ function verifyRecoveryOtp(
   }
 
 
+  if (
+    !/^\d{6}$/.test(
+      enteredOTP
+    )
+  ) {
+
+    return {
+
+      success: false,
+
+      message:
+        "Please enter a valid six-digit recovery code."
+
+    };
+
+  }
+
+
   const found =
     findUser(
       identity
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -4801,7 +4843,7 @@ function verifyRecoveryOtp(
       lockUntil.getTime()
     ) &&
     Date.now() <
-      lockUntil.getTime()
+    lockUntil.getTime()
   ) {
 
     return {
@@ -4844,7 +4886,7 @@ function verifyRecoveryOtp(
       expires.getTime()
     ) ||
     Date.now() >
-      expires.getTime()
+    expires.getTime()
   ) {
 
     return {
@@ -4860,6 +4902,10 @@ function verifyRecoveryOtp(
 
   }
 
+
+  // ----------------------------------------------------------
+  // COMPARE
+  // ----------------------------------------------------------
 
   const storedOTP =
     normalize(
@@ -4959,16 +5005,21 @@ function verifyRecoveryOtp(
   }
 
 
-  // ----------------------------------------------------------
-  // CORRECT
-  // ----------------------------------------------------------
-
   return {
 
     success: true,
 
     recoveryVerified:
       true,
+
+    id:
+      Number(
+        getRowField(
+          found.sheet,
+          row,
+          "ID"
+        )
+      ) || null,
 
     uid:
       getRowField(
@@ -5049,6 +5100,24 @@ function resetPassword(
 
 
   if (
+    !/^\d{6}$/.test(
+      enteredOTP
+    )
+  ) {
+
+    return {
+
+      success: false,
+
+      message:
+        "Please enter a valid six-digit recovery code."
+
+    };
+
+  }
+
+
+  if (
     newPassword.length < 8
   ) {
 
@@ -5087,7 +5156,9 @@ function resetPassword(
     );
 
 
-  if (!found) {
+  if (
+    !found
+  ) {
 
     return {
 
@@ -5139,7 +5210,7 @@ function resetPassword(
       expires.getTime()
     ) ||
     Date.now() >
-      expires.getTime()
+    expires.getTime()
   ) {
 
     return {
@@ -5155,7 +5226,7 @@ function resetPassword(
 
 
   // ----------------------------------------------------------
-  // UPDATE PASSWORD
+  // PASSWORD
   // ----------------------------------------------------------
 
   setUserField(
@@ -5252,11 +5323,13 @@ function requireSession(
 //
 // IMPORTANT:
 //
-// This is the ONLY doPost() in the project.
+// This is the ONLY doPost() in this Code.gs.
 //
 // ============================================================
 
-function doPost(e) {
+function doPost(
+  e
+) {
 
   try {
 
@@ -5288,7 +5361,9 @@ function doPost(e) {
           e.postData.contents
         );
 
-    } catch (parseError) {
+    } catch (
+      parseError
+    ) {
 
       return response({
 
@@ -5308,14 +5383,29 @@ function doPost(e) {
       );
 
 
+    if (
+      !action
+    ) {
+
+      return response({
+
+        success: false,
+
+        message:
+          "No API action specified."
+
+      });
+
+    }
+
+
     switch (
       action
     ) {
 
-
-      // ======================================================
-      // AUTHENTICATION
-      // ======================================================
+      // ------------------------------------------------------
+      // AUTH
+      // ------------------------------------------------------
 
       case "register":
 
@@ -5382,9 +5472,9 @@ function doPost(e) {
         );
 
 
-      // ======================================================
+      // ------------------------------------------------------
       // OTP
-      // ======================================================
+      // ------------------------------------------------------
 
       case "prepareOtp":
 
@@ -5431,9 +5521,9 @@ function doPost(e) {
         );
 
 
-      // ======================================================
+      // ------------------------------------------------------
       // PASSWORD RECOVERY
-      // ======================================================
+      // ------------------------------------------------------
 
       case "forgotPassword":
 
@@ -5462,14 +5552,9 @@ function doPost(e) {
         );
 
 
-      // ======================================================
-      // INVENTORY COMPATIBILITY
-      // ======================================================
-      //
-      // If your separate inventory.gs contains
-      // SFInv_dispatch(), inventory actions continue to work.
-      //
-      // ======================================================
+      // ------------------------------------------------------
+      // INVENTORY
+      // ------------------------------------------------------
 
       default:
 
@@ -5500,7 +5585,9 @@ function doPost(e) {
 
     }
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     console.error(
       "StockFlow API Error:",
@@ -5526,10 +5613,10 @@ function doPost(e) {
 
 
 // ============================================================
-// GET / HEALTH CHECK
+// HEALTH CHECK
 // ============================================================
 //
-// Open your /exec URL in a browser.
+// Open the /exec URL in a browser.
 //
 // Expected:
 //
