@@ -23,6 +23,20 @@ IMPORTANT
 - api.js DOES NOT store passwords.
 - OTP generation is handled by the backend.
 - In DEMO_MODE, the backend may return demoOtp.
+
+IMPORTANT FOR GOOGLE APPS SCRIPT
+--------------------------------
+The frontend sends JSON using:
+
+    Content-Type: text/plain;charset=utf-8
+
+This avoids an unnecessary CORS preflight request.
+
+The Apps Script Web App must be deployed as:
+
+    Execute as: Me
+    Who has access: Anyone
+
 =========================================================
 */
 
@@ -43,12 +57,16 @@ IMPORTANT
     const API_CONFIG =
         CONFIG.API || {};
 
+
     const API_URL =
-        CONFIG.API_URL ||
-        CONFIG.APPS_SCRIPT_URL ||
-        CONFIG.GOOGLE_APPS_SCRIPT_URL ||
-        CONFIG.BACKEND_URL ||
-        "";
+        String(
+            CONFIG.API_URL ||
+            CONFIG.APPS_SCRIPT_URL ||
+            CONFIG.GOOGLE_APPS_SCRIPT_URL ||
+            CONFIG.BACKEND_URL ||
+            ""
+        ).trim();
+
 
     const REQUEST_TIMEOUT =
         Number(
@@ -57,23 +75,29 @@ IMPORTANT
             30000
         );
 
+
     const RETRY_COUNT =
         Number(
-            API_CONFIG.RETRY_COUNT ||
-            CONFIG.API_RETRY_COUNT ||
+            API_CONFIG.RETRY_COUNT ??
+            CONFIG.API_RETRY_COUNT ??
             0
         );
 
+
     const RETRY_DELAY =
         Number(
-            API_CONFIG.RETRY_DELAY ||
-            CONFIG.API_RETRY_DELAY ||
+            API_CONFIG.RETRY_DELAY ??
+            CONFIG.API_RETRY_DELAY ??
             1000
         );
 
+
     const HTTP_METHOD =
-        API_CONFIG.METHOD ||
-        "POST";
+        String(
+            API_CONFIG.METHOD ||
+            "POST"
+        ).toUpperCase();
+
 
     const CONTENT_TYPE =
         API_CONFIG.CONTENT_TYPE ||
@@ -86,12 +110,12 @@ IMPORTANT
 
     class StockFlowAPIError extends Error {
 
-        constructor(
-            message,
-            options = {}
-        ) {
+        constructor(message, options = {}) {
 
-            super(message);
+            super(
+                message ||
+                "An unknown API error occurred."
+            );
 
             this.name =
                 "StockFlowAPIError";
@@ -101,7 +125,7 @@ IMPORTANT
                 "API_ERROR";
 
             this.status =
-                options.status ||
+                options.status ??
                 null;
 
             this.action =
@@ -109,11 +133,15 @@ IMPORTANT
                 null;
 
             this.response =
-                options.response ||
+                options.response ??
                 null;
 
             this.data =
-                options.data ||
+                options.data ??
+                null;
+
+            this.originalError =
+                options.originalError ??
                 null;
         }
     }
@@ -139,6 +167,7 @@ IMPORTANT
             value === null ||
             typeof value === "undefined"
         ) {
+
             return "";
         }
 
@@ -158,6 +187,7 @@ IMPORTANT
                 cleanValue(arguments[i]);
 
             if (value) {
+
                 return value;
             }
         }
@@ -170,35 +200,43 @@ IMPORTANT
        IDENTITY RESOLUTION
        ===================================================== */
 
-    /*
-     * The backend needs an identity when verifying or
-     * preparing an OTP.
-     *
-     * Priority:
-     *
-     * identity
-     * username
-     * gmail
-     * email
-     * phone
-     * uid
-     */
-
     function resolveIdentity(data = {}) {
 
+        if (!isObject(data)) {
+
+            return "";
+        }
+
+
         return firstValue(
+
             data.identity,
+
             data.username,
+
             data.gmail,
+
             data.email,
+
             data.phone,
-            data.uid
+
+            data.phoneNumber,
+
+            data.mobile,
+
+            data.mobileNumber,
+
+            data.uid,
+
+            data.userId,
+
+            data.UID
         );
     }
 
 
     /* =====================================================
-       NORMALIZE REQUEST DATA
+       OTP DATA NORMALIZATION
        ===================================================== */
 
     function normalizeOtpData(data = {}) {
@@ -208,13 +246,16 @@ IMPORTANT
                 ? { ...data }
                 : {};
 
+
         const identity =
             resolveIdentity(input);
+
 
         const username =
             firstValue(
                 input.username
             );
+
 
         const gmail =
             firstValue(
@@ -222,11 +263,13 @@ IMPORTANT
                 input.email
             );
 
+
         const email =
             firstValue(
                 input.email,
                 input.gmail
             );
+
 
         const phone =
             firstValue(
@@ -236,6 +279,7 @@ IMPORTANT
                 input.mobileNumber
             );
 
+
         const uid =
             firstValue(
                 input.uid,
@@ -243,11 +287,13 @@ IMPORTANT
                 input.UID
             );
 
+
         const channel =
             firstValue(
                 input.channel,
                 input.otpChannel
             );
+
 
         return {
 
@@ -279,24 +325,25 @@ IMPORTANT
         if (!API_URL) {
 
             throw new StockFlowAPIError(
-                "API URL is not configured.",
+                "The Google Apps Script API URL is missing.",
                 {
-                    code: "API_URL_MISSING"
+                    code:
+                        "API_URL_MISSING"
                 }
             );
         }
 
 
         if (
-            !API_URL.includes(
-                "script.google.com/macros/s/"
-            )
+            !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i
+                .test(API_URL)
         ) {
 
             throw new StockFlowAPIError(
                 "The configured API URL is not a valid Google Apps Script Web App URL.",
                 {
-                    code: "API_URL_INVALID"
+                    code:
+                        "API_URL_INVALID"
                 }
             );
         }
@@ -304,7 +351,7 @@ IMPORTANT
 
 
     /* =====================================================
-       JSON PARSER
+       SAFE JSON PARSER
        ===================================================== */
 
     function parseJson(text) {
@@ -312,12 +359,17 @@ IMPORTANT
         const raw =
             cleanValue(text);
 
+
         if (!raw) {
 
             throw new StockFlowAPIError(
-                "The server returned an empty response.",
+                "The Google Apps Script returned an empty response.",
                 {
-                    code: "EMPTY_RESPONSE"
+                    code:
+                        "EMPTY_RESPONSE",
+
+                    response:
+                        raw
                 }
             );
         }
@@ -334,11 +386,18 @@ IMPORTANT
                 raw
             );
 
+
             throw new StockFlowAPIError(
-                "The server returned an invalid response.",
+                "The server returned an invalid response. Check the Google Apps Script Web App deployment.",
                 {
-                    code: "INVALID_JSON",
-                    response: raw
+                    code:
+                        "INVALID_JSON",
+
+                    response:
+                        raw,
+
+                    originalError:
+                        error
                 }
             );
         }
@@ -354,23 +413,34 @@ IMPORTANT
         if (!isObject(result)) {
 
             return {
-                success: true,
-                data: result
+
+                success:
+                    true,
+
+                data:
+                    result
             };
         }
 
 
         /*
-         * Some Apps Script responses may return:
+         * Keep the backend response intact.
+         *
+         * This is important because different
+         * StockFlow modules may return:
          *
          * {
          *     success: true,
          *     data: {...}
          * }
          *
-         * Others may return the useful fields directly.
+         * OR:
          *
-         * Keep the original object intact.
+         * {
+         *     success: true,
+         *     token: "...",
+         *     user: {...}
+         * }
          */
 
         return result;
@@ -378,12 +448,13 @@ IMPORTANT
 
 
     /* =====================================================
-       RESPONSE SUCCESS CHECK
+       SUCCESS CHECK
        ===================================================== */
 
     function isSuccessfulResponse(result) {
 
         if (!isObject(result)) {
+
             return true;
         }
 
@@ -392,6 +463,7 @@ IMPORTANT
             result.success === false ||
             result.ok === false
         ) {
+
             return false;
         }
 
@@ -401,6 +473,7 @@ IMPORTANT
             String(result.status)
                 .toLowerCase() === "error"
         ) {
+
             return false;
         }
 
@@ -410,20 +483,30 @@ IMPORTANT
 
 
     /* =====================================================
-       ERROR MESSAGE EXTRACTION
+       SERVER ERROR MESSAGE
        ===================================================== */
 
     function getServerErrorMessage(result) {
 
         if (!result) {
 
-            return "The server returned an error.";
+            return "The server returned an unknown error.";
         }
 
 
-        if (typeof result === "string") {
+        if (
+            typeof result === "string"
+        ) {
 
             return result;
+        }
+
+
+        if (
+            !isObject(result)
+        ) {
+
+            return "The server rejected the request.";
         }
 
 
@@ -434,6 +517,8 @@ IMPORTANT
             result.error,
 
             result.details,
+
+            result.reason,
 
             result.data &&
             result.data.message,
@@ -454,7 +539,66 @@ IMPORTANT
 
         return new Promise(
             resolve =>
-                setTimeout(resolve, ms)
+                setTimeout(
+                    resolve,
+                    ms
+                )
+        );
+    }
+
+
+    /* =====================================================
+       RETRY POLICY
+       ===================================================== */
+
+    /*
+     * NEVER automatically retry operations that can
+     * create or modify data.
+     *
+     * Examples:
+     *
+     * register
+     * createProduct
+     * updateProduct
+     * deleteProduct
+     * createStockIn
+     * createStockOut
+     * resetPassword
+     *
+     * Automatic retry is only allowed for safe
+     * read/session/health operations.
+     */
+
+    function canRetryAction(action) {
+
+        const safeActions = [
+
+            "health",
+
+            "session",
+
+            "listActivity",
+
+            "inventory",
+
+            "listProducts",
+
+            "listCategories",
+
+            "listSuppliers",
+
+            "listStockIn",
+
+            "listStockOut",
+
+            "listTransactions",
+
+            "dashboard"
+        ];
+
+
+        return safeActions.includes(
+            String(action)
         );
     }
 
@@ -477,7 +621,8 @@ IMPORTANT
             throw new StockFlowAPIError(
                 "API action is required.",
                 {
-                    code: "ACTION_MISSING"
+                    code:
+                        "ACTION_MISSING"
                 }
             );
         }
@@ -487,13 +632,20 @@ IMPORTANT
 
             action,
 
-            ...(isObject(payload)
-                ? payload
-                : {})
+            ...(
+                isObject(payload)
+                    ? payload
+                    : {}
+            )
         };
 
 
-        const attempts =
+        /*
+         * Only use configured retries when the
+         * action is safe to retry.
+         */
+
+        const configuredRetries =
             Math.max(
                 0,
                 Number(
@@ -503,7 +655,14 @@ IMPORTANT
             );
 
 
-        let lastError = null;
+        const attempts =
+            canRetryAction(action)
+                ? configuredRetries
+                : 0;
+
+
+        let lastError =
+            null;
 
 
         for (
@@ -515,33 +674,56 @@ IMPORTANT
             const controller =
                 new AbortController();
 
+
             const timeoutId =
                 setTimeout(
-                    () =>
-                        controller.abort(),
+                    () => {
+                        controller.abort();
+                    },
                     REQUEST_TIMEOUT
                 );
 
 
             try {
 
+                /*
+                 * IMPORTANT:
+                 *
+                 * credentials are omitted because
+                 * Google Apps Script authentication
+                 * is handled by the Web App deployment.
+                 */
+
                 const response =
                     await fetch(
                         API_URL,
                         {
+
                             method:
                                 HTTP_METHOD,
 
                             headers: {
+
                                 "Content-Type":
-                                    CONTENT_TYPE
+                                    CONTENT_TYPE,
+
+                                "Accept":
+                                    "application/json"
                             },
 
                             body:
-                                JSON.stringify(body),
+                                JSON.stringify(
+                                    body
+                                ),
 
                             redirect:
                                 "follow",
+
+                            credentials:
+                                "omit",
+
+                            mode:
+                                "cors",
 
                             signal:
                                 controller.signal
@@ -549,14 +731,33 @@ IMPORTANT
                     );
 
 
-                clearTimeout(timeoutId);
+                clearTimeout(
+                    timeoutId
+                );
 
 
                 const text =
                     await response.text();
 
 
+                console.log(
+                    "[STOCKFLOW API] Response",
+                    {
+                        action,
+                        status:
+                            response.status,
+                        ok:
+                            response.ok
+                    }
+                );
+
+
                 let result;
+
+
+                /*
+                 * Parse the response.
+                 */
 
                 try {
 
@@ -566,8 +767,8 @@ IMPORTANT
                 } catch (parseError) {
 
                     /*
-                     * HTTP response succeeded but the
-                     * response body was not JSON.
+                     * If HTTP itself failed, expose
+                     * the HTTP status instead of hiding it.
                      */
 
                     if (
@@ -575,10 +776,11 @@ IMPORTANT
                     ) {
 
                         throw new StockFlowAPIError(
-                            "The server returned HTTP " +
+                            "Google Apps Script returned HTTP " +
                             response.status +
                             ".",
                             {
+
                                 code:
                                     "HTTP_ERROR",
 
@@ -593,20 +795,25 @@ IMPORTANT
                         );
                     }
 
+
                     throw parseError;
                 }
 
 
                 result =
-                    normalizeResponse(result);
+                    normalizeResponse(
+                        result
+                    );
 
 
-                /* -----------------------------------------
-                   SERVER ERROR
-                   ----------------------------------------- */
+                /* =========================================
+                   BACKEND ERROR
+                   ========================================= */
 
                 if (
-                    !isSuccessfulResponse(result)
+                    !isSuccessfulResponse(
+                        result
+                    )
                 ) {
 
                     throw new StockFlowAPIError(
@@ -614,6 +821,7 @@ IMPORTANT
                             result
                         ),
                         {
+
                             code:
                                 result.code ||
                                 "SERVER_ERROR",
@@ -634,17 +842,20 @@ IMPORTANT
                 }
 
 
-                /* -----------------------------------------
+                /* =========================================
                    HTTP ERROR
-                   ----------------------------------------- */
+                   ========================================= */
 
-                if (!response.ok) {
+                if (
+                    !response.ok
+                ) {
 
                     throw new StockFlowAPIError(
                         getServerErrorMessage(
                             result
                         ),
                         {
+
                             code:
                                 "HTTP_ERROR",
 
@@ -654,23 +865,33 @@ IMPORTANT
                             action,
 
                             response:
-                                result
+                                result,
+
+                            data:
+                                result.data ||
+                                null
                         }
                     );
                 }
 
+
+                /*
+                 * SUCCESS
+                 */
 
                 return result;
 
 
             } catch (error) {
 
-                clearTimeout(timeoutId);
+                clearTimeout(
+                    timeoutId
+                );
 
 
-                /*
-                 * Preserve our own API errors.
-                 */
+                /* =========================================
+                   OUR OWN API ERROR
+                   ========================================= */
 
                 if (
                     error instanceof
@@ -680,7 +901,14 @@ IMPORTANT
                     lastError =
                         error;
 
-                } else if (
+                }
+
+
+                /* =========================================
+                   TIMEOUT
+                   ========================================= */
+
+                else if (
                     error &&
                     error.name ===
                     "AbortError"
@@ -690,45 +918,105 @@ IMPORTANT
                         new StockFlowAPIError(
                             "The request timed out. Please try again.",
                             {
+
                                 code:
                                     "TIMEOUT",
 
-                                action
-                            }
-                        );
+                                action,
 
-                } else {
-
-                    console.error(
-                        "[STOCKFLOW API NETWORK ERROR]",
-                        error
-                    );
-
-                    lastError =
-                        new StockFlowAPIError(
-                            "Unable to connect to the verification service.",
-                            {
-                                code:
-                                    "NETWORK_ERROR",
-
-                                action
+                                originalError:
+                                    error
                             }
                         );
                 }
 
 
-                /*
-                 * Retry only when another attempt
-                 * is available.
-                 */
+                /* =========================================
+                   NETWORK / CORS / FETCH ERROR
+                   ========================================= */
+
+                else {
+
+                    console.error(
+                        "[STOCKFLOW API] Fetch failed.",
+                        {
+                            action,
+                            url:
+                                API_URL,
+                            error:
+                                error
+                        }
+                    );
+
+
+                    let message =
+                        "Unable to connect to the verification service.";
+
+
+                    /*
+                     * Give a useful development
+                     * message instead of hiding the
+                     * actual problem.
+                     */
+
+                    if (
+                        CONFIG.DEBUG === true
+                    ) {
+
+                        if (
+                            error &&
+                            error.message
+                        ) {
+
+                            message =
+                                "Unable to connect to the Google Apps Script Web App. " +
+                                error.message;
+                        }
+
+                    }
+
+
+                    lastError =
+                        new StockFlowAPIError(
+                            message,
+                            {
+
+                                code:
+                                    "NETWORK_ERROR",
+
+                                action,
+
+                                originalError:
+                                    error
+                            }
+                        );
+                }
+
+
+                /* =========================================
+                   RETRY
+                   ========================================= */
 
                 if (
                     attempt < attempts
                 ) {
 
+                    console.warn(
+                        "[STOCKFLOW API] Retrying:",
+                        {
+                            action,
+                            attempt:
+                                attempt + 1,
+                            maxRetries:
+                                attempts
+                        }
+                    );
+
+
                     await delay(
                         RETRY_DELAY
                     );
+
 
                     continue;
                 }
@@ -742,6 +1030,7 @@ IMPORTANT
         throw new StockFlowAPIError(
             "Unable to complete the request.",
             {
+
                 code:
                     "REQUEST_FAILED",
 
@@ -760,6 +1049,7 @@ IMPORTANT
         return request(
             "register",
             {
+
                 ...data,
 
                 role:
@@ -777,11 +1067,31 @@ IMPORTANT
     async function login(data = {}) {
 
         const identity =
-            resolveIdentity(data);
+            resolveIdentity(
+                data
+            );
+
+
+        if (!identity) {
+
+            throw new StockFlowAPIError(
+                "Username, Gmail, or phone number is required.",
+                {
+
+                    code:
+                        "LOGIN_IDENTITY_MISSING",
+
+                    action:
+                        "login"
+                }
+            );
+        }
+
 
         return request(
             "login",
             {
+
                 ...data,
 
                 identity
@@ -794,32 +1104,22 @@ IMPORTANT
        PREPARE OTP
        ===================================================== */
 
-    /*
-     * IMPORTANT:
-     *
-     * This does NOT generate the OTP locally.
-     *
-     * The backend generates the OTP and stores it in:
-     *
-     * Google Sheets
-     * Firebase
-     *
-     * In DEMO_MODE the backend may return:
-     *
-     * demoOtp
-     */
-
-    async function prepareOtp(data = {}) {
+    async function prepareOtp(
+        data = {}
+    ) {
 
         const otpData =
-            normalizeOtpData(data);
+            normalizeOtpData(
+                data
+            );
 
 
         if (!otpData.identity) {
 
             throw new StockFlowAPIError(
-                "Username or Gmail is required.",
+                "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "OTP_IDENTITY_MISSING",
 
@@ -841,29 +1141,22 @@ IMPORTANT
        GENERATE OTP
        ===================================================== */
 
-    /*
-     * Backend compatibility alias.
-     *
-     * Some versions of Code.gs use:
-     *
-     * generateOtp
-     *
-     * while the frontend uses:
-     *
-     * prepareOtp
-     */
-
-    async function generateOtp(data = {}) {
+    async function generateOtp(
+        data = {}
+    ) {
 
         const otpData =
-            normalizeOtpData(data);
+            normalizeOtpData(
+                data
+            );
 
 
         if (!otpData.identity) {
 
             throw new StockFlowAPIError(
-                "Username or Gmail is required.",
+                "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "OTP_IDENTITY_MISSING",
 
@@ -885,16 +1178,23 @@ IMPORTANT
        VERIFY OTP
        ===================================================== */
 
-    async function verifyOtp(data = {}) {
+    async function verifyOtp(
+        data = {}
+    ) {
 
         const otpData =
-            normalizeOtpData(data);
+            normalizeOtpData(
+                data
+            );
 
 
         const otp =
             firstValue(
+
                 otpData.otp,
+
                 otpData.code,
+
                 otpData.OTP
             );
 
@@ -902,8 +1202,9 @@ IMPORTANT
         if (!otpData.identity) {
 
             throw new StockFlowAPIError(
-                "Username or Gmail is required.",
+                "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "OTP_IDENTITY_MISSING",
 
@@ -919,6 +1220,7 @@ IMPORTANT
             throw new StockFlowAPIError(
                 "Please enter the verification code.",
                 {
+
                     code:
                         "OTP_MISSING",
 
@@ -932,6 +1234,7 @@ IMPORTANT
         return request(
             "verifyOtp",
             {
+
                 ...otpData,
 
                 otp
@@ -949,14 +1252,17 @@ IMPORTANT
     ) {
 
         const otpData =
-            normalizeOtpData(data);
+            normalizeOtpData(
+                data
+            );
 
 
         if (!otpData.identity) {
 
             throw new StockFlowAPIError(
-                "Username or Gmail is required.",
+                "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "OTP_IDENTITY_MISSING",
 
@@ -982,15 +1288,9 @@ IMPORTANT
         data = {}
     ) {
 
-        /*
-         * Backend compatibility alias.
-         *
-         * Existing frontend code may call updateOtp().
-         * The backend's resend operation is the actual
-         * OTP regeneration operation.
-         */
-
-        return resendOtp(data);
+        return resendOtp(
+            data
+        );
     }
 
 
@@ -1048,7 +1348,9 @@ IMPORTANT
     ) {
 
         const identity =
-            resolveIdentity(data);
+            resolveIdentity(
+                data
+            );
 
 
         if (!identity) {
@@ -1056,6 +1358,7 @@ IMPORTANT
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "RECOVERY_IDENTITY_MISSING",
 
@@ -1069,6 +1372,7 @@ IMPORTANT
         return request(
             "forgotPassword",
             {
+
                 ...data,
 
                 identity
@@ -1086,13 +1390,18 @@ IMPORTANT
     ) {
 
         const otpData =
-            normalizeOtpData(data);
+            normalizeOtpData(
+                data
+            );
 
 
         const otp =
             firstValue(
+
                 otpData.otp,
+
                 otpData.code,
+
                 otpData.OTP
             );
 
@@ -1102,6 +1411,7 @@ IMPORTANT
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
                 {
+
                     code:
                         "RECOVERY_IDENTITY_MISSING",
 
@@ -1117,6 +1427,7 @@ IMPORTANT
             throw new StockFlowAPIError(
                 "Please enter the recovery verification code.",
                 {
+
                     code:
                         "RECOVERY_OTP_MISSING",
 
@@ -1130,6 +1441,7 @@ IMPORTANT
         return request(
             "verifyRecoveryOtp",
             {
+
                 ...otpData,
 
                 otp
@@ -1509,10 +1821,6 @@ IMPORTANT
 
     /*
      * Backward compatibility.
-     *
-     * Some older files may reference:
-     *
-     * window.API
      */
 
     window.API =
@@ -1528,7 +1836,11 @@ IMPORTANT
     ) {
 
         console.log(
-            "[STOCKFLOW API] Loaded."
+            "=========================================="
+        );
+
+        console.log(
+            "[STOCKFLOW API] API CLIENT LOADED"
         );
 
         console.log(
@@ -1539,6 +1851,11 @@ IMPORTANT
         console.log(
             "[STOCKFLOW API] Method:",
             HTTP_METHOD
+        );
+
+        console.log(
+            "[STOCKFLOW API] Content-Type:",
+            CONTENT_TYPE
         );
 
         console.log(
@@ -1554,6 +1871,10 @@ IMPORTANT
         console.log(
             "[STOCKFLOW API] Demo Mode:",
             CONFIG.DEMO_MODE === true
+        );
+
+        console.log(
+            "=========================================="
         );
     }
 
