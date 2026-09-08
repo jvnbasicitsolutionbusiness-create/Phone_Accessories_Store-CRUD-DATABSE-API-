@@ -218,12 +218,14 @@
 
 
             <!-- =================================================
-                 EMAIL STATUS
+                 EMAIL VERIFICATION
             ================================================== -->
 
             <section
                 class="verification-method primary"
                 aria-label="Email verification"
+                data-verification-method="email"
+                tabindex="0"
             >
 
                 <div class="verification-method-icon">
@@ -246,6 +248,18 @@
 
                 </div>
 
+
+                <!-- EMAIL ACTION -->
+
+                <button
+                    id="resendEmailOtpBtn"
+                    class="verification-method-action"
+                    type="button"
+                    data-resend-email-otp
+                >
+                    Send code by email
+                </button>
+
             </section>
 
 
@@ -257,6 +271,8 @@
             <section
                 class="verification-method"
                 aria-label="Phone verification"
+                data-verification-method="phone"
+                tabindex="0"
             >
 
                 <div class="verification-method-icon">
@@ -279,6 +295,9 @@
 
                 </div>
 
+
+                <!-- PHONE ACTION -->
+
                 <button
                     id="resendPhoneOtpBtn"
                     class="verification-method-action"
@@ -286,7 +305,7 @@
                     data-resend-phone-otp
                     disabled
                 >
-                    Send code
+                    Send code by phone
                 </button>
 
             </section>
@@ -377,7 +396,7 @@
                     </div>
 
 
-                    <!-- Hidden compatibility input -->
+                    <!-- HIDDEN COMPATIBILITY INPUT -->
 
                     <input
                         id="otp"
@@ -438,29 +457,8 @@
 
 
             <!-- =================================================
-                 RESEND EMAIL
+                 EMAIL TIMER
             ================================================== -->
-
-            <div class="otp-resend">
-
-                <span>
-                    Didn't receive the email?
-                </span>
-
-                <button
-                    id="resendEmailOtpBtn"
-                    class="link-button"
-                    type="button"
-                    data-resend-email-otp
-                >
-                    Resend email code
-                </button>
-
-            </div>
-
-
-
-            <!-- EMAIL TIMER -->
 
             <div
                 id="emailOtpTimer"
@@ -472,7 +470,9 @@
 
 
 
-            <!-- PHONE TIMER -->
+            <!-- =================================================
+                 PHONE TIMER
+            ================================================== -->
 
             <div
                 id="phoneOtpTimer"
@@ -484,7 +484,9 @@
 
 
 
-            <!-- BACK LOGIN -->
+            <!-- =================================================
+                 BACK LOGIN
+            ================================================== -->
 
             <div class="auth-switch">
 
@@ -504,7 +506,9 @@
 
 
 
-            <!-- FOOTER -->
+            <!-- =================================================
+                 FOOTER
+            ================================================== -->
 
             <footer class="auth-footer">
 
@@ -525,6 +529,7 @@
 </div>
 
 </main>
+
 
 
 <!-- =========================================================
