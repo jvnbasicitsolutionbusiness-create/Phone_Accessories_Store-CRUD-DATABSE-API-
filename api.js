@@ -56,6 +56,11 @@ Examples:
     INVALID_OTP
     OTP_EXPIRED
     OTP_LOCKED
+    OTP_COOLDOWN
+    RECOVERY_NOT_ALLOWED
+    RECOVERY_TOKEN_INVALID
+    PASSWORD_INVALID
+    PASSWORD_MISMATCH
 
 These are NOT network errors.
 
@@ -72,7 +77,7 @@ classified as network/API errors.
 
     /* =====================================================
        CONFIGURATION
-       ===================================================== */
+    ===================================================== */
 
     const CONFIG =
         window.STOCKFLOW_CONFIG ||
@@ -135,7 +140,7 @@ classified as network/API errors.
 
     /* =====================================================
        CUSTOM ERROR
-       ===================================================== */
+    ===================================================== */
 
     class StockFlowAPIError extends Error {
 
@@ -188,15 +193,15 @@ classified as network/API errors.
                 null;
 
 
-            /*
-             * Useful when debugging the
-             * actual HTTP response.
-             */
-
             this.rawResponse =
                 options.rawResponse ??
                 null;
 
+
+            /*
+             * These flags are intentionally based ONLY
+             * on the normalized API error code.
+             */
 
             this.isNetworkError =
                 this.code ===
@@ -208,19 +213,27 @@ classified as network/API errors.
                 "TIMEOUT";
 
 
+            this.isTransportError =
+                this.isNetworkError ||
+                this.isTimeout ||
+                this.code ===
+                    "API_URL_MISSING" ||
+                this.code ===
+                    "API_URL_INVALID" ||
+                this.code ===
+                    "EMPTY_RESPONSE" ||
+                this.code ===
+                    "INVALID_JSON" ||
+                this.code ===
+                    "HTTP_ERROR" ||
+                this.code ===
+                    "RESPONSE_READ_ERROR";
+
+
             this.isBackendError =
-                !this.isNetworkError &&
-                !this.isTimeout &&
+                !this.isTransportError &&
                 this.code !==
-                    "API_URL_MISSING" &&
-                this.code !==
-                    "API_URL_INVALID" &&
-                this.code !==
-                    "EMPTY_RESPONSE" &&
-                this.code !==
-                    "INVALID_JSON" &&
-                this.code !==
-                    "HTTP_ERROR";
+                    "ACTION_MISSING";
 
         }
 
@@ -229,7 +242,7 @@ classified as network/API errors.
 
     /* =====================================================
        BASIC HELPERS
-       ===================================================== */
+    ===================================================== */
 
     function isObject(
         value
@@ -303,7 +316,7 @@ classified as network/API errors.
         )
             .toUpperCase()
             .replace(
-                /\s+/g,
+                /[\s-]+/g,
                 "_"
             );
 
@@ -311,8 +324,84 @@ classified as network/API errors.
 
 
     /* =====================================================
+       PARSE POSSIBLE OBJECT
+    ===================================================== */
+
+    /*
+     * Some layers may pass JSON as a string.
+     *
+     * Example:
+     *
+     * error.response = '{"code":"ACCOUNT_NOT_FOUND"}'
+     *
+     * This helper lets the API client inspect it without
+     * incorrectly classifying it as a network error.
+     */
+
+    function parsePossibleObject(
+        value
+    ) {
+
+        if (
+            isObject(value)
+        ) {
+
+            return value;
+
+        }
+
+
+        if (
+            typeof value !==
+            "string"
+        ) {
+
+            return null;
+
+        }
+
+
+        const text =
+            value.trim();
+
+
+        if (
+            !text
+        ) {
+
+            return null;
+
+        }
+
+
+        try {
+
+            const parsed =
+                JSON.parse(
+                    text
+                );
+
+
+            return isObject(
+                parsed
+            )
+                ? parsed
+                : null;
+
+        } catch (
+            error
+        ) {
+
+            return null;
+
+        }
+
+    }
+
+
+    /* =====================================================
        IDENTITY RESOLUTION
-       ===================================================== */
+    ===================================================== */
 
     function resolveIdentity(
         data = {}
@@ -358,7 +447,7 @@ classified as network/API errors.
 
     /* =====================================================
        OTP DATA NORMALIZATION
-       ===================================================== */
+    ===================================================== */
 
     function normalizeOtpData(
         data = {}
@@ -447,7 +536,7 @@ classified as network/API errors.
 
     /* =====================================================
        API URL VALIDATION
-       ===================================================== */
+    ===================================================== */
 
     function validateApiUrl() {
 
@@ -492,7 +581,7 @@ classified as network/API errors.
 
     /* =====================================================
        JSON PARSER
-       ===================================================== */
+    ===================================================== */
 
     function parseJson(
         text,
@@ -581,7 +670,7 @@ classified as network/API errors.
 
     /* =====================================================
        RESPONSE NORMALIZATION
-       ===================================================== */
+    ===================================================== */
 
     function normalizeResponse(
         result
@@ -605,24 +694,16 @@ classified as network/API errors.
 
 
         /*
-         * Do not destroy or rewrite the backend response.
+         * Preserve the backend response exactly.
          *
-         * The backend may return:
+         * Do NOT convert:
          *
-         * {
-         *     success: true,
-         *     user: {...}
-         * }
+         * ACCOUNT_NOT_FOUND
+         * INVALID_OTP
+         * OTP_EXPIRED
+         * RECOVERY_TOKEN_INVALID
          *
-         * or:
-         *
-         * {
-         *     success: false,
-         *     code: "ACCOUNT_NOT_FOUND",
-         *     message: "Account does not exist."
-         * }
-         *
-         * Both must remain intact.
+         * into generic errors.
          */
 
         return {
@@ -634,7 +715,7 @@ classified as network/API errors.
 
     /* =====================================================
        SUCCESS CHECK
-       ===================================================== */
+    ===================================================== */
 
     function isSuccessfulResponse(
         result
@@ -690,7 +771,7 @@ classified as network/API errors.
 
     /* =====================================================
        SERVER ERROR MESSAGE
-       ===================================================== */
+    ===================================================== */
 
     function getServerErrorMessage(
         result
@@ -729,16 +810,28 @@ classified as network/API errors.
 
 
         const nestedData =
-            isObject(
+            parsePossibleObject(
                 result.data
-            )
-                ? result.data
-                : null;
+            );
+
+
+        const nestedResponse =
+            parsePossibleObject(
+                result.response
+            );
+
+
+        const nestedResult =
+            parsePossibleObject(
+                result.result
+            );
 
 
         return firstValue(
 
             result.message,
+
+            result.errorMessage,
 
             result.error,
 
@@ -750,7 +843,22 @@ classified as network/API errors.
                 nestedData.message,
 
             nestedData &&
+                nestedData.errorMessage,
+
+            nestedData &&
                 nestedData.error,
+
+            nestedResponse &&
+                nestedResponse.message,
+
+            nestedResponse &&
+                nestedResponse.error,
+
+            nestedResult &&
+                nestedResult.message,
+
+            nestedResult &&
+                nestedResult.error,
 
             "The server rejected the request."
 
@@ -761,7 +869,7 @@ classified as network/API errors.
 
     /* =====================================================
        SERVER ERROR CODE
-       ===================================================== */
+    ===================================================== */
 
     function getServerErrorCode(
         result
@@ -781,6 +889,23 @@ classified as network/API errors.
                 "string"
         ) {
 
+            const parsed =
+                parsePossibleObject(
+                    result
+                );
+
+
+            if (
+                parsed
+            ) {
+
+                return getServerErrorCode(
+                    parsed
+                );
+
+            }
+
+
             return "SERVER_ERROR";
 
         }
@@ -796,15 +921,24 @@ classified as network/API errors.
 
 
         const nestedData =
-            isObject(
+            parsePossibleObject(
                 result.data
-            )
-                ? result.data
-                : null;
+            );
 
 
-        return normalizeCode(
+        const nestedResponse =
+            parsePossibleObject(
+                result.response
+            );
 
+
+        const nestedResult =
+            parsePossibleObject(
+                result.result
+            );
+
+
+        const code =
             firstValue(
 
                 result.code,
@@ -813,24 +947,44 @@ classified as network/API errors.
 
                 result.error_code,
 
+                result.statusCode,
+
                 nestedData &&
                     nestedData.code,
 
                 nestedData &&
                     nestedData.errorCode,
 
+                nestedData &&
+                    nestedData.error_code,
+
+                nestedResponse &&
+                    nestedResponse.code,
+
+                nestedResponse &&
+                    nestedResponse.errorCode,
+
+                nestedResult &&
+                    nestedResult.code,
+
                 "SERVER_ERROR"
 
-            )
+            );
 
-        ) || "SERVER_ERROR";
+
+        return (
+            normalizeCode(
+                code
+            ) ||
+            "SERVER_ERROR"
+        );
 
     }
 
 
     /* =====================================================
        DEBUG RESPONSE
-       ===================================================== */
+    ===================================================== */
 
     function debugResponse(
         action,
@@ -869,7 +1023,7 @@ classified as network/API errors.
 
     /* =====================================================
        DELAY
-       ===================================================== */
+    ===================================================== */
 
     function delay(
         ms
@@ -888,13 +1042,13 @@ classified as network/API errors.
 
     /* =====================================================
        RETRY POLICY
-       ===================================================== */
+    ===================================================== */
 
     /*
-     * Only safe operations may automatically retry.
+     * Only safe read operations may automatically retry.
      *
      * Authentication, registration, OTP generation,
-     * password reset and data modification are NOT
+     * password reset and other write operations are NOT
      * automatically retried.
      */
 
@@ -940,7 +1094,7 @@ classified as network/API errors.
 
     /* =====================================================
        TRANSPORT ERROR DETECTION
-       ===================================================== */
+    ===================================================== */
 
     function isNativeTransportError(
         error
@@ -966,8 +1120,14 @@ classified as network/API errors.
 
 
         /*
-         * Browsers commonly report failed
-         * cross-origin fetches as TypeError.
+         * Browser fetch failures are commonly reported
+         * as TypeError.
+         *
+         * IMPORTANT:
+         * Only native errors reaching this function are
+         * treated this way.
+         *
+         * Backend business errors are normalized first.
          */
 
         if (
@@ -987,7 +1147,7 @@ classified as network/API errors.
 
     /* =====================================================
        REQUEST
-       ===================================================== */
+    ===================================================== */
 
     async function request(
         action,
@@ -1105,7 +1265,7 @@ classified as network/API errors.
 
                 /* =========================================
                    FETCH
-                   ========================================= */
+                ========================================= */
 
                 const response =
                     await fetch(
@@ -1153,7 +1313,7 @@ classified as network/API errors.
 
                 /* =========================================
                    READ RESPONSE
-                   ========================================= */
+                ========================================= */
 
                 let text = "";
 
@@ -1215,7 +1375,7 @@ classified as network/API errors.
 
                 /* =========================================
                    PARSE JSON
-                   ========================================= */
+                ========================================= */
 
                 let result;
 
@@ -1289,8 +1449,8 @@ classified as network/API errors.
 
 
                 /* =========================================
-                   BACKEND ERROR
-                   ========================================= */
+                   BACKEND / BUSINESS ERROR
+                ========================================= */
 
                 if (
                     !isSuccessfulResponse(
@@ -1313,9 +1473,27 @@ classified as network/API errors.
                     /*
                      * CRITICAL:
                      *
-                     * This is a backend/business error.
+                     * Preserve backend business errors.
                      *
-                     * It MUST NOT become NETWORK_ERROR.
+                     * Example:
+                     *
+                     * {
+                     *   success:false,
+                     *   code:"ACCOUNT_NOT_FOUND",
+                     *   message:"Account does not exist."
+                     * }
+                     *
+                     * becomes:
+                     *
+                     * error.code =
+                     * "ACCOUNT_NOT_FOUND"
+                     *
+                     * error.message =
+                     * "Account does not exist."
+                     *
+                     * NOT:
+                     *
+                     * NETWORK_ERROR
                      */
 
                     throw new StockFlowAPIError(
@@ -1334,8 +1512,12 @@ classified as network/API errors.
                                 result,
 
                             data:
-                                result.data ||
-                                null,
+                                isObject(
+                                    result.data
+                                )
+                                    ? result.data
+                                    : result.data ??
+                                      null,
 
                             rawResponse:
                                 text
@@ -1348,7 +1530,7 @@ classified as network/API errors.
 
                 /* =========================================
                    HTTP ERROR
-                   ========================================= */
+                ========================================= */
 
                 if (
                     !response.ok
@@ -1372,8 +1554,12 @@ classified as network/API errors.
                                 result,
 
                             data:
-                                result.data ||
-                                null,
+                                isObject(
+                                    result.data
+                                )
+                                    ? result.data
+                                    : result.data ??
+                                      null,
 
                             rawResponse:
                                 text
@@ -1386,7 +1572,7 @@ classified as network/API errors.
 
                 /* =========================================
                    SUCCESS
-                   ========================================= */
+                ========================================= */
 
                 return result;
 
@@ -1402,7 +1588,7 @@ classified as network/API errors.
 
                 /* =========================================
                    ALREADY NORMALIZED API ERROR
-                   ========================================= */
+                ========================================= */
 
                 if (
                     error instanceof
@@ -1417,7 +1603,7 @@ classified as network/API errors.
 
                 /* =========================================
                    TIMEOUT
-                   ========================================= */
+                ========================================= */
 
                 else if (
                     error &&
@@ -1446,7 +1632,7 @@ classified as network/API errors.
 
                 /* =========================================
                    NATIVE NETWORK/FETCH ERROR
-                   ========================================= */
+                ========================================= */
 
                 else if (
                     isNativeTransportError(
@@ -1508,7 +1694,7 @@ classified as network/API errors.
 
                 /* =========================================
                    UNKNOWN JAVASCRIPT ERROR
-                   ========================================= */
+                ========================================= */
 
                 else {
 
@@ -1549,7 +1735,7 @@ classified as network/API errors.
 
                 /* =========================================
                    RETRY
-                   ========================================= */
+                ========================================= */
 
                 if (
                     attempt <
@@ -1606,7 +1792,7 @@ classified as network/API errors.
 
     /* =====================================================
        REGISTER
-       ===================================================== */
+    ===================================================== */
 
     async function register(
         data = {}
@@ -1630,7 +1816,7 @@ classified as network/API errors.
 
     /* =====================================================
        REGISTER ADMIN
-       ===================================================== */
+    ===================================================== */
 
     async function registerAdmin(
         data = {}
@@ -1654,7 +1840,7 @@ classified as network/API errors.
 
     /* =====================================================
        LOGIN
-       ===================================================== */
+    ===================================================== */
 
     async function login(
         data = {}
@@ -1702,7 +1888,7 @@ classified as network/API errors.
 
     /* =====================================================
        PREPARE OTP
-       ===================================================== */
+    ===================================================== */
 
     async function prepareOtp(
         data = {}
@@ -1744,7 +1930,7 @@ classified as network/API errors.
 
     /* =====================================================
        GENERATE OTP
-       ===================================================== */
+    ===================================================== */
 
     async function generateOtp(
         data = {}
@@ -1786,7 +1972,7 @@ classified as network/API errors.
 
     /* =====================================================
        RESEND OTP
-       ===================================================== */
+    ===================================================== */
 
     async function resendOtp(
         data = {}
@@ -1828,7 +2014,7 @@ classified as network/API errors.
 
     /* =====================================================
        REQUEST OTP
-       ===================================================== */
+    ===================================================== */
 
     async function requestOtp(
         data = {}
@@ -1843,7 +2029,7 @@ classified as network/API errors.
 
     /* =====================================================
        UPDATE OTP
-       ===================================================== */
+    ===================================================== */
 
     async function updateOtp(
         data = {}
@@ -1858,7 +2044,7 @@ classified as network/API errors.
 
     /* =====================================================
        VERIFY OTP
-       ===================================================== */
+    ===================================================== */
 
     async function verifyOtp(
         data = {}
@@ -1938,7 +2124,7 @@ classified as network/API errors.
 
     /* =====================================================
        SESSION
-       ===================================================== */
+    ===================================================== */
 
     async function session(
         data = {}
@@ -1954,7 +2140,7 @@ classified as network/API errors.
 
     /* =====================================================
        REQUIRE SESSION
-       ===================================================== */
+    ===================================================== */
 
     async function requireSession(
         data = {}
@@ -1970,7 +2156,7 @@ classified as network/API errors.
 
     /* =====================================================
        LOGOUT
-       ===================================================== */
+    ===================================================== */
 
     async function logout(
         data = {}
@@ -1986,7 +2172,7 @@ classified as network/API errors.
 
     /* =====================================================
        FORGOT PASSWORD
-       ===================================================== */
+    ===================================================== */
 
     async function forgotPassword(
         data = {}
@@ -2034,7 +2220,7 @@ classified as network/API errors.
 
     /* =====================================================
        VERIFY RECOVERY OTP
-       ===================================================== */
+    ===================================================== */
 
     async function verifyRecoveryOtp(
         data = {}
@@ -2114,7 +2300,7 @@ classified as network/API errors.
 
     /* =====================================================
        RESET PASSWORD
-       ===================================================== */
+    ===================================================== */
 
     async function resetPassword(
         data = {}
@@ -2128,6 +2314,12 @@ classified as network/API errors.
                 : {};
 
 
+        /*
+         * recoveryToken is validated by Code.gs.
+         *
+         * api.js only transports it.
+         */
+
         return request(
             "resetPassword",
             input
@@ -2138,7 +2330,7 @@ classified as network/API errors.
 
     /* =====================================================
        ACTIVITY
-       ===================================================== */
+    ===================================================== */
 
     async function listActivity(
         data = {}
@@ -2154,7 +2346,7 @@ classified as network/API errors.
 
     /* =====================================================
        INVENTORY
-       ===================================================== */
+    ===================================================== */
 
     async function inventory(
         data = {}
@@ -2170,7 +2362,7 @@ classified as network/API errors.
 
     /* =====================================================
        PRODUCTS
-       ===================================================== */
+    ===================================================== */
 
     async function listProducts(
         data = {}
@@ -2222,7 +2414,7 @@ classified as network/API errors.
 
     /* =====================================================
        CATEGORIES
-       ===================================================== */
+    ===================================================== */
 
     async function listCategories(
         data = {}
@@ -2274,7 +2466,7 @@ classified as network/API errors.
 
     /* =====================================================
        SUPPLIERS
-       ===================================================== */
+    ===================================================== */
 
     async function listSuppliers(
         data = {}
@@ -2326,7 +2518,7 @@ classified as network/API errors.
 
     /* =====================================================
        STOCK IN
-       ===================================================== */
+    ===================================================== */
 
     async function listStockIn(
         data = {}
@@ -2354,7 +2546,7 @@ classified as network/API errors.
 
     /* =====================================================
        STOCK OUT
-       ===================================================== */
+    ===================================================== */
 
     async function listStockOut(
         data = {}
@@ -2382,7 +2574,7 @@ classified as network/API errors.
 
     /* =====================================================
        TRANSACTIONS
-       ===================================================== */
+    ===================================================== */
 
     async function listTransactions(
         data = {}
@@ -2398,7 +2590,7 @@ classified as network/API errors.
 
     /* =====================================================
        DASHBOARD
-       ===================================================== */
+    ===================================================== */
 
     async function dashboard(
         data = {}
@@ -2414,7 +2606,7 @@ classified as network/API errors.
 
     /* =====================================================
        HEALTH CHECK
-       ===================================================== */
+    ===================================================== */
 
     async function health(
         data = {}
@@ -2430,7 +2622,7 @@ classified as network/API errors.
 
     /* =====================================================
        API OBJECT
-       ===================================================== */
+    ===================================================== */
 
     const StockFlowAPI = {
 
@@ -2508,7 +2700,7 @@ classified as network/API errors.
 
     /* =====================================================
        GLOBAL EXPORT
-       ===================================================== */
+    ===================================================== */
 
     window.StockFlowAPI =
         StockFlowAPI;
@@ -2524,7 +2716,7 @@ classified as network/API errors.
 
     /* =====================================================
        DEBUG INFORMATION
-       ===================================================== */
+    ===================================================== */
 
     if (
         CONFIG.DEBUG === true
