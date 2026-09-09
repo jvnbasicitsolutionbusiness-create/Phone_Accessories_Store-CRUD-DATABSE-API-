@@ -40,6 +40,8 @@
    CONFIGURATION
    ========================================================= */
 
+const SHEET_APP_URL = "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec"
+
 const SHEET_ID =
     "1w3j0sV9rDiBvS4cpHU31iGb4KIeyUPoALZf5vLH2ivY";
 
