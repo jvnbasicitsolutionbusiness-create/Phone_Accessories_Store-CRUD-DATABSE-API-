@@ -6,6 +6,8 @@
 // STOCKFLOW
 // Phone Accessories Inventory Management System
 //
+// COMPLETE AUTHENTICATION BACKEND
+//
 // FEATURES
 // ------------------------------------------------------------
 // 1. Employee registration
@@ -31,6 +33,18 @@
 // 21. Google Sheets OTP storage
 // 22. Firebase OTP storage
 // 23. Backend OTP response for school-project UI
+// 24. Concurrent-request protection
+// 25. Firebase synchronization
+// 26. OTP rollback protection
+//
+// IMPORTANT
+// ------------------------------------------------------------
+// OTP GENERATION HAPPENS ONLY ON THE SERVER.
+//
+// The frontend MUST NOT use Math.random() to create OTPs.
+//
+// The OTP returned by this backend is the actual OTP generated
+// by Google Apps Script and stored in Google Sheets/Firebase.
 //
 // ============================================================
 
@@ -73,7 +87,6 @@ const MAX_OTP_ATTEMPTS =
 const OTP_LOCK_MINUTES =
   30;
 
-// Required cooldown:
 // 120 seconds = 2 minutes
 const RESEND_COOLDOWN_SECONDS =
   120;
@@ -82,8 +95,6 @@ const RESEND_COOLDOWN_SECONDS =
 // ============================================================
 // SHEET HEADERS
 // ============================================================
-//
-// ORIGINAL 19 COLUMNS
 //
 // 1  UID
 // 2  NAME
@@ -104,14 +115,8 @@ const RESEND_COOLDOWN_SECONDS =
 // 17 VERIFIED AT
 // 18 LAST OTP SENT
 // 19 LAST LOGIN
-//
-// NEW COLUMNS
-//
 // 20 LAST EMAIL OTP SENT
 // 21 LAST PHONE OTP SENT
-//
-// These two additional columns make the email and phone
-// cooldowns truly independent on the backend.
 //
 // ============================================================
 
@@ -140,6 +145,37 @@ const HEADERS = [
   "LAST PHONE OTP SENT"
 
 ];
+
+
+// ============================================================
+// COLUMN CONSTANTS
+// ============================================================
+
+const COL = {
+
+  UID: 1,
+  NAME: 2,
+  USERNAME: 3,
+  PASSWORD: 4,
+  AGE: 5,
+  ACCOUNT_STATUS: 6,
+  GMAIL: 7,
+  PHONE: 8,
+  ROLE: 9,
+  VERIFIED: 10,
+  OTP: 11,
+  OTP_EXPIRES: 12,
+  OTP_ATTEMPTS: 13,
+  OTP_LOCK_UNTIL: 14,
+  OTP_CHANNEL: 15,
+  CREATED_AT: 16,
+  VERIFIED_AT: 17,
+  LAST_OTP_SENT: 18,
+  LAST_LOGIN: 19,
+  LAST_EMAIL_OTP_SENT: 20,
+  LAST_PHONE_OTP_SENT: 21
+
+};
 
 
 // ============================================================
@@ -200,6 +236,7 @@ function ensureHeaders(sheet) {
   const requiredColumns =
     HEADERS.length;
 
+
   if (
     sheet.getMaxColumns() <
     requiredColumns
@@ -239,7 +276,9 @@ function ensureHeaders(sheet) {
   ) {
 
     if (
-      currentHeaders[i] !==
+      String(
+        currentHeaders[i] || ""
+      ).trim() !==
       HEADERS[i]
     ) {
 
@@ -298,6 +337,7 @@ function getRows(sheet) {
     return [];
 
   }
+
 
   return sheet
     .getRange(
@@ -404,6 +444,20 @@ function validEmail(email) {
 
 
 // ============================================================
+// VALIDATE GMAIL
+// ============================================================
+
+function validGmail(email) {
+
+  return (
+    validEmail(email) &&
+    /@gmail\.com$/i.test(email)
+  );
+
+}
+
+
+// ============================================================
 // VALIDATE PHILIPPINE PHONE
 // ============================================================
 
@@ -419,16 +473,20 @@ function validPhone(phone) {
 // ============================================================
 // GENERATE UID
 // ============================================================
+//
+// UID generation is separate from OTP generation.
+//
+// ============================================================
 
 function generateUID() {
 
   return (
     "sf_" +
-    Date.now() +
-    "_" +
-    Math.random()
-      .toString(36)
-      .substring(2, 9)
+    Utilities.getUuid()
+      .replace(
+        /-/g,
+        ""
+      )
   );
 
 }
@@ -440,19 +498,30 @@ function generateUID() {
 //
 // IMPORTANT:
 //
-// OTP generation happens ONLY on Apps Script.
+// This is the ONLY OTP generator.
 //
-// The frontend must NEVER generate the OTP.
+// Frontend must NEVER generate an OTP.
 //
 // ============================================================
 
 function generateOTP() {
 
+  const minimum =
+    100000;
+
+  const maximum =
+    999999;
+
+
   return String(
     Math.floor(
-      100000 +
+      minimum +
       Math.random() *
-      900000
+      (
+        maximum -
+        minimum +
+        1
+      )
     )
   );
 
@@ -476,6 +545,13 @@ function findUser(identity) {
       .toLowerCase();
 
 
+  if (!target) {
+
+    return null;
+
+  }
+
+
   for (
     let i = 0;
     i < rows.length;
@@ -488,25 +564,25 @@ function findUser(identity) {
 
     const uid =
       normalize(
-        row[0]
+        row[COL.UID - 1]
       ).toLowerCase();
 
 
     const username =
       normalize(
-        row[2]
+        row[COL.USERNAME - 1]
       ).toLowerCase();
 
 
     const gmail =
       normalizeEmail(
-        row[6]
+        row[COL.GMAIL - 1]
       );
 
 
     const phone =
       normalizePhone(
-        row[7]
+        row[COL.PHONE - 1]
       ).toLowerCase();
 
 
@@ -605,17 +681,71 @@ function escapeHtml(value) {
 
 
 // ============================================================
+// BOOLEAN HELPER
+// ============================================================
+
+function isTrue(value) {
+
+  if (
+    value === true
+  ) {
+
+    return true;
+
+  }
+
+
+  return (
+    normalize(value)
+      .toUpperCase() ===
+    "TRUE"
+  );
+
+}
+
+
+// ============================================================
+// DATE HELPER
+// ============================================================
+
+function validDate(value) {
+
+  if (!value) {
+
+    return null;
+
+  }
+
+
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(value);
+
+
+  if (
+    isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return null;
+
+  }
+
+
+  return date;
+
+}
+
+
+// ============================================================
 // FIREBASE AUTH TOKEN
 // ============================================================
 //
-// Optional.
-//
-// If your Firebase Realtime Database rules require an auth
-// token, place the token in Script Properties as:
+// Optional Script Property:
 //
 // FIREBASE_AUTH_TOKEN
-//
-// Otherwise the request is sent without auth.
 //
 // ============================================================
 
@@ -642,6 +772,7 @@ function firebaseUrl(
   let base =
     FIREBASE_DATABASE_URL;
 
+
   if (
     !base.endsWith("/")
   ) {
@@ -651,9 +782,12 @@ function firebaseUrl(
   }
 
 
-  let cleanPath =
+  const cleanPath =
     normalize(path)
-      .replace(/^\/+/, "");
+      .replace(
+        /^\/+/,
+        ""
+      );
 
 
   let url =
@@ -683,26 +817,204 @@ function firebaseUrl(
 
 
 // ============================================================
+// FIREBASE REQUEST
+// ============================================================
+
+function firebaseRequest(
+  path,
+  method,
+  payload
+) {
+
+  const options = {
+
+    method:
+      method || "get",
+
+    muteHttpExceptions:
+      true
+
+  };
+
+
+  if (
+    payload !== undefined &&
+    payload !== null
+  ) {
+
+    options.contentType =
+      "application/json";
+
+    options.payload =
+      JSON.stringify(
+        payload
+      );
+
+  }
+
+
+  const result =
+    UrlFetchApp.fetch(
+
+      firebaseUrl(
+        path
+      ),
+
+      options
+
+    );
+
+
+  const statusCode =
+    result.getResponseCode();
+
+
+  const responseText =
+    result.getContentText();
+
+
+  if (
+    statusCode < 200 ||
+    statusCode >= 300
+  ) {
+
+    throw new Error(
+      "Firebase request failed. HTTP " +
+      statusCode +
+      "."
+    );
+
+  }
+
+
+  return {
+
+    statusCode:
+      statusCode,
+
+    text:
+      responseText
+
+  };
+
+}
+
+
+// ============================================================
+// SAVE FIREBASE USER
+// ============================================================
+
+function saveFirebaseUser(
+  found,
+  verifiedOverride
+) {
+
+  const row =
+    found.values;
+
+
+  const uid =
+    normalize(
+      row[COL.UID - 1]
+    );
+
+
+  if (!uid) {
+
+    throw new Error(
+      "User UID is missing."
+    );
+
+  }
+
+
+  const payload = {
+
+    uid:
+      uid,
+
+    name:
+      normalize(
+        row[COL.NAME - 1]
+      ),
+
+    username:
+      normalize(
+        row[COL.USERNAME - 1]
+      ),
+
+    age:
+      row[COL.AGE - 1],
+
+    gmail:
+      normalizeEmail(
+        row[COL.GMAIL - 1]
+      ),
+
+    phone:
+      normalizePhone(
+        row[COL.PHONE - 1]
+      ),
+
+    role:
+      normalize(
+        row[COL.ROLE - 1]
+      ) ||
+      "Employee",
+
+    verified:
+      verifiedOverride !== undefined
+        ? Boolean(
+            verifiedOverride
+          )
+        : isTrue(
+            row[COL.VERIFIED - 1]
+          ),
+
+    accountStatus:
+      normalize(
+        row[COL.ACCOUNT_STATUS - 1]
+      ).toUpperCase(),
+
+    createdAt:
+      validDate(
+        row[COL.CREATED_AT - 1]
+      )
+        ? validDate(
+            row[COL.CREATED_AT - 1]
+          ).toISOString()
+        : new Date().toISOString(),
+
+    updatedAt:
+      new Date().toISOString()
+
+  };
+
+
+  firebaseRequest(
+
+    "stockflow/users/" +
+    encodeURIComponent(
+      uid
+    ),
+
+    "put",
+
+    payload
+
+  );
+
+
+  return true;
+
+}
+
+
+// ============================================================
 // SAVE OTP TO FIREBASE
 // ============================================================
 //
-// The same OTP saved in Google Sheets is saved here.
-//
-// Firebase structure:
-//
-// stockflow
-//   users
-//     UID
-//       uid
-//       username
-//       gmail
-//       phone
-//       otp
-//       otpExpires
-//       attempts
-//       lockedUntil
-//       channel
-//       updatedAt
+// The exact same OTP stored in Google Sheets is stored here.
 //
 // ============================================================
 
@@ -719,7 +1031,7 @@ function saveOtpToFirebase(
 
   const uid =
     normalize(
-      row[0]
+      row[COL.UID - 1]
     );
 
 
@@ -739,17 +1051,17 @@ function saveOtpToFirebase(
 
     username:
       normalize(
-        row[2]
+        row[COL.USERNAME - 1]
       ),
 
     gmail:
       normalizeEmail(
-        row[6]
+        row[COL.GMAIL - 1]
       ),
 
     phone:
       normalizePhone(
-        row[7]
+        row[COL.PHONE - 1]
       ),
 
     otp:
@@ -774,58 +1086,18 @@ function saveOtpToFirebase(
   };
 
 
-  const result =
-    UrlFetchApp.fetch(
+  firebaseRequest(
 
-      firebaseUrl(
-        "stockflow/users/" +
-        encodeURIComponent(uid)
-      ),
+    "stockflow/users/" +
+    encodeURIComponent(
+      uid
+    ),
 
-      {
+    "patch",
 
-        method:
-          "put",
+    payload
 
-        contentType:
-          "application/json",
-
-        payload:
-          JSON.stringify(
-            payload
-          ),
-
-        muteHttpExceptions:
-          true
-
-      }
-
-    );
-
-
-  const statusCode =
-    result.getResponseCode();
-
-
-  const responseText =
-    result.getContentText();
-
-
-  if (
-    statusCode < 200 ||
-    statusCode >= 300
-  ) {
-
-    console.error(
-      "Firebase OTP save error:",
-      responseText
-    );
-
-    throw new Error(
-      "Firebase OTP storage failed."
-    );
-
-  }
+  );
 
 
   return true;
@@ -843,13 +1115,11 @@ function updateFirebaseOtpAttempts(
   lockedUntil
 ) {
 
-  const row =
-    found.values;
-
-
   const uid =
     normalize(
-      row[0]
+      found.values[
+        COL.UID - 1
+      ]
     );
 
 
@@ -880,44 +1150,26 @@ function updateFirebaseOtpAttempts(
 
   try {
 
-    const result =
-      UrlFetchApp.fetch(
+    firebaseRequest(
 
-        firebaseUrl(
-          "stockflow/users/" +
-          encodeURIComponent(uid)
-        ),
+      "stockflow/users/" +
+      encodeURIComponent(
+        uid
+      ),
 
-        {
+      "patch",
 
-          method:
-            "patch",
+      payload
 
-          contentType:
-            "application/json",
-
-          payload:
-            JSON.stringify(
-              payload
-            ),
-
-          muteHttpExceptions:
-            true
-
-        }
-
-      );
-
-
-    return (
-      result.getResponseCode() >= 200 &&
-      result.getResponseCode() < 300
     );
+
+
+    return true;
 
   } catch (error) {
 
     console.error(
-      "Firebase attempt update error:",
+      "Firebase OTP attempt update error:",
       error
     );
 
@@ -936,13 +1188,11 @@ function clearOtpFromFirebase(
   found
 ) {
 
-  const row =
-    found.values;
-
-
   const uid =
     normalize(
-      row[0]
+      found.values[
+        COL.UID - 1
+      ]
     );
 
 
@@ -955,37 +1205,104 @@ function clearOtpFromFirebase(
 
   try {
 
-    const result =
-      UrlFetchApp.fetch(
+    firebaseRequest(
 
-        firebaseUrl(
-          "stockflow/users/" +
-          encodeURIComponent(uid) +
-          "/otp"
-        ),
+      "stockflow/users/" +
+      encodeURIComponent(
+        uid
+      ) +
+      "/otp",
 
-        {
+      "delete"
 
-          method:
-            "delete",
-
-          muteHttpExceptions:
-            true
-
-        }
-
-      );
-
-
-    return (
-      result.getResponseCode() >= 200 &&
-      result.getResponseCode() < 300
     );
+
+
+    return true;
 
   } catch (error) {
 
     console.error(
       "Firebase OTP delete error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
+// CLEAR FIREBASE OTP FIELDS
+// ============================================================
+//
+// Removes OTP-related data while preserving the user record.
+//
+// ============================================================
+
+function clearFirebaseOtpFields(
+  found
+) {
+
+  const uid =
+    normalize(
+      found.values[
+        COL.UID - 1
+      ]
+    );
+
+
+  if (!uid) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    firebaseRequest(
+
+      "stockflow/users/" +
+      encodeURIComponent(
+        uid
+      ),
+
+      "patch",
+
+      {
+
+        otp:
+          null,
+
+        otpExpires:
+          null,
+
+        attempts:
+          0,
+
+        lockedUntil:
+          "",
+
+        channel:
+          "",
+
+        updatedAt:
+          new Date().toISOString()
+
+      }
+
+    );
+
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "Firebase OTP cleanup error:",
       error
     );
 
@@ -1004,13 +1321,11 @@ function markFirebaseUserVerified(
   found
 ) {
 
-  const row =
-    found.values;
-
-
   const uid =
     normalize(
-      row[0]
+      found.values[
+        COL.UID - 1
+      ]
     );
 
 
@@ -1021,55 +1336,37 @@ function markFirebaseUserVerified(
   }
 
 
-  const payload = {
-
-    verified:
-      true,
-
-    verifiedAt:
-      new Date().toISOString(),
-
-    updatedAt:
-      new Date().toISOString()
-
-  };
-
-
   try {
 
-    const result =
-      UrlFetchApp.fetch(
+    firebaseRequest(
 
-        firebaseUrl(
-          "stockflow/users/" +
-          encodeURIComponent(uid)
-        ),
+      "stockflow/users/" +
+      encodeURIComponent(
+        uid
+      ),
 
-        {
+      "patch",
 
-          method:
-            "patch",
+      {
 
-          contentType:
-            "application/json",
+        verified:
+          true,
 
-          payload:
-            JSON.stringify(
-              payload
-            ),
+        accountStatus:
+          "VERIFIED",
 
-          muteHttpExceptions:
-            true
+        verifiedAt:
+          new Date().toISOString(),
 
-        }
+        updatedAt:
+          new Date().toISOString()
 
-      );
+      }
 
-
-    return (
-      result.getResponseCode() >= 200 &&
-      result.getResponseCode() < 300
     );
+
+
+    return true;
 
   } catch (error) {
 
@@ -1105,6 +1402,15 @@ function sendEmailOTP(
   }
 
 
+  if (!validEmail(email)) {
+
+    throw new Error(
+      "Invalid email address."
+    );
+
+  }
+
+
   const subject =
     resend
       ? "StockFlow - New verification code"
@@ -1123,6 +1429,7 @@ function sendEmailOTP(
     "Your StockFlow verification code is:\n\n" +
 
     otp +
+
     "\n\n" +
 
     "This code expires in " +
@@ -1189,7 +1496,9 @@ function sendEmailOTP(
           "color:#10233f;" +
         "\">" +
 
-          otp +
+          escapeHtml(
+            otp
+          ) +
 
         "</div>" +
 
@@ -1239,6 +1548,9 @@ function sendEmailOTP(
       APP_NAME
 
   });
+
+
+  return true;
 
 }
 
@@ -1303,7 +1615,9 @@ function sendSMSOTP(
 
   const url =
     "https://api.twilio.com/2010-04-01/Accounts/" +
-    accountSid +
+    encodeURIComponent(
+      accountSid
+    ) +
     "/Messages.json";
 
 
@@ -1415,6 +1729,22 @@ function sendOTPByChannel(
       .toLowerCase();
 
 
+  if (
+    normalizedChannel !==
+    "email" &&
+    normalizedChannel !==
+    "phone" &&
+    normalizedChannel !==
+    "both"
+  ) {
+
+    throw new Error(
+      "Invalid OTP channel."
+    );
+
+  }
+
+
   let emailSent =
     false;
 
@@ -1434,7 +1764,9 @@ function sendOTPByChannel(
 
   if (
     normalizedChannel ===
-    "email"
+    "email" ||
+    normalizedChannel ===
+    "both"
   ) {
 
     try {
@@ -1474,75 +1806,10 @@ function sendOTPByChannel(
 
   if (
     normalizedChannel ===
-    "phone"
-  ) {
-
-    try {
-
-      sendSMSOTP(
-
-        phone,
-
-        fullName,
-
-        otp
-
-      );
-
-
-      smsSent =
-        true;
-
-    } catch (error) {
-
-      smsError =
-        error &&
-        error.message
-          ? error.message
-          : "SMS could not be sent.";
-
-    }
-
-  }
-
-
-  // ----------------------------------------------------------
-  // BOTH
-  // ----------------------------------------------------------
-
-  if (
+    "phone" ||
     normalizedChannel ===
     "both"
   ) {
-
-    try {
-
-      sendEmailOTP(
-
-        email,
-
-        fullName,
-
-        otp,
-
-        resend
-
-      );
-
-
-      emailSent =
-        true;
-
-    } catch (error) {
-
-      emailError =
-        error &&
-        error.message
-          ? error.message
-          : "Email could not be sent.";
-
-    }
-
 
     try {
 
@@ -1583,7 +1850,7 @@ function sendOTPByChannel(
   ) {
 
     let message =
-      "OTP could not be sent.";
+      "OTP could not be delivered.";
 
 
     if (emailError) {
@@ -1661,17 +1928,12 @@ function getLockRemainingSeconds(
 ) {
 
   const lockUntil =
-    row[13]
-      ? new Date(row[13])
-      : null;
+    validDate(
+      row[COL.OTP_LOCK_UNTIL - 1]
+    );
 
 
-  if (
-    !lockUntil ||
-    isNaN(
-      lockUntil.getTime()
-    )
-  ) {
+  if (!lockUntil) {
 
     return 0;
 
@@ -1731,9 +1993,11 @@ function checkChannelCooldown(
   ) {
 
     timestamp =
-      row[19]
-        ? new Date(row[19])
-        : null;
+      validDate(
+        row[
+          COL.LAST_EMAIL_OTP_SENT - 1
+        ]
+      );
 
   }
 
@@ -1744,19 +2008,16 @@ function checkChannelCooldown(
   ) {
 
     timestamp =
-      row[20]
-        ? new Date(row[20])
-        : null;
+      validDate(
+        row[
+          COL.LAST_PHONE_OTP_SENT - 1
+        ]
+      );
 
   }
 
 
-  if (
-    !timestamp ||
-    isNaN(
-      timestamp.getTime()
-    )
-  ) {
+  if (!timestamp) {
 
     return {
 
@@ -1830,7 +2091,7 @@ function saveChannelTimestamp(
 
 
   let column =
-    18;
+    COL.LAST_OTP_SENT;
 
 
   if (
@@ -1839,7 +2100,7 @@ function saveChannelTimestamp(
   ) {
 
     column =
-      20;
+      COL.LAST_EMAIL_OTP_SENT;
 
   }
 
@@ -1850,7 +2111,7 @@ function saveChannelTimestamp(
   ) {
 
     column =
-      21;
+      COL.LAST_PHONE_OTP_SENT;
 
   }
 
@@ -1865,11 +2126,11 @@ function saveChannelTimestamp(
     );
 
 
-  // Keep original LAST OTP SENT populated too.
+  // Keep original LAST OTP SENT populated.
   found.sheet
     .getRange(
       found.rowNumber,
-      18
+      COL.LAST_OTP_SENT
     )
     .setValue(
       dateValue
@@ -1882,9 +2143,9 @@ function saveChannelTimestamp(
 // SAVE NEW OTP
 // ============================================================
 //
-// Saves OTP to Google Sheets first.
+// Google Sheets and Firebase must contain the SAME OTP.
 //
-// Firebase is then synchronized using the same OTP.
+// If Firebase storage fails, the Sheet OTP is rolled back.
 //
 // ============================================================
 
@@ -1906,80 +2167,132 @@ function saveOtp(
     found.rowNumber;
 
 
-  // OTP
-  sheet
-    .getRange(
+  const oldOtp =
+    sheet.getRange(
       rowNumber,
-      11
-    )
-    .setValue(
-      otp
-    );
+      COL.OTP
+    ).getValue();
 
 
-  // OTP expiration
-  sheet
-    .getRange(
+  const oldExpires =
+    sheet.getRange(
       rowNumber,
-      12
-    )
-    .setValue(
-      expires
-    );
+      COL.OTP_EXPIRES
+    ).getValue();
 
 
-  // Reset attempts
-  sheet
-    .getRange(
+  const oldAttempts =
+    sheet.getRange(
       rowNumber,
-      13
-    )
-    .setValue(
-      0
-    );
+      COL.OTP_ATTEMPTS
+    ).getValue();
 
 
-  // Clear lock
-  sheet
-    .getRange(
+  const oldLock =
+    sheet.getRange(
       rowNumber,
-      14
-    )
-    .setValue(
-      ""
-    );
+      COL.OTP_LOCK_UNTIL
+    ).getValue();
 
 
-  // Channel
-  sheet
-    .getRange(
+  const oldChannel =
+    sheet.getRange(
       rowNumber,
-      15
-    )
-    .setValue(
-      channel
-    );
+      COL.OTP_CHANNEL
+    ).getValue();
 
 
-  // Channel-specific timestamp
-  const now =
-    new Date();
+  const oldLastOtpSent =
+    sheet.getRange(
+      rowNumber,
+      COL.LAST_OTP_SENT
+    ).getValue();
 
 
-  saveChannelTimestamp(
-
-    found,
-
-    channel,
-
-    now
-
-  );
+  const oldEmailSent =
+    sheet.getRange(
+      rowNumber,
+      COL.LAST_EMAIL_OTP_SENT
+    ).getValue();
 
 
-  // Firebase must contain the SAME OTP.
+  const oldPhoneSent =
+    sheet.getRange(
+      rowNumber,
+      COL.LAST_PHONE_OTP_SENT
+    ).getValue();
+
+
   try {
 
+    // OTP
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP
+      )
+      .setValue(
+        otp
+      );
+
+
+    // Expiration
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_EXPIRES
+      )
+      .setValue(
+        expires
+      );
+
+
+    // Attempts
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_ATTEMPTS
+      )
+      .setValue(
+        0
+      );
+
+
+    // Lock
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_LOCK_UNTIL
+      )
+      .setValue(
+        ""
+      );
+
+
+    // Channel
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_CHANNEL
+      )
+      .setValue(
+        channel
+      );
+
+
+    // Channel timestamp
+    saveChannelTimestamp(
+
+      found,
+
+      channel,
+
+      new Date()
+
+    );
+
+
+    // Firebase synchronization
     saveOtpToFirebase(
 
       found,
@@ -1992,56 +2305,98 @@ function saveOtp(
 
     );
 
+
+    return expires;
+
   } catch (error) {
 
-    // Roll back Sheet OTP if Firebase failed.
+    // --------------------------------------------------------
+    // ROLLBACK SHEET
+    // --------------------------------------------------------
 
     sheet
       .getRange(
         rowNumber,
-        11
+        COL.OTP
       )
-      .setValue("");
-
-
-    sheet
-      .getRange(
-        rowNumber,
-        12
-      )
-      .setValue("");
+      .setValue(
+        oldOtp
+      );
 
 
     sheet
       .getRange(
         rowNumber,
-        13
+        COL.OTP_EXPIRES
       )
-      .setValue(0);
+      .setValue(
+        oldExpires
+      );
 
 
     sheet
       .getRange(
         rowNumber,
-        14
+        COL.OTP_ATTEMPTS
       )
-      .setValue("");
+      .setValue(
+        oldAttempts
+      );
 
 
     sheet
       .getRange(
         rowNumber,
-        15
+        COL.OTP_LOCK_UNTIL
       )
-      .setValue("");
+      .setValue(
+        oldLock
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_CHANNEL
+      )
+      .setValue(
+        oldChannel
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.LAST_OTP_SENT
+      )
+      .setValue(
+        oldLastOtpSent
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.LAST_EMAIL_OTP_SENT
+      )
+      .setValue(
+        oldEmailSent
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.LAST_PHONE_OTP_SENT
+      )
+      .setValue(
+        oldPhoneSent
+      );
 
 
     throw error;
 
   }
-
-
-  return expires;
 
 }
 
@@ -2057,7 +2412,7 @@ function clearSheetOtp(
   found.sheet
     .getRange(
       found.rowNumber,
-      11
+      COL.OTP
     )
     .setValue("");
 
@@ -2065,7 +2420,7 @@ function clearSheetOtp(
   found.sheet
     .getRange(
       found.rowNumber,
-      12
+      COL.OTP_EXPIRES
     )
     .setValue("");
 
@@ -2073,7 +2428,7 @@ function clearSheetOtp(
   found.sheet
     .getRange(
       found.rowNumber,
-      13
+      COL.OTP_ATTEMPTS
     )
     .setValue(0);
 
@@ -2081,7 +2436,7 @@ function clearSheetOtp(
   found.sheet
     .getRange(
       found.rowNumber,
-      14
+      COL.OTP_LOCK_UNTIL
     )
     .setValue("");
 
@@ -2089,7 +2444,7 @@ function clearSheetOtp(
   found.sheet
     .getRange(
       found.rowNumber,
-      15
+      COL.OTP_CHANNEL
     )
     .setValue("");
 
@@ -2097,14 +2452,38 @@ function clearSheetOtp(
 
 
 // ============================================================
-// RETURN OTP RESPONSE
+// CLEAR OTP COMPLETELY
+// ============================================================
+
+function clearOtpCompletely(
+  found
+) {
+
+  clearSheetOtp(
+    found
+  );
+
+
+  clearFirebaseOtpFields(
+    found
+  );
+
+}
+
+
+// ============================================================
+// OTP RESPONSE
 // ============================================================
 //
 // IMPORTANT:
 //
-// This is the exact OTP generated by Apps Script.
+// otp is the REAL server-generated OTP.
 //
-// otp.js does NOT generate this code.
+// This is returned because the school-project UI requires
+// automatic population of the six OTP boxes.
+//
+// Production systems should normally deliver the OTP through
+// email/SMS and NOT expose it in the browser response.
 //
 // ============================================================
 
@@ -2113,7 +2492,8 @@ function otpResponse(
   otp,
   channel,
   delivery,
-  generated
+  generated,
+  message
 ) {
 
   const row =
@@ -2136,29 +2516,43 @@ function otpResponse(
 
     uid:
       normalize(
-        row[0]
+        row[
+          COL.UID - 1
+        ]
       ),
 
     username:
       normalize(
-        row[2]
+        row[
+          COL.USERNAME - 1
+        ]
       ),
 
     gmail:
       normalizeEmail(
-        row[6]
+        row[
+          COL.GMAIL - 1
+        ]
       ),
 
     phone:
       normalizePhone(
-        row[7]
+        row[
+          COL.PHONE - 1
+        ]
       ),
 
     emailSent:
-      !!delivery.emailSent,
+      !!(
+        delivery &&
+        delivery.emailSent
+      ),
 
     smsSent:
-      !!delivery.smsSent,
+      !!(
+        delivery &&
+        delivery.smsSent
+      ),
 
     otpExpiresInMinutes:
       OTP_EXPIRY_MINUTES,
@@ -2167,11 +2561,14 @@ function otpResponse(
       RESEND_COOLDOWN_SECONDS,
 
     message:
-      channel === "email"
-        ? "A new verification code was generated for your registered Gmail."
-        : channel === "phone"
-          ? "A new verification code was generated for your registered phone."
-          : "A verification code was generated."
+      message ||
+      (
+        channel === "email"
+          ? "A new verification code was generated for your registered Gmail."
+          : channel === "phone"
+            ? "A new verification code was generated for your registered phone."
+            : "A verification code was generated."
+      )
 
   };
 
@@ -2179,22 +2576,12 @@ function otpResponse(
 
 
 // ============================================================
-// REGISTER EMPLOYEE
-// ============================================================
-//
-// OTP is NOT generated during registration.
-//
-// Registration creates the account.
-//
-// verify.html then calls prepareOtp().
-//
+// REGISTRATION VALIDATION
 // ============================================================
 
-function registerUser(data) {
-
-  const sheet =
-    getSheet();
-
+function validateRegistrationData(
+  data
+) {
 
   const name =
     normalize(
@@ -2223,7 +2610,8 @@ function registerUser(data) {
 
   const gmail =
     normalizeEmail(
-      data.gmail
+      data.gmail ||
+      data.email
     );
 
 
@@ -2244,7 +2632,7 @@ function registerUser(data) {
 
     return {
 
-      success:
+      valid:
         false,
 
       message:
@@ -2262,7 +2650,7 @@ function registerUser(data) {
 
     return {
 
-      success:
+      valid:
         false,
 
       message:
@@ -2280,7 +2668,7 @@ function registerUser(data) {
 
     return {
 
-      success:
+      valid:
         false,
 
       message:
@@ -2299,7 +2687,7 @@ function registerUser(data) {
 
     return {
 
-      success:
+      valid:
         false,
 
       message:
@@ -2318,7 +2706,7 @@ function registerUser(data) {
 
     return {
 
-      success:
+      valid:
         false,
 
       message:
@@ -2329,6 +2717,44 @@ function registerUser(data) {
   }
 
 
+  return {
+
+    valid:
+      true,
+
+    name:
+      name,
+
+    username:
+      username,
+
+    password:
+      password,
+
+    age:
+      age,
+
+    gmail:
+      gmail,
+
+    phone:
+      phone
+
+  };
+
+}
+
+
+// ============================================================
+// CHECK DUPLICATE ACCOUNT
+// ============================================================
+
+function checkDuplicateAccount(
+  username,
+  gmail,
+  phone
+) {
+
   if (
     findUser(
       username
@@ -2337,8 +2763,8 @@ function registerUser(data) {
 
     return {
 
-      success:
-        false,
+      duplicate:
+        true,
 
       message:
         "Username already exists."
@@ -2356,8 +2782,8 @@ function registerUser(data) {
 
     return {
 
-      success:
-        false,
+      duplicate:
+        true,
 
       message:
         "Gmail address already exists."
@@ -2375,8 +2801,8 @@ function registerUser(data) {
 
     return {
 
-      success:
-        false,
+      duplicate:
+        true,
 
       message:
         "Phone number already exists."
@@ -2386,83 +2812,273 @@ function registerUser(data) {
   }
 
 
-  const uid =
-    generateUID();
+  return {
+
+    duplicate:
+      false
+
+  };
+
+}
 
 
-  const now =
-    new Date();
+// ============================================================
+// CREATE FIREBASE ACCOUNT
+// ============================================================
 
+function createFirebaseAccount(
+  found
+) {
 
-  sheet.appendRow([
-
-    uid,
-
-    name,
-
-    username,
-
-    password,
-
-    age,
-
-    "PENDING",
-
-    gmail,
-
-    phone,
-
-    "Employee",
-
-    false,
-
-    "",
-
-    "",
-
-    0,
-
-    "",
-
-    "",
-
-    now,
-
-    "",
-
-    "",
-
-    "",
-
-    "",
-
-    ""
-
-  ]);
-
-
-  // Create basic Firebase user record.
   try {
 
-    const firebasePayload = {
+    saveFirebaseUser(
+      found,
+      false
+    );
+
+
+    return {
+
+      success:
+        true
+
+    };
+
+  } catch (error) {
+
+    console.error(
+      "Firebase account creation error:",
+      error
+    );
+
+
+    return {
+
+      success:
+        false,
+
+      message:
+        error &&
+        error.message
+          ? error.message
+          : "Firebase account storage failed."
+
+    };
+
+  }
+
+}
+
+
+// ============================================================
+// REGISTER EMPLOYEE
+// ============================================================
+//
+// Registration DOES NOT generate OTP.
+//
+// After successful registration, verify.html calls prepareOtp.
+//
+// ============================================================
+
+function registerUser(
+  data
+) {
+
+  const lock =
+    LockService
+      .getScriptLock();
+
+
+  try {
+
+    lock.waitLock(
+      30000
+    );
+
+
+    const validation =
+      validateRegistrationData(
+        data
+      );
+
+
+    if (
+      !validation.valid
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          validation.message
+
+      };
+
+    }
+
+
+    const duplicate =
+      checkDuplicateAccount(
+
+        validation.username,
+
+        validation.gmail,
+
+        validation.phone
+
+      );
+
+
+    if (
+      duplicate.duplicate
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          duplicate.message
+
+      };
+
+    }
+
+
+    const sheet =
+      getSheet();
+
+
+    const uid =
+      generateUID();
+
+
+    const now =
+      new Date();
+
+
+    const rowNumber =
+      sheet.getLastRow() +
+      1;
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        1,
+        1,
+        HEADERS.length
+      )
+      .setValues([[
+
+        uid,
+
+        validation.name,
+
+        validation.username,
+
+        validation.password,
+
+        validation.age,
+
+        "PENDING",
+
+        validation.gmail,
+
+        validation.phone,
+
+        "Employee",
+
+        false,
+
+        "",
+
+        "",
+
+        0,
+
+        "",
+
+        "",
+
+        now,
+
+        "",
+
+        "",
+
+        "",
+
+        "",
+
+        ""
+
+      ]]);
+
+
+    const found = {
+
+      sheet:
+        sheet,
+
+      rowNumber:
+        rowNumber,
+
+      values:
+        sheet
+          .getRange(
+            rowNumber,
+            1,
+            1,
+            HEADERS.length
+          )
+          .getValues()[0]
+
+    };
+
+
+    const firebaseResult =
+      createFirebaseAccount(
+        found
+      );
+
+
+    if (
+      !firebaseResult.success
+    ) {
+
+      sheet.deleteRow(
+        rowNumber
+      );
+
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Registration could not be completed because Firebase storage failed."
+
+      };
+
+    }
+
+
+    return {
+
+      success:
+        true,
 
       uid:
         uid,
 
-      name:
-        name,
-
       username:
-        username,
-
-      age:
-        age,
-
-      gmail:
-        gmail,
-
-      phone:
-        phone,
+        validation.username,
 
       role:
         "Employee",
@@ -2473,62 +3089,22 @@ function registerUser(data) {
       accountStatus:
         "PENDING",
 
-      createdAt:
-        now.toISOString(),
+      otpSent:
+        false,
 
-      updatedAt:
-        now.toISOString()
+      redirect:
+        "verify.html",
+
+      message:
+        "Registration successful. Continue to verification to receive your verification code."
 
     };
 
-
-    const result =
-      UrlFetchApp.fetch(
-
-        firebaseUrl(
-          "stockflow/users/" +
-          encodeURIComponent(uid)
-        ),
-
-        {
-
-          method:
-            "put",
-
-          contentType:
-            "application/json",
-
-          payload:
-            JSON.stringify(
-              firebasePayload
-            ),
-
-          muteHttpExceptions:
-            true
-
-        }
-
-      );
-
-
-    if (
-      result.getResponseCode() < 200 ||
-      result.getResponseCode() >= 300
-    ) {
-
-      throw new Error(
-        "Firebase account storage failed."
-      );
-
-    }
-
   } catch (error) {
 
-    // Remove account from Sheet if Firebase account
-    // creation failed.
-
-    sheet.deleteRow(
-      sheet.getLastRow()
+    console.error(
+      "Employee registration error:",
+      error
     );
 
 
@@ -2538,40 +3114,26 @@ function registerUser(data) {
         false,
 
       message:
-        "Registration could not be completed because Firebase storage failed."
+        error &&
+        error.message
+          ? error.message
+          : "Registration failed."
 
     };
 
+  } finally {
+
+    try {
+
+      lock.releaseLock();
+
+    } catch (error) {
+
+      // Nothing required.
+
+    }
+
   }
-
-
-  return {
-
-    success:
-      true,
-
-    uid:
-      uid,
-
-    username:
-      username,
-
-    role:
-      "Employee",
-
-    verified:
-      false,
-
-    accountStatus:
-      "PENDING",
-
-    otpSent:
-      false,
-
-    message:
-      "Registration successful. Continue to verification to receive your verification code."
-
-  };
 
 }
 
@@ -2580,7 +3142,9 @@ function registerUser(data) {
 // ADMIN REGISTRATION
 // ============================================================
 
-function registerAdmin(data) {
+function registerAdmin(
+  data
+) {
 
   const suppliedKey =
     String(
@@ -2614,276 +3178,200 @@ function registerAdmin(data) {
   }
 
 
-  const sheet =
-    getSheet();
-
-
-  const name =
-    normalize(
-      data.name
-    );
-
-
-  const username =
-    normalize(
-      data.username
-    );
-
-
-  const password =
-    String(
-      data.password ||
-      ""
-    );
-
-
-  const age =
-    Number(
-      data.age
-    );
-
-
-  const gmail =
-    normalizeEmail(
-      data.gmail
-    );
-
-
-  const phone =
-    normalizePhone(
-      data.phone
-    );
-
-
-  if (
-    !name ||
-    !username ||
-    !password ||
-    !age ||
-    !gmail ||
-    !phone
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "All required admin fields must be completed."
-
-    };
-
-  }
-
-
-  if (
-    username.length < 4 ||
-    username.length > 20
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Username must contain 4–20 characters."
-
-    };
-
-  }
-
-
-  if (
-    age < 18 ||
-    age > 100
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Age must be between 18 and 100."
-
-    };
-
-  }
-
-
-  if (
-    !validEmail(
-      gmail
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Invalid Gmail/email address."
-
-    };
-
-  }
-
-
-  if (
-    !validPhone(
-      phone
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Invalid Philippine phone number."
-
-    };
-
-  }
-
-
-  if (
-    findUser(
-      username
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Username already exists."
-
-    };
-
-  }
-
-
-  if (
-    findUser(
-      gmail
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Gmail address already exists."
-
-    };
-
-  }
-
-
-  if (
-    findUser(
-      phone
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Phone number already exists."
-
-    };
-
-  }
-
-
-  const uid =
-    generateUID();
-
-
-  const now =
-    new Date();
-
-
-  sheet.appendRow([
-
-    uid,
-
-    name,
-
-    username,
-
-    password,
-
-    age,
-
-    "PENDING",
-
-    gmail,
-
-    phone,
-
-    "Admin",
-
-    false,
-
-    "",
-
-    "",
-
-    0,
-
-    "",
-
-    "",
-
-    now,
-
-    "",
-
-    "",
-
-    "",
-
-    "",
-
-    ""
-
-  ]);
+  const lock =
+    LockService
+      .getScriptLock();
 
 
   try {
 
-    const firebasePayload = {
+    lock.waitLock(
+      30000
+    );
+
+
+    const validation =
+      validateRegistrationData(
+        data
+      );
+
+
+    if (
+      !validation.valid
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          validation.message
+
+      };
+
+    }
+
+
+    const duplicate =
+      checkDuplicateAccount(
+
+        validation.username,
+
+        validation.gmail,
+
+        validation.phone
+
+      );
+
+
+    if (
+      duplicate.duplicate
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          duplicate.message
+
+      };
+
+    }
+
+
+    const sheet =
+      getSheet();
+
+
+    const uid =
+      generateUID();
+
+
+    const now =
+      new Date();
+
+
+    const rowNumber =
+      sheet.getLastRow() +
+      1;
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        1,
+        1,
+        HEADERS.length
+      )
+      .setValues([[
+
+        uid,
+
+        validation.name,
+
+        validation.username,
+
+        validation.password,
+
+        validation.age,
+
+        "PENDING",
+
+        validation.gmail,
+
+        validation.phone,
+
+        "Admin",
+
+        false,
+
+        "",
+
+        "",
+
+        0,
+
+        "",
+
+        "",
+
+        now,
+
+        "",
+
+        "",
+
+        "",
+
+        "",
+
+        ""
+
+      ]]);
+
+
+    const found = {
+
+      sheet:
+        sheet,
+
+      rowNumber:
+        rowNumber,
+
+      values:
+        sheet
+          .getRange(
+            rowNumber,
+            1,
+            1,
+            HEADERS.length
+          )
+          .getValues()[0]
+
+    };
+
+
+    const firebaseResult =
+      createFirebaseAccount(
+        found
+      );
+
+
+    if (
+      !firebaseResult.success
+    ) {
+
+      sheet.deleteRow(
+        rowNumber
+      );
+
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Admin registration could not be completed because Firebase storage failed."
+
+      };
+
+    }
+
+
+    return {
+
+      success:
+        true,
 
       uid:
         uid,
 
-      name:
-        name,
-
       username:
-        username,
-
-      age:
-        age,
-
-      gmail:
-        gmail,
-
-      phone:
-        phone,
+        validation.username,
 
       role:
         "Admin",
@@ -2894,59 +3382,22 @@ function registerAdmin(data) {
       accountStatus:
         "PENDING",
 
-      createdAt:
-        now.toISOString(),
+      otpSent:
+        false,
 
-      updatedAt:
-        now.toISOString()
+      redirect:
+        "verify.html",
+
+      message:
+        "Admin registration successful. Continue to verification to receive your verification code."
 
     };
 
-
-    const result =
-      UrlFetchApp.fetch(
-
-        firebaseUrl(
-          "stockflow/users/" +
-          encodeURIComponent(uid)
-        ),
-
-        {
-
-          method:
-            "put",
-
-          contentType:
-            "application/json",
-
-          payload:
-            JSON.stringify(
-              firebasePayload
-            ),
-
-          muteHttpExceptions:
-            true
-
-        }
-
-      );
-
-
-    if (
-      result.getResponseCode() < 200 ||
-      result.getResponseCode() >= 300
-    ) {
-
-      throw new Error(
-        "Firebase account storage failed."
-      );
-
-    }
-
   } catch (error) {
 
-    sheet.deleteRow(
-      sheet.getLastRow()
+    console.error(
+      "Admin registration error:",
+      error
     );
 
 
@@ -2956,40 +3407,76 @@ function registerAdmin(data) {
         false,
 
       message:
-        "Admin registration could not be completed because Firebase storage failed."
+        error &&
+        error.message
+          ? error.message
+          : "Admin registration failed."
 
     };
 
+  } finally {
+
+    try {
+
+      lock.releaseLock();
+
+    } catch (error) {
+
+      // Nothing required.
+
+    }
+
   }
 
+}
 
-  return {
 
-    success:
-      true,
+// ============================================================
+// RESOLVE OTP IDENTITY
+// ============================================================
 
-    uid:
-      uid,
+function resolveOtpIdentity(
+  data
+) {
 
-    username:
-      username,
+  return normalize(
 
-    role:
-      "Admin",
+    data.identity ||
 
-    verified:
-      false,
+    data.username ||
 
-    accountStatus:
-      "PENDING",
+    data.gmail ||
 
-    otpSent:
-      false,
+    data.email ||
 
-    message:
-      "Admin registration successful. Continue to verification to receive your verification code."
+    data.phone
 
-  };
+  ).toLowerCase();
+
+}
+
+
+// ============================================================
+// RESOLVE OTP CHANNEL
+// ============================================================
+
+function resolveOtpChannel(
+  data
+) {
+
+  const requested =
+    normalize(
+      data.channel ||
+      "email"
+    ).toLowerCase();
+
+
+  return (
+    requested ===
+    "phone"
+  )
+    ? "phone"
+    : "email";
 
 }
 
@@ -2998,241 +3485,440 @@ function registerAdmin(data) {
 // PREPARE OTP
 // ============================================================
 //
-// Called by verify.html after registration.
+// Called by verify.html.
 //
-// Default channel:
-// EMAIL
+// Default channel = email.
 //
-// If an active OTP already exists and the selected channel
-// is still cooling down, the existing OTP is returned.
+// If an active OTP exists, it may be reused ONLY when the
+// existing OTP belongs to the requested channel.
 //
-// Otherwise a new OTP is generated.
+// A different channel always gets a new server-generated OTP
+// once that channel's cooldown allows it.
 //
 // ============================================================
 
-function prepareOtp(data) {
+function prepareOtp(
+  data
+) {
 
-  const identity =
-    normalize(
-
-      data.identity ||
-      data.username ||
-      data.gmail ||
-      data.email ||
-      data.phone
-
-    ).toLowerCase();
+  const lock =
+    LockService
+      .getScriptLock();
 
 
-  if (!identity) {
+  try {
 
-    return {
-
-      success:
-        false,
-
-      message:
-        "Username, email or phone is required."
-
-    };
-
-  }
-
-
-  const found =
-    findUser(
-      identity
+    lock.waitLock(
+      30000
     );
 
 
-  if (!found) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Account not found."
-
-    };
-
-  }
+    const identity =
+      resolveOtpIdentity(
+        data
+      );
 
 
-  const row =
-    found.values;
+    if (!identity) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Username, email or phone is required."
+
+      };
+
+    }
 
 
-  const verified =
-    row[9] === true ||
-    String(
-      row[9]
-    ).toUpperCase() ===
-    "TRUE";
+    const found =
+      findUser(
+        identity
+      );
 
 
-  if (verified) {
+    if (!found) {
 
-    return {
+      return {
 
-      success:
-        false,
+        success:
+          false,
 
-      verified:
-        true,
+        message:
+          "Account not found."
 
-      message:
-        "This account is already verified."
+      };
 
-    };
-
-  }
+    }
 
 
-  const requestedChannel =
-    normalize(
-      data.channel ||
-      "email"
-    ).toLowerCase();
+    const row =
+      found.values;
 
 
-  const channel =
-    requestedChannel ===
-    "phone"
-      ? "phone"
-      : "email";
+    if (
+      isTrue(
+        row[
+          COL.VERIFIED - 1
+        ]
+      )
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        verified:
+          true,
+
+        message:
+          "This account is already verified."
+
+      };
+
+    }
 
 
-  // ----------------------------------------------------------
-  // CHANNEL COOLDOWN
-  // ----------------------------------------------------------
-
-  const cooldown =
-    checkChannelCooldown(
-      row,
-      channel
-    );
+    const requestedChannel =
+      resolveOtpChannel(
+        data
+      );
 
 
-  // ----------------------------------------------------------
-  // EXISTING ACTIVE OTP
-  // ----------------------------------------------------------
+    // --------------------------------------------------------
+    // CHECK ACCOUNT LOCK
+    // --------------------------------------------------------
 
-  const existingOtp =
-    normalize(
-      row[10]
-    );
-
-
-  const existingExpires =
-    row[11]
-      ? new Date(row[11])
-      : null;
+    const lockRemaining =
+      getLockRemainingSeconds(
+        row
+      );
 
 
-  if (
-    !cooldown.allowed &&
-    existingOtp.length === OTP_LENGTH &&
-    existingExpires &&
-    !isNaN(
-      existingExpires.getTime()
-    ) &&
-    Date.now() <
-      existingExpires.getTime()
-  ) {
+    if (
+      lockRemaining > 0
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        locked:
+          true,
+
+        remainingSeconds:
+          lockRemaining,
+
+        message:
+          "Verification is temporarily locked. Please try again later."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK CHANNEL COOLDOWN
+    // --------------------------------------------------------
+
+    const cooldown =
+      checkChannelCooldown(
+
+        row,
+
+        requestedChannel
+
+      );
+
+
+    // --------------------------------------------------------
+    // EXISTING OTP
+    // --------------------------------------------------------
+
+    const existingOtp =
+      normalize(
+        row[
+          COL.OTP - 1
+        ]
+      );
+
+
+    const existingExpires =
+      validDate(
+        row[
+          COL.OTP_EXPIRES - 1
+        ]
+      );
+
 
     const existingChannel =
       normalize(
-        row[14]
+        row[
+          COL.OTP_CHANNEL - 1
+        ]
       ).toLowerCase();
 
 
-    return {
+    const existingOtpActive =
 
-      success:
-        true,
+      existingOtp.length ===
+      OTP_LENGTH &&
 
-      generated:
-        false,
+      /^\d{6}$/.test(
+        existingOtp
+      ) &&
 
-      otp:
-        existingOtp,
+      existingExpires &&
 
-      channel:
-        existingChannel ||
-        channel,
-
-      uid:
-        normalize(
-          row[0]
-        ),
-
-      username:
-        normalize(
-          row[2]
-        ),
-
-      gmail:
-        normalizeEmail(
-          row[6]
-        ),
-
-      phone:
-        normalizePhone(
-          row[7]
-        ),
-
-      emailSent:
-        existingChannel ===
-        "email",
-
-      smsSent:
-        existingChannel ===
-        "phone",
-
-      cooldownSeconds:
-        cooldown.remainingSeconds,
-
-      otpExpiresInMinutes:
-        OTP_EXPIRY_MINUTES,
-
-      message:
-        "Your current verification code is ready."
-
-    };
-
-  }
+      Date.now() <
+      existingExpires.getTime();
 
 
-  // ----------------------------------------------------------
-  // GENERATE NEW OTP
-  // ----------------------------------------------------------
+    // --------------------------------------------------------
+    // REUSE ONLY SAME-CHANNEL ACTIVE OTP
+    // --------------------------------------------------------
 
-  const otp =
-    generateOTP();
+    if (
+      existingOtpActive &&
+      existingChannel ===
+      requestedChannel &&
+      !cooldown.allowed
+    ) {
+
+      return {
+
+        success:
+          true,
+
+        generated:
+          false,
+
+        otp:
+          existingOtp,
+
+        channel:
+          existingChannel,
+
+        uid:
+          normalize(
+            row[
+              COL.UID - 1
+            ]
+          ),
+
+        username:
+          normalize(
+            row[
+              COL.USERNAME - 1
+            ]
+          ),
+
+        gmail:
+          normalizeEmail(
+            row[
+              COL.GMAIL - 1
+            ]
+          ),
+
+        phone:
+          normalizePhone(
+            row[
+              COL.PHONE - 1
+            ]
+          ),
+
+        emailSent:
+          existingChannel ===
+          "email",
+
+        smsSent:
+          existingChannel ===
+          "phone",
+
+        cooldownSeconds:
+          cooldown.remainingSeconds,
+
+        otpExpiresInMinutes:
+          OTP_EXPIRY_MINUTES,
+
+        message:
+          "Your current verification code is ready."
+
+      };
+
+    }
 
 
-  // ----------------------------------------------------------
-  // SAVE TO SHEETS + FIREBASE
-  // ----------------------------------------------------------
+    // --------------------------------------------------------
+    // IF CHANNEL IS COOLING DOWN AND WE CANNOT REUSE IT
+    // --------------------------------------------------------
 
-  let expires;
+    if (
+      !cooldown.allowed
+    ) {
 
-  try {
+      return {
 
-    expires =
-      saveOtp(
+        success:
+          false,
 
-        found,
+        cooldown:
+          true,
 
-        otp,
+        channel:
+          requestedChannel,
 
-        channel
+        remainingSeconds:
+          cooldown.remainingSeconds,
 
+        message:
+          "Please wait " +
+          cooldown.remainingSeconds +
+          " seconds before requesting another " +
+          requestedChannel +
+          " OTP."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // GENERATE NEW SERVER OTP
+    // --------------------------------------------------------
+
+    const otp =
+      generateOTP();
+
+
+    let expires;
+
+
+    try {
+
+      expires =
+        saveOtp(
+
+          found,
+
+          otp,
+
+          requestedChannel
+
+        );
+
+    } catch (error) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          error &&
+          error.message
+            ? error.message
+            : "Unable to store verification code."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // DELIVERY
+    // --------------------------------------------------------
+
+    let delivery;
+
+
+    try {
+
+      delivery =
+        sendOTPByChannel(
+
+          normalizeEmail(
+            row[
+              COL.GMAIL - 1
+            ]
+          ),
+
+          normalizePhone(
+            row[
+              COL.PHONE - 1
+            ]
+          ),
+
+          normalize(
+            row[
+              COL.NAME - 1
+            ]
+          ),
+
+          otp,
+
+          requestedChannel,
+
+          false
+
+        );
+
+    } catch (error) {
+
+      clearOtpCompletely(
+        found
       );
 
+
+      return {
+
+        success:
+          false,
+
+        message:
+          error &&
+          error.message
+            ? error.message
+            : "Unable to deliver verification code."
+
+      };
+
+    }
+
+
+    return otpResponse(
+
+      found,
+
+      otp,
+
+      requestedChannel,
+
+      delivery,
+
+      true,
+
+      requestedChannel ===
+      "email"
+
+        ? "A new verification code was generated for your registered Gmail."
+
+        : "A new verification code was generated for your registered phone."
+
+    );
+
   } catch (error) {
+
+    console.error(
+      "prepareOtp error:",
+      error
+    );
+
 
     return {
 
@@ -3243,85 +3929,23 @@ function prepareOtp(data) {
         error &&
         error.message
           ? error.message
-          : "Unable to store verification code."
+          : "Unable to prepare verification code."
 
     };
 
-  }
+  } finally {
 
+    try {
 
-  // ----------------------------------------------------------
-  // SEND
-  // ----------------------------------------------------------
+      lock.releaseLock();
 
-  let delivery;
+    } catch (error) {
 
+      // Nothing required.
 
-  try {
-
-    delivery =
-      sendOTPByChannel(
-
-        normalizeEmail(
-          row[6]
-        ),
-
-        normalizePhone(
-          row[7]
-        ),
-
-        normalize(
-          row[1]
-        ),
-
-        otp,
-
-        channel,
-
-        false
-
-      );
-
-  } catch (error) {
-
-    clearSheetOtp(
-      found
-    );
-
-    clearOtpFromFirebase(
-      found
-    );
-
-
-    return {
-
-      success:
-        false,
-
-      message:
-        error &&
-        error.message
-          ? error.message
-          : "Unable to send verification code."
-
-    };
+    }
 
   }
-
-
-  return otpResponse(
-
-    found,
-
-    otp,
-
-    channel,
-
-    delivery,
-
-    true
-
-  );
 
 }
 
@@ -3330,11 +3954,13 @@ function prepareOtp(data) {
 // GENERATE OTP
 // ============================================================
 //
-// Compatibility endpoint for api.js.
+// Compatibility endpoint.
 //
 // ============================================================
 
-function generateOtp(data) {
+function generateOtp(
+  data
+) {
 
   return prepareOtp(
     data
@@ -3347,239 +3973,318 @@ function generateOtp(data) {
 // RESEND OTP
 // ============================================================
 //
-// Email button:
+// channel=email
 //
-// channel = email
+// OR
 //
-// Phone button:
+// channel=phone
 //
-// channel = phone
-//
-// Each channel has its own 120-second cooldown.
+// Each channel has its own independent 120-second cooldown.
 //
 // ============================================================
 
-function resendOTP(data) {
+function resendOTP(
+  data
+) {
 
-  const identity =
-    normalize(
-
-      data.identity ||
-      data.username ||
-      data.gmail ||
-      data.email ||
-      data.phone
-
-    ).toLowerCase();
-
-
-  if (!identity) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Username, email or phone is required."
-
-    };
-
-  }
-
-
-  const found =
-    findUser(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Account not found."
-
-    };
-
-  }
-
-
-  const row =
-    found.values;
-
-
-  const verified =
-    row[9] === true ||
-    String(
-      row[9]
-    ).toUpperCase() ===
-    "TRUE";
-
-
-  if (verified) {
-
-    return {
-
-      success:
-        false,
-
-      verified:
-        true,
-
-      message:
-        "This account is already verified."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CHANNEL
-  // ----------------------------------------------------------
-
-  const requestedChannel =
-    normalize(
-      data.channel ||
-      "email"
-    ).toLowerCase();
-
-
-  const channel =
-    requestedChannel ===
-    "phone"
-      ? "phone"
-      : "email";
-
-
-  // ----------------------------------------------------------
-  // CHANNEL COOLDOWN
-  // ----------------------------------------------------------
-
-  const cooldown =
-    checkChannelCooldown(
-      row,
-      channel
-    );
-
-
-  if (
-    !cooldown.allowed
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      cooldown:
-        true,
-
-      channel:
-        channel,
-
-      remainingSeconds:
-        cooldown.remainingSeconds,
-
-      message:
-        "Please wait " +
-        cooldown.remainingSeconds +
-        " seconds before requesting another " +
-        channel +
-        " OTP."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // NEW OTP
-  // ----------------------------------------------------------
-
-  const newOTP =
-    generateOTP();
-
-
-  let expires;
+  const lock =
+    LockService
+      .getScriptLock();
 
 
   try {
 
-    expires =
-      saveOtp(
+    lock.waitLock(
+      30000
+    );
 
-        found,
 
-        newOTP,
+    const identity =
+      resolveOtpIdentity(
+        data
+      );
+
+
+    if (!identity) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Username, email or phone is required."
+
+      };
+
+    }
+
+
+    const found =
+      findUser(
+        identity
+      );
+
+
+    if (!found) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Account not found."
+
+      };
+
+    }
+
+
+    const row =
+      found.values;
+
+
+    if (
+      isTrue(
+        row[
+          COL.VERIFIED - 1
+        ]
+      )
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        verified:
+          true,
+
+        message:
+          "This account is already verified."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK LOCK
+    // --------------------------------------------------------
+
+    const lockRemaining =
+      getLockRemainingSeconds(
+        row
+      );
+
+
+    if (
+      lockRemaining > 0
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        locked:
+          true,
+
+        remainingSeconds:
+          lockRemaining,
+
+        message:
+          "Verification is temporarily locked. Please try again later."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHANNEL
+    // --------------------------------------------------------
+
+    const channel =
+      resolveOtpChannel(
+        data
+      );
+
+
+    // --------------------------------------------------------
+    // COOLDOWN
+    // --------------------------------------------------------
+
+    const cooldown =
+      checkChannelCooldown(
+
+        row,
 
         channel
 
       );
 
-  } catch (error) {
 
-    return {
+    if (
+      !cooldown.allowed
+    ) {
 
-      success:
-        false,
+      return {
 
-      message:
-        error &&
-        error.message
-          ? error.message
-          : "Unable to store the new verification code."
+        success:
+          false,
 
-    };
+        cooldown:
+          true,
 
-  }
+        channel:
+          channel,
+
+        remainingSeconds:
+          cooldown.remainingSeconds,
+
+        message:
+          "Please wait " +
+          cooldown.remainingSeconds +
+          " seconds before requesting another " +
+          channel +
+          " OTP."
+
+      };
+
+    }
 
 
-  // ----------------------------------------------------------
-  // SEND
-  // ----------------------------------------------------------
+    // --------------------------------------------------------
+    // GENERATE NEW SERVER OTP
+    // --------------------------------------------------------
 
-  let delivery;
+    const newOTP =
+      generateOTP();
 
 
-  try {
+    let expires;
 
-    delivery =
-      sendOTPByChannel(
 
-        normalizeEmail(
-          row[6]
-        ),
+    try {
 
-        normalizePhone(
-          row[7]
-        ),
+      expires =
+        saveOtp(
 
-        normalize(
-          row[1]
-        ),
+          found,
 
-        newOTP,
+          newOTP,
 
-        channel,
+          channel
 
-        true
+        );
 
+    } catch (error) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          error &&
+          error.message
+            ? error.message
+            : "Unable to store the new verification code."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // SEND
+    // --------------------------------------------------------
+
+    let delivery;
+
+
+    try {
+
+      delivery =
+        sendOTPByChannel(
+
+          normalizeEmail(
+            row[
+              COL.GMAIL - 1
+            ]
+          ),
+
+          normalizePhone(
+            row[
+              COL.PHONE - 1
+            ]
+          ),
+
+          normalize(
+            row[
+              COL.NAME - 1
+            ]
+          ),
+
+          newOTP,
+
+          channel,
+
+          true
+
+        );
+
+    } catch (error) {
+
+      clearOtpCompletely(
+        found
       );
 
-  } catch (error) {
 
-    clearSheetOtp(
-      found
+      return {
+
+        success:
+          false,
+
+        message:
+          error &&
+          error.message
+            ? error.message
+            : "Unable to deliver a new OTP."
+
+      };
+
+    }
+
+
+    return otpResponse(
+
+      found,
+
+      newOTP,
+
+      channel,
+
+      delivery,
+
+      true,
+
+      channel ===
+      "email"
+
+        ? "A new verification code was generated for your registered Gmail."
+
+        : "A new verification code was generated for your registered phone."
+
     );
 
-    clearOtpFromFirebase(
-      found
+  } catch (error) {
+
+    console.error(
+      "resendOTP error:",
+      error
     );
 
 
@@ -3592,26 +4297,23 @@ function resendOTP(data) {
         error &&
         error.message
           ? error.message
-          : "Unable to send a new OTP."
+          : "Unable to resend verification code."
 
     };
 
+  } finally {
+
+    try {
+
+      lock.releaseLock();
+
+    } catch (error) {
+
+      // Nothing required.
+
+    }
+
   }
-
-
-  return otpResponse(
-
-    found,
-
-    newOTP,
-
-    channel,
-
-    delivery,
-
-    true
-
-  );
 
 }
 
@@ -3620,11 +4322,13 @@ function resendOTP(data) {
 // REQUEST OTP
 // ============================================================
 //
-// Compatibility endpoint used by older auth.js code.
+// Compatibility endpoint for older auth.js.
 //
 // ============================================================
 
-function requestOtp(data) {
+function requestOtp(
+  data
+) {
 
   return resendOTP(
     data
@@ -3637,264 +4341,183 @@ function requestOtp(data) {
 // VERIFY OTP
 // ============================================================
 
-function verifyOTP(data) {
+function verifyOTP(
+  data
+) {
 
-  const identity =
-    normalize(
-
-      data.identity ||
-      data.username ||
-      data.gmail ||
-      data.email ||
-      data.phone
-
-    ).toLowerCase();
+  const lock =
+    LockService
+      .getScriptLock();
 
 
-  const enteredOTP =
-    normalize(
-      data.otp
+  try {
+
+    lock.waitLock(
+      30000
     );
 
 
-  if (
-    !identity ||
-    !enteredOTP
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Username/email and OTP are required."
-
-    };
-
-  }
-
-
-  if (
-    !/^\d{6}$/.test(
-      enteredOTP
-    )
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "OTP must contain exactly 6 digits."
-
-    };
-
-  }
-
-
-  const found =
-    findUser(
-      identity
-    );
-
-
-  if (!found) {
-
-    return {
-
-      success:
-        false,
-
-      message:
-        "Account not found."
-
-    };
-
-  }
-
-
-  const sheet =
-    found.sheet;
-
-
-  const rowNumber =
-    found.rowNumber;
-
-
-  const row =
-    found.values;
-
-
-  // ----------------------------------------------------------
-  // CHECK LOCK
-  // ----------------------------------------------------------
-
-  const lockRemaining =
-    getLockRemainingSeconds(
-      row
-    );
-
-
-  if (
-    lockRemaining > 0
-  ) {
-
-    const minutes =
-      Math.ceil(
-        lockRemaining / 60
+    const identity =
+      resolveOtpIdentity(
+        data
       );
 
 
-    return {
-
-      success:
-        false,
-
-      locked:
-        true,
-
-      remainingSeconds:
-        lockRemaining,
-
-      message:
-        "Too many incorrect OTP attempts. Try again in approximately " +
-        minutes +
-        " minute(s)."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CHECK EXPIRATION
-  // ----------------------------------------------------------
-
-  const storedOTP =
-    normalize(
-      row[10]
-    );
-
-
-  const expires =
-    row[11]
-      ? new Date(
-          row[11]
-        )
-      : null;
-
-
-  if (
-    !storedOTP
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      expired:
-        true,
-
-      message:
-        "No active verification code exists. Request a new OTP."
-
-    };
-
-  }
-
-
-  if (
-    !expires ||
-    isNaN(
-      expires.getTime()
-    ) ||
-    Date.now() >
-      expires.getTime()
-  ) {
-
-    return {
-
-      success:
-        false,
-
-      expired:
-        true,
-
-      message:
-        "This verification code has expired. Request a new OTP."
-
-    };
-
-  }
-
-
-  // ----------------------------------------------------------
-  // CHECK OTP
-  // ----------------------------------------------------------
-
-  if (
-    enteredOTP !==
-    storedOTP
-  ) {
-
-    let attempts =
-      Number(
-        row[12]
-      ) || 0;
-
-
-    attempts++;
+    const enteredOTP =
+      normalize(
+        data.otp
+      );
 
 
     if (
-      attempts >=
-      MAX_OTP_ATTEMPTS
+      !identity ||
+      !enteredOTP
     ) {
 
-      const newLock =
-        new Date(
+      return {
 
-          Date.now() +
+        success:
+          false,
 
-          OTP_LOCK_MINUTES *
-          60 *
-          1000
+        message:
+          "Username/email and OTP are required."
 
-        );
+      };
 
-
-      sheet
-        .getRange(
-          rowNumber,
-          13
-        )
-        .setValue(
-          attempts
-        );
+    }
 
 
-      sheet
-        .getRange(
-          rowNumber,
-          14
-        )
-        .setValue(
-          newLock
-        );
+    if (
+      !/^\d{6}$/.test(
+        enteredOTP
+      )
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "OTP must contain exactly 6 digits."
+
+      };
+
+    }
 
 
-      updateFirebaseOtpAttempts(
-
-        found,
-
-        attempts,
-
-        newLock
-
+    const found =
+      findUser(
+        identity
       );
+
+
+    if (!found) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Account not found."
+
+      };
+
+    }
+
+
+    const sheet =
+      found.sheet;
+
+
+    const rowNumber =
+      found.rowNumber;
+
+
+    // --------------------------------------------------------
+    // RELOAD ROW AFTER LOCK
+    // --------------------------------------------------------
+
+    const row =
+      sheet
+        .getRange(
+          rowNumber,
+          1,
+          1,
+          HEADERS.length
+        )
+        .getValues()[0];
+
+
+    // --------------------------------------------------------
+    // ALREADY VERIFIED
+    // --------------------------------------------------------
+
+    if (
+      isTrue(
+        row[
+          COL.VERIFIED - 1
+        ]
+      )
+    ) {
+
+      return {
+
+        success:
+          true,
+
+        verified:
+          true,
+
+        uid:
+          normalize(
+            row[
+              COL.UID - 1
+            ]
+          ),
+
+        username:
+          normalize(
+            row[
+              COL.USERNAME - 1
+            ]
+          ),
+
+        role:
+          normalize(
+            row[
+              COL.ROLE - 1
+            ]
+          ) ||
+          "Employee",
+
+        message:
+          "Account is already verified."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK LOCK
+    // --------------------------------------------------------
+
+    const lockRemaining =
+      getLockRemainingSeconds(
+        row
+      );
+
+
+    if (
+      lockRemaining > 0
+    ) {
+
+      const minutes =
+        Math.ceil(
+          lockRemaining / 60
+        );
 
 
       return {
@@ -3905,43 +4528,440 @@ function verifyOTP(data) {
         locked:
           true,
 
-        attempts:
-          attempts,
-
-        remainingAttempts:
-          0,
-
-        lockMinutes:
-          OTP_LOCK_MINUTES,
+        remainingSeconds:
+          lockRemaining,
 
         message:
-          "Too many incorrect OTP attempts. Your verification is temporarily locked for " +
-          OTP_LOCK_MINUTES +
-          " minutes."
+          "Too many incorrect OTP attempts. Try again in approximately " +
+          minutes +
+          " minute(s)."
 
       };
 
     }
 
 
-    sheet
-      .getRange(
-        rowNumber,
-        13
-      )
-      .setValue(
-        attempts
+    // --------------------------------------------------------
+    // CHECK EXPIRATION
+    // --------------------------------------------------------
+
+    const storedOTP =
+      normalize(
+        row[
+          COL.OTP - 1
+        ]
       );
 
 
-    updateFirebaseOtpAttempts(
+    const expires =
+      validDate(
+        row[
+          COL.OTP_EXPIRES - 1
+        ]
+      );
 
-      found,
 
-      attempts,
+    if (!storedOTP) {
 
-      null
+      return {
 
+        success:
+          false,
+
+        expired:
+          true,
+
+        message:
+          "No active verification code exists. Request a new OTP."
+
+      };
+
+    }
+
+
+    if (
+      !expires ||
+      Date.now() >
+      expires.getTime()
+    ) {
+
+      return {
+
+        success:
+          false,
+
+        expired:
+          true,
+
+        message:
+          "This verification code has expired. Request a new OTP."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // CHECK OTP
+    // --------------------------------------------------------
+
+    if (
+      enteredOTP !==
+      storedOTP
+    ) {
+
+      let attempts =
+        Number(
+          row[
+            COL.OTP_ATTEMPTS - 1
+          ]
+        ) || 0;
+
+
+      attempts++;
+
+
+      if (
+        attempts >=
+        MAX_OTP_ATTEMPTS
+      ) {
+
+        const newLock =
+          new Date(
+
+            Date.now() +
+
+            OTP_LOCK_MINUTES *
+            60 *
+            1000
+
+          );
+
+
+        sheet
+          .getRange(
+            rowNumber,
+            COL.OTP_ATTEMPTS
+          )
+          .setValue(
+            attempts
+          );
+
+
+        sheet
+          .getRange(
+            rowNumber,
+            COL.OTP_LOCK_UNTIL
+          )
+          .setValue(
+            newLock
+          );
+
+
+        updateFirebaseOtpAttempts(
+
+          found,
+
+          attempts,
+
+          newLock
+
+        );
+
+
+        return {
+
+          success:
+            false,
+
+          locked:
+            true,
+
+          attempts:
+            attempts,
+
+          remainingAttempts:
+            0,
+
+          lockMinutes:
+            OTP_LOCK_MINUTES,
+
+          message:
+            "Too many incorrect OTP attempts. Your verification is temporarily locked for " +
+            OTP_LOCK_MINUTES +
+            " minutes."
+
+        };
+
+      }
+
+
+      sheet
+        .getRange(
+          rowNumber,
+          COL.OTP_ATTEMPTS
+        )
+        .setValue(
+          attempts
+        );
+
+
+      updateFirebaseOtpAttempts(
+
+        found,
+
+        attempts,
+
+        null
+
+      );
+
+
+      return {
+
+        success:
+          false,
+
+        attempts:
+          attempts,
+
+        remainingAttempts:
+          MAX_OTP_ATTEMPTS -
+          attempts,
+
+        message:
+          "Invalid OTP. You have " +
+          (
+            MAX_OTP_ATTEMPTS -
+            attempts
+          ) +
+          " attempt(s) remaining."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // SUCCESSFUL VERIFICATION
+    // --------------------------------------------------------
+
+    const verifiedAt =
+      new Date();
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.ACCOUNT_STATUS
+      )
+      .setValue(
+        "VERIFIED"
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        COL.VERIFIED
+      )
+      .setValue(
+        true
+      );
+
+
+    // Clear OTP
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP
+      )
+      .setValue(
+        ""
+      );
+
+
+    // Clear expiration
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_EXPIRES
+      )
+      .setValue(
+        ""
+      );
+
+
+    // Reset attempts
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_ATTEMPTS
+      )
+      .setValue(
+        0
+      );
+
+
+    // Clear lock
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_LOCK_UNTIL
+      )
+      .setValue(
+        ""
+      );
+
+
+    // Clear channel
+    sheet
+      .getRange(
+        rowNumber,
+        COL.OTP_CHANNEL
+      )
+      .setValue(
+        ""
+      );
+
+
+    // Verified date
+    sheet
+      .getRange(
+        rowNumber,
+        COL.VERIFIED_AT
+      )
+      .setValue(
+        verifiedAt
+      );
+
+
+    // --------------------------------------------------------
+    // FIREBASE
+    // --------------------------------------------------------
+
+    try {
+
+      markFirebaseUserVerified(
+        found
+      );
+
+
+      clearFirebaseOtpFields(
+        found
+      );
+
+    } catch (firebaseError) {
+
+      console.error(
+        "Firebase verification synchronization error:",
+        firebaseError
+      );
+
+      // Google Sheets is already verified.
+      // Return success because verification itself succeeded.
+
+    }
+
+
+    return {
+
+      success:
+        true,
+
+      verified:
+        true,
+
+      accountStatus:
+        "VERIFIED",
+
+      uid:
+        normalize(
+          row[
+            COL.UID - 1
+          ]
+        ),
+
+      username:
+        normalize(
+          row[
+            COL.USERNAME - 1
+          ]
+        ),
+
+      role:
+        normalize(
+          row[
+            COL.ROLE - 1
+          ]
+        ) ||
+        "Employee",
+
+      user: {
+
+        uid:
+          normalize(
+            row[
+              COL.UID - 1
+            ]
+          ),
+
+        name:
+          normalize(
+            row[
+              COL.NAME - 1
+            ]
+          ),
+
+        username:
+          normalize(
+            row[
+              COL.USERNAME - 1
+            ]
+          ),
+
+        age:
+          row[
+            COL.AGE - 1
+          ],
+
+        accountStatus:
+          "VERIFIED",
+
+        gmail:
+          normalizeEmail(
+            row[
+              COL.GMAIL - 1
+            ]
+          ),
+
+        phone:
+          normalizePhone(
+            row[
+              COL.PHONE - 1
+            ]
+          ),
+
+        role:
+          normalize(
+            row[
+              COL.ROLE - 1
+            ]
+          ) ||
+          "Employee"
+
+      },
+
+      message:
+        "Account verified successfully."
+
+    };
+
+  } catch (error) {
+
+    console.error(
+      "verifyOTP error:",
+      error
     );
 
 
@@ -3950,183 +4970,27 @@ function verifyOTP(data) {
       success:
         false,
 
-      attempts:
-        attempts,
-
-      remainingAttempts:
-        MAX_OTP_ATTEMPTS -
-        attempts,
-
       message:
-        "Invalid OTP. You have " +
-        (
-          MAX_OTP_ATTEMPTS -
-          attempts
-        ) +
-        " attempt(s) remaining."
+        error &&
+        error.message
+          ? error.message
+          : "OTP verification failed."
 
     };
 
+  } finally {
+
+    try {
+
+      lock.releaseLock();
+
+    } catch (error) {
+
+      // Nothing required.
+
+    }
+
   }
-
-
-  // ----------------------------------------------------------
-  // SUCCESSFUL VERIFICATION
-  // ----------------------------------------------------------
-
-  sheet
-    .getRange(
-      rowNumber,
-      6
-    )
-    .setValue(
-      "VERIFIED"
-    );
-
-
-  sheet
-    .getRange(
-      rowNumber,
-      10
-    )
-    .setValue(
-      true
-    );
-
-
-  // Clear OTP
-  sheet
-    .getRange(
-      rowNumber,
-      11
-    )
-    .setValue("");
-
-
-  // Clear expiration
-  sheet
-    .getRange(
-      rowNumber,
-      12
-    )
-    .setValue("");
-
-
-  // Reset attempts
-  sheet
-    .getRange(
-      rowNumber,
-      13
-    )
-    .setValue(
-      0
-    );
-
-
-  // Clear lock
-  sheet
-    .getRange(
-      rowNumber,
-      14
-    )
-    .setValue("");
-
-
-  // Verified date
-  sheet
-    .getRange(
-      rowNumber,
-      17
-    )
-    .setValue(
-      new Date()
-    );
-
-
-  // Firebase verification
-  markFirebaseUserVerified(
-    found
-  );
-
-
-  // Remove Firebase OTP
-  clearOtpFromFirebase(
-    found
-  );
-
-
-  return {
-
-    success:
-      true,
-
-    verified:
-      true,
-
-    accountStatus:
-      "VERIFIED",
-
-    uid:
-      normalize(
-        row[0]
-      ),
-
-    username:
-      normalize(
-        row[2]
-      ),
-
-    role:
-      normalize(
-        row[8]
-      ) ||
-      "Employee",
-
-    user: {
-
-      uid:
-        normalize(
-          row[0]
-        ),
-
-      name:
-        normalize(
-          row[1]
-        ),
-
-      username:
-        normalize(
-          row[2]
-        ),
-
-      age:
-        row[4],
-
-      accountStatus:
-        "VERIFIED",
-
-      gmail:
-        normalizeEmail(
-          row[6]
-        ),
-
-      phone:
-        normalizePhone(
-          row[7]
-        ),
-
-      role:
-        normalize(
-          row[8]
-        ) ||
-        "Employee"
-
-    },
-
-    message:
-      "Account verified successfully."
-
-  };
 
 }
 
@@ -4135,7 +4999,9 @@ function verifyOTP(data) {
 // LOGIN
 // ============================================================
 
-function loginUser(data) {
+function loginUser(
+  data
+) {
 
   const identity =
     normalize(
@@ -4195,7 +5061,9 @@ function loginUser(data) {
 
   const savedPassword =
     String(
-      row[3] ||
+      row[
+        COL.PASSWORD - 1
+      ] ||
       ""
     );
 
@@ -4220,16 +5088,18 @@ function loginUser(data) {
 
   const status =
     normalize(
-      row[5]
+      row[
+        COL.ACCOUNT_STATUS - 1
+      ]
     ).toUpperCase();
 
 
   const verified =
-    row[9] === true ||
-    String(
-      row[9]
-    ).toUpperCase() ===
-    "TRUE";
+    isTrue(
+      row[
+        COL.VERIFIED - 1
+      ]
+    );
 
 
   // ----------------------------------------------------------
@@ -4272,6 +5142,24 @@ function loginUser(data) {
   }
 
 
+  if (
+    status ===
+    "BLOCKED"
+  ) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "This account has been blocked."
+
+    };
+
+  }
+
+
   if (!verified) {
 
     return {
@@ -4284,12 +5172,16 @@ function loginUser(data) {
 
       uid:
         normalize(
-          row[0]
+          row[
+            COL.UID - 1
+          ]
         ),
 
       username:
         normalize(
-          row[2]
+          row[
+            COL.USERNAME - 1
+          ]
         ),
 
       message:
@@ -4307,7 +5199,7 @@ function loginUser(data) {
   found.sheet
     .getRange(
       found.rowNumber,
-      19
+      COL.LAST_LOGIN
     )
     .setValue(
       new Date()
@@ -4329,40 +5221,56 @@ function loginUser(data) {
 
       uid:
         normalize(
-          row[0]
+          row[
+            COL.UID - 1
+          ]
         ),
 
       name:
         normalize(
-          row[1]
+          row[
+            COL.NAME - 1
+          ]
         ),
 
       username:
         normalize(
-          row[2]
+          row[
+            COL.USERNAME - 1
+          ]
         ),
 
       age:
-        row[4],
+        row[
+          COL.AGE - 1
+        ],
 
       accountStatus:
         normalize(
-          row[5]
+          row[
+            COL.ACCOUNT_STATUS - 1
+          ]
         ),
 
       gmail:
         normalizeEmail(
-          row[6]
+          row[
+            COL.GMAIL - 1
+          ]
         ),
 
       phone:
         normalizePhone(
-          row[7]
+          row[
+            COL.PHONE - 1
+          ]
         ),
 
       role:
         normalize(
-          row[8]
+          row[
+            COL.ROLE - 1
+          ]
         ) ||
         "Employee"
 
@@ -4377,7 +5285,9 @@ function loginUser(data) {
 // GET USER
 // ============================================================
 
-function getUser(data) {
+function getUser(
+  data
+) {
 
   const identity =
     normalize(
@@ -4434,49 +5344,65 @@ function getUser(data) {
 
       uid:
         normalize(
-          row[0]
+          row[
+            COL.UID - 1
+          ]
         ),
 
       name:
         normalize(
-          row[1]
+          row[
+            COL.NAME - 1
+          ]
         ),
 
       username:
         normalize(
-          row[2]
+          row[
+            COL.USERNAME - 1
+          ]
         ),
 
       age:
-        row[4],
+        row[
+          COL.AGE - 1
+        ],
 
       accountStatus:
         normalize(
-          row[5]
+          row[
+            COL.ACCOUNT_STATUS - 1
+          ]
         ),
 
       gmail:
         normalizeEmail(
-          row[6]
+          row[
+            COL.GMAIL - 1
+          ]
         ),
 
       phone:
         normalizePhone(
-          row[7]
+          row[
+            COL.PHONE - 1
+          ]
         ),
 
       role:
         normalize(
-          row[8]
+          row[
+            COL.ROLE - 1
+          ]
         ) ||
         "Employee",
 
       verified:
-        row[9] === true ||
-        String(
-          row[9]
-        ).toUpperCase() ===
-        "TRUE"
+        isTrue(
+          row[
+            COL.VERIFIED - 1
+          ]
+        )
 
     }
 
@@ -4513,7 +5439,9 @@ function updateAccountStatus(
 
     "SUSPENDED",
 
-    "DISABLED"
+    "DISABLED",
+
+    "BLOCKED"
 
   ];
 
@@ -4561,7 +5489,7 @@ function updateAccountStatus(
   found.sheet
     .getRange(
       found.rowNumber,
-      6
+      COL.ACCOUNT_STATUS
     )
     .setValue(
       status
@@ -4571,12 +5499,29 @@ function updateAccountStatus(
   found.sheet
     .getRange(
       found.rowNumber,
-      10
+      COL.VERIFIED
     )
     .setValue(
       status ===
       "VERIFIED"
     );
+
+
+  // Synchronize Firebase.
+  try {
+
+    markFirebaseUserVerified(
+      found
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase account status update error:",
+      error
+    );
+
+  }
 
 
   return {
@@ -4595,39 +5540,272 @@ function updateAccountStatus(
 // ============================================================
 // FORGOT PASSWORD
 // ============================================================
+//
+// Uses BOTH registered channels.
+//
+// The recovery OTP is server-generated.
+//
+// ============================================================
 
-function forgotPassword(data) {
+function forgotPassword(
+  data
+) {
 
-  const identity =
-    normalize(
-      data.identity
-    ).toLowerCase();
+  const lock =
+    LockService
+      .getScriptLock();
 
 
-  if (!identity) {
+  try {
+
+    lock.waitLock(
+      30000
+    );
+
+
+    const identity =
+      normalize(
+        data.identity
+      ).toLowerCase();
+
+
+    if (!identity) {
+
+      return {
+
+        success:
+          false,
+
+        message:
+          "Email or username is required."
+
+      };
+
+    }
+
+
+    const found =
+      findUser(
+        identity
+      );
+
+
+    // Do not expose whether the account exists.
+
+    if (!found) {
+
+      return {
+
+        success:
+          true,
+
+        message:
+          "If the account exists, recovery instructions will be sent."
+
+      };
+
+    }
+
+
+    const row =
+      found.values;
+
+
+    const resetOTP =
+      generateOTP();
+
+
+    const expires =
+      createOtpExpiration();
+
+
+    // --------------------------------------------------------
+    // SAVE SHEET OTP
+    // --------------------------------------------------------
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.OTP
+      )
+      .setValue(
+        resetOTP
+      );
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.OTP_EXPIRES
+      )
+      .setValue(
+        expires
+      );
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.OTP_ATTEMPTS
+      )
+      .setValue(
+        0
+      );
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.OTP_LOCK_UNTIL
+      )
+      .setValue(
+        ""
+      );
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.OTP_CHANNEL
+      )
+      .setValue(
+        "both"
+      );
+
+
+    const now =
+      new Date();
+
+
+    found.sheet
+      .getRange(
+        found.rowNumber,
+        COL.LAST_OTP_SENT
+      )
+      .setValue(
+        now
+      );
+
+
+    // --------------------------------------------------------
+    // FIREBASE
+    // --------------------------------------------------------
+
+    try {
+
+      saveOtpToFirebase(
+
+        found,
+
+        resetOTP,
+
+        expires,
+
+        "both"
+
+      );
+
+    } catch (error) {
+
+      clearSheetOtp(
+        found
+      );
+
+
+      return {
+
+        success:
+          true,
+
+        message:
+          "If the account exists, recovery instructions will be sent."
+
+      };
+
+    }
+
+
+    // --------------------------------------------------------
+    // DELIVERY
+    // --------------------------------------------------------
+
+    let delivery;
+
+
+    try {
+
+      delivery =
+        sendOTPByChannel(
+
+          normalizeEmail(
+            row[
+              COL.GMAIL - 1
+            ]
+          ),
+
+          normalizePhone(
+            row[
+              COL.PHONE - 1
+            ]
+          ),
+
+          normalize(
+            row[
+              COL.NAME - 1
+            ]
+          ),
+
+          resetOTP,
+
+          "both",
+
+          false
+
+        );
+
+    } catch (error) {
+
+      clearOtpCompletely(
+        found
+      );
+
+
+      return {
+
+        success:
+          true,
+
+        message:
+          "If the account exists, recovery instructions will be sent."
+
+      };
+
+    }
+
 
     return {
 
       success:
-        false,
+        true,
+
+      emailSent:
+        !!delivery.emailSent,
+
+      smsSent:
+        !!delivery.smsSent,
 
       message:
-        "Email or username is required."
+        "If the account exists, recovery instructions have been sent to the registered Gmail and phone."
 
     };
 
-  }
+  } catch (error) {
 
-
-  const found =
-    findUser(
-      identity
+    console.error(
+      "forgotPassword error:",
+      error
     );
 
-
-  // Do not expose whether account exists.
-
-  if (!found) {
 
     return {
 
@@ -4639,153 +5817,19 @@ function forgotPassword(data) {
 
     };
 
-  }
+  } finally {
 
+    try {
 
-  const row =
-    found.values;
+      lock.releaseLock();
 
+    } catch (error) {
 
-  const resetOTP =
-    generateOTP();
+      // Nothing required.
 
-
-  const expires =
-    createOtpExpiration();
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      11
-    )
-    .setValue(
-      resetOTP
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      12
-    )
-    .setValue(
-      expires
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      13
-    )
-    .setValue(
-      0
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      14
-    )
-    .setValue(
-      ""
-    );
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      15
-    )
-    .setValue(
-      "both"
-    );
-
-
-  const now =
-    new Date();
-
-
-  found.sheet
-    .getRange(
-      found.rowNumber,
-      18
-    )
-    .setValue(
-      now
-    );
-
-
-  // Firebase recovery OTP
-  try {
-
-    saveOtpToFirebase(
-
-      found,
-
-      resetOTP,
-
-      expires,
-
-      "both"
-
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Firebase recovery OTP error:",
-      error
-    );
+    }
 
   }
-
-
-  try {
-
-    sendOTPByChannel(
-
-      normalizeEmail(
-        row[6]
-      ),
-
-      normalizePhone(
-        row[7]
-      ),
-
-      normalize(
-        row[1]
-      ),
-
-      resetOTP,
-
-      "both",
-
-      false
-
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Recovery OTP error:",
-      error.message
-    );
-
-  }
-
-
-  return {
-
-    success:
-      true,
-
-    message:
-      "If the account exists, recovery instructions have been sent to the registered Gmail and phone."
-
-  };
 
 }
 
@@ -4817,10 +5861,29 @@ function doPost(e) {
     }
 
 
-    const data =
-      JSON.parse(
-        e.postData.contents
-      );
+    let data;
+
+
+    try {
+
+      data =
+        JSON.parse(
+          e.postData.contents
+        );
+
+    } catch (parseError) {
+
+      return response({
+
+        success:
+          false,
+
+        message:
+          "Invalid JSON request."
+
+      });
+
+    }
 
 
     const action =
@@ -4977,7 +6040,7 @@ function doPost(e) {
 
 
       // ------------------------------------------------------
-      // UNKNOWN
+      // UNKNOWN ACTION
       // ------------------------------------------------------
 
       default:
@@ -5061,6 +6124,42 @@ function doGet() {
 
     independentChannelCooldowns:
       true,
+
+    channels:
+      [
+
+        "email",
+
+        "phone"
+
+      ],
+
+    endpoints:
+      [
+
+        "register",
+
+        "registerAdmin",
+
+        "login",
+
+        "prepareOtp",
+
+        "generateOtp",
+
+        "resendOtp",
+
+        "requestOtp",
+
+        "verifyOtp",
+
+        "getUser",
+
+        "updateStatus",
+
+        "forgotPassword"
+
+      ],
 
     message:
       "StockFlow authentication backend is running."
