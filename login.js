@@ -2,7 +2,7 @@
    STOCKFLOW — LOGIN CONTROLLER
    ============================================================
 
-   FLOW:
+   LOGIN FLOW:
 
    Login Form
        ↓
@@ -12,36 +12,30 @@
        ↓
    Google Apps Script
        ↓
-   ┌───────────────────────────────┐
-   │ Login result                  │
-   └───────────────┬───────────────┘
-                   │
-          ┌────────┴────────┐
-          │                 │
-        SUCCESS           FAILURE
-          │                 │
-          ▼                 ▼
-     Save session      Show backend
-          │             error message
-          ▼
-      Dashboard
+   ┌───────────────────────────────────────────┐
+   │ Backend login response                    │
+   └──────────────────────┬────────────────────┘
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+           SUCCESS              VERIFICATION REQUIRED
+              │                       │
+              ▼                       ▼
+        Save session          Save verification state
+              │                       │
+              ▼                       ▼
+         dashboard.html          verify.html
 
-   UNVERIFIED ACCOUNT:
-
-   Login
-      ↓
-   Backend says requiresVerification
-      ↓
-   Save verification identity
-      ↓
-   verify.html
 
    IMPORTANT:
-   - This file does NOT generate OTP.
-   - This file does NOT store OTP.
+
+   - This file NEVER generates OTP.
+   - This file NEVER stores OTP.
    - Backend controls authentication.
    - Backend controls account status.
-   - Backend business errors are NOT network errors.
+   - Backend controls verification requirements.
+   - Backend controls OTP generation and delivery.
+   - Backend business errors are NOT automatically network errors.
    ============================================================ */
 
 
@@ -87,7 +81,9 @@ document.addEventListener(
 
 
         if (!form) {
+
             return;
+
         }
 
 
@@ -139,13 +135,21 @@ document.addEventListener(
 
 
         /* =====================================================
-           OTP STORAGE KEYS
+           AUTH CONFIGURATION
            ===================================================== */
 
         const AUTH =
             CONFIG.AUTH ||
             {};
 
+
+        /* =====================================================
+           VERIFICATION STORAGE KEYS
+           ===================================================== */
+
+        /*
+         * Current / legacy OTP keys.
+         */
 
         const OTP_IDENTITY_KEY =
             AUTH.OTP_IDENTITY_KEY ||
@@ -177,6 +181,45 @@ document.addEventListener(
             "STOCKFLOW_OTP_USERNAME";
 
 
+        /*
+         * New verification-flow keys.
+         *
+         * These are also written so verify.js can read
+         * the login verification state directly.
+         */
+
+        const VERIFICATION_STATE_KEY =
+            "STOCKFLOW_VERIFICATION_STATE";
+
+
+        const VERIFICATION_IDENTITY_KEY =
+            "STOCKFLOW_VERIFICATION_IDENTITY";
+
+
+        const VERIFICATION_UID_KEY =
+            "STOCKFLOW_VERIFICATION_UID";
+
+
+        const VERIFICATION_USERNAME_KEY =
+            "STOCKFLOW_VERIFICATION_USERNAME";
+
+
+        const VERIFICATION_EMAIL_KEY =
+            "STOCKFLOW_VERIFICATION_EMAIL";
+
+
+        const VERIFICATION_GMAIL_KEY =
+            "STOCKFLOW_VERIFICATION_GMAIL";
+
+
+        const VERIFICATION_PHONE_KEY =
+            "STOCKFLOW_VERIFICATION_PHONE";
+
+
+        const VERIFICATION_CHANNEL_KEY =
+            "STOCKFLOW_VERIFICATION_CHANNEL";
+
+
         /* =====================================================
            MESSAGE HELPERS
            ===================================================== */
@@ -185,6 +228,7 @@ document.addEventListener(
 
             message.textContent =
                 "";
+
 
             message.className =
                 "auth-message";
@@ -200,6 +244,7 @@ document.addEventListener(
             message.textContent =
                 text || "";
 
+
             message.className =
                 `auth-message ${type}`;
 
@@ -207,7 +252,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           LOADING STATE
+           BUTTON LOADING STATE
            ===================================================== */
 
         function setLoading(
@@ -263,8 +308,668 @@ document.addEventListener(
 
 
         /* =====================================================
-           SAVE VERIFICATION STATE
+           SAFE STRING
            ===================================================== */
+
+        function safeString(
+            value
+        ) {
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+
+                return "";
+
+            }
+
+
+            return String(
+                value
+            ).trim();
+
+        }
+
+
+        /* =====================================================
+           PARSE POSSIBLE OBJECT
+           ===================================================== */
+
+        function parsePossibleObject(
+            value
+        ) {
+
+            if (
+                !value
+            ) {
+
+                return null;
+
+            }
+
+
+            if (
+                typeof value ===
+                "object"
+            ) {
+
+                return value;
+
+            }
+
+
+            if (
+                typeof value ===
+                "string"
+            ) {
+
+                const text =
+                    value.trim();
+
+
+                if (!text) {
+
+                    return null;
+
+                }
+
+
+                try {
+
+                    return JSON.parse(
+                        text
+                    );
+
+                } catch (
+                    parseError
+                ) {
+
+                    return null;
+
+                }
+
+            }
+
+
+            return null;
+
+        }
+
+
+        /* =====================================================
+           GET RESPONSE OBJECT
+           ===================================================== */
+
+        function getResponseObject(
+            response
+        ) {
+
+            if (
+                !response
+            ) {
+
+                return null;
+
+            }
+
+
+            if (
+                typeof response ===
+                "object"
+            ) {
+
+                return response;
+
+            }
+
+
+            return parsePossibleObject(
+                response
+            );
+
+        }
+
+
+        /* =====================================================
+           GET ERROR CODE
+           ===================================================== */
+
+        function getErrorCode(
+            error
+        ) {
+
+            if (!error) {
+
+                return "";
+
+            }
+
+
+            /*
+             * Direct error fields.
+             */
+
+            const directCode =
+                error.code ||
+                error.errorCode ||
+                error.statusCode ||
+                "";
+
+
+            if (
+                directCode
+            ) {
+
+                return safeString(
+                    directCode
+                )
+                    .toUpperCase();
+
+            }
+
+
+            /*
+             * Possible structured backend
+             * response locations.
+             */
+
+            const candidates = [
+
+                error.response,
+                error.data,
+                error.rawResponse,
+                error.result
+
+            ];
+
+
+            for (
+                const candidate of candidates
+            ) {
+
+                const object =
+                    parsePossibleObject(
+                        candidate
+                    );
+
+
+                if (
+                    object &&
+                    (
+                        object.code ||
+                        object.errorCode
+                    )
+                ) {
+
+                    return safeString(
+                        object.code ||
+                        object.errorCode
+                    )
+                        .toUpperCase();
+
+                }
+
+            }
+
+
+            return "";
+
+        }
+
+
+        /* =====================================================
+           GET ERROR MESSAGE
+           ===================================================== */
+
+        function getErrorMessage(
+            error
+        ) {
+
+            if (!error) {
+
+                return "";
+
+            }
+
+
+            /*
+             * Inspect structured backend
+             * response first.
+             */
+
+            const candidates = [
+
+                error.response,
+                error.data,
+                error.rawResponse,
+                error.result
+
+            ];
+
+
+            for (
+                const candidate of candidates
+            ) {
+
+                const object =
+                    parsePossibleObject(
+                        candidate
+                    );
+
+
+                if (
+                    object &&
+                    typeof object.message ===
+                        "string" &&
+                    object.message.trim()
+                ) {
+
+                    return object.message.trim();
+
+                }
+
+            }
+
+
+            /*
+             * Direct error message.
+             */
+
+            if (
+                typeof error.message ===
+                    "string" &&
+                error.message.trim()
+            ) {
+
+                return error.message.trim();
+
+            }
+
+
+            return "";
+
+        }
+
+
+        /* =====================================================
+           EXTRACT BACKEND CODE FROM RESPONSE
+           ===================================================== */
+
+        function getResponseCode(
+            response
+        ) {
+
+            const object =
+                getResponseObject(
+                    response
+                );
+
+
+            if (!object) {
+
+                return "";
+
+            }
+
+
+            return safeString(
+                object.code ||
+                object.errorCode ||
+                object.statusCode ||
+                ""
+            )
+                .toUpperCase();
+
+        }
+
+
+        /* =====================================================
+           EXTRACT BACKEND MESSAGE FROM RESPONSE
+           ===================================================== */
+
+        function getResponseMessage(
+            response
+        ) {
+
+            const object =
+                getResponseObject(
+                    response
+                );
+
+
+            if (!object) {
+
+                return "";
+
+            }
+
+
+            if (
+                typeof object.message ===
+                    "string"
+            ) {
+
+                return object.message.trim();
+
+            }
+
+
+            if (
+                typeof object.error ===
+                    "string"
+            ) {
+
+                return object.error.trim();
+
+            }
+
+
+            return "";
+
+        }
+
+
+        /* =====================================================
+           BUSINESS ERROR MESSAGE
+           ===================================================== */
+
+        function getBusinessErrorMessage(
+            code,
+            messageText
+        ) {
+
+            const normalizedCode =
+                safeString(
+                    code
+                )
+                    .toUpperCase();
+
+
+            switch (
+                normalizedCode
+            ) {
+
+                case "ACCOUNT_NOT_FOUND":
+
+                case "USER_NOT_FOUND":
+
+                case "USER_DOES_NOT_EXIST":
+
+                case "ACCOUNT_DOES_NOT_EXIST":
+
+                    return (
+                        messageText ||
+                        "Account doesn't exist. Please consider registering first, then try again."
+                    );
+
+
+                case "INVALID_CREDENTIALS":
+
+                case "INVALID_LOGIN":
+
+                case "WRONG_PASSWORD":
+
+                case "INVALID_PASSWORD":
+
+                    return (
+                        messageText ||
+                        "Incorrect username, email, phone number, or password."
+                    );
+
+
+                case "ACCOUNT_LOCKED":
+
+                case "TEMPORARILY_LOCKED":
+
+                case "LOGIN_LOCKED":
+
+                    return (
+                        messageText ||
+                        "Your account is temporarily locked. Please try again later."
+                    );
+
+
+                case "ACCOUNT_DISABLED":
+
+                    return (
+                        messageText ||
+                        "This account is currently disabled."
+                    );
+
+
+                case "ACCOUNT_SUSPENDED":
+
+                    return (
+                        messageText ||
+                        "This account is currently suspended."
+                    );
+
+
+                case "ACCOUNT_BLOCKED":
+
+                    return (
+                        messageText ||
+                        "This account is currently blocked."
+                    );
+
+
+                case "ACCOUNT_PENDING":
+
+                    return (
+                        messageText ||
+                        "Your account is still pending verification."
+                    );
+
+
+                case "REQUIRES_VERIFICATION":
+
+                case "OTP_REQUIRED":
+
+                case "VERIFICATION_REQUIRED":
+
+                    return (
+                        messageText ||
+                        "Your account requires verification."
+                    );
+
+
+                case "INVALID_INPUT":
+
+                case "MISSING_FIELDS":
+
+                    return (
+                        messageText ||
+                        "Please enter your login information correctly."
+                    );
+
+
+                case "RATE_LIMITED":
+
+                case "TOO_MANY_REQUESTS":
+
+                    return (
+                        messageText ||
+                        "Too many requests. Please wait a moment and try again."
+                    );
+
+
+                case "SERVER_ERROR":
+
+                case "INTERNAL_ERROR":
+
+                    return (
+                        messageText ||
+                        "The login system encountered a server error. Please try again later."
+                    );
+
+
+                default:
+
+                    return (
+                        messageText ||
+                        ""
+                    );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           ACTUAL NETWORK ERROR DETECTION
+           ===================================================== */
+
+        function isActualNetworkError(
+            error
+        ) {
+
+            if (!error) {
+
+                return false;
+
+            }
+
+
+            const code =
+                getErrorCode(
+                    error
+                );
+
+
+            /*
+             * Explicit transport/API errors.
+             */
+
+            if (
+                code === "NETWORK_ERROR" ||
+                code === "TIMEOUT" ||
+                code === "API_URL_MISSING" ||
+                code === "API_URL_INVALID" ||
+                code === "EMPTY_RESPONSE" ||
+                code === "INVALID_JSON" ||
+                code === "HTTP_ERROR" ||
+                code === "FETCH_ERROR"
+            ) {
+
+                return true;
+
+            }
+
+
+            /*
+             * Native browser abort.
+             */
+
+            if (
+                error.name ===
+                    "AbortError"
+            ) {
+
+                return true;
+
+            }
+
+
+            /*
+             * Wrapped native transport error.
+             */
+
+            const original =
+                error.originalError;
+
+
+            if (
+                original &&
+                (
+                    original.name ===
+                        "TypeError" ||
+                    original.name ===
+                        "AbortError"
+                )
+            ) {
+
+                /*
+                 * If structured backend information
+                 * exists, this is not treated as a
+                 * network error.
+                 */
+
+                const backendCode =
+                    getErrorCode(
+                        error
+                    );
+
+
+                const backendMessage =
+                    getErrorMessage(
+                        error
+                    );
+
+
+                if (
+                    backendCode ||
+                    backendMessage
+                ) {
+
+                    return false;
+
+                }
+
+
+                return true;
+
+            }
+
+
+            /*
+             * Structured backend response means
+             * the request reached the backend.
+             */
+
+            const structuredResponse =
+                parsePossibleObject(
+                    error.response
+                );
+
+
+            const structuredData =
+                parsePossibleObject(
+                    error.data
+                );
+
+
+            const structuredRaw =
+                parsePossibleObject(
+                    error.rawResponse
+                );
+
+
+            if (
+                structuredResponse ||
+                structuredData ||
+                structuredRaw
+            ) {
+
+                return false;
+
+            }
+
+
+            return false;
+
+        }
+
+
+        /* =====================================================
+           SAVE VERIFICATION STATE
+           =====================================================
+
+           This is used when the backend says that the
+           account exists but still requires verification.
+
+           NO OTP IS SAVED HERE.
+           */
 
         function saveVerificationState(
             response,
@@ -272,126 +977,270 @@ document.addEventListener(
         ) {
 
             response =
-                response || {};
+                getResponseObject(
+                    response
+                ) || {};
 
+
+            /*
+             * Some backends return user information
+             * inside response.user.
+             */
+
+            const nestedUser =
+                parsePossibleObject(
+                    response.user
+                ) || {};
+
+
+            /*
+             * Identity priority.
+             */
 
             const identity =
-                response.identity ||
-                response.uid ||
-                response.userId ||
-                response.id ||
-                response.username ||
-                response.email ||
-                response.gmail ||
-                response.phone ||
-                fallbackIdentity ||
-                "";
+                safeString(
+                    response.identity ||
+                    response.loginIdentity ||
+                    response.uid ||
+                    response.userId ||
+                    response.id ||
+                    response.username ||
+                    response.email ||
+                    response.gmail ||
+                    response.phone ||
+                    nestedUser.identity ||
+                    nestedUser.username ||
+                    nestedUser.email ||
+                    nestedUser.gmail ||
+                    nestedUser.phone ||
+                    fallbackIdentity ||
+                    ""
+                );
 
 
             const uid =
-                response.uid ||
-                response.userId ||
-                response.id ||
-                "";
+                safeString(
+                    response.uid ||
+                    response.userId ||
+                    response.id ||
+                    nestedUser.uid ||
+                    nestedUser.userId ||
+                    nestedUser.id ||
+                    ""
+                );
 
 
             const email =
-                response.email ||
-                response.gmail ||
-                "";
+                safeString(
+                    response.email ||
+                    response.gmail ||
+                    nestedUser.email ||
+                    nestedUser.gmail ||
+                    ""
+                );
 
 
             const phone =
-                response.phone ||
-                "";
+                safeString(
+                    response.phone ||
+                    response.phoneNumber ||
+                    response.mobile ||
+                    response.mobileNumber ||
+                    nestedUser.phone ||
+                    nestedUser.phoneNumber ||
+                    nestedUser.mobile ||
+                    nestedUser.mobileNumber ||
+                    ""
+                );
 
 
             const username =
-                response.username ||
-                "";
+                safeString(
+                    response.username ||
+                    response.userName ||
+                    nestedUser.username ||
+                    nestedUser.userName ||
+                    ""
+                );
+
+
+            /*
+             * Backend may provide a preferred verification
+             * channel. Default to email because StockFlow's
+             * registration flow initially sends email OTP.
+             */
+
+            const channel =
+                safeString(
+                    response.channel ||
+                    response.verificationChannel ||
+                    response.otpChannel ||
+                    "email"
+                )
+                    .toLowerCase();
+
+
+            const verificationState = {
+
+                identity:
+                    identity,
+
+                uid:
+                    uid,
+
+                username:
+                    username,
+
+                email:
+                    email,
+
+                gmail:
+                    email,
+
+                phone:
+                    phone,
+
+                channel:
+                    channel,
+
+                requiresVerification:
+                    true,
+
+                createdAt:
+                    Date.now()
+
+            };
 
 
             try {
 
+                /* =============================================
+                   MAIN VERIFICATION STATE
+                   ============================================= */
+
+                sessionStorage.setItem(
+                    VERIFICATION_STATE_KEY,
+                    JSON.stringify(
+                        verificationState
+                    )
+                );
+
+
+                /* =============================================
+                   NEW VERIFICATION KEYS
+                   ============================================= */
+
+                sessionStorage.setItem(
+                    VERIFICATION_IDENTITY_KEY,
+                    identity
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_UID_KEY,
+                    uid
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_USERNAME_KEY,
+                    username
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_EMAIL_KEY,
+                    email
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_GMAIL_KEY,
+                    email
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_PHONE_KEY,
+                    phone
+                );
+
+
+                sessionStorage.setItem(
+                    VERIFICATION_CHANNEL_KEY,
+                    channel
+                );
+
+
+                /* =============================================
+                   LEGACY OTP KEYS
+                   ============================================= */
+
                 sessionStorage.setItem(
                     OTP_IDENTITY_KEY,
-                    String(
-                        identity
-                    )
+                    identity
                 );
 
 
                 sessionStorage.setItem(
                     OTP_UID_KEY,
-                    String(
-                        uid
-                    )
+                    uid
                 );
 
 
                 sessionStorage.setItem(
                     OTP_EMAIL_KEY,
-                    String(
-                        email
-                    )
+                    email
                 );
 
 
                 sessionStorage.setItem(
                     OTP_PHONE_KEY,
-                    String(
-                        phone
-                    )
+                    phone
                 );
 
 
                 sessionStorage.setItem(
                     OTP_USERNAME_KEY,
-                    String(
-                        username
-                    )
+                    username
                 );
 
 
-                /* Backward-compatible keys */
+                /* =============================================
+                   BACKWARD-COMPATIBLE LOWERCASE KEYS
+                   ============================================= */
 
                 sessionStorage.setItem(
                     "stockflow_otp_identity",
-                    String(
-                        identity
-                    )
+                    identity
                 );
 
 
                 sessionStorage.setItem(
                     "stockflow_otp_email",
-                    String(
-                        email
-                    )
+                    email
                 );
 
 
                 sessionStorage.setItem(
                     "stockflow_otp_phone",
-                    String(
-                        phone
-                    )
+                    phone
                 );
 
 
                 sessionStorage.setItem(
                     "stockflow_otp_username",
-                    String(
-                        username
-                    )
+                    username
                 );
 
 
-            } catch (error) {
+            } catch (
+                storageError
+            ) {
 
                 console.warn(
                     "STOCKFLOW: Unable to save verification state.",
-                    error
+                    storageError
                 );
 
             }
@@ -399,11 +1248,23 @@ document.addEventListener(
 
             return {
 
-                identity,
-                uid,
-                email,
-                phone,
-                username
+                identity:
+                    identity,
+
+                uid:
+                    uid,
+
+                email:
+                    email,
+
+                phone:
+                    phone,
+
+                username:
+                    username,
+
+                channel:
+                    channel
 
             };
 
@@ -411,12 +1272,17 @@ document.addEventListener(
 
 
         /* =====================================================
-           EXISTING SESSION CHECK
+           CHECK EXISTING SESSION
            ===================================================== */
 
         function checkExistingSession() {
 
             try {
+
+                /*
+                 * First use the centralized authentication
+                 * controller when available.
+                 */
 
                 if (
                     window.StockFlowAuth &&
@@ -428,11 +1294,14 @@ document.addEventListener(
                         window.StockFlowAuth.getCurrentUser();
 
 
-                    if (currentUser) {
+                    if (
+                        currentUser
+                    ) {
 
                         window.location.replace(
                             DASHBOARD_PAGE
                         );
+
 
                         return true;
 
@@ -441,13 +1310,19 @@ document.addEventListener(
                 }
 
 
+                /*
+                 * Backward-compatible session.
+                 */
+
                 const rawSession =
                     sessionStorage.getItem(
                         "STOCKFLOW_SESSION"
                     );
 
 
-                if (rawSession) {
+                if (
+                    rawSession
+                ) {
 
                     try {
 
@@ -470,11 +1345,14 @@ document.addEventListener(
                                 DASHBOARD_PAGE
                             );
 
+
                             return true;
 
                         }
 
-                    } catch (parseError) {
+                    } catch (
+                        parseError
+                    ) {
 
                         sessionStorage.removeItem(
                             "STOCKFLOW_SESSION"
@@ -484,7 +1362,9 @@ document.addEventListener(
 
                 }
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.warn(
                     "STOCKFLOW: Unable to check existing session.",
@@ -498,6 +1378,10 @@ document.addEventListener(
 
         }
 
+
+        /* =====================================================
+           EXISTING SESSION
+           ===================================================== */
 
         if (
             checkExistingSession()
@@ -545,484 +1429,6 @@ document.addEventListener(
 
 
         /* =====================================================
-           ERROR EXTRACTION
-           =====================================================
-
-           IMPORTANT FIX:
-
-           Apps Script/API errors may arrive as:
-
-           error.code
-           error.errorCode
-           error.response.code
-           error.data.code
-           error.rawResponse.code
-           error.response JSON
-           error.data JSON
-           error.rawResponse JSON
-
-           We inspect all supported locations before deciding
-           that something is a network error.
-           ===================================================== */
-
-        function parsePossibleObject(
-            value
-        ) {
-
-            if (
-                !value
-            ) {
-
-                return null;
-
-            }
-
-
-            if (
-                typeof value ===
-                "object"
-            ) {
-
-                return value;
-
-            }
-
-
-            if (
-                typeof value ===
-                "string"
-            ) {
-
-                const text =
-                    value.trim();
-
-
-                if (
-                    !text
-                ) {
-
-                    return null;
-
-                }
-
-
-                try {
-
-                    return JSON.parse(
-                        text
-                    );
-
-                } catch (error) {
-
-                    return null;
-
-                }
-
-            }
-
-
-            return null;
-
-        }
-
-
-        function getErrorCode(
-            error
-        ) {
-
-            if (!error) {
-
-                return "";
-
-            }
-
-
-            const directCode =
-                error.code ||
-                error.errorCode ||
-                error.statusCode ||
-                "";
-
-
-            if (
-                directCode
-            ) {
-
-                return String(
-                    directCode
-                )
-                    .trim()
-                    .toUpperCase();
-
-            }
-
-
-            const candidates = [
-
-                error.response,
-                error.data,
-                error.rawResponse,
-                error.result
-
-            ];
-
-
-            for (
-                const candidate of candidates
-            ) {
-
-                const object =
-                    parsePossibleObject(
-                        candidate
-                    );
-
-
-                if (
-                    object &&
-                    (
-                        object.code ||
-                        object.errorCode
-                    )
-                ) {
-
-                    return String(
-                        object.code ||
-                        object.errorCode
-                    )
-                        .trim()
-                        .toUpperCase();
-
-                }
-
-            }
-
-
-            return "";
-
-        }
-
-
-        function getErrorMessage(
-            error
-        ) {
-
-            if (!error) {
-
-                return "";
-
-            }
-
-
-            /*
-             * IMPORTANT:
-
-             * Do NOT immediately trust error.message
-             * if it is a generic transport message.
-
-             * First inspect structured backend data.
-             */
-
-            const candidates = [
-
-                error.response,
-                error.data,
-                error.rawResponse,
-                error.result
-
-            ];
-
-
-            for (
-                const candidate of candidates
-            ) {
-
-                const object =
-                    parsePossibleObject(
-                        candidate
-                    );
-
-
-                if (
-                    object &&
-                    typeof object.message ===
-                        "string" &&
-                    object.message.trim()
-                ) {
-
-                    return object.message.trim();
-
-                }
-
-            }
-
-
-            /*
-             * Direct API error message.
-             */
-
-            if (
-                typeof error.message ===
-                    "string" &&
-                error.message.trim()
-            ) {
-
-                return error.message.trim();
-
-            }
-
-
-            return "";
-
-        }
-
-
-        /* =====================================================
-           BUSINESS ERROR MESSAGE
-           ===================================================== */
-
-        function getBusinessErrorMessage(
-            code,
-            messageText
-        ) {
-
-            switch (
-                String(
-                    code ||
-                    ""
-                )
-                    .trim()
-                    .toUpperCase()
-            ) {
-
-                case "ACCOUNT_NOT_FOUND":
-                case "USER_NOT_FOUND":
-                case "USER_DOES_NOT_EXIST":
-                case "ACCOUNT_DOES_NOT_EXIST":
-
-                    return (
-                        messageText ||
-                        "Account doesn't exist. Please consider registering first, then try again."
-                    );
-
-
-                case "INVALID_CREDENTIALS":
-                case "INVALID_LOGIN":
-                case "WRONG_PASSWORD":
-
-                    return (
-                        messageText ||
-                        "Incorrect username, email, phone number, or password."
-                    );
-
-
-                case "ACCOUNT_LOCKED":
-                case "TEMPORARILY_LOCKED":
-
-                    return (
-                        messageText ||
-                        "Your account is temporarily locked. Please try again later."
-                    );
-
-
-                case "ACCOUNT_DISABLED":
-
-                    return (
-                        messageText ||
-                        "This account is currently disabled."
-                    );
-
-
-                case "ACCOUNT_SUSPENDED":
-
-                    return (
-                        messageText ||
-                        "This account is currently suspended."
-                    );
-
-
-                case "ACCOUNT_BLOCKED":
-
-                    return (
-                        messageText ||
-                        "This account is currently blocked."
-                    );
-
-
-                case "ACCOUNT_PENDING":
-
-                    return (
-                        messageText ||
-                        "Your account is still pending verification."
-                    );
-
-
-                case "REQUIRES_VERIFICATION":
-                case "OTP_REQUIRED":
-
-                    return (
-                        messageText ||
-                        "Your account requires verification."
-                    );
-
-
-                default:
-
-                    return (
-                        messageText ||
-                        ""
-                    );
-
-            }
-
-        }
-
-
-        /* =====================================================
-           DETERMINE ACTUAL NETWORK ERROR
-           ===================================================== */
-
-        function isActualNetworkError(
-            error
-        ) {
-
-            if (!error) {
-
-                return false;
-
-            }
-
-
-            const code =
-                getErrorCode(
-                    error
-                );
-
-
-            /*
-             * Explicit transport/API errors.
-             */
-
-            if (
-                code === "NETWORK_ERROR" ||
-                code === "TIMEOUT" ||
-                code === "API_URL_MISSING" ||
-                code === "API_URL_INVALID" ||
-                code === "EMPTY_RESPONSE" ||
-                code === "INVALID_JSON" ||
-                code === "HTTP_ERROR"
-            ) {
-
-                return true;
-
-            }
-
-
-            /*
-             * Native browser fetch errors.
-             */
-
-            if (
-                error.name ===
-                    "AbortError"
-            ) {
-
-                return true;
-
-            }
-
-
-            /*
-             * Only the original transport error
-             * should be checked for TypeError.
-             */
-
-            const original =
-                error.originalError;
-
-
-            if (
-                original &&
-                (
-                    original.name ===
-                        "TypeError" ||
-                    original.name ===
-                        "AbortError"
-                )
-            ) {
-
-                /*
-                 * Before calling this a network error,
-                 * make absolutely sure there isn't a
-                 * structured backend response attached.
-                 */
-
-                const backendCode =
-                    getErrorCode(
-                        error
-                    );
-
-
-                const backendMessage =
-                    getErrorMessage(
-                        error
-                    );
-
-
-                if (
-                    backendCode ||
-                    backendMessage
-                ) {
-
-                    return false;
-
-                }
-
-
-                return true;
-
-            }
-
-
-            /*
-             * If structured backend data exists,
-             * it is NOT a network error.
-             */
-
-            const structuredResponse =
-                parsePossibleObject(
-                    error.response
-                );
-
-
-            const structuredData =
-                parsePossibleObject(
-                    error.data
-                );
-
-
-            const structuredRaw =
-                parsePossibleObject(
-                    error.rawResponse
-                );
-
-
-            if (
-                structuredResponse ||
-                structuredData ||
-                structuredRaw
-            ) {
-
-                return false;
-
-            }
-
-
-            return false;
-
-        }
-
-
-        /* =====================================================
            LOGIN SUBMIT
            ===================================================== */
 
@@ -1033,12 +1439,25 @@ document.addEventListener(
                 event.preventDefault();
 
 
+                /*
+                 * Prevent accidental double submission.
+                 */
+
+                if (
+                    button.disabled
+                ) {
+
+                    return;
+
+                }
+
+
                 clearMessage();
 
 
-                /* =============================================
+                /* =================================================
                    READ VALUES
-                   ============================================= */
+                   ================================================= */
 
                 const identity =
                     identityInput.value.trim();
@@ -1048,11 +1467,13 @@ document.addEventListener(
                     passwordInput.value;
 
 
-                /* =============================================
+                /* =================================================
                    VALIDATION
-                   ============================================= */
+                   ================================================= */
 
-                if (!identity) {
+                if (
+                    !identity
+                ) {
 
                     showMessage(
                         "Please enter your username, email or phone number.",
@@ -1062,12 +1483,15 @@ document.addEventListener(
 
                     identityInput.focus();
 
+
                     return;
 
                 }
 
 
-                if (!password) {
+                if (
+                    !password
+                ) {
 
                     showMessage(
                         "Please enter your password.",
@@ -1077,14 +1501,15 @@ document.addEventListener(
 
                     passwordInput.focus();
 
+
                     return;
 
                 }
 
 
-                /* =============================================
+                /* =================================================
                    LOADING
-                   ============================================= */
+                   ================================================= */
 
                 setLoading(
                     true
@@ -1093,9 +1518,9 @@ document.addEventListener(
 
                 try {
 
-                    /* =========================================
-                       API CHECK
-                       ========================================= */
+                    /* =============================================
+                       API AVAILABILITY
+                       ============================================= */
 
                     if (
                         !window.StockFlowAPI ||
@@ -1103,16 +1528,24 @@ document.addEventListener(
                             "function"
                     ) {
 
-                        throw new Error(
-                            "Login API is not available. Please check api.js."
-                        );
+                        const apiError =
+                            new Error(
+                                "Login API is not available. Please check api.js."
+                            );
+
+
+                        apiError.code =
+                            "API_URL_MISSING";
+
+
+                        throw apiError;
 
                     }
 
 
-                    /* =========================================
+                    /* =============================================
                        API REQUEST
-                       ========================================= */
+                       ============================================= */
 
                     const response =
                         await window.StockFlowAPI.login({
@@ -1132,38 +1565,65 @@ document.addEventListener(
                     );
 
 
-                    /* =========================================
+                    /* =============================================
                        EMPTY RESPONSE
-                       ========================================= */
+                       ============================================= */
 
-                    if (!response) {
+                    if (
+                        !response
+                    ) {
 
-                        throw new Error(
-                            "No response was received from the server."
-                        );
+                        const emptyError =
+                            new Error(
+                                "No response was received from the server."
+                            );
+
+
+                        emptyError.code =
+                            "EMPTY_RESPONSE";
+
+
+                        throw emptyError;
 
                     }
 
 
-                    /* =========================================
+                    const result =
+                        getResponseObject(
+                            response
+                        ) || {};
+
+
+                    const responseCode =
+                        getResponseCode(
+                            result
+                        );
+
+
+                    const responseMessage =
+                        getResponseMessage(
+                            result
+                        );
+
+
+                    /* =============================================
                        ACCOUNT LOCKED
-                       ========================================= */
+                       ============================================= */
 
                     if (
-                        response.locked === true ||
-                        response.isLocked === true ||
-                        response.accountLocked === true ||
-                        String(
-                            response.code ||
-                            ""
-                        )
-                            .trim()
-                            .toUpperCase() ===
-                                "ACCOUNT_LOCKED"
+                        result.locked === true ||
+                        result.isLocked === true ||
+                        result.accountLocked === true ||
+                        responseCode ===
+                            "ACCOUNT_LOCKED" ||
+                        responseCode ===
+                            "TEMPORARILY_LOCKED" ||
+                        responseCode ===
+                            "LOGIN_LOCKED"
                     ) {
 
                         showMessage(
-                            response.message ||
+                            responseMessage ||
                             "Your account is temporarily locked. Please try again later.",
                             "warning"
                         );
@@ -1174,21 +1634,91 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
-                       ACCOUNT NOT VERIFIED
-                       ========================================= */
+                    /* =============================================
+                       ACCOUNT DISABLED
+                       ============================================= */
+
+                    if (
+                        result.disabled === true ||
+                        result.accountDisabled === true ||
+                        responseCode ===
+                            "ACCOUNT_DISABLED"
+                    ) {
+
+                        showMessage(
+                            responseMessage ||
+                            "This account is currently disabled.",
+                            "error"
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================================
+                       ACCOUNT SUSPENDED
+                       ============================================= */
+
+                    if (
+                        result.suspended === true ||
+                        result.accountSuspended === true ||
+                        responseCode ===
+                            "ACCOUNT_SUSPENDED"
+                    ) {
+
+                        showMessage(
+                            responseMessage ||
+                            "This account is currently suspended.",
+                            "error"
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================================
+                       ACCOUNT BLOCKED
+                       ============================================= */
+
+                    if (
+                        result.blocked === true ||
+                        result.accountBlocked === true ||
+                        responseCode ===
+                            "ACCOUNT_BLOCKED"
+                    ) {
+
+                        showMessage(
+                            responseMessage ||
+                            "This account is currently blocked.",
+                            "error"
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================================
+                       ACCOUNT REQUIRES VERIFICATION
+                       ============================================= */
 
                     const requiresVerification =
-                        response.verified === false ||
-                        response.requiresVerification === true ||
-                        response.needsVerification === true ||
-                        String(
-                            response.code ||
-                            ""
-                        )
-                            .trim()
-                            .toUpperCase() ===
-                                "REQUIRES_VERIFICATION";
+                        result.verified === false ||
+                        result.isVerified === false ||
+                        result.requiresVerification === true ||
+                        result.needsVerification === true ||
+                        result.verificationRequired === true ||
+                        responseCode ===
+                            "REQUIRES_VERIFICATION" ||
+                        responseCode ===
+                            "OTP_REQUIRED" ||
+                        responseCode ===
+                            "VERIFICATION_REQUIRED";
 
 
                     if (
@@ -1197,24 +1727,38 @@ document.addEventListener(
 
                         const verification =
                             saveVerificationState(
-                                response,
+                                result,
                                 identity
                             );
 
+
+                        /*
+                         * verify.js needs at least an identity
+                         * in order to know which account is being
+                         * verified.
+                         */
 
                         if (
                             !verification.identity
                         ) {
 
-                            throw new Error(
-                                "Your account requires verification, but no verification identity was returned by the server."
-                            );
+                            const verificationError =
+                                new Error(
+                                    "Your account requires verification, but the server did not return a verification identity."
+                                );
+
+
+                            verificationError.code =
+                                "VERIFICATION_IDENTITY_MISSING";
+
+
+                            throw verificationError;
 
                         }
 
 
                         showMessage(
-                            response.message ||
+                            responseMessage ||
                             "Your account is not verified. Redirecting to verification...",
                             "warning"
                         );
@@ -1237,35 +1781,23 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
+                    /* =============================================
                        NORMAL LOGIN FAILURE
-                       ========================================= */
+                       ============================================= */
 
                     if (
-                        response.success !== true
+                        result.success !== true
                     ) {
 
-                        const code =
-                            getErrorCode(
-                                response
-                            );
-
-
-                        const backendMessage =
-                            getErrorMessage(
-                                response
-                            );
-
-
-                        const finalMessage =
+                        const businessMessage =
                             getBusinessErrorMessage(
-                                code,
-                                backendMessage
+                                responseCode,
+                                responseMessage
                             );
 
 
                         showMessage(
-                            finalMessage ||
+                            businessMessage ||
                             "Invalid login credentials. Please check your information and try again.",
                             "error"
                         );
@@ -1276,9 +1808,9 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
+                    /* =============================================
                        SAVE LOGIN SESSION
-                       ========================================= */
+                       ============================================= */
 
                     if (
                         window.StockFlowAuth &&
@@ -1287,21 +1819,28 @@ document.addEventListener(
                     ) {
 
                         window.StockFlowAuth.saveLogin(
-                            response
+                            result
                         );
 
                     } else {
+
+                        /*
+                         * Fallback session storage when auth.js
+                         * is unavailable.
+                         */
 
                         try {
 
                             sessionStorage.setItem(
                                 "STOCKFLOW_SESSION",
                                 JSON.stringify(
-                                    response
+                                    result
                                 )
                             );
 
-                        } catch (storageError) {
+                        } catch (
+                            storageError
+                        ) {
 
                             console.warn(
                                 "STOCKFLOW: Unable to save login session.",
@@ -1313,20 +1852,20 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
-                       SUCCESS
-                       ========================================= */
+                    /* =============================================
+                       SUCCESS MESSAGE
+                       ============================================= */
 
                     showMessage(
-                        response.message ||
+                        responseMessage ||
                         "Sign in successful. Redirecting...",
                         "success"
                     );
 
 
-                    /* =========================================
+                    /* =============================================
                        DASHBOARD REDIRECT
-                       ========================================= */
+                       ============================================= */
 
                     window.setTimeout(
                         () => {
@@ -1350,15 +1889,19 @@ document.addEventListener(
                     );
 
 
-                    /* =========================================
-                       EXTRACT BACKEND ERROR
-                       ========================================= */
+                    /* =============================================
+                       ERROR CODE
+                       ============================================= */
 
                     const code =
                         getErrorCode(
                             error
                         );
 
+
+                    /* =============================================
+                       ERROR MESSAGE
+                       ============================================= */
 
                     const backendMessage =
                         getErrorMessage(
@@ -1378,9 +1921,9 @@ document.addEventListener(
                     );
 
 
-                    /* =========================================
+                    /* =============================================
                        ACTUAL NETWORK/API ERROR
-                       ========================================= */
+                       ============================================= */
 
                     if (
                         isActualNetworkError(
@@ -1399,9 +1942,30 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
+                    /* =============================================
+                       VERIFICATION IDENTITY ERROR
+                       ============================================= */
+
+                    if (
+                        code ===
+                            "VERIFICATION_IDENTITY_MISSING"
+                    ) {
+
+                        showMessage(
+                            backendMessage ||
+                            "The account requires verification, but the verification information could not be loaded. Please try logging in again.",
+                            "error"
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =============================================
                        BACKEND BUSINESS ERROR
-                       ========================================= */
+                       ============================================= */
 
                     const businessMessage =
                         getBusinessErrorMessage(
@@ -1425,9 +1989,9 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
-                       FALLBACK BUSINESS MESSAGE
-                       ========================================= */
+                    /* =============================================
+                       FALLBACK BACKEND MESSAGE
+                       ============================================= */
 
                     if (
                         backendMessage &&
@@ -1445,9 +2009,9 @@ document.addEventListener(
                     }
 
 
-                    /* =========================================
-                       UNKNOWN ERROR
-                       ========================================= */
+                    /* =============================================
+                       UNKNOWN LOGIN ERROR
+                       ============================================= */
 
                     showMessage(
                         "Unable to sign in. Please check your information and try again.",
