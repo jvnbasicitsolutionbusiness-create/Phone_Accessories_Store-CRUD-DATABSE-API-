@@ -443,7 +443,7 @@
 
         if (
             !API_URL.includes(
-                "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lq4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec"
+                "script.google.com/macros/s/"
             )
         ) {
 
