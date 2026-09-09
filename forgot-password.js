@@ -272,36 +272,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       SAVE RECOVERY IDENTITY
+       SAVE RECOVERY STATE
+       =========================================================
+
+       Only account identity is saved here.
+
+       OTP generation remains the responsibility of
+       recovery.js / backend.
     ========================================================= */
 
-    function saveRecoveryIdentity(identity) {
+    function saveRecoveryState(
+        identity,
+        user
+    ) {
+
+        user =
+            user || {};
+
+
+        const uid =
+            clean(
+                user.uid ||
+                user.userId ||
+                user.id
+            );
+
+
+        const username =
+            clean(
+                user.username ||
+                user.userName
+            ).toLowerCase();
+
+
+        const email =
+            normalizeEmail(
+                user.email ||
+                user.gmail
+            );
+
+
+        const phone =
+            normalizePhone(
+                user.phone ||
+                user.phoneNo ||
+                user.phone_number
+            );
+
 
         /*
-         * IMPORTANT:
-         *
-         * We only save the identity here.
-         *
-         * No OTP is generated.
-         * No OTP is stored.
-         * No recovery token is created.
-         *
-         * recovery.js handles the actual recovery OTP flow.
+         * Keep the user's original input as the primary
+         * recovery identity.
          */
+
+        const recoveryIdentity =
+            clean(identity);
+
 
         try {
 
             sessionStorage.setItem(
                 STORAGE_KEYS.IDENTITY,
-                identity
+                recoveryIdentity
             );
 
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.UID,
+                uid
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.USERNAME,
+                username
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.EMAIL,
+                email
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.GMAIL,
+                email
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.PHONE,
+                phone
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.CHANNEL,
+                "email"
+            );
+
+
+            /*
+             * Recovery OTP has NOT been generated yet.
+             */
 
             sessionStorage.setItem(
                 STORAGE_KEYS.OTP_READY,
                 "false"
             );
 
+
+            /*
+             * Never carry an old OTP or token into
+             * a new recovery attempt.
+             */
 
             sessionStorage.removeItem(
                 STORAGE_KEYS.OTP
@@ -315,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.warn(
-                "Unable to save recovery identity:",
+                "Unable to save recovery state:",
                 error
             );
 
@@ -325,75 +410,219 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       API ERROR HANDLING
-    ========================================================= */
+       API ERROR EXTRACTION
+       ========================================================= */
 
     function getErrorCode(error) {
 
-        return clean(
+        const directCode =
             error?.code ||
-            error?.data?.code ||
-            error?.response?.code ||
-            ""
-        ).toUpperCase();
+            error?.errorCode;
+
+
+        if (directCode) {
+
+            return clean(
+                directCode
+            ).toUpperCase();
+
+        }
+
+
+        const candidates = [
+
+            error?.data,
+            error?.response,
+            error?.rawResponse,
+            error?.result
+
+        ];
+
+
+        for (
+            const candidate of candidates
+        ) {
+
+            let object =
+                candidate;
+
+
+            if (
+                typeof candidate ===
+                "string"
+            ) {
+
+                try {
+
+                    object =
+                        JSON.parse(
+                            candidate
+                        );
+
+                } catch (parseError) {
+
+                    object =
+                        null;
+
+                }
+
+            }
+
+
+            if (
+                object &&
+                (
+                    object.code ||
+                    object.errorCode
+                )
+            ) {
+
+                return clean(
+                    object.code ||
+                    object.errorCode
+                ).toUpperCase();
+
+            }
+
+        }
+
+
+        return "";
 
     }
 
 
     function getErrorMessage(error) {
 
-        return clean(
-            error?.message ||
-            error?.data?.message ||
-            error?.response?.message ||
-            ""
-        );
+        const candidates = [
+
+            error?.data,
+            error?.response,
+            error?.rawResponse,
+            error?.result
+
+        ];
+
+
+        for (
+            const candidate of candidates
+        ) {
+
+            let object =
+                candidate;
+
+
+            if (
+                typeof candidate ===
+                "string"
+            ) {
+
+                try {
+
+                    object =
+                        JSON.parse(
+                            candidate
+                        );
+
+                } catch (parseError) {
+
+                    object =
+                        null;
+
+                }
+
+            }
+
+
+            if (
+                object &&
+                typeof object.message ===
+                    "string" &&
+                object.message.trim()
+            ) {
+
+                return object.message.trim();
+
+            }
+
+        }
+
+
+        if (
+            typeof error?.message ===
+                "string"
+        ) {
+
+            return clean(
+                error.message
+            );
+
+        }
+
+
+        return "";
 
     }
 
 
-    function getRecoveryErrorMessage(error) {
+    /* =========================================================
+       RECOVERY ERROR MESSAGE
+    ========================================================= */
+
+    function getRecoveryErrorMessage(
+        error
+    ) {
 
         const code =
-            getErrorCode(error);
+            getErrorCode(
+                error
+            );
 
 
         const backendMessage =
-            getErrorMessage(error);
+            getErrorMessage(
+                error
+            );
 
 
         switch (code) {
 
             case "ACCOUNT_NOT_FOUND":
             case "USER_NOT_FOUND":
+            case "USER_DOES_NOT_EXIST":
+            case "ACCOUNT_DOES_NOT_EXIST":
+
                 return (
-                    backendMessage ||
-                    "Account does not exist."
+                    "Account could not be found. Please check your Gmail, username, or phone number, or register first."
                 );
 
 
             case "ACCOUNT_DISABLED":
+
                 return (
                     backendMessage ||
-                    "This account is disabled."
+                    "This account is disabled and cannot use password recovery."
                 );
 
 
             case "ACCOUNT_SUSPENDED":
+
                 return (
                     backendMessage ||
-                    "This account is suspended."
+                    "This account is suspended and cannot use password recovery."
                 );
 
 
             case "ACCOUNT_BLOCKED":
+
                 return (
                     backendMessage ||
-                    "This account is blocked."
+                    "This account is blocked and cannot use password recovery."
                 );
 
 
             case "ACCOUNT_PENDING":
+
                 return (
                     backendMessage ||
                     "This account is still pending verification."
@@ -401,6 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             case "RECOVERY_NOT_ALLOWED":
+
                 return (
                     backendMessage ||
                     "Password recovery is not available for this account."
@@ -413,6 +643,8 @@ document.addEventListener("DOMContentLoaded", () => {
             case "API_URL_INVALID":
             case "EMPTY_RESPONSE":
             case "INVALID_JSON":
+            case "HTTP_ERROR":
+
                 return (
                     "Unable to connect to the recovery system right now. Please try again."
                 );
@@ -420,14 +652,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             default:
 
-                if (backendMessage) {
-
-                    return backendMessage;
-
-                }
-
-
                 return (
+                    backendMessage ||
                     "We could not process your request. Please try again."
                 );
 
@@ -443,9 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function getAPI() {
 
         if (
-            window.StockFlowAPI &&
-            typeof window.StockFlowAPI.forgotPassword ===
-                "function"
+            window.StockFlowAPI
         ) {
 
             return window.StockFlowAPI;
@@ -454,9 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (
-            window.API &&
-            typeof window.API.forgotPassword ===
-                "function"
+            window.API
         ) {
 
             return window.API;
@@ -473,38 +695,250 @@ document.addEventListener("DOMContentLoaded", () => {
        VALIDATE IDENTITY
     ========================================================= */
 
-    function validateIdentity(value) {
+    function validateIdentity(
+        value
+    ) {
 
         const identity =
-            normalizeIdentity(value);
+            normalizeIdentity(
+                value
+            );
 
 
         if (!identity) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Please enter your username, Gmail, or phone number."
+
             };
 
         }
 
 
-        if (identity.length < 3) {
+        if (
+            identity.length < 3
+        ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Please enter a valid account identifier."
+
             };
 
         }
 
 
         return {
+
             valid: true,
+
             identity
+
         };
+
+    }
+
+
+    /* =========================================================
+       FIND ACCOUNT
+       =========================================================
+
+       IMPORTANT FIX:
+
+       The previous version NEVER checked the backend.
+
+       It immediately redirected to recovery.html.
+
+       This version first asks the backend whether the
+       supplied Gmail / username / phone belongs to an
+       existing account.
+
+       It does NOT generate an OTP here.
+
+       recovery.js remains responsible for requesting
+       the recovery OTP after the account is confirmed.
+    ========================================================= */
+
+    async function findRecoveryAccount(
+        identity
+    ) {
+
+        const API =
+            getAPI();
+
+
+        if (!API) {
+
+            const error =
+                new Error(
+                    "The account lookup system is not available."
+                );
+
+
+            error.code =
+                "API_UNAVAILABLE";
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * getUser() is intentionally used for the
+         * existence check only.
+         *
+         * This prevents forgot-password.js and
+         * recovery.js from requesting two different OTPs.
+         */
+
+        if (
+            typeof API.getUser !==
+                "function"
+        ) {
+
+            const error =
+                new Error(
+                    "The account lookup function is not available."
+                );
+
+
+            error.code =
+                "API_METHOD_MISSING";
+
+
+            throw error;
+
+        }
+
+
+        const response =
+            await API.getUser({
+
+                identity:
+                    identity
+
+            });
+
+
+        if (!response) {
+
+            const error =
+                new Error(
+                    "No account information was returned."
+                );
+
+
+            error.code =
+                "ACCOUNT_NOT_FOUND";
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * Support different backend response formats.
+         */
+
+        const success =
+            response.success === true ||
+            response.ok === true;
+
+
+        const user =
+            response.user ||
+            response.account ||
+            response.data ||
+            response;
+
+
+        /*
+         * Explicit failure response.
+         */
+
+        if (
+            response.success === false ||
+            response.ok === false
+        ) {
+
+            const error =
+                new Error(
+                    response.message ||
+                    "Account could not be found."
+                );
+
+
+            error.code =
+                response.code ||
+                "ACCOUNT_NOT_FOUND";
+
+
+            error.data =
+                response;
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * Some versions of getUser() may return a
+         * user object directly.
+         */
+
+        const hasUser =
+            Boolean(
+                user &&
+                (
+                    user.uid ||
+                    user.userId ||
+                    user.id ||
+                    user.username ||
+                    user.email ||
+                    user.gmail ||
+                    user.phone ||
+                    user.phoneNo
+                )
+            );
+
+
+        if (
+            !success &&
+            !hasUser
+        ) {
+
+            const error =
+                new Error(
+                    response.message ||
+                    "Account could not be found."
+                );
+
+
+            error.code =
+                response.code ||
+                "ACCOUNT_NOT_FOUND";
+
+
+            error.data =
+                response;
+
+
+            throw error;
+
+        }
+
+
+        return user;
 
     }
 
@@ -524,26 +958,12 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (!validation.valid) {
+        if (
+            !validation.valid
+        ) {
 
             showMessage(
                 validation.message,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        const API =
-            getAPI();
-
-
-        if (!API) {
-
-            showMessage(
-                "The password recovery system is not available right now.",
                 "error"
             );
 
@@ -557,71 +977,88 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Remove previous recovery information.
-         *
-         * This prevents an old recovery token or OTP
-         * from being reused for another account.
+         * Clear any previous account's recovery state.
          */
 
         clearRecoveryState();
 
 
-        setLoading(true);
+        setLoading(
+            true
+        );
 
 
         try {
 
             /*
-             * IMPORTANT:
-             *
-             * We intentionally do NOT use the returned OTP.
-             *
-             * The backend/recovery flow is responsible for:
-             *
-             * forgot-password
-             *       ↓
-             * recovery.html
-             *       ↓
-             * recovery.js
-             *       ↓
-             * backend OTP generation
+             * =================================================
+             * ACCOUNT EXISTENCE CHECK
+             * =================================================
              */
+
+            const user =
+                await findRecoveryAccount(
+                    identity
+                );
+
 
             /*
-             * We do not actually need to call forgotPassword()
-             * here.
+             * Account exists.
              *
-             * The identity is saved locally and recovery.js
-             * will perform the backend recovery request once
-             * recovery.html loads.
+             * Save the identity and continue to recovery.html.
              */
 
-
-            saveRecoveryIdentity(
-                identity
+            saveRecoveryState(
+                identity,
+                user
             );
 
 
             showMessage(
-                "Account information accepted. Preparing password recovery...",
+                "Account found. Preparing password recovery...",
                 "success"
             );
 
 
-            window.setTimeout(() => {
+            /*
+             * IMPORTANT:
+             *
+             * No OTP is requested here.
+             *
+             * recovery.js will request the backend-generated
+             * OTP after recovery.html loads.
+             */
 
-                window.location.href =
-                    recoveryRoute;
+            window.setTimeout(
+                () => {
 
-            }, 500);
+                    window.location.href =
+                        recoveryRoute;
 
-        } catch (error) {
+                },
+                500
+            );
+
+
+        } catch (
+            error
+        ) {
 
             console.error(
-                "STOCKFLOW recovery start error:",
+                "STOCKFLOW recovery account lookup error:",
                 error
             );
 
+
+            /*
+             * MOST IMPORTANT BEHAVIOR:
+             *
+             * If the account doesn't exist,
+             * DO NOT redirect.
+             *
+             * Stay on forgot-password.html and show
+             * the account-not-found message.
+             */
 
             showMessage(
                 getRecoveryErrorMessage(
@@ -630,9 +1067,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 "error"
             );
 
+
         } finally {
 
-            setLoading(false);
+            setLoading(
+                false
+            );
 
         }
 
@@ -656,10 +1096,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       INPUT CLEANUP
+       CLEAR ERROR WHILE TYPING
     ========================================================= */
 
-    if (identityInput) {
+    if (
+        identityInput
+    ) {
+
+        identityInput.addEventListener(
+            "input",
+            () => {
+
+                if (
+                    message &&
+                    message.textContent
+                ) {
+
+                    showMessage("");
+
+                }
+
+            }
+        );
+
 
         identityInput.addEventListener(
             "blur",
@@ -674,6 +1133,5 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
     }
-
 
 });
