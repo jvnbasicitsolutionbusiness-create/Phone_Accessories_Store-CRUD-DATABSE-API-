@@ -2,6 +2,18 @@ document.addEventListener("DOMContentLoaded", () => {
     "use strict";
 
     /* =========================================================
+       STOCKFLOW — REGISTER.JS
+       =========================================================
+       Purpose:
+       - Validate registration form
+       - Register account through StockFlowAPI
+       - Save verification identity
+       - Redirect to verify.html
+       - NEVER generate or auto-fill OTP
+       ========================================================= */
+
+
+    /* =========================================================
        ELEMENTS
        ========================================================= */
 
@@ -15,58 +27,76 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+
     const message =
-        document.getElementById("registerMessage");
+        document.getElementById(
+            "registerMessage"
+        );
+
 
     const button =
-        document.getElementById("registerButton");
+        document.getElementById(
+            "registerButton"
+        );
+
 
     /*
-     * IMPORTANT:
      * These IDs MUST match register.html.
      */
+
     const firstNameInput =
         document.getElementById(
             "registerFirstName"
         );
+
 
     const lastNameInput =
         document.getElementById(
             "registerLastName"
         );
 
+
     const usernameInput =
         document.getElementById(
             "registerUsername"
         );
+
 
     const ageInput =
         document.getElementById(
             "registerAge"
         );
 
+
     const emailInput =
         document.getElementById(
             "registerEmail"
         );
+
 
     const phoneInput =
         document.getElementById(
             "registerPhone"
         );
 
+
     const passwordInput =
         document.getElementById(
             "registerPassword"
         );
+
 
     const confirmPasswordInput =
         document.getElementById(
             "registerConfirmPassword"
         );
 
+
     const termsInput =
-        document.getElementById("terms");
+        document.getElementById(
+            "terms"
+        );
+
 
     const communicationsInput =
         document.getElementById(
@@ -89,23 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
             email: !!emailInput,
             phone: !!phoneInput,
             password: !!passwordInput,
-            confirmPassword: !!confirmPasswordInput
+            confirmPassword: !!confirmPasswordInput,
+            terms: !!termsInput,
+            communications: !!communicationsInput
         }
     );
-
-
-    /*
-     * This should print:
-     *
-     * firstName: true
-     * lastName: true
-     * username: true
-     * age: true
-     * email: true
-     * phone: true
-     * password: true
-     * confirmPassword: true
-     */
 
 
     /* =========================================================
@@ -117,9 +135,11 @@ document.addEventListener("DOMContentLoaded", () => {
         window.CONFIG ||
         {};
 
+
     const routes =
         config.ROUTES ||
         {};
+
 
     const verifyRoute =
         routes.VERIFY ||
@@ -167,7 +187,10 @@ document.addEventListener("DOMContentLoaded", () => {
        ========================================================= */
 
     function clean(value) {
-        return String(value ?? "").trim();
+
+        return String(
+            value ?? ""
+        ).trim();
     }
 
 
@@ -191,12 +214,36 @@ document.addEventListener("DOMContentLoaded", () => {
             clean(value)
                 .replace(/\s+/g, "");
 
-        if (phone.startsWith("+63")) {
+
+        /*
+         * Convert:
+         *
+         * +639XXXXXXXXX
+         *
+         * to:
+         *
+         * 09XXXXXXXXX
+         */
+
+        if (
+            phone.startsWith("+63")
+        ) {
 
             phone =
                 "0" +
                 phone.substring(3);
         }
+
+
+        /*
+         * Convert:
+         *
+         * 639XXXXXXXXX
+         *
+         * to:
+         *
+         * 09XXXXXXXXX
+         */
 
         if (
             phone.startsWith("63") &&
@@ -207,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "0" +
                 phone.substring(2);
         }
+
 
         return phone;
     }
@@ -221,11 +269,18 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        message.textContent =
+
+        const finalText =
             clean(text);
 
+
+        message.textContent =
+            finalText;
+
+
         message.hidden =
-            !clean(text);
+            !finalText;
+
 
         message.classList.remove(
             "success",
@@ -234,42 +289,96 @@ document.addEventListener("DOMContentLoaded", () => {
             "info"
         );
 
-        if (clean(text)) {
 
-            message.classList.add(type);
+        if (finalText) {
+
+            message.classList.add(
+                type
+            );
         }
     }
 
 
-    function setLoading(loading) {
+    function setLoading(
+        loading
+    ) {
 
         if (!button) {
             return;
         }
 
-        button.disabled =
+
+        const isLoading =
             Boolean(loading);
+
+
+        button.disabled =
+            isLoading;
+
 
         const buttonText =
             button.querySelector(
                 ".button-text"
             );
 
+
         const buttonLoader =
             button.querySelector(
                 ".button-loader"
             );
 
+
         if (buttonText) {
 
             buttonText.hidden =
-                Boolean(loading);
+                isLoading;
         }
+
 
         if (buttonLoader) {
 
             buttonLoader.hidden =
-                !Boolean(loading);
+                !isLoading;
+        }
+
+
+        /*
+         * Fallback for buttons that do not
+         * contain .button-text / .button-loader.
+         */
+
+        if (
+            !buttonText &&
+            !buttonLoader
+        ) {
+
+            if (
+                isLoading &&
+                !button.dataset.originalText
+            ) {
+
+                button.dataset.originalText =
+                    button.textContent;
+            }
+
+
+            if (
+                isLoading
+            ) {
+
+                button.textContent =
+                    "Creating account...";
+            }
+
+
+            if (
+                !isLoading &&
+                button.dataset.originalText
+            ) {
+
+                button.textContent =
+                    button.dataset.originalText;
+            }
         }
     }
 
@@ -278,41 +387,61 @@ document.addEventListener("DOMContentLoaded", () => {
        VALIDATORS
        ========================================================= */
 
-    function isValidName(value) {
+    function isValidName(
+        value
+    ) {
 
         const name =
             clean(value);
+
 
         if (!name) {
             return false;
         }
 
+
         if (
             name.length < 1 ||
             name.length > 50
         ) {
+
             return false;
         }
 
+
         /*
          * Allows:
-         * letters
-         * accents
-         * spaces
-         * apostrophes
-         * hyphens
-         * periods
+         * - Letters
+         * - Accented letters
+         * - Combining marks
+         * - Spaces
+         * - Apostrophes
+         * - Hyphens
+         * - Periods
+         *
+         * Examples:
+         * Juan
+         * Maria Clara
+         * Anne-Marie
+         * O'Connor
+         * Dr. Reyes
          */
+
         return /^[\p{L}\p{M} .'-]+$/u.test(
             name
         );
     }
 
 
-    function isValidUsername(value) {
+    function isValidUsername(
+        value
+    ) {
 
         const username =
-            normalizeUsername(value);
+            normalizeUsername(
+                value
+            );
+
 
         return /^[a-z0-9._]{4,30}$/.test(
             username
@@ -320,10 +449,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidAge(value) {
+    function isValidAge(
+        value
+    ) {
 
         const age =
             Number(value);
+
 
         return (
             Number.isInteger(age) &&
@@ -333,10 +465,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidEmail(value) {
+    function isValidEmail(
+        value
+    ) {
 
         const email =
-            normalizeEmail(value);
+            normalizeEmail(
+                value
+            );
+
+
+        /*
+         * Registration currently accepts
+         * Gmail accounts only.
+         */
 
         return /^[a-z0-9._%+-]+@gmail\.com$/i.test(
             email
@@ -344,10 +486,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidPhone(value) {
+    function isValidPhone(
+        value
+    ) {
 
         const phone =
-            normalizePhone(value);
+            normalizePhone(
+                value
+            );
+
+
+        /*
+         * Philippine mobile format:
+         *
+         * 09XXXXXXXXX
+         *
+         * 11 digits.
+         */
 
         return /^09\d{9}$/.test(
             phone
@@ -355,30 +510,63 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isStrongPassword(value) {
+    function isStrongPassword(
+        value
+    ) {
 
         const password =
-            String(value ?? "");
+            String(
+                value ?? ""
+            );
 
-        if (password.length < 8) {
+
+        if (
+            password.length < 8
+        ) {
+
             return false;
         }
 
-        if (!/[A-Z]/.test(password)) {
+
+        if (
+            !/[A-Z]/.test(
+                password
+            )
+        ) {
+
             return false;
         }
 
-        if (!/[a-z]/.test(password)) {
+
+        if (
+            !/[a-z]/.test(
+                password
+            )
+        ) {
+
             return false;
         }
 
-        if (!/[0-9]/.test(password)) {
+
+        if (
+            !/[0-9]/.test(
+                password
+            )
+        ) {
+
             return false;
         }
 
-        if (!/[^A-Za-z0-9]/.test(password)) {
+
+        if (
+            !/[^A-Za-z0-9]/.test(
+                password
+            )
+        ) {
+
             return false;
         }
+
 
         return true;
     }
@@ -390,47 +578,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function validateForm() {
 
-        /*
-         * Read directly from the CORRECT HTML IDs.
-         */
         const firstName =
             clean(
                 firstNameInput?.value
             );
+
 
         const lastName =
             clean(
                 lastNameInput?.value
             );
 
+
         const username =
             normalizeUsername(
                 usernameInput?.value
             );
+
 
         const age =
             clean(
                 ageInput?.value
             );
 
+
         const email =
             normalizeEmail(
                 emailInput?.value
             );
+
 
         const phone =
             normalizePhone(
                 phoneInput?.value
             );
 
+
         const password =
             String(
-                passwordInput?.value ?? ""
+                passwordInput?.value ??
+                ""
             );
+
 
         const confirmPassword =
             String(
-                confirmPasswordInput?.value ?? ""
+                confirmPasswordInput?.value ??
+                ""
             );
 
 
@@ -493,7 +687,9 @@ document.addEventListener("DOMContentLoaded", () => {
            ===================================================== */
 
         if (
-            !isValidAge(age)
+            !isValidAge(
+                age
+            )
         ) {
 
             return {
@@ -509,7 +705,9 @@ document.addEventListener("DOMContentLoaded", () => {
            ===================================================== */
 
         if (
-            !isValidEmail(email)
+            !isValidEmail(
+                email
+            )
         ) {
 
             return {
@@ -525,7 +723,9 @@ document.addEventListener("DOMContentLoaded", () => {
            ===================================================== */
 
         if (
-            !isValidPhone(phone)
+            !isValidPhone(
+                phone
+            )
         ) {
 
             return {
@@ -589,15 +789,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /* =====================================================
-           SUCCESS
+           REGISTRATION DATA
            ===================================================== */
 
         return {
+
             valid: true,
 
             data: {
+
                 firstName,
+
                 lastName,
+
                 name:
                     `${firstName} ${lastName}`.trim(),
 
@@ -607,6 +811,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     Number(age),
 
                 email,
+
                 gmail:
                     email,
 
@@ -624,6 +829,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
+       CLEAR OLD VERIFICATION STATE
+       ========================================================= */
+
+    function clearVerificationState() {
+
+        try {
+
+            Object.values(
+                STORAGE_KEYS
+            ).forEach(
+                key => {
+
+                    sessionStorage.removeItem(
+                        key
+                    );
+                }
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "StockFlow: unable to clear previous verification state.",
+                error
+            );
+        }
+    }
+
+
+    /* =========================================================
        SAVE VERIFICATION STATE
        ========================================================= */
 
@@ -635,100 +869,153 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
 
             const identity =
-                data.email ||
-                data.phone ||
-                data.username;
+                clean(
+                    data.email ||
+                    data.phone ||
+                    data.username
+                );
+
+
+            const uid =
+                clean(
+                    response?.uid ||
+                    response?.user?.uid ||
+                    response?.data?.uid ||
+                    ""
+                );
+
+
+            /*
+             * Identity used by verify.js.
+             */
 
             sessionStorage.setItem(
                 STORAGE_KEYS.IDENTITY,
                 identity
             );
 
-            sessionStorage.setItem(
-                STORAGE_KEYS.UID,
-                clean(
-                    response?.uid ||
-                    response?.user?.uid ||
-                    ""
-                )
-            );
+
+            /*
+             * UID returned by backend.
+             */
+
+            if (uid) {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.UID,
+                    uid
+                );
+
+            } else {
+
+                sessionStorage.removeItem(
+                    STORAGE_KEYS.UID
+                );
+            }
+
 
             sessionStorage.setItem(
                 STORAGE_KEYS.USERNAME,
                 data.username
             );
 
+
             sessionStorage.setItem(
                 STORAGE_KEYS.EMAIL,
                 data.email
             );
 
+
             sessionStorage.setItem(
                 STORAGE_KEYS.GMAIL,
-                data.email
+                data.gmail
             );
+
 
             sessionStorage.setItem(
                 STORAGE_KEYS.PHONE,
                 data.phone
             );
 
+
             /*
-             * Initial channel defaults to email.
+             * Initial verification channel.
+             *
+             * The backend's registration flow
+             * uses email as the initial OTP
+             * delivery channel.
              */
+
             sessionStorage.setItem(
                 STORAGE_KEYS.CHANNEL,
                 "email"
             );
 
+
             /*
-             * IMPORTANT:
-             * Registration itself does NOT generate
-             * an OTP.
+             * OTP is NOT generated here.
              */
+
             sessionStorage.setItem(
                 STORAGE_KEYS.OTP_READY,
                 "false"
             );
 
+
             /*
-             * Never store an OTP from registration.
+             * Never save an OTP returned from
+             * registration.
+             *
+             * verify.js will request the OTP
+             * from the backend.
              */
+
             sessionStorage.removeItem(
                 STORAGE_KEYS.OTP
             );
 
+
         } catch (error) {
 
-            console.warn(
-                "Unable to save verification state:",
+            console.error(
+                "StockFlow: unable to save verification state.",
                 error
+            );
+
+            throw new Error(
+                "Unable to prepare account verification."
             );
         }
     }
 
 
     /* =========================================================
-       API ERROR HANDLING
+       API ERROR HELPERS
        ========================================================= */
 
-    function getErrorCode(error) {
+    function getErrorCode(
+        error
+    ) {
 
         return clean(
             error?.code ||
             error?.data?.code ||
             error?.response?.code ||
+            error?.result?.code ||
             ""
         ).toUpperCase();
     }
 
 
-    function getBackendMessage(error) {
+    function getBackendMessage(
+        error
+    ) {
 
         return clean(
-            error?.message ||
             error?.data?.message ||
             error?.response?.message ||
+            error?.result?.message ||
+            error?.message ||
             ""
         );
     }
@@ -739,21 +1026,35 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const code =
-            getErrorCode(error);
+            getErrorCode(
+                error
+            );
+
 
         const backendMessage =
-            getBackendMessage(error);
+            getBackendMessage(
+                error
+            );
+
 
         switch (code) {
+
+            /* =================================================
+               DUPLICATE USERNAME
+               ================================================= */
 
             case "USERNAME_EXISTS":
 
             case "DUPLICATE_USERNAME":
 
                 return (
-                    "Username already exists."
+                    "Username already exists. Please choose another username."
                 );
 
+
+            /* =================================================
+               DUPLICATE EMAIL
+               ================================================= */
 
             case "EMAIL_EXISTS":
 
@@ -766,6 +1067,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            /* =================================================
+               DUPLICATE PHONE
+               ================================================= */
+
             case "PHONE_EXISTS":
 
             case "DUPLICATE_PHONE":
@@ -774,6 +1079,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     "This phone number is already registered."
                 );
 
+
+            /* =================================================
+               ACCOUNT ALREADY EXISTS
+               ================================================= */
 
             case "ACCOUNT_EXISTS":
 
@@ -784,6 +1093,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            /* =================================================
+               VALIDATION
+               ================================================= */
+
             case "INVALID_REGISTRATION":
 
             case "VALIDATION_ERROR":
@@ -793,6 +1106,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Please check your registration information."
                 );
 
+
+            /* =================================================
+               API / NETWORK
+               ================================================= */
 
             case "API_URL_MISSING":
 
@@ -811,12 +1128,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            /* =================================================
+               DEFAULT
+               ================================================= */
+
             default:
 
-                if (backendMessage) {
+                if (
+                    backendMessage
+                ) {
 
                     return backendMessage;
                 }
+
 
                 return (
                     "Registration could not be completed. Please try again."
@@ -826,10 +1150,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       GET API
+       GET STOCKFLOW API
        ========================================================= */
 
     function getAPI() {
+
+        /*
+         * Preferred API namespace.
+         */
 
         if (
             window.StockFlowAPI &&
@@ -840,6 +1168,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return window.StockFlowAPI;
         }
 
+
+        /*
+         * Backward-compatible API namespace.
+         */
+
         if (
             window.API &&
             typeof window.API.register ===
@@ -849,22 +1182,24 @@ document.addEventListener("DOMContentLoaded", () => {
             return window.API;
         }
 
+
         return null;
     }
 
 
     /* =========================================================
-       REGISTRATION
+       REGISTRATION SUBMISSION
        ========================================================= */
 
     async function submitRegistration() {
 
         showMessage("");
 
-        /*
-         * FIRST CHECK:
-         * Make absolutely sure the inputs exist.
-         */
+
+        /* =====================================================
+           CHECK REQUIRED ELEMENTS
+           ===================================================== */
+
         if (
             !firstNameInput ||
             !lastNameInput ||
@@ -880,24 +1215,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 "StockFlow registration fields are missing."
             );
 
+
             showMessage(
-                "Registration form could not be loaded correctly. Please refresh the page."
+                "Registration form could not be loaded correctly. Please refresh the page.",
+                "error"
             );
+
 
             return;
         }
 
 
+        /* =====================================================
+           VALIDATE
+           ===================================================== */
+
         const validation =
             validateForm();
 
 
-        if (!validation.valid) {
+        if (
+            !validation.valid
+        ) {
 
             showMessage(
                 validation.message,
                 "error"
             );
+
 
             return;
         }
@@ -907,15 +1252,33 @@ document.addEventListener("DOMContentLoaded", () => {
             validation.data;
 
 
+        /* =====================================================
+           GET API
+           ===================================================== */
+
         const API =
             getAPI();
 
 
         if (!API) {
 
-            showMessage(
-                "Registration system is not available. Please refresh the page and try again."
+            console.error(
+                "StockFlow API is unavailable.",
+                {
+                    StockFlowAPI:
+                        !!window.StockFlowAPI,
+
+                    API:
+                        !!window.API
+                }
             );
+
+
+            showMessage(
+                "Registration system is not available. Please refresh the page and try again.",
+                "error"
+            );
+
 
             return;
         }
@@ -926,32 +1289,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            /*
-             * Clear previous verification state.
-             */
-            try {
+            /* =================================================
+               CLEAR OLD VERIFICATION STATE
+               ================================================= */
 
-                Object.values(
-                    STORAGE_KEYS
-                ).forEach(
-                    key => {
-                        sessionStorage.removeItem(
-                            key
-                        );
-                    }
-                );
-
-            } catch (storageError) {
-
-                console.warn(
-                    "Unable to clear previous verification state:",
-                    storageError
-                );
-            }
+            clearVerificationState();
 
 
             /* =================================================
-               API REGISTRATION REQUEST
+               REGISTRATION REQUEST
+               =================================================
+               IMPORTANT:
+               No OTP is generated here.
+               The backend registration endpoint creates
+               the account only.
                ================================================= */
 
             const response =
@@ -998,17 +1349,56 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
+            /* =================================================
+               CHECK RESPONSE
+               ================================================= */
+
             if (
-                !response ||
+                !response
+            ) {
+
+                throw {
+                    code:
+                        "EMPTY_RESPONSE",
+
+                    message:
+                        "The registration server returned an empty response."
+                };
+            }
+
+
+            if (
                 response.success === false
             ) {
 
-                throw (
-                    response ||
-                    new Error(
-                        "Registration failed."
-                    )
-                );
+                throw response;
+            }
+
+
+            /*
+             * Some API wrappers may return:
+             *
+             * {
+             *   success: true,
+             *   user: {...}
+             * }
+             *
+             * while older wrappers may return:
+             *
+             * {
+             *   success: true,
+             *   uid: "..."
+             * }
+             *
+             * Both are supported.
+             */
+
+            if (
+                response.error &&
+                !response.success
+            ) {
+
+                throw response;
             }
 
 
@@ -1032,12 +1422,15 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            /*
-             * Registration does NOT generate OTP.
-             *
-             * verify.js will request the OTP
-             * from the backend.
-             */
+            /* =================================================
+               REDIRECT
+               =================================================
+               verify.js will:
+               1. Read the saved identity.
+               2. Request the initial email OTP.
+               3. Start the email cooldown.
+               4. Keep the OTP input empty.
+               ================================================= */
 
             window.setTimeout(
                 () => {
@@ -1049,6 +1442,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 700
             );
 
+
         } catch (error) {
 
             console.error(
@@ -1056,12 +1450,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 error
             );
 
+
             showMessage(
                 getRegistrationErrorMessage(
                     error
                 ),
                 "error"
             );
+
 
         } finally {
 
@@ -1080,16 +1476,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
+            /*
+             * Prevent duplicate submissions while
+             * the first request is still processing.
+             */
+
+            if (
+                button?.disabled
+            ) {
+
+                return;
+            }
+
+
             submitRegistration();
         }
     );
 
 
     /* =========================================================
-       INPUT NORMALIZATION
+       USERNAME NORMALIZATION
        ========================================================= */
 
-    if (usernameInput) {
+    if (
+        usernameInput
+    ) {
 
         usernameInput.addEventListener(
             "input",
@@ -1101,13 +1512,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         .replace(
                             /[^a-z0-9._]/g,
                             ""
+                        )
+                        .substring(
+                            0,
+                            30
                         );
             }
         );
     }
 
 
-    if (emailInput) {
+    /* =========================================================
+       EMAIL NORMALIZATION
+       ========================================================= */
+
+    if (
+        emailInput
+    ) {
 
         emailInput.addEventListener(
             "input",
@@ -1122,7 +1543,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    if (phoneInput) {
+    /* =========================================================
+       PHONE NORMALIZATION
+       ========================================================= */
+
+    if (
+        phoneInput
+    ) {
 
         phoneInput.addEventListener(
             "input",
@@ -1135,6 +1562,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             ""
                         );
 
+
+                /*
+                 * Convert:
+                 *
+                 * 639XXXXXXXXX
+                 *
+                 * to:
+                 *
+                 * 09XXXXXXXXX
+                 */
+
                 if (
                     value.startsWith("63") &&
                     value.length <= 12
@@ -1145,11 +1583,47 @@ document.addEventListener("DOMContentLoaded", () => {
                         value.substring(2);
                 }
 
+
+                /*
+                 * Keep only 11 digits.
+                 */
+
                 phoneInput.value =
                     value.substring(
                         0,
                         11
                     );
+            }
+        );
+    }
+
+
+    /* =========================================================
+       AGE NORMALIZATION
+       ========================================================= */
+
+    if (
+        ageInput
+    ) {
+
+        ageInput.addEventListener(
+            "input",
+            () => {
+
+                /*
+                 * Numbers only.
+                 */
+
+                ageInput.value =
+                    ageInput.value
+                        .replace(
+                            /\D/g,
+                            ""
+                        )
+                        .substring(
+                            0,
+                            3
+                        );
             }
         );
     }
@@ -1176,32 +1650,51 @@ document.addEventListener("DOMContentLoaded", () => {
                             toggle.dataset
                                 .togglePassword;
 
-                        if (!targetId) {
+
+                        if (
+                            !targetId
+                        ) {
+
                             return;
                         }
+
 
                         const input =
                             document.getElementById(
                                 targetId
                             );
 
-                        if (!input) {
+
+                        if (
+                            !input
+                        ) {
+
                             return;
                         }
+
 
                         const isPassword =
                             input.type ===
                             "password";
+
 
                         input.type =
                             isPassword
                                 ? "text"
                                 : "password";
 
+
+                        /*
+                         * Preserve existing design.
+                         * Only change the button text/
+                         * accessibility state.
+                         */
+
                         toggle.textContent =
                             isPassword
                                 ? "Hide"
                                 : "Show";
+
 
                         toggle.setAttribute(
                             "aria-label",
@@ -1209,6 +1702,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ? "Hide password"
                                 : "Show password"
                         );
+
 
                         toggle.setAttribute(
                             "aria-pressed",
@@ -1226,7 +1720,9 @@ document.addEventListener("DOMContentLoaded", () => {
        PASSWORD STRENGTH
        ========================================================= */
 
-    if (passwordInput) {
+    if (
+        passwordInput
+    ) {
 
         passwordInput.addEventListener(
             "input",
@@ -1234,6 +1730,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const password =
                     passwordInput.value;
+
 
                 const checks = {
 
@@ -1263,8 +1760,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 /*
-                 * Support optional strength
-                 * indicators if present in HTML.
+                 * Update optional password
+                 * requirement indicators.
+                 *
+                 * This does not require CSS
+                 * changes.
                  */
 
                 Object.entries(
@@ -1277,7 +1777,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                 `[data-password-check="${key}"]`
                             );
 
-                        if (element) {
+
+                        if (
+                            element
+                        ) {
 
                             element.classList.toggle(
                                 "valid",
@@ -1307,8 +1810,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (
                     !confirmPasswordInput.value
                 ) {
+
+                    confirmPasswordInput
+                        .classList
+                        .remove(
+                            "invalid"
+                        );
+
                     return;
                 }
+
 
                 if (
                     confirmPasswordInput.value ===
@@ -1317,13 +1828,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     confirmPasswordInput
                         .classList
-                        .remove("invalid");
+                        .remove(
+                            "invalid"
+                        );
 
                 } else {
 
                     confirmPasswordInput
                         .classList
-                        .add("invalid");
+                        .add(
+                            "invalid"
+                        );
+                }
+            }
+        );
+
+
+        /*
+         * Also update confirmation state when
+         * the main password is changed.
+         */
+
+        passwordInput.addEventListener(
+            "input",
+            () => {
+
+                if (
+                    !confirmPasswordInput.value
+                ) {
+
+                    confirmPasswordInput
+                        .classList
+                        .remove(
+                            "invalid"
+                        );
+
+                    return;
+                }
+
+
+                if (
+                    confirmPasswordInput.value ===
+                    passwordInput.value
+                ) {
+
+                    confirmPasswordInput
+                        .classList
+                        .remove(
+                            "invalid"
+                        );
+
+                } else {
+
+                    confirmPasswordInput
+                        .classList
+                        .add(
+                            "invalid"
+                        );
                 }
             }
         );
@@ -1339,7 +1900,12 @@ document.addEventListener("DOMContentLoaded", () => {
     showMessage("");
 
 
+    /* =========================================================
+       DEBUG
+       ========================================================= */
+
     console.log(
         "StockFlow register.js loaded successfully."
     );
+
 });
