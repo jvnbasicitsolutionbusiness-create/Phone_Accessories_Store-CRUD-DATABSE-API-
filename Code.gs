@@ -1,6 +1,6 @@
 // ============================================================
 // STOCKFLOW AUTHENTICATION BACKEND
-// Google Apps Script + Google Sheets
+// Google Apps Script + Google Sheets + Firebase
 // ============================================================
 //
 // STOCKFLOW
@@ -17,30 +17,20 @@
 // 7. OTP is single-use
 // 8. Maximum 4 verification attempts
 // 9. Temporary lock after 4 failed attempts
-// 10. Independent email/phone OTP requests
-// 11. Independent 120-second cooldowns
-// 12. Login
-// 13. Account status
-// 14. Role support
-// 15. Forgot password
-// 16. prepareOtp endpoint
-// 17. generateOtp endpoint
-// 18. resendOtp endpoint
-// 19. verifyOtp endpoint
-// 20. OTP returned only as backend response for the
-//     current school-project verification UI.
-//
-// IMPORTANT
-// ------------------------------------------------------------
-// Required Script Properties for real SMS:
-//
-// TWILIO_ACCOUNT_SID
-// TWILIO_AUTH_TOKEN
-// TWILIO_PHONE_NUMBER
-//
-// Required for admin registration:
-//
-// ADMIN_REGISTRATION_KEY
+// 10. Independent email OTP cooldown
+// 11. Independent phone OTP cooldown
+// 12. 120-second cooldown per channel
+// 13. Login
+// 14. Account status
+// 15. Role support
+// 16. Forgot password
+// 17. prepareOtp endpoint
+// 18. generateOtp endpoint
+// 19. resendOtp endpoint
+// 20. verifyOtp endpoint
+// 21. Google Sheets OTP storage
+// 22. Firebase OTP storage
+// 23. Backend OTP response for school-project UI
 //
 // ============================================================
 
@@ -60,6 +50,14 @@ const APP_NAME =
 
 
 // ============================================================
+// FIREBASE CONFIGURATION
+// ============================================================
+
+const FIREBASE_DATABASE_URL =
+  "https://midtermexamproject-default-rtdb.firebaseio.com/";
+
+
+// ============================================================
 // OTP CONFIGURATION
 // ============================================================
 
@@ -75,7 +73,8 @@ const MAX_OTP_ATTEMPTS =
 const OTP_LOCK_MINUTES =
   30;
 
-// REQUIRED: 2 minutes
+// Required cooldown:
+// 120 seconds = 2 minutes
 const RESEND_COOLDOWN_SECONDS =
   120;
 
@@ -84,10 +83,8 @@ const RESEND_COOLDOWN_SECONDS =
 // SHEET HEADERS
 // ============================================================
 //
-// IMPORTANT:
-// Keep this order synchronized with all row indexes below.
+// ORIGINAL 19 COLUMNS
 //
-// Column:
 // 1  UID
 // 2  NAME
 // 3  USERNAME
@@ -108,9 +105,18 @@ const RESEND_COOLDOWN_SECONDS =
 // 18 LAST OTP SENT
 // 19 LAST LOGIN
 //
+// NEW COLUMNS
+//
+// 20 LAST EMAIL OTP SENT
+// 21 LAST PHONE OTP SENT
+//
+// These two additional columns make the email and phone
+// cooldowns truly independent on the backend.
+//
 // ============================================================
 
 const HEADERS = [
+
   "UID",
   "NAME",
   "USERNAME",
@@ -129,7 +135,10 @@ const HEADERS = [
   "CREATED AT",
   "VERIFIED AT",
   "LAST OTP SENT",
-  "LAST LOGIN"
+  "LAST LOGIN",
+  "LAST EMAIL OTP SENT",
+  "LAST PHONE OTP SENT"
+
 ];
 
 
@@ -197,12 +206,16 @@ function ensureHeaders(sheet) {
   ) {
 
     sheet.insertColumnsAfter(
+
       sheet.getMaxColumns(),
+
       requiredColumns -
       sheet.getMaxColumns()
+
     );
 
   }
+
 
   const currentHeaders =
     sheet
@@ -214,8 +227,10 @@ function ensureHeaders(sheet) {
       )
       .getValues()[0];
 
+
   let changed =
     false;
+
 
   for (
     let i = 0;
@@ -236,6 +251,7 @@ function ensureHeaders(sheet) {
     }
 
   }
+
 
   if (changed) {
 
@@ -335,6 +351,7 @@ function normalizePhone(value) {
         ""
       );
 
+
   // 09123456789
   if (
     /^09\d{9}$/.test(phone)
@@ -347,6 +364,7 @@ function normalizePhone(value) {
 
   }
 
+
   // 639123456789
   if (
     /^639\d{9}$/.test(phone)
@@ -356,6 +374,7 @@ function normalizePhone(value) {
 
   }
 
+
   // +639123456789
   if (
     /^\+639\d{9}$/.test(phone)
@@ -364,6 +383,7 @@ function normalizePhone(value) {
     return phone;
 
   }
+
 
   return phone;
 
@@ -419,8 +439,10 @@ function generateUID() {
 // ============================================================
 //
 // IMPORTANT:
-// OTP generation happens ONLY here on Apps Script.
-// The frontend must NEVER generate its own OTP.
+//
+// OTP generation happens ONLY on Apps Script.
+//
+// The frontend must NEVER generate the OTP.
 //
 // ============================================================
 
@@ -453,6 +475,7 @@ function findUser(identity) {
     normalize(identity)
       .toLowerCase();
 
+
   for (
     let i = 0;
     i < rows.length;
@@ -462,25 +485,30 @@ function findUser(identity) {
     const row =
       rows[i];
 
+
     const uid =
       normalize(
         row[0]
       ).toLowerCase();
+
 
     const username =
       normalize(
         row[2]
       ).toLowerCase();
 
+
     const gmail =
       normalizeEmail(
         row[6]
       );
 
+
     const phone =
       normalizePhone(
         row[7]
       ).toLowerCase();
+
 
     if (
       target === uid ||
@@ -505,6 +533,7 @@ function findUser(identity) {
     }
 
   }
+
 
   return null;
 
@@ -576,6 +605,487 @@ function escapeHtml(value) {
 
 
 // ============================================================
+// FIREBASE AUTH TOKEN
+// ============================================================
+//
+// Optional.
+//
+// If your Firebase Realtime Database rules require an auth
+// token, place the token in Script Properties as:
+//
+// FIREBASE_AUTH_TOKEN
+//
+// Otherwise the request is sent without auth.
+//
+// ============================================================
+
+function getFirebaseAuthToken() {
+
+  return (
+    getProperty(
+      "FIREBASE_AUTH_TOKEN"
+    ) ||
+    ""
+  );
+
+}
+
+
+// ============================================================
+// FIREBASE URL BUILDER
+// ============================================================
+
+function firebaseUrl(
+  path
+) {
+
+  let base =
+    FIREBASE_DATABASE_URL;
+
+  if (
+    !base.endsWith("/")
+  ) {
+
+    base += "/";
+
+  }
+
+
+  let cleanPath =
+    normalize(path)
+      .replace(/^\/+/, "");
+
+
+  let url =
+    base +
+    cleanPath +
+    ".json";
+
+
+  const token =
+    getFirebaseAuthToken();
+
+
+  if (token) {
+
+    url +=
+      "?auth=" +
+      encodeURIComponent(
+        token
+      );
+
+  }
+
+
+  return url;
+
+}
+
+
+// ============================================================
+// SAVE OTP TO FIREBASE
+// ============================================================
+//
+// The same OTP saved in Google Sheets is saved here.
+//
+// Firebase structure:
+//
+// stockflow
+//   users
+//     UID
+//       uid
+//       username
+//       gmail
+//       phone
+//       otp
+//       otpExpires
+//       attempts
+//       lockedUntil
+//       channel
+//       updatedAt
+//
+// ============================================================
+
+function saveOtpToFirebase(
+  found,
+  otp,
+  expires,
+  channel
+) {
+
+  const row =
+    found.values;
+
+
+  const uid =
+    normalize(
+      row[0]
+    );
+
+
+  if (!uid) {
+
+    throw new Error(
+      "User UID is missing."
+    );
+
+  }
+
+
+  const payload = {
+
+    uid:
+      uid,
+
+    username:
+      normalize(
+        row[2]
+      ),
+
+    gmail:
+      normalizeEmail(
+        row[6]
+      ),
+
+    phone:
+      normalizePhone(
+        row[7]
+      ),
+
+    otp:
+      String(otp),
+
+    otpExpires:
+      expires.toISOString(),
+
+    attempts:
+      0,
+
+    lockedUntil:
+      "",
+
+    channel:
+      normalize(channel)
+        .toLowerCase(),
+
+    updatedAt:
+      new Date().toISOString()
+
+  };
+
+
+  const result =
+    UrlFetchApp.fetch(
+
+      firebaseUrl(
+        "stockflow/users/" +
+        encodeURIComponent(uid)
+      ),
+
+      {
+
+        method:
+          "put",
+
+        contentType:
+          "application/json",
+
+        payload:
+          JSON.stringify(
+            payload
+          ),
+
+        muteHttpExceptions:
+          true
+
+      }
+
+    );
+
+
+  const statusCode =
+    result.getResponseCode();
+
+
+  const responseText =
+    result.getContentText();
+
+
+  if (
+    statusCode < 200 ||
+    statusCode >= 300
+  ) {
+
+    console.error(
+      "Firebase OTP save error:",
+      responseText
+    );
+
+    throw new Error(
+      "Firebase OTP storage failed."
+    );
+
+  }
+
+
+  return true;
+
+}
+
+
+// ============================================================
+// UPDATE FIREBASE OTP ATTEMPTS
+// ============================================================
+
+function updateFirebaseOtpAttempts(
+  found,
+  attempts,
+  lockedUntil
+) {
+
+  const row =
+    found.values;
+
+
+  const uid =
+    normalize(
+      row[0]
+    );
+
+
+  if (!uid) {
+
+    return false;
+
+  }
+
+
+  const payload = {
+
+    attempts:
+      Number(attempts) || 0,
+
+    lockedUntil:
+      lockedUntil
+        ? new Date(
+            lockedUntil
+          ).toISOString()
+        : "",
+
+    updatedAt:
+      new Date().toISOString()
+
+  };
+
+
+  try {
+
+    const result =
+      UrlFetchApp.fetch(
+
+        firebaseUrl(
+          "stockflow/users/" +
+          encodeURIComponent(uid)
+        ),
+
+        {
+
+          method:
+            "patch",
+
+          contentType:
+            "application/json",
+
+          payload:
+            JSON.stringify(
+              payload
+            ),
+
+          muteHttpExceptions:
+            true
+
+        }
+
+      );
+
+
+    return (
+      result.getResponseCode() >= 200 &&
+      result.getResponseCode() < 300
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase attempt update error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
+// CLEAR FIREBASE OTP
+// ============================================================
+
+function clearOtpFromFirebase(
+  found
+) {
+
+  const row =
+    found.values;
+
+
+  const uid =
+    normalize(
+      row[0]
+    );
+
+
+  if (!uid) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    const result =
+      UrlFetchApp.fetch(
+
+        firebaseUrl(
+          "stockflow/users/" +
+          encodeURIComponent(uid) +
+          "/otp"
+        ),
+
+        {
+
+          method:
+            "delete",
+
+          muteHttpExceptions:
+            true
+
+        }
+
+      );
+
+
+    return (
+      result.getResponseCode() >= 200 &&
+      result.getResponseCode() < 300
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase OTP delete error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
+// MARK FIREBASE USER VERIFIED
+// ============================================================
+
+function markFirebaseUserVerified(
+  found
+) {
+
+  const row =
+    found.values;
+
+
+  const uid =
+    normalize(
+      row[0]
+    );
+
+
+  if (!uid) {
+
+    return false;
+
+  }
+
+
+  const payload = {
+
+    verified:
+      true,
+
+    verifiedAt:
+      new Date().toISOString(),
+
+    updatedAt:
+      new Date().toISOString()
+
+  };
+
+
+  try {
+
+    const result =
+      UrlFetchApp.fetch(
+
+        firebaseUrl(
+          "stockflow/users/" +
+          encodeURIComponent(uid)
+        ),
+
+        {
+
+          method:
+            "patch",
+
+          contentType:
+            "application/json",
+
+          payload:
+            JSON.stringify(
+              payload
+            ),
+
+          muteHttpExceptions:
+            true
+
+        }
+
+      );
+
+
+    return (
+      result.getResponseCode() >= 200 &&
+      result.getResponseCode() < 300
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase verification update error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
 // SEND EMAIL OTP
 // ============================================================
 
@@ -594,16 +1104,20 @@ function sendEmailOTP(
 
   }
 
+
   const subject =
     resend
       ? "StockFlow - New verification code"
       : "StockFlow - Your verification code";
 
+
   const plainText =
 
     "Hello " +
-    (fullName ||
-      "StockFlow User") +
+    (
+      fullName ||
+      "StockFlow User"
+    ) +
     ",\n\n" +
 
     "Your StockFlow verification code is:\n\n" +
@@ -856,6 +1370,7 @@ function sendSMSOTP(
   const statusCode =
     result.getResponseCode();
 
+
   const responseText =
     result.getContentText();
 
@@ -899,6 +1414,7 @@ function sendOTPByChannel(
     normalize(channel)
       .toLowerCase();
 
+
   let emailSent =
     false;
 
@@ -924,11 +1440,17 @@ function sendOTPByChannel(
     try {
 
       sendEmailOTP(
+
         email,
+
         fullName,
+
         otp,
+
         resend
+
       );
+
 
       emailSent =
         true;
@@ -958,10 +1480,15 @@ function sendOTPByChannel(
     try {
 
       sendSMSOTP(
+
         phone,
+
         fullName,
+
         otp
+
       );
+
 
       smsSent =
         true;
@@ -991,11 +1518,17 @@ function sendOTPByChannel(
     try {
 
       sendEmailOTP(
+
         email,
+
         fullName,
+
         otp,
+
         resend
+
       );
+
 
       emailSent =
         true;
@@ -1014,10 +1547,15 @@ function sendOTPByChannel(
     try {
 
       sendSMSOTP(
+
         phone,
+
         fullName,
+
         otp
+
       );
+
 
       smsSent =
         true;
@@ -1035,6 +1573,10 @@ function sendOTPByChannel(
   }
 
 
+  // ----------------------------------------------------------
+  // NOTHING SENT
+  // ----------------------------------------------------------
+
   if (
     !emailSent &&
     !smsSent
@@ -1042,6 +1584,7 @@ function sendOTPByChannel(
 
     let message =
       "OTP could not be sent.";
+
 
     if (emailError) {
 
@@ -1051,6 +1594,7 @@ function sendOTPByChannel(
 
     }
 
+
     if (smsError) {
 
       message +=
@@ -1058,6 +1602,7 @@ function sendOTPByChannel(
         smsError;
 
     }
+
 
     throw new Error(
       message
@@ -1095,10 +1640,13 @@ function sendOTPByChannel(
 function createOtpExpiration() {
 
   return new Date(
+
     Date.now() +
+
     OTP_EXPIRY_MINUTES *
     60 *
     1000
+
   );
 
 }
@@ -1117,6 +1665,7 @@ function getLockRemainingSeconds(
       ? new Date(row[13])
       : null;
 
+
   if (
     !lockUntil ||
     isNaN(
@@ -1128,13 +1677,17 @@ function getLockRemainingSeconds(
 
   }
 
+
   const remaining =
     Math.ceil(
+
       (
         lockUntil.getTime() -
         Date.now()
       ) / 1000
+
     );
+
 
   return Math.max(
     0,
@@ -1145,30 +1698,63 @@ function getLockRemainingSeconds(
 
 
 // ============================================================
-// CHECK OTP COOLDOWN
+// CHECK CHANNEL COOLDOWN
 // ============================================================
 //
-// The current Sheet has one LAST OTP SENT column.
-// The selected channel is therefore used to control
-// the server-side cooldown.
+// Email:
 //
-// Frontend keeps independent email/phone timers.
+// Column 20
+//
+// Phone:
+//
+// Column 21
 //
 // ============================================================
 
-function checkOtpCooldown(
-  row
+function checkChannelCooldown(
+  row,
+  channel
 ) {
 
-  const lastSent =
-    row[17]
-      ? new Date(row[17])
-      : null;
+  const normalizedChannel =
+    normalize(channel)
+      .toLowerCase();
+
+
+  let timestamp =
+    null;
+
 
   if (
-    !lastSent ||
+    normalizedChannel ===
+    "email"
+  ) {
+
+    timestamp =
+      row[19]
+        ? new Date(row[19])
+        : null;
+
+  }
+
+
+  if (
+    normalizedChannel ===
+    "phone"
+  ) {
+
+    timestamp =
+      row[20]
+        ? new Date(row[20])
+        : null;
+
+  }
+
+
+  if (
+    !timestamp ||
     isNaN(
-      lastSent.getTime()
+      timestamp.getTime()
     )
   ) {
 
@@ -1188,7 +1774,7 @@ function checkOtpCooldown(
   const secondsPassed =
     (
       Date.now() -
-      lastSent.getTime()
+      timestamp.getTime()
     ) / 1000;
 
 
@@ -1217,8 +1803,10 @@ function checkOtpCooldown(
 
     remainingSeconds:
       Math.ceil(
+
         RESEND_COOLDOWN_SECONDS -
         secondsPassed
+
       )
 
   };
@@ -1227,7 +1815,77 @@ function checkOtpCooldown(
 
 
 // ============================================================
+// SAVE CHANNEL TIMESTAMP
+// ============================================================
+
+function saveChannelTimestamp(
+  found,
+  channel,
+  dateValue
+) {
+
+  const normalizedChannel =
+    normalize(channel)
+      .toLowerCase();
+
+
+  let column =
+    18;
+
+
+  if (
+    normalizedChannel ===
+    "email"
+  ) {
+
+    column =
+      20;
+
+  }
+
+
+  if (
+    normalizedChannel ===
+    "phone"
+  ) {
+
+    column =
+      21;
+
+  }
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      column
+    )
+    .setValue(
+      dateValue
+    );
+
+
+  // Keep original LAST OTP SENT populated too.
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      18
+    )
+    .setValue(
+      dateValue
+    );
+
+}
+
+
+// ============================================================
 // SAVE NEW OTP
+// ============================================================
+//
+// Saves OTP to Google Sheets first.
+//
+// Firebase is then synchronized using the same OTP.
+//
 // ============================================================
 
 function saveOtp(
@@ -1239,8 +1897,10 @@ function saveOtp(
   const expires =
     createOtpExpiration();
 
+
   const sheet =
     found.sheet;
+
 
   const rowNumber =
     found.rowNumber;
@@ -1301,15 +1961,84 @@ function saveOtp(
     );
 
 
-  // Last OTP sent
-  sheet
-    .getRange(
-      rowNumber,
-      18
-    )
-    .setValue(
-      new Date()
+  // Channel-specific timestamp
+  const now =
+    new Date();
+
+
+  saveChannelTimestamp(
+
+    found,
+
+    channel,
+
+    now
+
+  );
+
+
+  // Firebase must contain the SAME OTP.
+  try {
+
+    saveOtpToFirebase(
+
+      found,
+
+      otp,
+
+      expires,
+
+      channel
+
     );
+
+  } catch (error) {
+
+    // Roll back Sheet OTP if Firebase failed.
+
+    sheet
+      .getRange(
+        rowNumber,
+        11
+      )
+      .setValue("");
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        12
+      )
+      .setValue("");
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        13
+      )
+      .setValue(0);
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        14
+      )
+      .setValue("");
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        15
+      )
+      .setValue("");
+
+
+    throw error;
+
+  }
 
 
   return expires;
@@ -1318,15 +2047,64 @@ function saveOtp(
 
 
 // ============================================================
+// CLEAR SHEET OTP
+// ============================================================
+
+function clearSheetOtp(
+  found
+) {
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      11
+    )
+    .setValue("");
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      12
+    )
+    .setValue("");
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      13
+    )
+    .setValue(0);
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      14
+    )
+    .setValue("");
+
+
+  found.sheet
+    .getRange(
+      found.rowNumber,
+      15
+    )
+    .setValue("");
+
+}
+
+
+// ============================================================
 // RETURN OTP RESPONSE
 // ============================================================
 //
-// The OTP is generated by Apps Script.
-// The frontend does NOT generate it.
+// IMPORTANT:
 //
-// This response is used by verify.html/otp.js so the
-// six OTP boxes can display the exact backend-generated
-// code after the backend request completes.
+// This is the exact OTP generated by Apps Script.
+//
+// otp.js does NOT generate this code.
 //
 // ============================================================
 
@@ -1334,16 +2112,21 @@ function otpResponse(
   found,
   otp,
   channel,
-  delivery
+  delivery,
+  generated
 ) {
 
   const row =
     found.values;
 
+
   return {
 
     success:
       true,
+
+    generated:
+      generated !== false,
 
     otp:
       String(otp),
@@ -1385,10 +2168,10 @@ function otpResponse(
 
     message:
       channel === "email"
-        ? "A new verification code was prepared for your registered Gmail."
+        ? "A new verification code was generated for your registered Gmail."
         : channel === "phone"
-          ? "A new verification code was prepared for your registered phone."
-          : "A verification code was prepared."
+          ? "A new verification code was generated for your registered phone."
+          : "A verification code was generated."
 
   };
 
@@ -1399,13 +2182,11 @@ function otpResponse(
 // REGISTER EMPLOYEE
 // ============================================================
 //
+// OTP is NOT generated during registration.
+//
 // Registration creates the account.
 //
-// IMPORTANT:
-// OTP is NOT generated here.
-//
-// The verification page will call prepareOtp()
-// after redirecting to verify.html.
+// verify.html then calls prepareOtp().
 //
 // ============================================================
 
@@ -1420,35 +2201,37 @@ function registerUser(data) {
       data.name
     );
 
+
   const username =
     normalize(
       data.username
     );
 
+
   const password =
     String(
-      data.password || ""
+      data.password ||
+      ""
     );
+
 
   const age =
     Number(
       data.age
     );
 
+
   const gmail =
     normalizeEmail(
       data.gmail
     );
+
 
   const phone =
     normalizePhone(
       data.phone
     );
 
-
-  // ----------------------------------------------------------
-  // VALIDATION
-  // ----------------------------------------------------------
 
   if (
     !name ||
@@ -1546,10 +2329,6 @@ function registerUser(data) {
   }
 
 
-  // ----------------------------------------------------------
-  // DUPLICATE CHECK
-  // ----------------------------------------------------------
-
   if (
     findUser(
       username
@@ -1607,12 +2386,9 @@ function registerUser(data) {
   }
 
 
-  // ----------------------------------------------------------
-  // CREATE ACCOUNT
-  // ----------------------------------------------------------
-
   const uid =
     generateUID();
+
 
   const now =
     new Date();
@@ -1656,9 +2432,117 @@ function registerUser(data) {
 
     "",
 
+    "",
+
+    "",
+
     ""
 
   ]);
+
+
+  // Create basic Firebase user record.
+  try {
+
+    const firebasePayload = {
+
+      uid:
+        uid,
+
+      name:
+        name,
+
+      username:
+        username,
+
+      age:
+        age,
+
+      gmail:
+        gmail,
+
+      phone:
+        phone,
+
+      role:
+        "Employee",
+
+      verified:
+        false,
+
+      accountStatus:
+        "PENDING",
+
+      createdAt:
+        now.toISOString(),
+
+      updatedAt:
+        now.toISOString()
+
+    };
+
+
+    const result =
+      UrlFetchApp.fetch(
+
+        firebaseUrl(
+          "stockflow/users/" +
+          encodeURIComponent(uid)
+        ),
+
+        {
+
+          method:
+            "put",
+
+          contentType:
+            "application/json",
+
+          payload:
+            JSON.stringify(
+              firebasePayload
+            ),
+
+          muteHttpExceptions:
+            true
+
+        }
+
+      );
+
+
+    if (
+      result.getResponseCode() < 200 ||
+      result.getResponseCode() >= 300
+    ) {
+
+      throw new Error(
+        "Firebase account storage failed."
+      );
+
+    }
+
+  } catch (error) {
+
+    // Remove account from Sheet if Firebase account
+    // creation failed.
+
+    sheet.deleteRow(
+      sheet.getLastRow()
+    );
+
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Registration could not be completed because Firebase storage failed."
+
+    };
+
+  }
 
 
   return {
@@ -1739,10 +2623,12 @@ function registerAdmin(data) {
       data.name
     );
 
+
   const username =
     normalize(
       data.username
     );
+
 
   const password =
     String(
@@ -1750,15 +2636,18 @@ function registerAdmin(data) {
       ""
     );
 
+
   const age =
     Number(
       data.age
     );
 
+
   const gmail =
     normalizeEmail(
       data.gmail
     );
+
 
   const phone =
     normalizePhone(
@@ -1922,6 +2811,7 @@ function registerAdmin(data) {
   const uid =
     generateUID();
 
+
   const now =
     new Date();
 
@@ -1964,9 +2854,113 @@ function registerAdmin(data) {
 
     "",
 
+    "",
+
+    "",
+
     ""
 
   ]);
+
+
+  try {
+
+    const firebasePayload = {
+
+      uid:
+        uid,
+
+      name:
+        name,
+
+      username:
+        username,
+
+      age:
+        age,
+
+      gmail:
+        gmail,
+
+      phone:
+        phone,
+
+      role:
+        "Admin",
+
+      verified:
+        false,
+
+      accountStatus:
+        "PENDING",
+
+      createdAt:
+        now.toISOString(),
+
+      updatedAt:
+        now.toISOString()
+
+    };
+
+
+    const result =
+      UrlFetchApp.fetch(
+
+        firebaseUrl(
+          "stockflow/users/" +
+          encodeURIComponent(uid)
+        ),
+
+        {
+
+          method:
+            "put",
+
+          contentType:
+            "application/json",
+
+          payload:
+            JSON.stringify(
+              firebasePayload
+            ),
+
+          muteHttpExceptions:
+            true
+
+        }
+
+      );
+
+
+    if (
+      result.getResponseCode() < 200 ||
+      result.getResponseCode() >= 300
+    ) {
+
+      throw new Error(
+        "Firebase account storage failed."
+      );
+
+    }
+
+  } catch (error) {
+
+    sheet.deleteRow(
+      sheet.getLastRow()
+    );
+
+
+    return {
+
+      success:
+        false,
+
+      message:
+        "Admin registration could not be completed because Firebase storage failed."
+
+    };
+
+  }
 
 
   return {
@@ -2004,13 +2998,15 @@ function registerAdmin(data) {
 // PREPARE OTP
 // ============================================================
 //
-// Called by otp.js after registration.
+// Called by verify.html after registration.
 //
 // Default channel:
 // EMAIL
 //
-// This generates a NEW server OTP and sends it through the
-// requested channel.
+// If an active OTP already exists and the selected channel
+// is still cooling down, the existing OTP is returned.
+//
+// Otherwise a new OTP is generated.
 //
 // ============================================================
 
@@ -2018,11 +3014,13 @@ function prepareOtp(data) {
 
   const identity =
     normalize(
+
       data.identity ||
       data.username ||
       data.gmail ||
       data.email ||
       data.phone
+
     ).toLowerCase();
 
 
@@ -2107,109 +3105,108 @@ function prepareOtp(data) {
 
 
   // ----------------------------------------------------------
-  // SERVER COOLDOWN
+  // CHANNEL COOLDOWN
   // ----------------------------------------------------------
 
   const cooldown =
-    checkOtpCooldown(
-      row
+    checkChannelCooldown(
+      row,
+      channel
     );
 
 
-  // prepareOtp is allowed to create the first OTP.
-  // If one was recently generated, do not immediately create
-  // another one.
+  // ----------------------------------------------------------
+  // EXISTING ACTIVE OTP
+  // ----------------------------------------------------------
+
+  const existingOtp =
+    normalize(
+      row[10]
+    );
+
+
+  const existingExpires =
+    row[11]
+      ? new Date(row[11])
+      : null;
+
+
   if (
     !cooldown.allowed &&
-    row[10]
+    existingOtp.length === OTP_LENGTH &&
+    existingExpires &&
+    !isNaN(
+      existingExpires.getTime()
+    ) &&
+    Date.now() <
+      existingExpires.getTime()
   ) {
 
-    const existingOtp =
+    const existingChannel =
       normalize(
-        row[10]
-      );
-
-    const existingExpires =
-      row[11]
-        ? new Date(row[11])
-        : null;
+        row[14]
+      ).toLowerCase();
 
 
-    if (
-      existingOtp.length ===
-        OTP_LENGTH &&
-      existingExpires &&
-      !isNaN(
-        existingExpires.getTime()
-      ) &&
-      Date.now() <
-        existingExpires.getTime()
-    ) {
+    return {
 
-      return {
+      success:
+        true,
 
-        success:
-          true,
+      generated:
+        false,
 
-        otp:
-          existingOtp,
+      otp:
+        existingOtp,
 
-        channel:
-          normalize(
-            row[14]
-          ).toLowerCase() ||
-          channel,
+      channel:
+        existingChannel ||
+        channel,
 
-        uid:
-          normalize(
-            row[0]
-          ),
+      uid:
+        normalize(
+          row[0]
+        ),
 
-        username:
-          normalize(
-            row[2]
-          ),
+      username:
+        normalize(
+          row[2]
+        ),
 
-        gmail:
-          normalizeEmail(
-            row[6]
-          ),
+      gmail:
+        normalizeEmail(
+          row[6]
+        ),
 
-        phone:
-          normalizePhone(
-            row[7]
-          ),
+      phone:
+        normalizePhone(
+          row[7]
+        ),
 
-        emailSent:
-          normalize(
-            row[14]
-          ).toLowerCase() ===
-          "email",
+      emailSent:
+        existingChannel ===
+        "email",
 
-        smsSent:
-          normalize(
-            row[14]
-          ).toLowerCase() ===
-          "phone",
+      smsSent:
+        existingChannel ===
+        "phone",
 
-        cooldownSeconds:
-          cooldown.remainingSeconds,
+      cooldownSeconds:
+        cooldown.remainingSeconds,
 
-        otpExpiresInMinutes:
-          OTP_EXPIRY_MINUTES,
+      otpExpiresInMinutes:
+        OTP_EXPIRY_MINUTES,
 
-        message:
-          "Your current verification code is ready."
+      message:
+        "Your current verification code is ready."
 
-      };
-
-    }
+    };
 
   }
 
 
   // ----------------------------------------------------------
-  // GENERATE
+  // GENERATE NEW OTP
   // ----------------------------------------------------------
 
   const otp =
@@ -2217,14 +3214,40 @@ function prepareOtp(data) {
 
 
   // ----------------------------------------------------------
-  // SAVE
+  // SAVE TO SHEETS + FIREBASE
   // ----------------------------------------------------------
 
-  saveOtp(
-    found,
-    otp,
-    channel
-  );
+  let expires;
+
+  try {
+
+    expires =
+      saveOtp(
+
+        found,
+
+        otp,
+
+        channel
+
+      );
+
+  } catch (error) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        error &&
+        error.message
+          ? error.message
+          : "Unable to store verification code."
+
+    };
+
+  }
 
 
   // ----------------------------------------------------------
@@ -2232,6 +3255,7 @@ function prepareOtp(data) {
   // ----------------------------------------------------------
 
   let delivery;
+
 
   try {
 
@@ -2260,28 +3284,14 @@ function prepareOtp(data) {
 
   } catch (error) {
 
-    // Remove OTP if delivery completely failed.
+    clearSheetOtp(
+      found
+    );
 
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        11
-      )
-      .setValue("");
+    clearOtpFromFirebase(
+      found
+    );
 
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        12
-      )
-      .setValue("");
-
-    found.sheet
-      .getRange(
-        found.rowNumber,
-        18
-      )
-      .setValue("");
 
     return {
 
@@ -2300,10 +3310,17 @@ function prepareOtp(data) {
 
 
   return otpResponse(
+
     found,
+
     otp,
+
     channel,
-    delivery
+
+    delivery,
+
+    true
+
   );
 
 }
@@ -2314,8 +3331,6 @@ function prepareOtp(data) {
 // ============================================================
 //
 // Compatibility endpoint for api.js.
-//
-// It behaves similarly to prepareOtp.
 //
 // ============================================================
 
@@ -2332,17 +3347,15 @@ function generateOtp(data) {
 // RESEND OTP
 // ============================================================
 //
-// IMPORTANT:
-//
 // Email button:
 //
-// channel = "email"
+// channel = email
 //
 // Phone button:
 //
-// channel = "phone"
+// channel = phone
 //
-// They do NOT automatically send to both.
+// Each channel has its own 120-second cooldown.
 //
 // ============================================================
 
@@ -2350,11 +3363,13 @@ function resendOTP(data) {
 
   const identity =
     normalize(
+
       data.identity ||
       data.username ||
       data.gmail ||
       data.email ||
       data.phone
+
     ).toLowerCase();
 
 
@@ -2443,12 +3458,13 @@ function resendOTP(data) {
 
 
   // ----------------------------------------------------------
-  // COOLDOWN
+  // CHANNEL COOLDOWN
   // ----------------------------------------------------------
 
   const cooldown =
-    checkOtpCooldown(
-      row
+    checkChannelCooldown(
+      row,
+      channel
     );
 
 
@@ -2464,13 +3480,18 @@ function resendOTP(data) {
       cooldown:
         true,
 
+      channel:
+        channel,
+
       remainingSeconds:
         cooldown.remainingSeconds,
 
       message:
         "Please wait " +
         cooldown.remainingSeconds +
-        " seconds before requesting another OTP."
+        " seconds before requesting another " +
+        channel +
+        " OTP."
 
     };
 
@@ -2485,11 +3506,38 @@ function resendOTP(data) {
     generateOTP();
 
 
-  saveOtp(
-    found,
-    newOTP,
-    channel
-  );
+  let expires;
+
+
+  try {
+
+    expires =
+      saveOtp(
+
+        found,
+
+        newOTP,
+
+        channel
+
+      );
+
+  } catch (error) {
+
+    return {
+
+      success:
+        false,
+
+      message:
+        error &&
+        error.message
+          ? error.message
+          : "Unable to store the new verification code."
+
+    };
+
+  }
 
 
   // ----------------------------------------------------------
@@ -2497,6 +3545,7 @@ function resendOTP(data) {
   // ----------------------------------------------------------
 
   let delivery;
+
 
   try {
 
@@ -2525,6 +3574,15 @@ function resendOTP(data) {
 
   } catch (error) {
 
+    clearSheetOtp(
+      found
+    );
+
+    clearOtpFromFirebase(
+      found
+    );
+
+
     return {
 
       success:
@@ -2542,10 +3600,17 @@ function resendOTP(data) {
 
 
   return otpResponse(
+
     found,
+
     newOTP,
+
     channel,
-    delivery
+
+    delivery,
+
+    true
+
   );
 
 }
@@ -2576,12 +3641,15 @@ function verifyOTP(data) {
 
   const identity =
     normalize(
+
       data.identity ||
       data.username ||
       data.gmail ||
       data.email ||
       data.phone
+
     ).toLowerCase();
+
 
   const enteredOTP =
     normalize(
@@ -2650,8 +3718,10 @@ function verifyOTP(data) {
   const sheet =
     found.sheet;
 
+
   const rowNumber =
     found.rowNumber;
+
 
   const row =
     found.values;
@@ -2675,6 +3745,7 @@ function verifyOTP(data) {
       Math.ceil(
         lockRemaining / 60
       );
+
 
     return {
 
@@ -2705,6 +3776,7 @@ function verifyOTP(data) {
     normalize(
       row[10]
     );
+
 
   const expires =
     row[11]
@@ -2773,6 +3845,7 @@ function verifyOTP(data) {
         row[12]
       ) || 0;
 
+
     attempts++;
 
 
@@ -2783,10 +3856,13 @@ function verifyOTP(data) {
 
       const newLock =
         new Date(
+
           Date.now() +
+
           OTP_LOCK_MINUTES *
           60 *
           1000
+
         );
 
 
@@ -2808,6 +3884,17 @@ function verifyOTP(data) {
         .setValue(
           newLock
         );
+
+
+      updateFirebaseOtpAttempts(
+
+        found,
+
+        attempts,
+
+        newLock
+
+      );
 
 
       return {
@@ -2845,6 +3932,17 @@ function verifyOTP(data) {
       .setValue(
         attempts
       );
+
+
+    updateFirebaseOtpAttempts(
+
+      found,
+
+      attempts,
+
+      null
+
+    );
 
 
     return {
@@ -2945,6 +4043,18 @@ function verifyOTP(data) {
     );
 
 
+  // Firebase verification
+  markFirebaseUserVerified(
+    found
+  );
+
+
+  // Remove Firebase OTP
+  clearOtpFromFirebase(
+    found
+  );
+
+
   return {
 
     success:
@@ -3031,6 +4141,7 @@ function loginUser(data) {
     normalize(
       data.identity
     ).toLowerCase();
+
 
   const password =
     String(
@@ -3387,6 +4498,7 @@ function updateAccountStatus(
       data.username
     ).toLowerCase();
 
+
   const status =
     normalize(
       data.status
@@ -3513,7 +4625,7 @@ function forgotPassword(data) {
     );
 
 
-  // Do not expose whether the account exists.
+  // Do not expose whether account exists.
 
   if (!found) {
 
@@ -3536,6 +4648,7 @@ function forgotPassword(data) {
 
   const resetOTP =
     generateOTP();
+
 
   const expires =
     createOtpExpiration();
@@ -3591,14 +4704,43 @@ function forgotPassword(data) {
     );
 
 
+  const now =
+    new Date();
+
+
   found.sheet
     .getRange(
       found.rowNumber,
       18
     )
     .setValue(
-      new Date()
+      now
     );
+
+
+  // Firebase recovery OTP
+  try {
+
+    saveOtpToFirebase(
+
+      found,
+
+      resetOTP,
+
+      expires,
+
+      "both"
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Firebase recovery OTP error:",
+      error
+    );
+
+  }
 
 
   try {
@@ -3690,7 +4832,6 @@ function doPost(e) {
     switch (
       action
     ) {
-
 
       // ------------------------------------------------------
       // EMPLOYEE REGISTRATION
@@ -3900,6 +5041,9 @@ function doGet() {
     status:
       "ONLINE",
 
+    firebase:
+      FIREBASE_DATABASE_URL,
+
     otpLength:
       OTP_LENGTH,
 
@@ -3914,6 +5058,9 @@ function doGet() {
 
     resendCooldownSeconds:
       RESEND_COOLDOWN_SECONDS,
+
+    independentChannelCooldowns:
+      true,
 
     message:
       "StockFlow authentication backend is running."
