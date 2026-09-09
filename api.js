@@ -1179,154 +1179,305 @@
 
 
     /* =========================================================
-       OTP — VERIFY
-       ========================================================= */
+   OTP — VERIFY
+   ========================================================= */
 
-    async function verifyOtp(
-        data = {}
-    ) {
-
-        return normalizeResult(
-            await request(
-                "verifyOtp",
-                {
-
-                    uid:
-                        safeString(
-                            data.uid
-                        ),
-
-                    identity:
-                        buildIdentity(
-                            data
-                        ),
-
-                    username:
-                        safeString(
-                            data.username
-                        ),
-
-                    email:
-                        safeString(
-                            data.email
-                        ),
-
-                    gmail:
-                        safeString(
-                            data.gmail ||
-                            data.email
-                        ),
-
-                    phone:
-                        safeString(
-                            data.phone
-                        ),
-
-                    channel:
-                        safeString(
-                            data.channel ||
-                            data.otpChannel
-                        ) ||
-                        "email",
-
-                    otpChannel:
-                        safeString(
-                            data.otpChannel ||
-                            data.channel
-                        ) ||
-                        "email",
-
-                    otp:
-                        safeString(
-                            data.otp
-                        )
-                }
-            )
-        );
-    }
-
-
-    /* =========================================================
-       OTP — PREPARE
-       ========================================================= */
-
-    async function prepareOtp(
-        data = {}
-    ) {
-
-        const payload = {
-
-            uid:
-                safeString(
-                    data.uid
-                ),
-
-            identity:
-                buildIdentity(
-                    data
-                ),
-
-            username:
-                safeString(
-                    data.username
-                ),
-
-            email:
-                safeString(
-                    data.email
-                ),
-
-            gmail:
-                safeString(
-                    data.gmail ||
-                    data.email
-                ),
-
-            phone:
-                safeString(
-                    data.phone
-                ),
-
-            channel:
-                safeString(
-                    data.channel ||
-                    data.otpChannel
-                ) ||
-                "email",
-
-            otpChannel:
-                safeString(
-                    data.otpChannel ||
-                    data.channel
-                ) ||
-                "email"
-        };
+         async function verifyOtp(
+             data = {}
+         ) {
+         
+             const channel =
+                 safeString(
+                     data.channel ||
+                     data.otpChannel
+                 ).toLowerCase() ||
+                 "email";
+         
+         
+             const payload = {
+         
+                 uid:
+                     safeString(
+                         data.uid
+                     ),
+         
+                 identity:
+                     buildIdentity(
+                         data
+                     ),
+         
+                 username:
+                     safeString(
+                         data.username
+                     ),
+         
+                 email:
+                     safeString(
+                         data.email
+                     ),
+         
+                 gmail:
+                     safeString(
+                         data.gmail ||
+                         data.email
+                     ),
+         
+                 phone:
+                     safeString(
+                         data.phone
+                     ),
+         
+                 channel:
+         
+                     channel === "phone"
+                         ? "phone"
+                         : "email",
+         
+                 otpChannel:
+         
+                     channel === "phone"
+                         ? "phone"
+                         : "email",
+         
+                 otp:
+                     safeString(
+                         data.otp
+                     )
+             };
+         
+         
+             try {
+         
+                 const result =
+                     await request(
+                         "verifyOtp",
+                         payload
+                     );
+         
+         
+                 return normalizeResult(
+                     result
+                 );
+         
+         
+             } catch (error) {
+         
+                 /*
+                  * IMPORTANT:
+                  *
+                  * Wrong OTP
+                  * expired OTP
+                  * locked OTP
+                  * account not found
+                  * account disabled
+                  * verification failure
+                  *
+                  * are BUSINESS RESULTS.
+                  *
+                  * They must stay on verify.html.
+                  */
+         
+                 if (
+                     error?.data &&
+                     error?.isTransportError !== true
+                 ) {
+         
+                     return normalizeResult(
+                         error.data
+                     );
+                 }
+         
+         
+                 /*
+                  * Only actual connection/
+                  * timeout failures are thrown.
+                  */
+         
+                 throw error;
+             }
+         }
 
 
-        try {
+   /* =========================================================
+   OTP — PREPARE
+   ========================================================= */
 
-            return normalizeResult(
-                await request(
-                    "prepareOtp",
-                    payload
-                )
-            );
-
-        } catch (error) {
-
-            const code =
-                getServerErrorCode(
-                    error
-                );
-
-            const message =
-                String(
-                    getServerErrorMessage(
-                        error
-                    ) ||
-                    error?.message ||
-                    ""
-                ).toLowerCase();
+         async function prepareOtp(
+             data = {}
+         ) {
+         
+             const channel =
+                 safeString(
+                     data.channel ||
+                     data.otpChannel
+                 ).toLowerCase() ||
+                 "email";
+         
+         
+             const payload = {
+         
+                 uid:
+                     safeString(
+                         data.uid
+                     ),
+         
+                 identity:
+                     buildIdentity(
+                         data
+                     ),
+         
+                 username:
+                     safeString(
+                         data.username
+                     ),
+         
+                 email:
+                     safeString(
+                         data.email
+                     ),
+         
+                 gmail:
+                     safeString(
+                         data.gmail ||
+                         data.email
+                     ),
+         
+                 phone:
+                     safeString(
+                         data.phone
+                     ),
+         
+                 channel:
+         
+                     channel === "phone"
+                         ? "phone"
+                         : "email",
+         
+                 otpChannel:
+         
+                     channel === "phone"
+                         ? "phone"
+                         : "email"
+             };
+         
+         
+             try {
+         
+                 const result =
+                     await request(
+                         "prepareOtp",
+                         payload
+                     );
+         
+         
+                 return normalizeResult(
+                     result
+                 );
+         
+         
+             } catch (error) {
+         
+                 /*
+                  * IMPORTANT FOR VERIFY PAGE
+                  *
+                  * A backend business error must NOT
+                  * cause the verification page to
+                  * interpret the request as a redirect
+                  * condition.
+                  *
+                  * Transport errors are still thrown.
+                  */
+         
+                 const code =
+                     getServerErrorCode(
+                         error
+                     );
+         
+         
+                 const isTransport =
+                     error?.isTransportError === true ||
+                     code === "NETWORK_ERROR" ||
+                     code === "TIMEOUT";
+         
+         
+                 if (
+                     !isTransport &&
+                     error?.data
+                 ) {
+         
+                     return normalizeResult(
+                         error.data
+                     );
+                 }
+         
+         
+                 /*
+                  * Compatibility with older
+                  * Apps Script versions.
+                  *
+                  * Only fall back when prepareOtp
+                  * genuinely does not exist.
+                  */
+         
+                 const message =
+                     String(
+                         getServerErrorMessage(
+                             error
+                         ) ||
+                         error?.message ||
+                         ""
+                     ).toLowerCase();
+         
+         
+                 const missingAction =
+                     code === "UNKNOWN_ACTION" ||
+         
+                     message.includes(
+                         "unknown action"
+                     ) ||
+         
+                     message.includes(
+                         "unsupported action"
+                     ) ||
+         
+                     message.includes(
+                         "action not found"
+                     );
+         
+         
+                 if (
+                     missingAction
+                 ) {
+         
+                     try {
+         
+                         return normalizeResult(
+                             await request(
+                                 "resendOtp",
+                                 payload
+                             )
+                         );
+         
+                     } catch (fallbackError) {
+         
+                         if (
+                             fallbackError?.data &&
+                             fallbackError?.isTransportError !== true
+                         ) {
+         
+                             return normalizeResult(
+                                 fallbackError.data
+                             );
+                         }
+         
+                         throw fallbackError;
+                     }
+                 }
+         
+         
+                 throw error;
+             }
+         }
 
 
             /* -----------------------------------------------------
@@ -1528,34 +1679,65 @@
 
 
     /* =========================================================
-       GET USER
-       ========================================================= */
+   GET USER
+   ========================================================= */
 
-    async function getUser(
-        identity
-    ) {
+      async function getUser(
+          identity
+      ) {
+      
+          const data =
+              typeof identity === "object" &&
+              identity !== null
+                  ? identity
+                  : {
+                      identity:
+                          safeString(identity)
+                  };
+      
+      
+          const payload = {
+      
+              uid:
+                  safeString(
+                      data.uid
+                  ),
+      
+              identity:
+                  buildIdentity(
+                      data
+                  ),
+      
+              username:
+                  safeString(
+                      data.username
+                  ),
+      
+              email:
+                  safeString(
+                      data.email
+                  ),
+      
+              gmail:
+                  safeString(
+                      data.gmail ||
+                      data.email
+                  ),
+      
+              phone:
+                  safeString(
+                      data.phone
+                  )
+          };
 
-        const value =
-            typeof identity ===
-            "object"
-                ? buildIdentity(
-                    identity
-                )
-                : safeString(
-                    identity
-                );
 
-
-        return normalizeResult(
-            await request(
-                "getUser",
-                {
-                    identity:
-                        value
-                }
-            )
-        );
-    }
+    return normalizeResult(
+        await request(
+            "getUser",
+            payload
+        )
+    );
+}
 
 
     /* =========================================================
