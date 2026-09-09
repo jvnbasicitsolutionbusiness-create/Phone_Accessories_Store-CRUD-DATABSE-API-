@@ -79,7 +79,7 @@
                 <p>
                     Confirm your account with the
                     one-time verification code generated
-                    for your registration.
+                    securely by STOCKFLOW.
                 </p>
 
             </div>
@@ -173,7 +173,9 @@
         <div class="auth-card">
 
 
-            <!-- MOBILE BRAND -->
+            <!-- =================================================
+                 MOBILE BRAND
+            ================================================== -->
 
             <div class="auth-mobile-brand">
 
@@ -197,7 +199,9 @@
 
 
 
-            <!-- HEADER -->
+            <!-- =================================================
+                 HEADER
+            ================================================== -->
 
             <header class="auth-header">
 
@@ -218,10 +222,11 @@
 
 
             <!-- =================================================
-                 EMAIL VERIFICATION
+                 EMAIL VERIFICATION METHOD
             ================================================== -->
 
             <section
+                id="emailMethod"
                 class="verification-method primary"
                 aria-label="Email verification"
                 data-verification-method="email"
@@ -243,19 +248,17 @@
                     </span>
 
                     <small>
-                        Request an Email code only if Phone is unavailable.
+                        Request a new email code when needed.
                     </small>
 
                 </div>
 
 
-                <!-- EMAIL ACTION -->
-
                 <button
-                    id="resendEmailOtpBtn"
+                    id="sendEmailCode"
                     class="verification-method-action"
                     type="button"
-                    data-resend-email-otp
+                    data-send-email-code
                 >
                     Send code by email
                 </button>
@@ -265,10 +268,11 @@
 
 
             <!-- =================================================
-                 PHONE BACKUP
+                 PHONE VERIFICATION METHOD
             ================================================== -->
 
             <section
+                id="phoneMethod"
                 class="verification-method"
                 aria-label="Phone verification"
                 data-verification-method="phone"
@@ -286,24 +290,21 @@
                     </strong>
 
                     <span id="phoneDeliveryStatus">
-                        Use your registered phone if needed.
+                        Your registered phone can be used for verification.
                     </span>
 
                     <small>
-                        Request a phone code only if email is unavailable.
+                        Request a new phone code when needed.
                     </small>
 
                 </div>
 
 
-                <!-- PHONE ACTION -->
-
                 <button
-                    id="resendPhoneOtpBtn"
+                    id="sendPhoneCode"
                     class="verification-method-action"
                     type="button"
-                    data-resend-phone-otp
-                    disabled
+                    data-send-phone-code
                 >
                     Send code by phone
                 </button>
@@ -313,11 +314,11 @@
 
 
             <!-- =================================================
-                 OTP FORM
+                 OTP VERIFICATION FORM
             ================================================== -->
 
             <form
-                id="otpForm"
+                id="verifyForm"
                 class="auth-form otp-form"
                 autocomplete="off"
                 novalidate
@@ -325,15 +326,17 @@
 
                 <div class="form-field">
 
-                    <label>
+                    <label for="otp">
                         Verification Code
                     </label>
 
 
-                    <!-- SIX OTP BOXES -->
+                    <!-- =================================================
+                         SIX OTP BOXES
+                    ================================================== -->
 
                     <div
-                        id="otpBoxes"
+                        id="otpInputs"
                         class="otp-boxes"
                         aria-label="6-digit verification code"
                     >
@@ -396,7 +399,9 @@
                     </div>
 
 
-                    <!-- HIDDEN COMPATIBILITY INPUT -->
+                    <!-- =================================================
+                         HIDDEN COMPATIBILITY INPUT
+                    ================================================== -->
 
                     <input
                         id="otp"
@@ -418,7 +423,9 @@
 
 
 
-                <!-- MESSAGE -->
+                <!-- =================================================
+                     OTP MESSAGE
+                ================================================== -->
 
                 <div
                     id="otpMessage"
@@ -430,7 +437,9 @@
 
 
 
-                <!-- VERIFY BUTTON -->
+                <!-- =================================================
+                     VERIFY BUTTON
+                ================================================== -->
 
                 <button
                     id="verifyOtpBtn"
@@ -457,7 +466,19 @@
 
 
             <!-- =================================================
-                 EMAIL TIMER
+                 SELECTED DESTINATION
+            ================================================== -->
+
+            <div
+                id="otpDestination"
+                class="otp-destination"
+                aria-live="polite"
+            ></div>
+
+
+
+            <!-- =================================================
+                 EMAIL COOLDOWN
             ================================================== -->
 
             <div
@@ -465,13 +486,13 @@
                 class="otp-timer"
                 aria-live="polite"
             >
-                Resend available in 2:00
+                Email code available.
             </div>
 
 
 
             <!-- =================================================
-                 PHONE TIMER
+                 PHONE COOLDOWN
             ================================================== -->
 
             <div
@@ -479,7 +500,7 @@
                 class="otp-timer"
                 aria-live="polite"
             >
-                Phone backup is available now.
+                Phone code available.
             </div>
 
 
@@ -539,7 +560,6 @@
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="auth.js"></script>
-<script src="otp.js"></script>
 <script src="verify.js"></script>
 
 </body>
