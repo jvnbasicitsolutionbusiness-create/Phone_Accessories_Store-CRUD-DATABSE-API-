@@ -1,675 +1,572 @@
-/* ============================================================
-   STOCKFLOW — PASSWORD RECOVERY REQUEST CONTROLLER
-   ============================================================
-
-   RESPONSIBILITIES
-   ----------------
-   1. Accept Gmail / phone / username
-   2. Ask backend to locate the account
-   3. Ask backend to generate a REAL recovery OTP
-   4. Store recovery state locally
-   5. Redirect to recovery.html
-   6. NEVER generate OTP on the frontend
-
-   IMPORTANT
-   ---------
-   OTP generation belongs to Apps Script / Code.gs.
-
-   This file does NOT generate OTP values.
-
-   ============================================================ */
-
 document.addEventListener("DOMContentLoaded", () => {
-
     "use strict";
 
 
     /* =========================================================
-       CONFIGURATION
-       ========================================================= */
-
-    const CONFIG =
-        window.STOCKFLOW_CONFIG ||
-        window.CONFIG ||
-        {};
-
-    const ROUTES =
-        CONFIG.ROUTES ||
-        {};
-
-    const STORAGE =
-        CONFIG.STORAGE ||
-        {};
-
-    const AUTH =
-        CONFIG.AUTH ||
-        {};
-
-    const API =
-        window.StockFlowAPI ||
-        window.API ||
-        null;
-
-
-    /* =========================================================
        ELEMENTS
-       ========================================================= */
+    ========================================================= */
 
     const form =
-        document.querySelector("#forgotForm");
-
-    const msg =
-        document.querySelector("#message");
-
-    const identityInput =
-        document.querySelector("#identity");
-
-
-    /* =========================================================
-       PAGE CHECK
-       ========================================================= */
+        document.getElementById("forgotPasswordForm");
 
     if (!form) {
         return;
     }
 
 
+    const identityInput =
+        document.getElementById("forgotIdentity");
+
+
+    const message =
+        document.getElementById("forgotPasswordMessage");
+
+
+    const button =
+        document.getElementById("forgotPasswordButton");
+
+
     /* =========================================================
-       STORAGE KEYS
-       ========================================================= */
+       CONFIGURATION
+    ========================================================= */
+
+    const config =
+        window.STOCKFLOW_CONFIG ||
+        window.CONFIG ||
+        {};
+
+
+    const routes =
+        config.ROUTES ||
+        {};
+
+
+    const recoveryRoute =
+        routes.RECOVERY ||
+        routes.recovery ||
+        "recovery.html";
+
+
+    /* =========================================================
+       STORAGE
+    ========================================================= */
 
     const STORAGE_KEYS = {
 
         IDENTITY:
-            STORAGE.OTP_IDENTITY ||
-            "STOCKFLOW_OTP_IDENTITY",
-
-        USERNAME:
-            STORAGE.OTP_USERNAME ||
-            "STOCKFLOW_OTP_USERNAME",
-
-        EMAIL:
-            STORAGE.OTP_EMAIL ||
-            "STOCKFLOW_OTP_EMAIL",
-
-        PHONE:
-            STORAGE.OTP_PHONE ||
-            "STOCKFLOW_OTP_PHONE",
+            "STOCKFLOW_RECOVERY_IDENTITY",
 
         UID:
-            STORAGE.OTP_UID ||
-            "STOCKFLOW_OTP_UID",
+            "STOCKFLOW_RECOVERY_UID",
+
+        USERNAME:
+            "STOCKFLOW_RECOVERY_USERNAME",
+
+        EMAIL:
+            "STOCKFLOW_RECOVERY_EMAIL",
+
+        GMAIL:
+            "STOCKFLOW_RECOVERY_GMAIL",
+
+        PHONE:
+            "STOCKFLOW_RECOVERY_PHONE",
 
         CHANNEL:
-            STORAGE.OTP_CHANNEL ||
-            "STOCKFLOW_OTP_CHANNEL",
+            "STOCKFLOW_RECOVERY_CHANNEL",
 
-        RECOVERY_READY:
+        OTP_READY:
             "STOCKFLOW_RECOVERY_OTP_READY",
 
-        RECOVERY_OTP:
-            "STOCKFLOW_RECOVERY_DEMO_OTP",
+        OTP:
+            "STOCKFLOW_RECOVERY_OTP",
 
-        RECOVERY_STARTED:
-            "STOCKFLOW_RECOVERY_STARTED"
+        TOKEN:
+            "STOCKFLOW_RECOVERY_TOKEN"
     };
 
 
     /* =========================================================
        HELPERS
-       ========================================================= */
+    ========================================================= */
 
     function clean(value) {
 
-        if (
-            value === null ||
-            typeof value === "undefined"
-        ) {
-            return "";
-        }
+        return String(
+            value ?? ""
+        ).trim();
 
-        return String(value).trim();
     }
 
 
-    function storageSet(key, value) {
+    function normalizeIdentity(value) {
 
-        try {
+        return clean(value);
 
-            sessionStorage.setItem(
-                key,
-                String(value ?? "")
-            );
-
-            localStorage.setItem(
-                key,
-                String(value ?? "")
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "[STOCKFLOW FORGOT PASSWORD] Storage unavailable.",
-                error
-            );
-        }
     }
 
 
-    function storageRemove(key) {
+    function normalizeEmail(value) {
 
-        try {
+        return clean(value).toLowerCase();
 
-            sessionStorage.removeItem(key);
-            localStorage.removeItem(key);
-
-        } catch (error) {
-
-            /* Ignore storage errors. */
-        }
     }
 
 
-    function getResponseData(response) {
+    function normalizePhone(value) {
 
-        if (
-            !response ||
-            typeof response !== "object"
-        ) {
-            return {};
+        let phone =
+            clean(value).replace(
+                /\s+/g,
+                ""
+            );
+
+
+        if (phone.startsWith("+63")) {
+
+            phone =
+                "0" +
+                phone.substring(3);
+
         }
 
+
         if (
-            response.data &&
-            typeof response.data === "object"
+            phone.startsWith("63") &&
+            phone.length === 12
         ) {
 
-            return {
-                ...response,
-                ...response.data
-            };
+            phone =
+                "0" +
+                phone.substring(2);
+
         }
 
-        return response;
+
+        return phone;
+
     }
 
 
     /* =========================================================
        MESSAGE
-       ========================================================= */
+    ========================================================= */
 
     function showMessage(
-        message,
+        text,
         type = "error"
     ) {
 
-        if (!msg) {
-            return;
-        }
-
-        msg.textContent =
-            message || "";
-
-        msg.className =
-            type;
-    }
-
-
-    function hideMessage() {
-
-        if (!msg) {
-            return;
-        }
-
-        msg.textContent = "";
-        msg.className = "";
-    }
-
-
-    /* =========================================================
-       ERROR HANDLING
-       ========================================================= */
-
-    function getErrorCode(error) {
-
-        return clean(
-            error &&
-            (
-                error.code ||
-                error.errorCode ||
-                error.statusCode
-            )
-        ).toUpperCase();
-    }
-
-
-    function getErrorMessage(error) {
-
-        if (!error) {
-
-            return (
-                "Something went wrong. Please try again."
-            );
-        }
-
-
-        const code =
-            getErrorCode(error);
-
-
-        const message =
-            clean(
-                error.message
-            );
-
-
-        /*
-         * Explicit backend business errors.
-         */
-
-        if (
-            code === "USER_NOT_FOUND" ||
-            code === "ACCOUNT_NOT_FOUND" ||
-            code === "RECOVERY_USER_NOT_FOUND"
-        ) {
-
-            return (
-                "No registered StockFlow account was found for that information."
-            );
-        }
-
-
-        if (
-            code === "RECOVERY_IDENTITY_MISSING"
-        ) {
-
-            return (
-                "Please enter your registered Gmail, phone number, or username."
-            );
-        }
-
-
-        if (
-            code === "ACCOUNT_DISABLED"
-        ) {
-
-            return (
-                "This StockFlow account is disabled. Please contact the administrator."
-            );
-        }
-
-
-        if (
-            code === "ACCOUNT_SUSPENDED"
-        ) {
-
-            return (
-                "This StockFlow account is suspended. Please contact the administrator."
-            );
-        }
-
-
-        if (
-            code === "ACCOUNT_LOCKED" ||
-            code === "OTP_LOCKED"
-        ) {
-
-            return (
-                "Recovery verification is temporarily locked. Please try again later."
-            );
-        }
-
-
-        if (
-            code === "OTP_COOLDOWN"
-        ) {
-
-            return (
-                "Please wait before requesting another recovery code."
-            );
-        }
-
-
-        /*
-         * Explicit transport errors only.
-         */
-
-        if (
-            code === "NETWORK_ERROR" ||
-            code === "TIMEOUT" ||
-            code === "API_URL_MISSING" ||
-            code === "API_URL_INVALID" ||
-            code === "EMPTY_RESPONSE" ||
-            code === "INVALID_JSON" ||
-            code === "HTTP_ERROR"
-        ) {
-
-            return (
-                "Unable to connect to the recovery service. Please try again."
-            );
-        }
-
-
-        /*
-         * Preserve backend message.
-         */
-
-        if (message) {
-
-            return message;
-        }
-
-
-        /*
-         * Native network errors.
-         */
-
-        if (
-            error.name === "AbortError"
-        ) {
-
-            return (
-                "The recovery service took too long to respond. Please try again."
-            );
-        }
-
-
-        return (
-            "Unable to process your recovery request right now. Please try again."
-        );
-    }
-
-
-    /* =========================================================
-       EXTRACT BACKEND OTP
-       ========================================================= */
-
-    function extractBackendOtp(response) {
-
-        const data =
-            getResponseData(response);
-
-
-        const candidates = [
-
-            data.demoOtp,
-            data.demoOTP,
-
-            data.generatedOtp,
-            data.generatedOTP,
-
-            data.recoveryOtp,
-            data.recoveryOTP,
-
-            data.otp,
-            data.OTP
-        ];
-
-
-        const otpLength =
-            Number(
-                AUTH.OTP_LENGTH ||
-                6
-            );
-
-
-        for (
-            const candidate of candidates
-        ) {
-
-            const value =
-                clean(candidate)
-                    .replace(/\D/g, "");
-
-
-            if (
-                value.length ===
-                otpLength
-            ) {
-
-                return value;
-            }
-        }
-
-
-        return "";
-    }
-
-
-    /* =========================================================
-       SAVE RECOVERY STATE
-       ========================================================= */
-
-    function saveRecoveryState(response) {
-
-        const data =
-            getResponseData(response);
-
-
-        const username =
-            clean(
-                data.username ||
-                data.USERNAME
-            );
-
-
-        const email =
-            clean(
-                data.email ||
-                data.gmail ||
-                data.GMAIL
-            );
-
-
-        const phone =
-            clean(
-                data.phone ||
-                data.phoneNumber ||
-                data["PHONE NO."]
-            );
-
-
-        const uid =
-            clean(
-                data.uid ||
-                data.UID
-            );
-
-
-        const identity =
-            clean(
-                data.identity
-            ) ||
-            clean(
-                identityInput
-                    ? identityInput.value
-                    : ""
-            );
-
-
-        const channel =
-            clean(
-                data.channel
-            ) ||
-            (
-                identity.includes("@")
-                    ? "email"
-                    : "phone"
-            );
-
-
-        storageSet(
-            STORAGE_KEYS.IDENTITY,
-            identity
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.USERNAME,
-            username
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.EMAIL,
-            email
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.PHONE,
-            phone
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.UID,
-            uid
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.CHANNEL,
-            channel
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.RECOVERY_READY,
-            "true"
-        );
-
-
-        storageSet(
-            STORAGE_KEYS.RECOVERY_STARTED,
-            "true"
-        );
-
-
-        /*
-         * DEMO MODE ONLY:
-         *
-         * Store the backend-generated OTP temporarily
-         * so recovery.js can display the exact same OTP.
-         *
-         * No OTP is generated here.
-         */
-
-        const backendOtp =
-            extractBackendOtp(response);
-
-
-        if (
-            backendOtp
-        ) {
-
-            storageSet(
-                STORAGE_KEYS.RECOVERY_OTP,
-                backendOtp
-            );
-
-        } else {
-
-            storageRemove(
-                STORAGE_KEYS.RECOVERY_OTP
-            );
-        }
-    }
-
-
-    /* =========================================================
-       REDIRECT
-       ========================================================= */
-
-    function continueToRecovery() {
-
-        const route =
-            ROUTES.RECOVERY ||
-            "recovery.html";
-
-
-        window.location.href =
-            route;
-    }
-
-
-    /* =========================================================
-       REQUEST RECOVERY
-       ========================================================= */
-
-    async function requestRecovery() {
-
-        if (!API) {
-
-            showMessage(
-                "The recovery service is not available.",
-                "error"
-            );
-
+        if (!message) {
             return;
         }
 
 
         const value =
-            identityInput
-                ? clean(
-                    identityInput.value
-                )
-                : "";
+            clean(text);
 
 
-        if (!value) {
+        message.textContent =
+            value;
 
-            showMessage(
-                "Please enter your registered Gmail, phone number, or username.",
-                "error"
+
+        message.hidden =
+            !value;
+
+
+        message.classList.remove(
+            "success",
+            "error",
+            "warning",
+            "info"
+        );
+
+
+        if (value) {
+
+            message.classList.add(
+                type
             );
 
-            if (identityInput) {
-                identityInput.focus();
-            }
+        }
 
+    }
+
+
+    /* =========================================================
+       LOADING STATE
+    ========================================================= */
+
+    function setLoading(loading) {
+
+        if (!button) {
             return;
         }
 
 
-        const button =
-            form.querySelector(
-                "button[type='submit'], button"
+        const isLoading =
+            Boolean(loading);
+
+
+        button.disabled =
+            isLoading;
+
+
+        const buttonText =
+            button.querySelector(
+                ".button-text"
             );
 
 
-        if (button) {
+        const buttonLoader =
+            button.querySelector(
+                ".button-loader"
+            );
 
-            button.disabled = true;
 
-            button.dataset.originalText =
-                button.dataset.originalText ||
-                button.textContent;
+        if (buttonText) {
 
-            button.textContent =
-                "Checking account...";
+            buttonText.hidden =
+                isLoading;
+
         }
 
 
-        hideMessage();
+        if (buttonLoader) {
+
+            buttonLoader.hidden =
+                !isLoading;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       CLEAR PREVIOUS RECOVERY STATE
+    ========================================================= */
+
+    function clearRecoveryState() {
+
+        Object.values(
+            STORAGE_KEYS
+        ).forEach((key) => {
+
+            try {
+
+                sessionStorage.removeItem(
+                    key
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Unable to clear recovery state:",
+                    error
+                );
+
+            }
+
+        });
+
+    }
+
+
+    /* =========================================================
+       SAVE RECOVERY IDENTITY
+    ========================================================= */
+
+    function saveRecoveryIdentity(identity) {
+
+        /*
+         * IMPORTANT:
+         *
+         * We only save the identity here.
+         *
+         * No OTP is generated.
+         * No OTP is stored.
+         * No recovery token is created.
+         *
+         * recovery.js handles the actual recovery OTP flow.
+         */
+
+        try {
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.IDENTITY,
+                identity
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.OTP_READY,
+                "false"
+            );
+
+
+            sessionStorage.removeItem(
+                STORAGE_KEYS.OTP
+            );
+
+
+            sessionStorage.removeItem(
+                STORAGE_KEYS.TOKEN
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to save recovery identity:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       API ERROR HANDLING
+    ========================================================= */
+
+    function getErrorCode(error) {
+
+        return clean(
+            error?.code ||
+            error?.data?.code ||
+            error?.response?.code ||
+            ""
+        ).toUpperCase();
+
+    }
+
+
+    function getErrorMessage(error) {
+
+        return clean(
+            error?.message ||
+            error?.data?.message ||
+            error?.response?.message ||
+            ""
+        );
+
+    }
+
+
+    function getRecoveryErrorMessage(error) {
+
+        const code =
+            getErrorCode(error);
+
+
+        const backendMessage =
+            getErrorMessage(error);
+
+
+        switch (code) {
+
+            case "ACCOUNT_NOT_FOUND":
+            case "USER_NOT_FOUND":
+                return (
+                    backendMessage ||
+                    "Account does not exist."
+                );
+
+
+            case "ACCOUNT_DISABLED":
+                return (
+                    backendMessage ||
+                    "This account is disabled."
+                );
+
+
+            case "ACCOUNT_SUSPENDED":
+                return (
+                    backendMessage ||
+                    "This account is suspended."
+                );
+
+
+            case "ACCOUNT_BLOCKED":
+                return (
+                    backendMessage ||
+                    "This account is blocked."
+                );
+
+
+            case "ACCOUNT_PENDING":
+                return (
+                    backendMessage ||
+                    "This account is still pending verification."
+                );
+
+
+            case "RECOVERY_NOT_ALLOWED":
+                return (
+                    backendMessage ||
+                    "Password recovery is not available for this account."
+                );
+
+
+            case "NETWORK_ERROR":
+            case "TIMEOUT":
+            case "API_URL_MISSING":
+            case "API_URL_INVALID":
+            case "EMPTY_RESPONSE":
+            case "INVALID_JSON":
+                return (
+                    "Unable to connect to the recovery system right now. Please try again."
+                );
+
+
+            default:
+
+                if (backendMessage) {
+
+                    return backendMessage;
+
+                }
+
+
+                return (
+                    "We could not process your request. Please try again."
+                );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       API ACCESS
+    ========================================================= */
+
+    function getAPI() {
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.forgotPassword ===
+                "function"
+        ) {
+
+            return window.StockFlowAPI;
+
+        }
+
+
+        if (
+            window.API &&
+            typeof window.API.forgotPassword ===
+                "function"
+        ) {
+
+            return window.API;
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* =========================================================
+       VALIDATE IDENTITY
+    ========================================================= */
+
+    function validateIdentity(value) {
+
+        const identity =
+            normalizeIdentity(value);
+
+
+        if (!identity) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter your username, Gmail, or phone number."
+            };
+
+        }
+
+
+        if (identity.length < 3) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter a valid account identifier."
+            };
+
+        }
+
+
+        return {
+            valid: true,
+            identity
+        };
+
+    }
+
+
+    /* =========================================================
+       SUBMIT
+    ========================================================= */
+
+    async function submitRecoveryRequest() {
+
+        showMessage("");
+
+
+        const validation =
+            validateIdentity(
+                identityInput?.value
+            );
+
+
+        if (!validation.valid) {
+
+            showMessage(
+                validation.message,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const API =
+            getAPI();
+
+
+        if (!API) {
+
+            showMessage(
+                "The password recovery system is not available right now.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const identity =
+            validation.identity;
 
 
         /*
-         * Clear stale recovery state.
+         * Remove previous recovery information.
+         *
+         * This prevents an old recovery token or OTP
+         * from being reused for another account.
          */
 
-        storageRemove(
-            STORAGE_KEYS.RECOVERY_READY
-        );
+        clearRecoveryState();
 
-        storageRemove(
-            STORAGE_KEYS.RECOVERY_OTP
-        );
 
-        storageRemove(
-            STORAGE_KEYS.RECOVERY_STARTED
-        );
+        setLoading(true);
 
 
         try {
@@ -677,118 +574,105 @@ document.addEventListener("DOMContentLoaded", () => {
             /*
              * IMPORTANT:
              *
-             * The backend generates the OTP.
+             * We intentionally do NOT use the returned OTP.
+             *
+             * The backend/recovery flow is responsible for:
+             *
+             * forgot-password
+             *       ↓
+             * recovery.html
+             *       ↓
+             * recovery.js
+             *       ↓
+             * backend OTP generation
              */
-
-            const response =
-                await API.forgotPassword({
-
-                    identity:
-                        value
-
-                });
-
-
-            const data =
-                getResponseData(
-                    response
-                );
-
-
-            if (
-                response &&
-                response.success === false
-            ) {
-
-                throw Object.assign(
-                    new Error(
-                        data.message ||
-                        "Unable to start account recovery."
-                    ),
-                    {
-                        code:
-                            data.code ||
-                            data.errorCode ||
-                            "RECOVERY_REQUEST_FAILED"
-                    }
-                );
-            }
-
 
             /*
-             * Save everything needed by recovery.js.
+             * We do not actually need to call forgotPassword()
+             * here.
+             *
+             * The identity is saved locally and recovery.js
+             * will perform the backend recovery request once
+             * recovery.html loads.
              */
 
-            saveRecoveryState(
-                response
+
+            saveRecoveryIdentity(
+                identity
             );
 
 
-            /*
-             * Move to OTP page.
-             */
+            showMessage(
+                "Account information accepted. Preparing password recovery...",
+                "success"
+            );
 
-            continueToRecovery();
 
+            window.setTimeout(() => {
+
+                window.location.href =
+                    recoveryRoute;
+
+            }, 500);
 
         } catch (error) {
 
             console.error(
-                "[STOCKFLOW FORGOT PASSWORD] Recovery request failed:",
+                "STOCKFLOW recovery start error:",
                 error
             );
 
 
             showMessage(
-                getErrorMessage(
+                getRecoveryErrorMessage(
                     error
                 ),
                 "error"
             );
 
-
         } finally {
 
-            if (button) {
+            setLoading(false);
 
-                button.disabled = false;
-
-                button.textContent =
-                    button.dataset.originalText ||
-                    "Continue";
-            }
         }
+
     }
 
 
     /* =========================================================
-       FORM EVENT
-       ========================================================= */
+       FORM SUBMIT
+    ========================================================= */
 
     form.addEventListener(
         "submit",
-        function (event) {
+        (event) => {
 
             event.preventDefault();
 
-            requestRecovery();
+            submitRecoveryRequest();
+
         }
     );
 
 
     /* =========================================================
-       START
-       ========================================================= */
+       INPUT CLEANUP
+    ========================================================= */
 
     if (identityInput) {
 
         identityInput.addEventListener(
-            "input",
-            function () {
+            "blur",
+            () => {
 
-                hideMessage();
+                identityInput.value =
+                    normalizeIdentity(
+                        identityInput.value
+                    );
+
             }
         );
+
     }
 
 
