@@ -71,8 +71,11 @@ document.addEventListener("DOMContentLoaded", () => {
         OTP_READY:
             "STOCKFLOW_RECOVERY_OTP_READY",
 
-        OTP:
-            "STOCKFLOW_RECOVERY_OTP",
+        OTP_EXPIRES_AT:
+            "STOCKFLOW_RECOVERY_OTP_EXPIRES_AT",
+
+        OTP_COOLDOWN:
+            "STOCKFLOW_RECOVERY_OTP_COOLDOWN",
 
         TOKEN:
             "STOCKFLOW_RECOVERY_TOKEN"
@@ -321,15 +324,11 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        const recoveryIdentity =
-            clean(identity);
-
-
         try {
 
             sessionStorage.setItem(
                 STORAGE_KEYS.IDENTITY,
-                recoveryIdentity
+                clean(identity)
             );
 
 
@@ -364,9 +363,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Default recovery channel.
+             * Default channel.
              *
-             * recovery.js may change this later.
+             * recovery.js may allow the user to switch
+             * between email and phone verification.
              */
 
             sessionStorage.setItem(
@@ -376,7 +376,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * OTP has NOT been generated yet.
+             * OTP is NOT generated here.
+             *
+             * The backend is responsible for generating
+             * and sending the OTP.
              */
 
             sessionStorage.setItem(
@@ -386,11 +389,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Never reuse an old OTP.
+             * Do not store the actual OTP.
              */
 
             sessionStorage.removeItem(
-                STORAGE_KEYS.OTP
+                "STOCKFLOW_RECOVERY_OTP"
+            );
+
+
+            /*
+             * Do not reuse an old expiration time.
+             */
+
+            sessionStorage.removeItem(
+                STORAGE_KEYS.OTP_EXPIRES_AT
+            );
+
+
+            /*
+             * Do not reuse an old cooldown.
+             */
+
+            sessionStorage.removeItem(
+                STORAGE_KEYS.OTP_COOLDOWN
             );
 
 
@@ -415,25 +436,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       PARSE POSSIBLE API OBJECT
+       PARSE OBJECT
     ========================================================= */
 
     function parseObject(
         value
     ) {
 
-        if (
-            !value
-        ) {
-
+        if (!value) {
             return null;
-
         }
 
 
         if (
-            typeof value ===
-            "object"
+            typeof value === "object"
         ) {
 
             return value;
@@ -442,8 +458,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (
-            typeof value ===
-            "string"
+            typeof value === "string"
         ) {
 
             try {
@@ -664,6 +679,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            case "RATE_LIMITED":
+            case "TOO_MANY_REQUESTS":
+            case "OTP_COOLDOWN":
+
+                return (
+                    backendMessage ||
+                    "Please wait before requesting another verification code."
+                );
+
+
             case "NETWORK_ERROR":
             case "TIMEOUT":
             case "API_URL_MISSING":
@@ -770,6 +795,65 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
+        /*
+         * Email validation.
+         *
+         * This is intentionally simple because the user
+         * may also enter username or phone number.
+         */
+
+        if (
+            identity.includes("@")
+        ) {
+
+            const emailPattern =
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+            if (
+                !emailPattern.test(
+                    identity
+                )
+            ) {
+
+                return {
+
+                    valid: false,
+
+                    message:
+                        "Please enter a valid Gmail or email address."
+
+                };
+
+            }
+
+        }
+
+
+        /*
+         * Philippine phone validation.
+         */
+
+        if (
+            /^(\+63|63|09)\d{8,10}$/.test(
+                identity.replace(
+                    /\s+/g,
+                    ""
+                )
+            )
+        ) {
+
+            return {
+
+                valid: true,
+
+                identity
+
+            };
+
+        }
+
+
         return {
 
             valid: true,
@@ -796,9 +880,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!root) {
-
             return null;
-
         }
 
 
@@ -815,10 +897,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-
-        /*
-         * Preferred user containers.
-         */
 
         const candidates = [
 
@@ -854,10 +932,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Some APIs return the user object itself.
-         *
-         * Only accept the root object if it actually
-         * contains recognizable account fields.
+         * Some APIs return the user object directly.
          */
 
         if (
@@ -1010,10 +1085,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * No response means lookup failed.
-         */
-
         if (!response) {
 
             const error =
@@ -1030,10 +1101,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-
-        /*
-         * Normalize string JSON responses.
-         */
 
         const parsedResponse =
             parseObject(
@@ -1059,11 +1126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Explicit failure from backend.
-         *
-         * IMPORTANT:
-         * Never redirect when the backend explicitly says
-         * that the account does not exist.
+         * Explicit backend failure.
          */
 
         if (
@@ -1093,10 +1156,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * Extract an actual account object.
-         */
-
         const user =
             extractUser(
                 parsedResponse
@@ -1104,7 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * NO USER = NO REDIRECT.
+         * NEVER redirect when no real account exists.
          */
 
         if (!user) {
@@ -1132,6 +1191,402 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         return user;
+
+    }
+
+
+    /* =========================================================
+       PREPARE RECOVERY OTP
+    ========================================================= */
+
+    async function prepareRecoveryOTP(
+        user
+    ) {
+
+        const API =
+            getAPI();
+
+
+        if (!API) {
+
+            const error =
+                new Error(
+                    "The recovery API is not available."
+                );
+
+
+            error.code =
+                "API_UNAVAILABLE";
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * New StockFlow API.
+         *
+         * OTP generation MUST happen on the backend.
+         */
+
+        if (
+            typeof API.prepareOtp ===
+            "function"
+        ) {
+
+            return await API.prepareOtp({
+
+                identity:
+                    clean(
+                        sessionStorage.getItem(
+                            STORAGE_KEYS.IDENTITY
+                        )
+                    ),
+
+                uid:
+                    clean(
+                        user?.uid ||
+                        user?.userId ||
+                        user?.id ||
+                        user?.UID
+                    ),
+
+                username:
+                    clean(
+                        user?.username ||
+                        user?.userName ||
+                        user?.USERNAME
+                    ),
+
+                email:
+                    normalizeEmail(
+                        user?.email ||
+                        user?.gmail ||
+                        user?.GMAIL ||
+                        user?.emailAddress
+                    ),
+
+                phone:
+                    normalizePhone(
+                        user?.phone ||
+                        user?.phoneNo ||
+                        user?.phone_number ||
+                        user?.phoneNumber ||
+                        user?.["PHONE NO."]
+                    ),
+
+                channel:
+                    "email",
+
+                purpose:
+                    "password_recovery"
+
+            });
+
+        }
+
+
+        /*
+         * Compatibility with API naming variations.
+         */
+
+        if (
+            typeof API.prepareOTP ===
+            "function"
+        ) {
+
+            return await API.prepareOTP({
+
+                identity:
+                    clean(
+                        sessionStorage.getItem(
+                            STORAGE_KEYS.IDENTITY
+                        )
+                    ),
+
+                uid:
+                    clean(
+                        user?.uid ||
+                        user?.userId ||
+                        user?.id ||
+                        user?.UID
+                    ),
+
+                username:
+                    clean(
+                        user?.username ||
+                        user?.userName ||
+                        user?.USERNAME
+                    ),
+
+                email:
+                    normalizeEmail(
+                        user?.email ||
+                        user?.gmail ||
+                        user?.GMAIL ||
+                        user?.emailAddress
+                    ),
+
+                phone:
+                    normalizePhone(
+                        user?.phone ||
+                        user?.phoneNo ||
+                        user?.phone_number ||
+                        user?.phoneNumber ||
+                        user?.["PHONE NO."]
+                    ),
+
+                channel:
+                    "email",
+
+                purpose:
+                    "password_recovery"
+
+            });
+
+        }
+
+
+        /*
+         * Do not generate an OTP in the browser.
+         */
+
+        const error =
+            new Error(
+                "The recovery API does not provide the required OTP preparation method."
+            );
+
+
+        error.code =
+            "API_METHOD_MISSING";
+
+
+        throw error;
+
+    }
+
+
+    /* =========================================================
+       PROCESS OTP RESPONSE
+    ========================================================= */
+
+    function processOtpResponse(
+        response
+    ) {
+
+        const parsed =
+            parseObject(
+                response
+            );
+
+
+        if (!parsed) {
+
+            const error =
+                new Error(
+                    "The recovery system returned an invalid response."
+                );
+
+
+            error.code =
+                "INVALID_JSON";
+
+
+            throw error;
+
+        }
+
+
+        if (
+            parsed.success === false ||
+            parsed.ok === false
+        ) {
+
+            const error =
+                new Error(
+                    parsed.message ||
+                    "Unable to prepare password recovery."
+                );
+
+
+            error.code =
+                parsed.code ||
+                parsed.errorCode ||
+                "RECOVERY_NOT_ALLOWED";
+
+
+            error.data =
+                parsed;
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * Store state only.
+         *
+         * NEVER store:
+         *
+         * parsed.otp
+         * parsed.code when it represents the OTP
+         * parsed.verificationCode
+         *
+         * The actual OTP must remain server-side.
+         */
+
+        try {
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.OTP_READY,
+                "true"
+            );
+
+
+            const expiresAt =
+                clean(
+                    parsed.otpExpiresAt ||
+                    parsed.expiresAt ||
+                    parsed.otp_expires_at
+                );
+
+
+            if (
+                expiresAt
+            ) {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.OTP_EXPIRES_AT,
+                    expiresAt
+                );
+
+            }
+
+
+            const cooldown =
+                Number(
+                    parsed.cooldownSeconds ||
+                    parsed.cooldown ||
+                    0
+                );
+
+
+            if (
+                Number.isFinite(
+                    cooldown
+                ) &&
+                cooldown > 0
+            ) {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.OTP_COOLDOWN,
+                    String(
+                        cooldown
+                    )
+                );
+
+            }
+
+
+            const token =
+                clean(
+                    parsed.token ||
+                    parsed.recoveryToken ||
+                    parsed.resetToken
+                );
+
+
+            if (
+                token
+            ) {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.TOKEN,
+                    token
+                );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to save OTP recovery state:",
+                error
+            );
+
+        }
+
+
+        return parsed;
+
+    }
+
+
+    /* =========================================================
+       DELIVERY MESSAGE
+    ========================================================= */
+
+    function getDeliveryMessage(
+        response
+    ) {
+
+        const parsed =
+            parseObject(
+                response
+            ) || {};
+
+
+        const emailSent =
+            parsed.emailSent === true ||
+            parsed.email_sent === true;
+
+
+        const emailConfigured =
+            parsed.emailConfigured === true ||
+            parsed.email_configured === true;
+
+
+        /*
+         * If backend explicitly confirms email delivery,
+         * we can tell the user the code was sent.
+         */
+
+        if (
+            emailSent
+        ) {
+
+            return (
+                "A verification code has been sent to your registered Gmail."
+            );
+
+        }
+
+
+        /*
+         * Backend may know that the email service is
+         * configured but delivery has not been confirmed.
+         */
+
+        if (
+            emailConfigured
+        ) {
+
+            return (
+                "A verification code was requested for your registered Gmail. Please check your inbox and spam folder."
+            );
+
+        }
+
+
+        /*
+         * Do not falsely claim an email was delivered.
+         */
+
+        return (
+            "Your account was found and a verification code was requested. Check your registered Gmail. If you do not receive it, use the resend option on the recovery page."
+        );
 
     }
 
@@ -1172,7 +1627,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Remove any previous recovery session.
+         * Remove previous recovery state.
          */
 
         clearRecoveryState();
@@ -1185,12 +1640,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            /*
-             * ================================================
-             * STEP 1
-             * ACCOUNT LOOKUP
-             * ================================================
-             */
+            /* ================================================
+               STEP 1
+               ACCOUNT LOOKUP
+            ================================================= */
 
             const user =
                 await findRecoveryAccount(
@@ -1198,11 +1651,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /*
-             * ================================================
-             * ACCOUNT FOUND
-             * ================================================
-             */
+            /* ================================================
+               STEP 2
+               SAVE ACCOUNT
+            ================================================= */
 
             saveRecoveryState(
                 identity,
@@ -1210,24 +1662,51 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
+            /* ================================================
+               STEP 3
+               REQUEST BACKEND OTP
+            ================================================= */
+
             showMessage(
-                "Account found. Preparing password recovery...",
+                "Account found. Requesting verification code...",
+                "info"
+            );
+
+
+            const otpResponse =
+                await prepareRecoveryOTP(
+                    user
+                );
+
+
+            /* ================================================
+               STEP 4
+               PROCESS BACKEND RESPONSE
+            ================================================= */
+
+            const processedResponse =
+                processOtpResponse(
+                    otpResponse
+                );
+
+
+            /* ================================================
+               STEP 5
+               SHOW DELIVERY STATUS
+            ================================================= */
+
+            showMessage(
+                getDeliveryMessage(
+                    processedResponse
+                ),
                 "success"
             );
 
 
-            /*
-             * ================================================
-             * STEP 2
-             * GO TO RECOVERY PAGE
-             * ================================================
-             *
-             * OTP generation happens in recovery.js.
-             *
-             * This prevents forgot-password.js from
-             * generating one OTP and recovery.js from
-             * generating another OTP.
-             */
+            /* ================================================
+               STEP 6
+               OPEN RECOVERY PAGE
+            ================================================= */
 
             window.setTimeout(
                 () => {
@@ -1240,23 +1719,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 500
             );
 
-
         } catch (
             error
         ) {
 
             console.error(
-                "STOCKFLOW recovery account lookup error:",
+                "STOCKFLOW password recovery error:",
                 error
             );
 
 
             /*
-             * IMPORTANT:
-             *
              * Errors NEVER redirect.
-             *
-             * The user remains on forgot-password.html.
              */
 
             showMessage(
@@ -1265,7 +1739,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 ),
                 "error"
             );
-
 
         } finally {
 
