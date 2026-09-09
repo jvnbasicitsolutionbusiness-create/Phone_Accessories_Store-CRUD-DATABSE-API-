@@ -1,298 +1,647 @@
 /* ============================================================
-   STOCKFLOW — AUTHENTICATION CONTROLLER
+   STOCKFLOW — AUTHENTICATION UI CONTROLLER
    File: auth.js
 
-   Handles:
-   - Sign In / Create Account tab switching
-   - Login/Register panel visibility
-   - Password Show/Hide
-   - Authentication navigation
+   RESPONSIBILITIES:
+   - Login / Register tab switching
+   - Login / Register panel visibility
+   - Password show / hide
+   - Authentication UI navigation
    - URL hash navigation
    - Keyboard accessibility
+   - Authentication UI state reset
 
-   NOTE:
-   This file does NOT handle:
-   - API requests
-   - OTP verification
-   - Sessions
-   - Firebase
+   THIS FILE DOES NOT:
+   - Call the API
+   - Generate OTP
+   - Store OTP
+   - Verify OTP
+   - Handle Firebase
+   - Handle Google Apps Script
+   - Save authentication sessions
+   - Perform login
+   - Perform registration
+
+   API:
+       api.js
+
+   LOGIN:
+       login.js
+
+   REGISTER:
+       register.js
+
+   OTP:
+       verify.js
+
+   SESSION:
+       StockFlowAuth
    ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
 
-    "use strict";
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-
-    /* =========================================================
-       ELEMENTS
-       ========================================================= */
-
-    const authTabs =
-        document.querySelectorAll(
-            "[data-auth-tab]"
-        );
+        "use strict";
 
 
-    const authControls =
-        document.querySelectorAll(
-            "[data-show-auth]"
-        );
+        /* =====================================================
+           ELEMENTS
+           ===================================================== */
 
-
-    const authPanels =
-        document.querySelectorAll(
-            "[data-auth-view]"
-        );
-
-
-    /*
-     * If this page does not contain
-     * authentication components, stop safely.
-     */
-
-    if (
-        !authTabs.length &&
-        !authControls.length &&
-        !authPanels.length
-    ) {
-        return;
-    }
-
-
-    /* =========================================================
-       SHOW AUTH PANEL
-       ========================================================= */
-
-    function showAuthPanel(view, focusInput = true) {
-
-        if (
-            view !== "login" &&
-            view !== "register"
-        ) {
-            view = "login";
-        }
-
-
-        /* -----------------------------------------------------
-           PANELS
-           ----------------------------------------------------- */
-
-        authPanels.forEach(panel => {
-
-            const panelView =
-                panel.dataset.authView;
-
-
-            const active =
-                panelView === view;
-
-
-            panel.classList.toggle(
-                "hidden",
-                !active
+        const authTabs =
+            document.querySelectorAll(
+                "[data-auth-tab]"
             );
 
 
-            panel.setAttribute(
-                "aria-hidden",
-                String(!active)
-            );
-
-        });
-
-
-        /* -----------------------------------------------------
-           TABS
-           ----------------------------------------------------- */
-
-        authTabs.forEach(tab => {
-
-            const tabView =
-                tab.dataset.authTab;
-
-
-            const active =
-                tabView === view;
-
-
-            tab.classList.toggle(
-                "active",
-                active
+        const authControls =
+            document.querySelectorAll(
+                "[data-show-auth]"
             );
 
 
-            tab.setAttribute(
-                "aria-selected",
-                String(active)
+        const authPanels =
+            document.querySelectorAll(
+                "[data-auth-view]"
             );
 
-        });
-
-
-        /* -----------------------------------------------------
-           ACCESSIBILITY
-           ----------------------------------------------------- */
-
-        const activePanel =
-            document.querySelector(
-                `[data-auth-view="${view}"]`
-            );
-
-
-        if (
-            activePanel &&
-            focusInput
-        ) {
-
-            const firstInput =
-                activePanel.querySelector(
-                    "input:not([type='hidden'])"
-                );
-
-
-            if (firstInput) {
-
-                setTimeout(() => {
-
-                    firstInput.focus();
-
-                }, 60);
-
-            }
-
-        }
-
-
-        /* -----------------------------------------------------
-           UPDATE HASH
-           ----------------------------------------------------- */
-
-        const currentHash =
-            window.location.hash;
-
-
-        const desiredHash =
-            "#" + view;
-
-
-        if (
-            currentHash !== desiredHash
-        ) {
-
-            /*
-             * Replace the hash instead of creating
-             * unnecessary browser history entries.
-             */
-
-            history.replaceState(
-                null,
-                "",
-                desiredHash
-            );
-
-        }
-
-    }
-
-
-    /* =========================================================
-       TAB CLICK
-       ========================================================= */
-
-    authTabs.forEach(tab => {
-
-        tab.addEventListener(
-            "click",
-            () => {
-
-                const view =
-                    tab.dataset.authTab;
-
-
-                showAuthPanel(
-                    view,
-                    true
-                );
-
-            }
-        );
-
-    });
-
-
-    /* =========================================================
-       AUTH SWITCH LINKS / BUTTONS
-       ========================================================= */
-
-    authControls.forEach(control => {
 
         /*
-         * Do not register the tab buttons twice.
+         * Some pages may not contain the authentication UI.
+         *
+         * In that situation auth.js must exit safely.
          */
 
         if (
-            control.matches(
-                "[data-auth-tab]"
-            )
+            !authTabs.length &&
+            !authControls.length &&
+            !authPanels.length
         ) {
+
             return;
+
         }
 
 
-        control.addEventListener(
-            "click",
-            event => {
+        /* =====================================================
+           VALID AUTH VIEWS
+           ===================================================== */
 
-                event.preventDefault();
+        const VALID_VIEWS = [
+            "login",
+            "register"
+        ];
 
 
-                const view =
-                    control.dataset.showAuth;
+        /* =====================================================
+           NORMALIZE VIEW
+           ===================================================== */
+
+        function normalizeView(
+            view
+        ) {
+
+            const normalized =
+                String(
+                    view || ""
+                )
+                    .toLowerCase()
+                    .trim();
 
 
-                showAuthPanel(
-                    view,
-                    true
+            if (
+                VALID_VIEWS.includes(
+                    normalized
+                )
+            ) {
+
+                return normalized;
+
+            }
+
+
+            return "login";
+
+        }
+
+
+        /* =====================================================
+           CLEAR AUTH MESSAGES
+           ===================================================== */
+
+        function clearInactiveMessages() {
+
+            const messages =
+                document.querySelectorAll(
+                    ".auth-message"
+                );
+
+
+            messages.forEach(
+                message => {
+
+                    message.textContent =
+                        "";
+
+
+                    message.className =
+                        "auth-message";
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           RESET AUTH BUTTON STATES
+           ===================================================== */
+
+        function resetButtonStates() {
+
+            const buttons =
+                document.querySelectorAll(
+                    ".auth-submit"
+                );
+
+
+            buttons.forEach(
+                button => {
+
+                    /*
+                     * Remove loading state.
+                     */
+
+                    button.classList.remove(
+                        "loading"
+                    );
+
+
+                    /*
+                     * Restore button availability.
+                     */
+
+                    button.disabled =
+                        false;
+
+
+                    button.removeAttribute(
+                        "aria-busy"
+                    );
+
+
+                    /*
+                     * Restore normal button text.
+                     */
+
+                    const text =
+                        button.querySelector(
+                            ".button-text"
+                        );
+
+
+                    if (text) {
+
+                        text.hidden =
+                            false;
+
+
+                        text.style.display =
+                            "";
+
+                    }
+
+
+                    /*
+                     * Hide loader.
+                     */
+
+                    const loader =
+                        button.querySelector(
+                            ".button-loader"
+                        );
+
+
+                    if (loader) {
+
+                        loader.hidden =
+                            true;
+
+
+                        loader.style.display =
+                            "";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           SHOW AUTH PANEL
+           ===================================================== */
+
+        function showAuthPanel(
+            view,
+            focusInput = true
+        ) {
+
+            view =
+                normalizeView(
+                    view
+                );
+
+
+            /* -------------------------------------------------
+               PANELS
+               ------------------------------------------------- */
+
+            authPanels.forEach(
+                panel => {
+
+                    const panelView =
+                        normalizeView(
+                            panel.dataset.authView
+                        );
+
+
+                    const active =
+                        panelView === view;
+
+
+                    /*
+                     * Preserve the existing CSS class
+                     * structure.
+                     */
+
+                    panel.classList.toggle(
+                        "hidden",
+                        !active
+                    );
+
+
+                    panel.setAttribute(
+                        "aria-hidden",
+                        String(
+                            !active
+                        )
+                    );
+
+
+                    /*
+                     * Keep inactive panels out of
+                     * keyboard navigation.
+                     */
+
+                    if (
+                        active
+                    ) {
+
+                        panel.removeAttribute(
+                            "inert"
+                        );
+
+                    } else {
+
+                        /*
+                         * Do not force inert when the
+                         * browser does not support it.
+                         */
+
+                        try {
+
+                            panel.setAttribute(
+                                "inert",
+                                ""
+                            );
+
+                        } catch (
+                            error
+                        ) {
+
+                            /*
+                             * Older browsers may not
+                             * support the property.
+                             */
+
+                        }
+
+                    }
+
+                }
+            );
+
+
+            /* -------------------------------------------------
+               TABS
+               ------------------------------------------------- */
+
+            authTabs.forEach(
+                tab => {
+
+                    const tabView =
+                        normalizeView(
+                            tab.dataset.authTab
+                        );
+
+
+                    const active =
+                        tabView === view;
+
+
+                    tab.classList.toggle(
+                        "active",
+                        active
+                    );
+
+
+                    tab.setAttribute(
+                        "aria-selected",
+                        String(
+                            active
+                        )
+                    );
+
+
+                    /*
+                     * If tabs behave like ARIA tabs,
+                     * maintain tab index.
+                     */
+
+                    if (
+                        tab.getAttribute(
+                            "role"
+                        ) === "tab"
+                    ) {
+
+                        tab.setAttribute(
+                            "tabindex",
+                            active
+                                ? "0"
+                                : "-1"
+                        );
+
+                    }
+
+                }
+            );
+
+
+            /* -------------------------------------------------
+               FOCUS FIRST INPUT
+               ------------------------------------------------- */
+
+            if (
+                focusInput
+            ) {
+
+                const activePanel =
+                    Array.from(
+                        authPanels
+                    ).find(
+                        panel =>
+                            normalizeView(
+                                panel.dataset.authView
+                            ) === view
+                    );
+
+
+                if (
+                    activePanel
+                ) {
+
+                    const firstInput =
+                        activePanel.querySelector(
+                            "input:not([type='hidden']):not([disabled])"
+                        );
+
+
+                    if (
+                        firstInput
+                    ) {
+
+                        window.setTimeout(
+                            () => {
+
+                                try {
+
+                                    firstInput.focus();
+
+                                } catch (
+                                    error
+                                ) {
+
+                                    /*
+                                     * Ignore focus errors.
+                                     */
+
+                                }
+
+                            },
+                            60
+                        );
+
+                    }
+
+                }
+
+            }
+
+
+            /* -------------------------------------------------
+               UPDATE URL HASH
+               ------------------------------------------------- */
+
+            const desiredHash =
+                "#" + view;
+
+
+            if (
+                window.location.hash !==
+                desiredHash
+            ) {
+
+                /*
+                 * replaceState prevents every tab
+                 * click from creating a browser-history
+                 * entry.
+                 */
+
+                try {
+
+                    window.history.replaceState(
+                        null,
+                        "",
+                        desiredHash
+                    );
+
+                } catch (
+                    error
+                ) {
+
+                    /*
+                     * Fallback for restricted browsers.
+                     */
+
+                    try {
+
+                        window.location.hash =
+                            desiredHash;
+
+                    } catch (
+                        hashError
+                    ) {
+
+                        console.warn(
+                            "STOCKFLOW: Unable to update authentication URL hash.",
+                            hashError
+                        );
+
+                    }
+
+                }
+
+            }
+
+
+            return view;
+
+        }
+
+
+        /* =====================================================
+           TAB CLICK HANDLERS
+           ===================================================== */
+
+        authTabs.forEach(
+            tab => {
+
+                tab.addEventListener(
+                    "click",
+                    event => {
+
+                        /*
+                         * If the element is an anchor,
+                         * prevent its default navigation.
+                         */
+
+                        if (
+                            tab.tagName
+                                .toLowerCase() ===
+                            "a"
+                        ) {
+
+                            event.preventDefault();
+
+                        }
+
+
+                        const view =
+                            tab.dataset.authTab;
+
+
+                        clearInactiveMessages();
+
+
+                        showAuthPanel(
+                            view,
+                            true
+                        );
+
+                    }
                 );
 
             }
         );
 
-    });
+
+        /* =====================================================
+           AUTH SWITCH LINKS / BUTTONS
+           ===================================================== */
+
+        authControls.forEach(
+            control => {
+
+                /*
+                 * Do not attach a second handler
+                 * to an actual auth tab.
+                 */
+
+                if (
+                    control.matches(
+                        "[data-auth-tab]"
+                    )
+                ) {
+
+                    return;
+
+                }
 
 
-    /* =========================================================
-       PASSWORD SHOW / HIDE
-       ========================================================= */
+                control.addEventListener(
+                    "click",
+                    event => {
 
-    document.addEventListener(
-        "click",
-        event => {
+                        event.preventDefault();
 
-            const button =
-                event.target.closest(
-                    ".password-toggle"
+
+                        const view =
+                            control.dataset.showAuth;
+
+
+                        clearInactiveMessages();
+
+
+                        showAuthPanel(
+                            view,
+                            true
+                        );
+
+                    }
                 );
 
+            }
+        );
 
-            if (!button) {
-                return;
+
+        /* =====================================================
+           PASSWORD SHOW / HIDE
+           ===================================================== */
+
+        function getPasswordInput(
+            toggleButton
+        ) {
+
+            if (
+                !toggleButton
+            ) {
+
+                return null;
+
             }
 
 
-            let input = null;
+            let input =
+                null;
 
 
             /* -------------------------------------------------
-               EXPLICIT TARGET
+               METHOD 1:
+               data-target
                ------------------------------------------------- */
 
             const targetId =
-                button.dataset.target ||
-                button.dataset.togglePassword;
+                toggleButton.dataset.target ||
+                toggleButton.dataset.togglePassword;
 
 
-            if (targetId) {
+            if (
+                targetId
+            ) {
 
                 input =
                     document.getElementById(
@@ -303,22 +652,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* -------------------------------------------------
-               WRAPPER FALLBACK
+               METHOD 2:
+               ARIA CONTROLS
                ------------------------------------------------- */
 
-            if (!input) {
+            if (
+                !input
+            ) {
 
-                const wrapper =
-                    button.closest(
-                        ".password-field, .password-wrapper, .password-wrap"
+                const ariaControls =
+                    toggleButton.getAttribute(
+                        "aria-controls"
                     );
 
 
-                if (wrapper) {
+                if (
+                    ariaControls
+                ) {
 
                     input =
-                        wrapper.querySelector(
-                            "input"
+                        document.getElementById(
+                            ariaControls
                         );
 
                 }
@@ -326,372 +680,660 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            if (!input) {
-                return;
-            }
-
-
             /* -------------------------------------------------
-               SHOW
+               METHOD 3:
+               PASSWORD FIELD WRAPPER
                ------------------------------------------------- */
 
             if (
-                input.type === "password"
+                !input
             ) {
 
-                input.type =
-                    "text";
+                const wrapper =
+                    toggleButton.closest(
+                        ".password-field, .password-wrapper, .password-wrap, .input-password"
+                    );
 
 
-                button.textContent =
-                    "Hide";
+                if (
+                    wrapper
+                ) {
 
+                    input =
+                        wrapper.querySelector(
+                            "input[type='password'], input[type='text']"
+                        );
 
-                button.classList.add(
-                    "active"
-                );
-
-
-                button.setAttribute(
-                    "aria-label",
-                    "Hide password"
-                );
-
-
-                button.setAttribute(
-                    "aria-pressed",
-                    "true"
-                );
+                }
 
             }
 
 
             /* -------------------------------------------------
-               HIDE
+               METHOD 4:
+               PARENT ELEMENT
                ------------------------------------------------- */
 
-            else {
+            if (
+                !input &&
+                toggleButton.parentElement
+            ) {
 
-                input.type =
-                    "password";
-
-
-                button.textContent =
-                    "Show";
-
-
-                button.classList.remove(
-                    "active"
-                );
-
-
-                button.setAttribute(
-                    "aria-label",
-                    "Show password"
-                );
-
-
-                button.setAttribute(
-                    "aria-pressed",
-                    "false"
-                );
+                input =
+                    toggleButton.parentElement.querySelector(
+                        "input[type='password'], input[type='text']"
+                    );
 
             }
 
+
+            return input;
+
         }
-    );
 
 
-    /* =========================================================
-       KEYBOARD TAB NAVIGATION
-       ========================================================= */
+        function updatePasswordToggleUI(
+            toggleButton,
+            visible
+        ) {
 
-    authTabs.forEach(tab => {
+            if (
+                !toggleButton
+            ) {
 
-        tab.addEventListener(
-            "keydown",
-            event => {
+                return;
+
+            }
+
+
+            /*
+             * Preserve icons if the HTML contains
+             * a dedicated text/icon element.
+             */
+
+            const textElement =
+                toggleButton.querySelector(
+                    ".toggle-text, .password-toggle-text"
+                );
+
+
+            if (
+                textElement
+            ) {
+
+                textElement.textContent =
+                    visible
+                        ? "Hide"
+                        : "Show";
+
+            }
+
+            else {
+
+                /*
+                 * Only change plain-text buttons.
+                 *
+                 * If the button contains SVG/icon markup,
+                 * don't destroy it.
+                 */
+
+                const hasElementChildren =
+                    toggleButton.children.length >
+                    0;
+
 
                 if (
-                    event.key !== "ArrowLeft" &&
-                    event.key !== "ArrowRight"
+                    !hasElementChildren
                 ) {
+
+                    toggleButton.textContent =
+                        visible
+                            ? "Hide"
+                            : "Show";
+
+                }
+
+            }
+
+
+            toggleButton.classList.toggle(
+                "active",
+                visible
+            );
+
+
+            toggleButton.setAttribute(
+                "aria-label",
+                visible
+                    ? "Hide password"
+                    : "Show password"
+            );
+
+
+            toggleButton.setAttribute(
+                "aria-pressed",
+                String(
+                    visible
+                )
+            );
+
+        }
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                const toggleButton =
+                    event.target.closest(
+                        ".password-toggle"
+                    );
+
+
+                if (
+                    !toggleButton
+                ) {
+
                     return;
+
                 }
 
 
                 event.preventDefault();
 
 
-                const tabArray =
-                    Array.from(
-                        authTabs
+                const input =
+                    getPasswordInput(
+                        toggleButton
                     );
-
-
-                const currentIndex =
-                    tabArray.indexOf(
-                        tab
-                    );
-
-
-                let nextIndex;
 
 
                 if (
-                    event.key === "ArrowRight"
+                    !input
                 ) {
 
-                    nextIndex =
-                        currentIndex + 1;
+                    console.warn(
+                        "STOCKFLOW: Password toggle could not find its password input."
+                    );
 
 
-                    if (
-                        nextIndex >=
-                        tabArray.length
-                    ) {
+                    return;
 
-                        nextIndex = 0;
+                }
 
-                    }
+
+                const currentlyHidden =
+                    input.type ===
+                    "password";
+
+
+                if (
+                    currentlyHidden
+                ) {
+
+                    input.type =
+                        "text";
+
+
+                    updatePasswordToggleUI(
+                        toggleButton,
+                        true
+                    );
 
                 }
 
                 else {
 
-                    nextIndex =
-                        currentIndex - 1;
+                    input.type =
+                        "password";
+
+
+                    updatePasswordToggleUI(
+                        toggleButton,
+                        false
+                    );
+
+                }
+
+
+                /*
+                 * Keep the password input focused.
+                 */
+
+                try {
+
+                    input.focus();
+
+
+                    /*
+                     * Place cursor at the end.
+                     */
+
+                    const length =
+                        input.value.length;
 
 
                     if (
-                        nextIndex < 0
+                        typeof input.setSelectionRange ===
+                        "function"
                     ) {
 
-                        nextIndex =
-                            tabArray.length - 1;
+                        input.setSelectionRange(
+                            length,
+                            length
+                        );
 
                     }
 
+                } catch (
+                    error
+                ) {
+
+                    /*
+                     * Ignore focus/cursor errors.
+                     */
+
                 }
 
+            }
+        );
 
-                const nextTab =
-                    tabArray[nextIndex];
+
+        /* =====================================================
+           KEYBOARD TAB NAVIGATION
+           ===================================================== */
+
+        authTabs.forEach(
+            tab => {
+
+                tab.addEventListener(
+                    "keydown",
+                    event => {
+
+                        const key =
+                            event.key;
 
 
-                if (!nextTab) {
+                        if (
+                            key !== "ArrowLeft" &&
+                            key !== "ArrowRight" &&
+                            key !== "Home" &&
+                            key !== "End"
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        event.preventDefault();
+
+
+                        const tabArray =
+                            Array.from(
+                                authTabs
+                            );
+
+
+                        if (
+                            !tabArray.length
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const currentIndex =
+                            tabArray.indexOf(
+                                tab
+                            );
+
+
+                        let nextIndex =
+                            currentIndex;
+
+
+                        /* -----------------------------------------
+                           LEFT
+                           ----------------------------------------- */
+
+                        if (
+                            key === "ArrowLeft"
+                        ) {
+
+                            nextIndex =
+                                currentIndex - 1;
+
+
+                            if (
+                                nextIndex < 0
+                            ) {
+
+                                nextIndex =
+                                    tabArray.length - 1;
+
+                            }
+
+                        }
+
+
+                        /* -----------------------------------------
+                           RIGHT
+                           ----------------------------------------- */
+
+                        else if (
+                            key === "ArrowRight"
+                        ) {
+
+                            nextIndex =
+                                currentIndex + 1;
+
+
+                            if (
+                                nextIndex >=
+                                tabArray.length
+                            ) {
+
+                                nextIndex =
+                                    0;
+
+                            }
+
+                        }
+
+
+                        /* -----------------------------------------
+                           HOME
+                           ----------------------------------------- */
+
+                        else if (
+                            key === "Home"
+                        ) {
+
+                            nextIndex =
+                                0;
+
+                        }
+
+
+                        /* -----------------------------------------
+                           END
+                           ----------------------------------------- */
+
+                        else if (
+                            key === "End"
+                        ) {
+
+                            nextIndex =
+                                tabArray.length - 1;
+
+                        }
+
+
+                        const nextTab =
+                            tabArray[
+                                nextIndex
+                            ];
+
+
+                        if (
+                            !nextTab
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        nextTab.focus();
+
+
+                        clearInactiveMessages();
+
+
+                        showAuthPanel(
+                            nextTab.dataset.authTab,
+                            false
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* =====================================================
+           ENTER / SPACE SUPPORT FOR CUSTOM TABS
+           ===================================================== */
+
+        authTabs.forEach(
+            tab => {
+
+                /*
+                 * Native buttons and links already
+                 * support keyboard activation.
+                 *
+                 * Only add manual support for elements
+                 * that are not naturally interactive.
+                 */
+
+                const tagName =
+                    tab.tagName.toLowerCase();
+
+
+                const naturallyInteractive =
+                    tagName === "button" ||
+                    tagName === "a" ||
+                    tagName === "input";
+
+
+                if (
+                    naturallyInteractive
+                ) {
+
                     return;
+
                 }
 
 
-                nextTab.focus();
+                tab.addEventListener(
+                    "keydown",
+                    event => {
+
+                        if (
+                            event.key !== "Enter" &&
+                            event.key !== " "
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        event.preventDefault();
+
+
+                        const view =
+                            tab.dataset.authTab;
+
+
+                        clearInactiveMessages();
+
+
+                        showAuthPanel(
+                            view,
+                            true
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* =====================================================
+           HASH ROUTING
+           ===================================================== */
+
+        function getHashView() {
+
+            const hash =
+                window.location.hash
+                    .replace(
+                        "#",
+                        ""
+                    )
+                    .toLowerCase()
+                    .trim();
+
+
+            return normalizeView(
+                hash
+            );
+
+        }
+
+
+        /* =====================================================
+           HASH CHANGE
+           ===================================================== */
+
+        window.addEventListener(
+            "hashchange",
+            () => {
+
+                const view =
+                    getHashView();
+
+
+                clearInactiveMessages();
 
 
                 showAuthPanel(
-                    nextTab.dataset.authTab,
+                    view,
                     false
                 );
 
             }
         );
 
-    });
+
+        /* =====================================================
+           INITIAL AUTH UI STATE
+           ===================================================== */
+
+        resetButtonStates();
 
 
-    /* =========================================================
-       CLEAR AUTH MESSAGES
-       ========================================================= */
-
-    function clearInactiveMessages() {
-
-        const messages =
-            document.querySelectorAll(
-                ".auth-message"
-            );
+        const initialView =
+            getHashView();
 
 
-        messages.forEach(message => {
-
-            message.textContent =
-                "";
-
-            message.className =
-                "auth-message";
-
-        });
-
-    }
+        showAuthPanel(
+            initialView,
+            false
+        );
 
 
-    /* =========================================================
-       RESET BUTTON STATES
-       ========================================================= */
+        /* =====================================================
+           PUBLIC AUTH UI CONTROLLER
+           ===================================================== */
 
-    function resetButtonStates() {
+        window.StockFlowAuthUI = {
 
-        const buttons =
-            document.querySelectorAll(
-                ".auth-submit"
-            );
+            /* -----------------------------------------------
+               SHOW LOGIN
+               ----------------------------------------------- */
 
+            showLogin() {
 
-        buttons.forEach(button => {
-
-            button.classList.remove(
-                "loading"
-            );
+                clearInactiveMessages();
 
 
-            button.disabled =
-                false;
-
-
-            const text =
-                button.querySelector(
-                    ".button-text"
+                return showAuthPanel(
+                    "login",
+                    true
                 );
 
+            },
 
-            const loader =
-                button.querySelector(
-                    ".button-loader"
+
+            /* -----------------------------------------------
+               SHOW REGISTER
+               ----------------------------------------------- */
+
+            showRegister() {
+
+                clearInactiveMessages();
+
+
+                return showAuthPanel(
+                    "register",
+                    true
                 );
 
+            },
 
-            if (text) {
 
-                text.style.display =
-                    "";
+            /* -----------------------------------------------
+               GET CURRENT VIEW
+               ----------------------------------------------- */
+
+            getCurrentView() {
+
+                const activePanel =
+                    Array.from(
+                        authPanels
+                    ).find(
+                        panel =>
+                            !panel.classList.contains(
+                                "hidden"
+                            )
+                    );
+
+
+                if (
+                    activePanel
+                ) {
+
+                    return normalizeView(
+                        activePanel.dataset.authView
+                    );
+
+                }
+
+
+                return "login";
+
+            },
+
+
+            /* -----------------------------------------------
+               CLEAR MESSAGES
+               ----------------------------------------------- */
+
+            clearMessages() {
+
+                clearInactiveMessages();
+
+            },
+
+
+            /* -----------------------------------------------
+               RESET BUTTONS
+               ----------------------------------------------- */
+
+            resetButtons() {
+
+                resetButtonStates();
 
             }
 
+        };
 
-            if (loader) {
-
-                loader.hidden =
-                    true;
-
-            }
-
-        });
 
     }
-
-
-    /* =========================================================
-       HASH ROUTING
-       ========================================================= */
-
-    function getHashView() {
-
-        const hash =
-            window.location.hash
-                .replace("#", "")
-                .toLowerCase()
-                .trim();
-
-
-        if (
-            hash === "register"
-        ) {
-
-            return "register";
-
-        }
-
-
-        return "login";
-
-    }
-
-
-    /* =========================================================
-       HASH CHANGE
-       ========================================================= */
-
-    window.addEventListener(
-        "hashchange",
-        () => {
-
-            const view =
-                getHashView();
-
-
-            clearInactiveMessages();
-
-
-            showAuthPanel(
-                view,
-                false
-            );
-
-        }
-    );
-
-
-    /* =========================================================
-       INITIAL STATE
-       ========================================================= */
-
-    resetButtonStates();
-
-
-    const initialView =
-        getHashView();
-
-
-    showAuthPanel(
-        initialView,
-        false
-    );
-
-
-    /* =========================================================
-       PUBLIC CONTROLLER
-       ========================================================= */
-
-    window.StockFlowAuthUI = {
-
-        showLogin() {
-
-            clearInactiveMessages();
-
-
-            showAuthPanel(
-                "login",
-                true
-            );
-
-        },
-
-
-        showRegister() {
-
-            clearInactiveMessages();
-
-
-            showAuthPanel(
-                "register",
-                true
-            );
-
-        },
-
-
-        getCurrentView() {
-
-            const activePanel =
-                document.querySelector(
-                    '[data-auth-view]:not(.hidden)'
-                );
-
-
-            return activePanel
-                ? activePanel.dataset.authView
-                : "login";
-
-        }
-
-    };
-
-});
+);
