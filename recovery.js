@@ -118,12 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-    const DEMO_MODE =
-        Boolean(
-            config.DEMO_MODE === true
-        );
-
-
     /* =========================================================
        STORAGE KEYS
     ========================================================= */
@@ -154,11 +148,15 @@ document.addEventListener("DOMContentLoaded", () => {
         OTP_READY:
             "STOCKFLOW_RECOVERY_OTP_READY",
 
-        OTP:
-            "STOCKFLOW_RECOVERY_OTP",
+        OTP_EXPIRES_AT:
+            "STOCKFLOW_RECOVERY_OTP_EXPIRES_AT",
+
+        OTP_COOLDOWN:
+            "STOCKFLOW_RECOVERY_OTP_COOLDOWN",
 
         TOKEN:
             "STOCKFLOW_RECOVERY_TOKEN"
+
     };
 
 
@@ -182,8 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         channel: "email",
 
-        demoOtp: "",
-
         otpReady: false,
 
         otpVerified: false,
@@ -206,9 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         },
 
-        countdownTimer: null,
-
-        demoFillTimer: null
+        countdownTimer: null
 
     };
 
@@ -228,7 +222,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function normalizeEmail(value) {
 
-        return clean(value).toLowerCase();
+        return clean(
+            value
+        ).toLowerCase();
 
     }
 
@@ -242,7 +238,9 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (phone.startsWith("+63")) {
+        if (
+            phone.startsWith("+63")
+        ) {
 
             phone =
                 "0" +
@@ -268,6 +266,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    function parseObject(value) {
+
+        if (!value) {
+            return null;
+        }
+
+
+        if (
+            typeof value === "object"
+        ) {
+
+            return value;
+
+        }
+
+
+        if (
+            typeof value === "string"
+        ) {
+
+            try {
+
+                return JSON.parse(
+                    value
+                );
+
+            } catch (error) {
+
+                return null;
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
     function getAPI() {
 
         if (
@@ -289,55 +327,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         return null;
-
-    }
-
-
-    /* =========================================================
-       DEMO MODE
-    ========================================================= */
-
-    function isDemoMode() {
-
-        return DEMO_MODE;
-
-    }
-
-
-    function getDemoDelay() {
-
-        const minimum =
-            Number(
-                AUTH_CONFIG.DEMO_DELAY_MIN ||
-                3000
-            );
-
-
-        const maximum =
-            Number(
-                AUTH_CONFIG.DEMO_DELAY_MAX ||
-                5000
-            );
-
-
-        /*
-         * This random value controls ONLY the simulated
-         * 3–5 second UI security delay.
-         *
-         * It NEVER generates an OTP.
-         */
-
-        return (
-            minimum +
-            Math.floor(
-                Math.random() *
-                (
-                    maximum -
-                    minimum +
-                    1
-                )
-            )
-        );
 
     }
 
@@ -428,6 +417,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* =========================================================
+       BUTTON LOADING
+    ========================================================= */
+
     function setButtonLoading(
         button,
         loading,
@@ -440,8 +433,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        button.disabled =
+        const isLoading =
             Boolean(loading);
+
+
+        button.disabled =
+            isLoading;
 
 
         const buttonText =
@@ -463,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             buttonText.hidden =
-                Boolean(loading);
+                isLoading;
 
         }
 
@@ -475,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             buttonLoader.hidden =
-                !Boolean(loading);
+                !isLoading;
 
         }
 
@@ -483,29 +480,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       ERROR HANDLING
+       ERROR HELPERS
     ========================================================= */
 
     function getErrorCode(error) {
 
-        return clean(
+        const directCode =
             error?.code ||
-            error?.data?.code ||
-            error?.response?.code ||
-            ""
-        ).toUpperCase();
+            error?.errorCode;
+
+
+        if (directCode) {
+
+            return clean(
+                directCode
+            ).toUpperCase();
+
+        }
+
+
+        const candidates = [
+
+            error?.data,
+            error?.response,
+            error?.rawResponse,
+            error?.result
+
+        ];
+
+
+        for (
+            const candidate
+            of candidates
+        ) {
+
+            const object =
+                parseObject(
+                    candidate
+                );
+
+
+            if (
+                object &&
+                (
+                    object.code ||
+                    object.errorCode
+                )
+            ) {
+
+                return clean(
+                    object.code ||
+                    object.errorCode
+                ).toUpperCase();
+
+            }
+
+        }
+
+
+        return "";
 
     }
 
 
     function getErrorMessage(error) {
 
-        return clean(
-            error?.message ||
-            error?.data?.message ||
-            error?.response?.message ||
-            ""
-        );
+        const candidates = [
+
+            error?.data,
+            error?.response,
+            error?.rawResponse,
+            error?.result
+
+        ];
+
+
+        for (
+            const candidate
+            of candidates
+        ) {
+
+            const object =
+                parseObject(
+                    candidate
+                );
+
+
+            if (
+                object &&
+                typeof object.message ===
+                    "string" &&
+                object.message.trim()
+            ) {
+
+                return clean(
+                    object.message
+                );
+
+            }
+
+        }
+
+
+        if (
+            typeof error?.message ===
+            "string"
+        ) {
+
+            return clean(
+                error.message
+            );
+
+        }
+
+
+        return "";
 
     }
 
@@ -513,21 +602,27 @@ document.addEventListener("DOMContentLoaded", () => {
     function getRecoveryErrorMessage(error) {
 
         const code =
-            getErrorCode(error);
+            getErrorCode(
+                error
+            );
 
 
         const message =
-            getErrorMessage(error);
+            getErrorMessage(
+                error
+            );
 
 
         switch (code) {
 
             case "ACCOUNT_NOT_FOUND":
             case "USER_NOT_FOUND":
+            case "USER_DOES_NOT_EXIST":
+            case "ACCOUNT_DOES_NOT_EXIST":
 
                 return (
                     message ||
-                    "Account does not exist."
+                    "Account could not be found."
                 );
 
 
@@ -575,7 +670,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 return (
                     message ||
-                    "This recovery code has expired. Please request a new code."
+                    "This verification code has expired. Please request a new code."
+                );
+
+
+            case "INVALID_OTP":
+            case "OTP_INVALID":
+
+                return (
+                    message ||
+                    "The verification code is incorrect."
                 );
 
 
@@ -589,15 +693,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            case "INVALID_OTP":
-
-                return (
-                    message ||
-                    "The verification code is incorrect."
-                );
-
-
             case "OTP_COOLDOWN":
+            case "RATE_LIMITED":
+            case "TOO_MANY_REQUESTS":
 
                 return (
                     message ||
@@ -609,7 +707,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 return (
                     message ||
-                    "Your recovery code is not ready yet."
+                    "Your verification code is not ready yet."
                 );
 
 
@@ -640,28 +738,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
+            case "PASSWORD_RESET_FAILED":
+
+                return (
+                    message ||
+                    "The password could not be reset. Please try again."
+                );
+
+
             case "NETWORK_ERROR":
             case "TIMEOUT":
             case "API_URL_MISSING":
             case "API_URL_INVALID":
             case "EMPTY_RESPONSE":
             case "INVALID_JSON":
+            case "HTTP_ERROR":
 
                 return (
                     "Unable to connect to the password recovery system right now. Please try again."
                 );
 
 
-            default:
-
-                if (message) {
-
-                    return message;
-
-                }
-
+            case "API_UNAVAILABLE":
+            case "API_METHOD_MISSING":
 
                 return (
+                    "The password recovery service is not available right now. Please try again later."
+                );
+
+
+            default:
+
+                return (
+                    message ||
                     "Password recovery could not be completed. Please try again."
                 );
 
@@ -735,26 +844,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 "email";
 
 
+            if (
+                state.channel !== "email" &&
+                state.channel !== "phone"
+            ) {
+
+                state.channel =
+                    "email";
+
+            }
+
+
             state.otpReady =
                 sessionStorage.getItem(
                     STORAGE_KEYS.OTP_READY
                 ) === "true";
 
-
-            /*
-             * We deliberately do NOT load a previous OTP.
-             *
-             * Recovery OTPs must come from the backend.
-             */
-
-            state.demoOtp = "";
-
-
-            /*
-             * A recovery token is loaded only because it is
-             * issued by the backend after successful OTP
-             * verification.
-             */
 
             state.recoveryToken =
                 clean(
@@ -762,6 +867,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         STORAGE_KEYS.TOKEN
                     )
                 );
+
+
+            /*
+             * IMPORTANT:
+             *
+             * There is intentionally NO:
+             *
+             * state.otp
+             * state.demoOtp
+             * sessionStorage OTP loading
+             *
+             * The real OTP belongs only to the backend.
+             */
 
         } catch (error) {
 
@@ -834,15 +952,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Never persist the OTP itself.
+             * Never store the actual OTP.
              */
 
             sessionStorage.removeItem(
-                STORAGE_KEYS.OTP
+                "STOCKFLOW_RECOVERY_OTP"
             );
 
 
-            if (state.recoveryToken) {
+            if (
+                state.recoveryToken
+            ) {
 
                 sessionStorage.setItem(
                     STORAGE_KEYS.TOKEN,
@@ -864,36 +984,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CLEAR RECOVERY STATE
-    ========================================================= */
-
-    function clearRecoveryState() {
-
-        Object.values(
-            STORAGE_KEYS
-        ).forEach((key) => {
-
-            try {
-
-                sessionStorage.removeItem(
-                    key
-                );
-
-            } catch (error) {
-
-                console.warn(
-                    "Unable to clear recovery state:",
-                    error
-                );
-
-            }
-
-        });
-
-    }
-
-
-    /* =========================================================
        UPDATE STATE FROM API RESPONSE
     ========================================================= */
 
@@ -901,33 +991,51 @@ document.addEventListener("DOMContentLoaded", () => {
         response
     ) {
 
-        if (!response) {
+        const parsed =
+            parseObject(
+                response
+            );
+
+
+        if (!parsed) {
             return;
         }
 
 
+        const user =
+            parseObject(
+                parsed.user
+            ) || {};
+
+
         state.uid =
             clean(
-                response.uid ||
-                response.user?.uid ||
+                parsed.uid ||
+                parsed.userId ||
+                user.uid ||
+                user.userId ||
                 state.uid
             );
 
 
         state.username =
             clean(
-                response.username ||
-                response.user?.username ||
+                parsed.username ||
+                parsed.userName ||
+                user.username ||
+                user.userName ||
                 state.username
             );
 
 
         state.email =
             normalizeEmail(
-                response.gmail ||
-                response.email ||
-                response.user?.gmail ||
-                response.user?.email ||
+                parsed.email ||
+                parsed.gmail ||
+                parsed.emailAddress ||
+                user.email ||
+                user.gmail ||
+                user.emailAddress ||
                 state.email
             );
 
@@ -938,18 +1046,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         state.phone =
             normalizePhone(
-                response.phone ||
-                response.phoneNo ||
-                response.user?.phone ||
-                response.user?.phoneNo ||
+                parsed.phone ||
+                parsed.phoneNo ||
+                parsed.phoneNumber ||
+                user.phone ||
+                user.phoneNo ||
+                user.phoneNumber ||
                 state.phone
             );
 
 
         state.identity =
             clean(
-                response.identity ||
-                response.user?.identity ||
+                parsed.identity ||
+                user.identity ||
                 state.identity ||
                 state.email ||
                 state.username ||
@@ -957,64 +1067,32 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        const responseChannel =
+        const channel =
             clean(
-                response.channel ||
+                parsed.channel ||
                 state.channel
             ).toLowerCase();
 
 
         if (
-            responseChannel === "email" ||
-            responseChannel === "phone" ||
-            responseChannel === "both"
+            channel === "email" ||
+            channel === "phone"
         ) {
 
             state.channel =
-                responseChannel;
+                channel;
 
         }
 
 
         /*
-         * This is the ONLY place where demoOtp is obtained.
+         * The server may indicate that an OTP is ready.
          *
-         * It must come from Code.gs.
+         * We NEVER read or save an OTP value.
          */
 
         if (
-            isDemoMode() &&
-            typeof response.otp === "string" &&
-            /^\d{6}$/.test(
-                response.otp
-            )
-        ) {
-
-            state.demoOtp =
-                response.otp;
-
-        }
-
-
-        /*
-         * Recovery token comes from successful
-         * verifyRecoveryOtp().
-         */
-
-        if (
-            typeof response.recoveryToken ===
-                "string" &&
-            response.recoveryToken
-        ) {
-
-            state.recoveryToken =
-                response.recoveryToken;
-
-        }
-
-
-        if (
-            response.otpReady === true
+            parsed.otpReady === true
         ) {
 
             state.otpReady =
@@ -1022,19 +1100,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
+        /*
+         * Recovery token is allowed because it is an
+         * authorization token returned AFTER successful
+         * OTP verification.
+         */
+
+        const token =
+            clean(
+                parsed.recoveryToken ||
+                parsed.token ||
+                parsed.resetToken
+            );
+
+
+        if (token) {
+
+            state.recoveryToken =
+                token;
+
+        }
+
+
         saveState();
 
     }
 
 
     /* =========================================================
-       MASK DESTINATION
+       DESTINATION MASKING
     ========================================================= */
 
     function maskEmail(email) {
 
         const value =
-            normalizeEmail(email);
+            normalizeEmail(
+                email
+            );
 
 
         if (!value) {
@@ -1088,7 +1191,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function maskPhone(phone) {
 
         const value =
-            normalizePhone(phone);
+            normalizePhone(
+                phone
+            );
 
 
         if (!value) {
@@ -1146,7 +1251,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       OTP INPUT HELPERS
+       OTP INPUT
     ========================================================= */
 
     function getOtpInputs() {
@@ -1163,18 +1268,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return getOtpInputs()
             .map(
                 (input) =>
-                    clean(input.value)
+                    clean(
+                        input.value
+                    )
             )
             .join("");
 
     }
 
 
-    function setOtpValue(value) {
+    function setOtpValue(
+        value
+    ) {
 
         const digits =
             clean(value)
-                .replace(/\D/g, "")
+                .replace(
+                    /\D/g,
+                    ""
+                )
                 .substring(
                     0,
                     OTP_LENGTH
@@ -1206,7 +1318,8 @@ document.addEventListener("DOMContentLoaded", () => {
         getOtpInputs().forEach(
             (input) => {
 
-                input.value = "";
+                input.value =
+                    "";
 
             }
         );
@@ -1264,6 +1377,18 @@ document.addEventListener("DOMContentLoaded", () => {
         inputs.forEach(
             (input, index) => {
 
+                input.setAttribute(
+                    "inputmode",
+                    "numeric"
+                );
+
+
+                input.setAttribute(
+                    "autocomplete",
+                    "one-time-code"
+                );
+
+
                 input.addEventListener(
                     "input",
                     () => {
@@ -1315,7 +1440,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 inputs[
                                     index - 1
-                                ].value = "";
+                                ].value =
+                                    "";
 
 
                                 inputs[
@@ -1364,11 +1490,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         event.preventDefault();
 
 
+                        const clipboard =
+                            event.clipboardData ||
+                            window.clipboardData;
+
+
+                        if (!clipboard) {
+                            return;
+                        }
+
+
                         const pasted =
-                            (
-                                event.clipboardData ||
-                                window.clipboardData
-                            )
+                            clipboard
                                 .getData("text")
                                 .replace(
                                     /\D/g,
@@ -1384,6 +1517,28 @@ document.addEventListener("DOMContentLoaded", () => {
                             pasted
                         );
 
+
+                        const finalInputs =
+                            getOtpInputs();
+
+
+                        if (
+                            finalInputs.length
+                        ) {
+
+                            const focusIndex =
+                                Math.min(
+                                    pasted.length,
+                                    finalInputs.length - 1
+                                );
+
+
+                            finalInputs[
+                                focusIndex
+                            ].focus();
+
+                        }
+
                     }
                 );
 
@@ -1396,6 +1551,46 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================================================
        COOLDOWN
     ========================================================= */
+
+    function formatTime(
+        seconds
+    ) {
+
+        const value =
+            Math.max(
+                0,
+                Number(seconds) || 0
+            );
+
+
+        const minutes =
+            Math.floor(
+                value / 60
+            );
+
+
+        const remaining =
+            value % 60;
+
+
+        return (
+            String(
+                minutes
+            ).padStart(
+                2,
+                "0"
+            ) +
+            ":" +
+            String(
+                remaining
+            ).padStart(
+                2,
+                "0"
+            )
+        );
+
+    }
+
 
     function getChannelCooldown() {
 
@@ -1413,83 +1608,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function setChannelCooldown(
-        channel,
-        seconds
-    ) {
-
-        const value =
-            Math.max(
-                0,
-                Number(seconds) || 0
-            );
-
-
-        if (
-            channel === "phone"
-        ) {
-
-            state.countdowns.phone =
-                value;
-
-        } else {
-
-            state.countdowns.email =
-                value;
-
-        }
-
-
-        updateCountdownUI();
-
-    }
-
-
     function updateCountdownUI() {
 
-        const emailSeconds =
-            state.countdowns.email;
-
-
-        const phoneSeconds =
-            state.countdowns.phone;
+        const seconds =
+            getChannelCooldown();
 
 
         if (recoveryOtpTimer) {
 
             if (
-                state.channel === "phone"
+                seconds > 0
             ) {
 
-                if (
-                    phoneSeconds > 0
-                ) {
+                const channelName =
+                    state.channel === "phone"
+                        ? "Phone"
+                        : "Email";
 
-                    recoveryOtpTimer.textContent =
-                        `Phone code available again in ${formatTime(phoneSeconds)}.`;
 
-                } else {
-
-                    recoveryOtpTimer.textContent =
-                        "Phone code available.";
-
-                }
+                recoveryOtpTimer.textContent =
+                    `${channelName} code available again in ${formatTime(seconds)}.`;
 
             } else {
 
-                if (
-                    emailSeconds > 0
-                ) {
-
-                    recoveryOtpTimer.textContent =
-                        `Email code available again in ${formatTime(emailSeconds)}.`;
-
-                } else {
-
-                    recoveryOtpTimer.textContent =
-                        "Email code available.";
-
-                }
+                recoveryOtpTimer.textContent =
+                    state.channel === "phone"
+                        ? "Phone code available."
+                        : "Email code available.";
 
             }
 
@@ -1500,60 +1645,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
             recoveryResendButton.disabled =
                 state.requestingOtp ||
-                getChannelCooldown() > 0;
+                seconds > 0;
 
         }
 
     }
 
 
-    function formatTime(seconds) {
-
-        const value =
-            Math.max(
-                0,
-                Number(seconds) || 0
-            );
-
-
-        const minutes =
-            Math.floor(
-                value / 60
-            );
-
-
-        const remainingSeconds =
-            value % 60;
-
-
-        return (
-            String(minutes).padStart(
-                2,
-                "0"
-            ) +
-            ":" +
-            String(remainingSeconds).padStart(
-                2,
-                "0"
-            )
-        );
-
-    }
-
-
     function startCooldown(
         channel,
-        seconds = RESEND_COOLDOWN
+        seconds
     ) {
 
-        setChannelCooldown(
-            channel,
-            seconds
-        );
+        const safeChannel =
+            channel === "phone"
+                ? "phone"
+                : "email";
 
 
-        if (state.countdownTimer) {
+        const safeSeconds =
+            Math.max(
+                0,
+                Math.floor(
+                    Number(seconds) || 0
+                )
+            );
+
+
+        state.countdowns[
+            safeChannel
+        ] =
+            safeSeconds;
+
+
+        updateCountdownUI();
+
+
+        if (
+            state.countdownTimer
+        ) {
+
             return;
+
+        }
+
+
+        if (
+            state.countdowns.email <= 0 &&
+            state.countdowns.phone <= 0
+        ) {
+
+            return;
+
         }
 
 
@@ -1561,28 +1704,20 @@ document.addEventListener("DOMContentLoaded", () => {
             window.setInterval(
                 () => {
 
-                    let active =
-                        false;
-
-
                     if (
-                        state.countdowns.email >
-                        0
+                        state.countdowns.email > 0
                     ) {
 
                         state.countdowns.email--;
-                        active = true;
 
                     }
 
 
                     if (
-                        state.countdowns.phone >
-                        0
+                        state.countdowns.phone > 0
                     ) {
 
                         state.countdowns.phone--;
-                        active = true;
 
                     }
 
@@ -1590,7 +1725,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateCountdownUI();
 
 
-                    if (!active) {
+                    if (
+                        state.countdowns.email <= 0 &&
+                        state.countdowns.phone <= 0
+                    ) {
 
                         window.clearInterval(
                             state.countdownTimer
@@ -1610,119 +1748,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       AUTO-FILL REAL BACKEND OTP
+       LOAD INITIAL COOLDOWN
     ========================================================= */
 
-    function scheduleDemoAutoFill() {
+    function loadInitialCooldown() {
 
-        if (
-            !isDemoMode()
-        ) {
+        try {
 
-            return;
-
-        }
-
-
-        if (
-            !state.demoOtp ||
-            !/^\d{6}$/.test(
-                state.demoOtp
-            )
-        ) {
-
-            return;
-
-        }
+            const storedCooldown =
+                Number(
+                    sessionStorage.getItem(
+                        STORAGE_KEYS.OTP_COOLDOWN
+                    ) || 0
+                );
 
 
-        if (state.demoFillTimer) {
+            if (
+                storedCooldown > 0
+            ) {
 
-            window.clearTimeout(
-                state.demoFillTimer
+                startCooldown(
+                    state.channel,
+                    storedCooldown
+                );
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to load recovery cooldown:",
+                error
             );
 
         }
-
-
-        setOtpInputsEnabled(
-            false
-        );
-
-
-        clearOtpInputs();
-
-
-        const delay =
-            getDemoDelay();
-
-
-        showOtpMessage(
-            "Verification code received. Preparing the code...",
-            "info"
-        );
-
-
-        state.demoFillTimer =
-            window.setTimeout(
-                () => {
-
-                    /*
-                     * IMPORTANT:
-                     *
-                     * This value came from Code.gs.
-                     *
-                     * No OTP is generated here.
-                     */
-
-                    setOtpValue(
-                        state.demoOtp
-                    );
-
-
-                    state.otpReady =
-                        true;
-
-
-                    setOtpInputsEnabled(
-                        true
-                    );
-
-
-                    updateVerifyButton();
-
-
-                    saveState();
-
-
-                    showOtpMessage(
-                        "Your verification code is ready.",
-                        "success"
-                    );
-
-
-                    if (
-                        getOtpInputs()[0]
-                    ) {
-
-                        getOtpInputs()[0].focus();
-
-                    }
-
-                },
-                delay
-            );
 
     }
 
 
     /* =========================================================
-       REQUEST RECOVERY OTP
+       REQUEST OTP
     ========================================================= */
 
     async function requestRecoveryOtp(
-        requestedChannel = state.channel,
-        isResend = false
+        requestedChannel = state.channel
     ) {
 
         const API =
@@ -1778,7 +1847,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (
-            isResend &&
             cooldown > 0
         ) {
 
@@ -1795,7 +1863,45 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!state.identity) {
 
             showOtpMessage(
-                "Recovery account information is missing. Please start again.",
+                "Your recovery session is missing. Please start password recovery again.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Phone recovery requires a registered phone number.
+         */
+
+        if (
+            channel === "phone" &&
+            !state.phone
+        ) {
+
+            showOtpMessage(
+                "No registered phone number is available for this account.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Email recovery requires a registered email.
+         */
+
+        if (
+            channel === "email" &&
+            !state.email
+        ) {
+
+            showOtpMessage(
+                "No registered Gmail is available for this account.",
                 "error"
             );
 
@@ -1814,10 +1920,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         state.otpReady =
             false;
-
-
-        state.demoOtp =
-            "";
 
 
         state.recoveryToken =
@@ -1842,14 +1944,14 @@ document.addEventListener("DOMContentLoaded", () => {
             recoveryResendButton,
             true,
             "Resend code",
-            "Requesting..."
+            "Sending..."
         );
 
 
         showOtpMessage(
-            isResend
-                ? "Requesting a new recovery code..."
-                : "Preparing your recovery code...",
+            channel === "phone"
+                ? "Requesting a new phone verification code..."
+                : "Requesting a new email verification code...",
             "info"
         );
 
@@ -1857,59 +1959,181 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
 
             /*
-             * IMPORTANT:
-             *
-             * forgotPassword() is called ONLY here.
-             *
-             * forgot-password.js does not call it.
+             * Prefer the new prepareOtp API.
              */
 
-            const response =
-                await API.forgotPassword({
-
-                    identity:
-                        state.identity,
-
-                    uid:
-                        state.uid,
-
-                    username:
-                        state.username,
-
-                    email:
-                        state.email,
-
-                    gmail:
-                        state.gmail,
-
-                    phone:
-                        state.phone,
-
-                    channel:
-                        channel
-
-                });
+            let response;
 
 
             if (
-                !response ||
-                response.success !== true
+                typeof API.prepareOtp ===
+                "function"
             ) {
+
+                response =
+                    await API.prepareOtp({
+
+                        identity:
+                            state.identity,
+
+                        uid:
+                            state.uid,
+
+                        username:
+                            state.username,
+
+                        email:
+                            state.email,
+
+                        gmail:
+                            state.gmail,
+
+                        phone:
+                            state.phone,
+
+                        channel:
+                            channel,
+
+                        purpose:
+                            "password_recovery"
+
+                    });
+
+            } else if (
+                typeof API.prepareOTP ===
+                "function"
+            ) {
+
+                response =
+                    await API.prepareOTP({
+
+                        identity:
+                            state.identity,
+
+                        uid:
+                            state.uid,
+
+                        username:
+                            state.username,
+
+                        email:
+                            state.email,
+
+                        gmail:
+                            state.gmail,
+
+                        phone:
+                            state.phone,
+
+                        channel:
+                            channel,
+
+                        purpose:
+                            "password_recovery"
+
+                    });
+
+            } else if (
+                typeof API.forgotPassword ===
+                "function"
+            ) {
+
+                /*
+                 * Backward compatibility for the existing
+                 * Apps Script API.
+                 */
+
+                response =
+                    await API.forgotPassword({
+
+                        identity:
+                            state.identity,
+
+                        uid:
+                            state.uid,
+
+                        username:
+                            state.username,
+
+                        email:
+                            state.email,
+
+                        gmail:
+                            state.gmail,
+
+                        phone:
+                            state.phone,
+
+                        channel:
+                            channel,
+
+                        purpose:
+                            "password_recovery"
+
+                    });
+
+            } else {
 
                 const error =
                     new Error(
-                        response?.message ||
-                        "Unable to prepare password recovery."
+                        "No recovery OTP endpoint is available."
                     );
 
 
                 error.code =
-                    response?.code ||
+                    "API_METHOD_MISSING";
+
+
+                throw error;
+
+            }
+
+
+            const parsed =
+                parseObject(
+                    response
+                );
+
+
+            if (
+                !parsed
+            ) {
+
+                const error =
+                    new Error(
+                        "The recovery system returned an invalid response."
+                    );
+
+
+                error.code =
+                    "INVALID_JSON";
+
+
+                throw error;
+
+            }
+
+
+            if (
+                parsed.success === false ||
+                parsed.ok === false
+            ) {
+
+                const error =
+                    new Error(
+                        parsed.message ||
+                        "Unable to send the recovery code."
+                    );
+
+
+                error.code =
+                    parsed.code ||
+                    parsed.errorCode ||
                     "RECOVERY_REQUEST_FAILED";
 
 
                 error.data =
-                    response;
+                    parsed;
 
 
                 throw error;
@@ -1918,81 +2142,139 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             updateStateFromResponse(
-                response
+                parsed
             );
 
 
             /*
-             * Backend must tell us the OTP is ready.
+             * OTP is considered ready only when the backend
+             * confirms it.
              */
 
-            if (
-                response.otpReady === true ||
-                (
-                    isDemoMode() &&
-                    /^\d{6}$/.test(
-                        state.demoOtp
-                    )
-                )
-            ) {
-
-                state.otpReady =
-                    true;
-
-            }
+            state.otpReady =
+                parsed.otpReady === true ||
+                parsed.code === "OTP_READY";
 
 
             /*
-             * Start ONLY the requested channel's cooldown.
+             * Never read:
+             *
+             * parsed.otp
+             * parsed.verificationCode
+             *
+             * They must never be used by the frontend.
              */
+
+            const cooldownSeconds =
+                Number(
+                    parsed.cooldownSeconds ||
+                    parsed.cooldown ||
+                    RESEND_COOLDOWN
+                );
+
 
             startCooldown(
                 channel,
-                Number(
-                    response.cooldown ||
-                    response.cooldownSeconds ||
-                    RESEND_COOLDOWN
-                )
+                cooldownSeconds
             );
+
+
+            try {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.OTP_COOLDOWN,
+                    String(
+                        cooldownSeconds
+                    )
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Unable to save OTP cooldown:",
+                    error
+                );
+
+            }
 
 
             updateDestination();
 
 
+            /*
+             * Enable manual OTP entry.
+             *
+             * The user receives the code from Gmail/SMS
+             * and enters it manually.
+             */
+
+            setOtpInputsEnabled(
+                true
+            );
+
+
+            const emailSent =
+                parsed.emailSent === true ||
+                parsed.email_sent === true;
+
+
+            const phoneSent =
+                parsed.phoneSent === true ||
+                parsed.phone_sent === true;
+
+
             if (
-                isDemoMode() &&
-                state.demoOtp
+                channel === "phone"
             ) {
 
-                /*
-                 * Demo mode:
-                 * backend OTP is automatically shown after
-                 * the configured 3–5 second delay.
-                 */
+                if (
+                    phoneSent
+                ) {
 
-                scheduleDemoAutoFill();
+                    showOtpMessage(
+                        "A verification code has been sent to your registered phone number.",
+                        "success"
+                    );
+
+                } else {
+
+                    showOtpMessage(
+                        parsed.message ||
+                        "A phone verification code was requested. Enter the code sent to your registered phone.",
+                        "success"
+                    );
+
+                }
 
             } else {
 
-                setOtpInputsEnabled(
-                    true
-                );
-
-
-                showOtpMessage(
-                    response.message ||
-                    "Your recovery code has been sent. Enter the code to continue.",
-                    "success"
-                );
-
-
                 if (
-                    getOtpInputs()[0]
+                    emailSent
                 ) {
 
-                    getOtpInputs()[0].focus();
+                    showOtpMessage(
+                        "A verification code has been sent to your registered Gmail.",
+                        "success"
+                    );
+
+                } else {
+
+                    showOtpMessage(
+                        parsed.message ||
+                        "An email verification code was requested. Check your Gmail inbox and spam folder.",
+                        "success"
+                    );
 
                 }
+
+            }
+
+
+            if (
+                getOtpInputs()[0]
+            ) {
+
+                getOtpInputs()[0].focus();
 
             }
 
@@ -2008,16 +2290,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 false;
 
 
-            state.demoOtp =
-                "";
+            clearOtpInputs();
 
 
             setOtpInputsEnabled(
                 false
             );
-
-
-            clearOtpInputs();
 
 
             showOtpMessage(
@@ -2037,7 +2315,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 recoveryResendButton,
                 false,
                 "Resend code",
-                "Requesting..."
+                "Sending..."
             );
 
 
@@ -2072,7 +2350,21 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             showOtpMessage(
-                "Please enter the complete 6-digit verification code.",
+                `Please enter the complete ${OTP_LENGTH}-digit verification code.`,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        if (
+            !state.identity
+        ) {
+
+            showOtpMessage(
+                "Your recovery session is missing. Please start password recovery again.",
                 "error"
             );
 
@@ -2120,67 +2412,138 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            if (
-                typeof API.verifyRecoveryOtp !==
-                    "function"
-            ) {
-
-                throw new Error(
-                    "The recovery OTP verification endpoint is not available."
-                );
-
-            }
+            let response;
 
 
-            const response =
-                await API.verifyRecoveryOtp({
+            const payload = {
 
-                    identity:
-                        state.identity,
+                identity:
+                    state.identity,
 
-                    uid:
-                        state.uid,
+                uid:
+                    state.uid,
 
-                    username:
-                        state.username,
+                username:
+                    state.username,
 
-                    email:
-                        state.email,
+                email:
+                    state.email,
 
-                    gmail:
-                        state.gmail,
+                gmail:
+                    state.gmail,
 
-                    phone:
-                        state.phone,
+                phone:
+                    state.phone,
 
-                    channel:
-                        state.channel,
+                channel:
+                    state.channel,
 
-                    otp:
-                        otp
+                otp:
+                    otp
 
-                });
+            };
 
+
+            /*
+             * Preferred new API.
+             */
 
             if (
-                !response ||
-                response.success !== true
+                typeof API.verifyOtp ===
+                "function"
             ) {
+
+                response =
+                    await API.verifyOtp(
+                        payload
+                    );
+
+            } else if (
+                typeof API.verifyOTP ===
+                "function"
+            ) {
+
+                response =
+                    await API.verifyOTP(
+                        payload
+                    );
+
+            } else if (
+                typeof API.verifyRecoveryOtp ===
+                "function"
+            ) {
+
+                /*
+                 * Compatibility with the previous API.
+                 */
+
+                response =
+                    await API.verifyRecoveryOtp(
+                        payload
+                    );
+
+            } else {
 
                 const error =
                     new Error(
-                        response?.message ||
-                        "The recovery code could not be verified."
+                        "The recovery OTP verification endpoint is not available."
                     );
 
 
                 error.code =
-                    response?.code ||
+                    "API_METHOD_MISSING";
+
+
+                throw error;
+
+            }
+
+
+            const parsed =
+                parseObject(
+                    response
+                );
+
+
+            if (
+                !parsed
+            ) {
+
+                const error =
+                    new Error(
+                        "The recovery system returned an invalid response."
+                    );
+
+
+                error.code =
+                    "INVALID_JSON";
+
+
+                throw error;
+
+            }
+
+
+            if (
+                parsed.success === false ||
+                parsed.ok === false
+            ) {
+
+                const error =
+                    new Error(
+                        parsed.message ||
+                        "The verification code is incorrect."
+                    );
+
+
+                error.code =
+                    parsed.code ||
+                    parsed.errorCode ||
                     "INVALID_OTP";
 
 
                 error.data =
-                    response;
+                    parsed;
 
 
                 throw error;
@@ -2189,14 +2552,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * The account is NOT marked verified here.
-             *
-             * This only authorizes password reset.
+             * Update account information and recovery token.
              */
 
             updateStateFromResponse(
-                response
+                parsed
             );
+
+
+            const recoveryToken =
+                clean(
+                    parsed.recoveryToken ||
+                    parsed.token ||
+                    parsed.resetToken
+                );
+
+
+            if (
+                recoveryToken
+            ) {
+
+                state.recoveryToken =
+                    recoveryToken;
+
+            }
+
+
+            /*
+             * A recovery token is strongly preferred.
+             *
+             * It prevents the password-reset request from
+             * relying on the OTP again.
+             */
+
+            if (
+                !state.recoveryToken
+            ) {
+
+                const error =
+                    new Error(
+                        "The recovery server did not return a recovery token."
+                    );
+
+
+                error.code =
+                    "RECOVERY_TOKEN_INVALID";
+
+
+                throw error;
+
+            }
 
 
             state.otpVerified =
@@ -2207,30 +2612,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 true;
 
 
-            state.recoveryToken =
-                clean(
-                    response.recoveryToken ||
-                    response.token ||
-                    ""
-                );
-
-
-            if (
-                !state.recoveryToken
-            ) {
-
-                throw new Error(
-                    "The recovery server did not return a recovery token."
-                );
-
-            }
+            state.otpReady =
+                false;
 
 
             saveState();
 
 
             showOtpMessage(
-                response.message ||
+                parsed.message ||
                 "Recovery code verified successfully.",
                 "success"
             );
@@ -2282,7 +2672,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       SHOW PASSWORD STEP
+       SHOW NEW PASSWORD STEP
     ========================================================= */
 
     function showNewPasswordStep() {
@@ -2339,61 +2729,84 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Password must be at least 8 characters long."
+
             };
 
         }
 
 
         if (
-            !/[A-Z]/.test(password)
+            !/[A-Z]/.test(
+                password
+            )
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Password must contain at least one uppercase letter."
+
             };
 
         }
 
 
         if (
-            !/[a-z]/.test(password)
+            !/[a-z]/.test(
+                password
+            )
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Password must contain at least one lowercase letter."
+
             };
 
         }
 
 
         if (
-            !/\d/.test(password)
+            !/\d/.test(
+                password
+            )
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Password must contain at least one number."
+
             };
 
         }
 
 
         if (
-            !/[^A-Za-z0-9]/.test(password)
+            !/[^A-Za-z0-9]/.test(
+                password
+            )
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Password must contain at least one special character."
+
             };
 
         }
@@ -2404,16 +2817,21 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return {
+
                 valid: false,
+
                 message:
                     "Passwords do not match."
+
             };
 
         }
 
 
         return {
+
             valid: true
+
         };
 
     }
@@ -2502,7 +2920,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (
             typeof API.resetPassword !==
-                "function"
+            "function"
         ) {
 
             showPasswordMessage(
@@ -2534,15 +2952,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         try {
-
-            /*
-             * IMPORTANT:
-             *
-             * recoveryToken is mandatory.
-             *
-             * The OTP itself is NOT sent again as the
-             * authorization mechanism.
-             */
 
             const response =
                 await API.resetPassword({
@@ -2583,25 +2992,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
 
+            const parsed =
+                parseObject(
+                    response
+                );
+
+
             if (
-                !response ||
-                response.success !== true
+                !parsed
             ) {
 
                 const error =
                     new Error(
-                        response?.message ||
+                        "The password reset system returned an invalid response."
+                    );
+
+
+                error.code =
+                    "INVALID_JSON";
+
+
+                throw error;
+
+            }
+
+
+            if (
+                parsed.success === false ||
+                parsed.ok === false
+            ) {
+
+                const error =
+                    new Error(
+                        parsed.message ||
                         "Password reset failed."
                     );
 
 
                 error.code =
-                    response?.code ||
+                    parsed.code ||
+                    parsed.errorCode ||
                     "PASSWORD_RESET_FAILED";
 
 
                 error.data =
-                    response;
+                    parsed;
 
 
                 throw error;
@@ -2610,10 +3045,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Password reset is complete.
+             * Password reset succeeded.
              *
-             * Clear all recovery state so the token cannot
-             * accidentally be reused.
+             * Destroy the recovery session immediately.
              */
 
             state.recoveryToken =
@@ -2628,6 +3062,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 false;
 
 
+            state.otpReady =
+                false;
+
+
             clearRecoveryState();
 
 
@@ -2638,17 +3076,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            if (newPasswordStep) {
+            if (recoveryOtpStep) {
 
-                newPasswordStep.hidden =
+                recoveryOtpStep.hidden =
                     true;
 
             }
 
 
-            if (recoveryOtpStep) {
+            if (newPasswordStep) {
 
-                recoveryOtpStep.hidden =
+                newPasswordStep.hidden =
                     true;
 
             }
@@ -2665,7 +3103,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (successMessage) {
 
                 successMessage.textContent =
-                    response.message ||
+                    parsed.message ||
                     "Your password has been reset successfully. You can now sign in with your new password.";
 
             }
@@ -2712,140 +3150,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       AUTO-START RECOVERY
-    ========================================================= */
-
-    function initializeRecovery() {
-
-        loadSavedState();
-
-
-        /*
-         * A recovery page without an identity cannot safely
-         * request an OTP.
-         */
-
-        if (!state.identity) {
-
-            showOtpMessage(
-                "No recovery account was selected. Please return to Forgot Password and try again.",
-                "error"
-            );
-
-
-            setOtpInputsEnabled(
-                false
-            );
-
-
-            if (recoveryResendButton) {
-
-                recoveryResendButton.disabled =
-                    true;
-
-            }
-
-
-            return;
-
-        }
-
-
-        updateDestination();
-
-
-        setOtpInputsEnabled(
-            false
-        );
-
-
-        clearOtpInputs();
-
-
-        updateCountdownUI();
-
-
-        /*
-         * Always request a fresh recovery OTP when entering
-         * the recovery page.
-         *
-         * This prevents stale OTPs from previous attempts.
-         */
-
-        requestRecoveryOtp(
-            state.channel || "email",
-            false
-        );
-
-    }
-
-
-    /* =========================================================
-       OTP FORM SUBMIT
-    ========================================================= */
-
-    if (recoveryOtpForm) {
-
-        recoveryOtpForm.addEventListener(
-            "submit",
-            (event) => {
-
-                event.preventDefault();
-
-                verifyRecoveryCode();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       RESEND BUTTON
-    ========================================================= */
-
-    if (recoveryResendButton) {
-
-        recoveryResendButton.addEventListener(
-            "click",
-            () => {
-
-                requestRecoveryOtp(
-                    state.channel,
-                    true
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       PASSWORD FORM
-    ========================================================= */
-
-    if (newPasswordForm) {
-
-        newPasswordForm.addEventListener(
-            "submit",
-            (event) => {
-
-                event.preventDefault();
-
-                resetPassword();
-
-            }
-        );
-
-    }
-
-
-    /* =========================================================
        PASSWORD CONFIRMATION
     ========================================================= */
 
-    if (confirmPasswordInput) {
+    function setupPasswordConfirmation() {
+
+        if (!confirmPasswordInput) {
+            return;
+        }
+
 
         confirmPasswordInput.addEventListener(
             "input",
@@ -2899,10 +3212,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       PASSWORD STRENGTH FEEDBACK
+       PASSWORD STRENGTH
     ========================================================= */
 
-    if (newPasswordInput) {
+    function setupPasswordStrength() {
+
+        if (!newPasswordInput) {
+            return;
+        }
+
 
         newPasswordInput.addEventListener(
             "input",
@@ -2916,6 +3234,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 if (!password) {
+
+                    showPasswordMessage(
+                        ""
+                    );
 
                     return;
 
@@ -2976,6 +3298,217 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
 
+
+                if (
+                    confirmPasswordInput &&
+                    confirmPasswordInput.value
+                ) {
+
+                    const matches =
+                        confirmPasswordInput.value ===
+                        password;
+
+
+                    confirmPasswordInput.setCustomValidity(
+                        matches
+                            ? ""
+                            : "Passwords do not match."
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       INITIALIZE RECOVERY PAGE
+    ========================================================= */
+
+    function initializeRecovery() {
+
+        loadSavedState();
+
+
+        /*
+         * Recovery page requires state created by
+         * forgot-password.js.
+         */
+
+        if (
+            !state.identity
+        ) {
+
+            showOtpMessage(
+                "No recovery account was selected. Please return to Forgot Password and try again.",
+                "error"
+            );
+
+
+            setOtpInputsEnabled(
+                false
+            );
+
+
+            if (recoveryVerifyButton) {
+
+                recoveryVerifyButton.disabled =
+                    true;
+
+            }
+
+
+            if (recoveryResendButton) {
+
+                recoveryResendButton.disabled =
+                    true;
+
+            }
+
+
+            return;
+
+        }
+
+
+        /*
+         * No automatic OTP request here.
+         *
+         * #8 forgot-password.js already requested the
+         * initial OTP before redirecting to this page.
+         */
+
+        updateDestination();
+
+
+        loadInitialCooldown();
+
+
+        clearOtpInputs();
+
+
+        /*
+         * OTP input stays manual.
+         *
+         * The user must enter the code received through
+         * Gmail or phone.
+         */
+
+        setOtpInputsEnabled(
+            true
+        );
+
+
+        updateVerifyButton();
+
+
+        /*
+         * If #8 confirmed that an OTP is ready, tell the
+         * user to enter it.
+         */
+
+        if (
+            state.otpReady
+        ) {
+
+            showOtpMessage(
+                state.channel === "phone"
+                    ? "Enter the verification code sent to your registered phone."
+                    : "Enter the verification code sent to your registered Gmail.",
+                "success"
+            );
+
+        } else {
+
+            showOtpMessage(
+                state.channel === "phone"
+                    ? "Enter the verification code sent to your registered phone, or use Resend code if needed."
+                    : "Enter the verification code sent to your registered Gmail, or use Resend code if needed.",
+                "info"
+            );
+
+        }
+
+
+        if (
+            getOtpInputs()[0]
+        ) {
+
+            getOtpInputs()[0].focus();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       OTP FORM
+    ========================================================= */
+
+    if (
+        recoveryOtpForm
+    ) {
+
+        recoveryOtpForm.addEventListener(
+            "submit",
+            (event) => {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                verifyRecoveryCode();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       RESEND BUTTON
+    ========================================================= */
+
+    if (
+        recoveryResendButton
+    ) {
+
+        recoveryResendButton.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                requestRecoveryOtp(
+                    state.channel
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       PASSWORD FORM
+    ========================================================= */
+
+    if (
+        newPasswordForm
+    ) {
+
+        newPasswordForm.addEventListener(
+            "submit",
+            (event) => {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                resetPassword();
+
             }
         );
 
@@ -2987,6 +3520,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================================================= */
 
     setupOtpInputs();
+
+    setupPasswordConfirmation();
+
+    setupPasswordStrength();
 
     initializeRecovery();
 
