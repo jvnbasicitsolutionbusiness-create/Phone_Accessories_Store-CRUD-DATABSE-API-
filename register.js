@@ -1,1397 +1,1039 @@
-/* ============================================================
-   STOCKFLOW — REGISTRATION CONTROLLER
-   ============================================================
+document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
 
-   REGISTRATION FLOW:
+    /* =========================================================
+       ELEMENTS
+    ========================================================= */
 
-   Register Form
-        ↓
-   Validate registration data
-        ↓
-   StockFlowAPI.register()
-        ↓
-   Google Apps Script
-        ↓
-   Generate ONE real verification OTP
-        ↓
-   Save account + OTP + expiry
-        ↓
-   Google Sheets USER
-        ↓
-   Save SAME OTP
-        ↓
-   Firebase
-        ↓
-   Return registration result
-        ↓
-   Save verification identity + OTP temporarily
-        ↓
-   Redirect to verify.html
-        ↓
-   verify.html / otp.js
-        ↓
-   Automatically populate six OTP boxes
+    const form =
+        document.getElementById("registerForm");
 
-   IMPORTANT:
-   - OTP is generated ONLY by the backend.
-   - OTP is stored in Google Sheets.
-   - The SAME OTP is stored in Firebase.
-   - Frontend does NOT generate an OTP.
-   - No demoOtp property is used.
-   - No fake Gmail/SMS delivery is claimed.
-   ============================================================ */
+    if (!form) {
+        return;
+    }
+
+    const message =
+        document.getElementById("registerMessage");
+
+    const button =
+        document.getElementById("registerButton");
+
+    const firstNameInput =
+        document.getElementById("firstName");
+
+    const lastNameInput =
+        document.getElementById("lastName");
+
+    const usernameInput =
+        document.getElementById("username");
+
+    const ageInput =
+        document.getElementById("age");
+
+    const emailInput =
+        document.getElementById("email");
+
+    const phoneInput =
+        document.getElementById("phone");
+
+    const passwordInput =
+        document.getElementById("password");
+
+    const confirmPasswordInput =
+        document.getElementById("confirmPassword");
+
+    const termsInput =
+        document.getElementById("terms");
+
+    const communicationsInput =
+        document.getElementById("communications");
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+    /* =========================================================
+       CONFIGURATION
+    ========================================================= */
 
-        "use strict";
+    const config =
+        window.STOCKFLOW_CONFIG ||
+        window.CONFIG ||
+        {};
+
+    const routes =
+        config.ROUTES ||
+        {};
+
+    const verifyRoute =
+        routes.VERIFY ||
+        routes.verify ||
+        "verify.html";
 
 
-        /* =====================================================
-           FORM
-           ===================================================== */
+    const STORAGE_KEYS = {
+        IDENTITY:
+            "STOCKFLOW_VERIFICATION_IDENTITY",
 
-        const form =
-            document.getElementById(
-                "registerForm"
+        UID:
+            "STOCKFLOW_VERIFICATION_UID",
+
+        USERNAME:
+            "STOCKFLOW_VERIFICATION_USERNAME",
+
+        EMAIL:
+            "STOCKFLOW_VERIFICATION_EMAIL",
+
+        GMAIL:
+            "STOCKFLOW_VERIFICATION_GMAIL",
+
+        PHONE:
+            "STOCKFLOW_VERIFICATION_PHONE",
+
+        CHANNEL:
+            "STOCKFLOW_VERIFICATION_CHANNEL",
+
+        OTP_READY:
+            "STOCKFLOW_OTP_READY",
+
+        OTP:
+            "STOCKFLOW_OTP"
+    };
+
+
+    /* =========================================================
+       HELPERS
+    ========================================================= */
+
+    function clean(value) {
+        return String(value ?? "").trim();
+    }
+
+
+    function normalizeUsername(value) {
+        return clean(value).toLowerCase();
+    }
+
+
+    function normalizeEmail(value) {
+        return clean(value).toLowerCase();
+    }
+
+
+    function normalizePhone(value) {
+
+        let phone =
+            clean(value).replace(/\s+/g, "");
+
+        if (phone.startsWith("+63")) {
+            phone =
+                "0" +
+                phone.substring(3);
+        }
+
+        if (phone.startsWith("63") &&
+            phone.length === 12) {
+
+            phone =
+                "0" +
+                phone.substring(2);
+        }
+
+        return phone;
+    }
+
+
+    function showMessage(
+        text,
+        type = "error"
+    ) {
+
+        if (!message) {
+            return;
+        }
+
+        message.textContent =
+            clean(text);
+
+        message.hidden =
+            !clean(text);
+
+        message.classList.remove(
+            "success",
+            "error",
+            "warning",
+            "info"
+        );
+
+        if (clean(text)) {
+            message.classList.add(type);
+        }
+    }
+
+
+    function setLoading(loading) {
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled =
+            Boolean(loading);
+
+        const buttonText =
+            button.querySelector(
+                ".button-text"
+            );
+
+        const buttonLoader =
+            button.querySelector(
+                ".button-loader"
+            );
+
+        if (buttonText) {
+            buttonText.hidden =
+                Boolean(loading);
+        }
+
+        if (buttonLoader) {
+            buttonLoader.hidden =
+                !Boolean(loading);
+        }
+    }
+
+
+    function isValidName(value) {
+
+        const name =
+            clean(value);
+
+        return (
+            name.length >= 2 &&
+            name.length <= 50 &&
+            /^[A-Za-zÀ-ÿ .'-]+$/.test(name)
+        );
+    }
+
+
+    function isValidUsername(value) {
+
+        const username =
+            clean(value);
+
+        /*
+         * Backend must use the same rule:
+         * 4–30 characters
+         * letters, numbers, underscore and dot
+         */
+
+        return (
+            username.length >= 4 &&
+            username.length <= 30 &&
+            /^[A-Za-z0-9._]+$/.test(username)
+        );
+    }
+
+
+    function isValidAge(value) {
+
+        const age =
+            Number(value);
+
+        return (
+            Number.isInteger(age) &&
+            age >= 18 &&
+            age <= 100
+        );
+    }
+
+
+    function isValidGmail(value) {
+
+        const email =
+            normalizeEmail(value);
+
+        return (
+            /^[^\s@]+@gmail\.com$/i.test(email)
+        );
+    }
+
+
+    function isValidPhilippinePhone(value) {
+
+        const phone =
+            normalizePhone(value);
+
+        return /^09\d{9}$/.test(phone);
+    }
+
+
+    function isStrongPassword(value) {
+
+        const password =
+            String(value ?? "");
+
+        if (password.length < 8) {
+            return false;
+        }
+
+        const hasUppercase =
+            /[A-Z]/.test(password);
+
+        const hasLowercase =
+            /[a-z]/.test(password);
+
+        const hasNumber =
+            /\d/.test(password);
+
+        const hasSymbol =
+            /[^A-Za-z0-9]/.test(password);
+
+        return (
+            hasUppercase &&
+            hasLowercase &&
+            hasNumber &&
+            hasSymbol
+        );
+    }
+
+
+    /* =========================================================
+       VERIFICATION STATE
+    ========================================================= */
+
+    function clearOldVerificationState() {
+
+        const keys = Object.values(
+            STORAGE_KEYS
+        );
+
+        keys.forEach((key) => {
+
+            try {
+                sessionStorage.removeItem(key);
+            } catch (error) {
+                console.warn(
+                    "Unable to clear session state:",
+                    error
+                );
+            }
+
+        });
+    }
+
+
+    function saveVerificationState(response, data) {
+
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT save an OTP here.
+         *
+         * Registration only creates the pending account.
+         * verify.js will call prepareOtp() and receive the
+         * backend-generated OTP.
+         */
+
+        const uid =
+            clean(
+                response?.uid ||
+                response?.user?.uid ||
+                data?.uid
+            );
+
+        const username =
+            normalizeUsername(
+                response?.username ||
+                response?.user?.username ||
+                data?.username
+            );
+
+        const email =
+            normalizeEmail(
+                response?.gmail ||
+                response?.email ||
+                response?.user?.gmail ||
+                response?.user?.email ||
+                data?.gmail ||
+                data?.email
+            );
+
+        const phone =
+            normalizePhone(
+                response?.phone ||
+                response?.phoneNo ||
+                response?.user?.phone ||
+                response?.user?.phoneNo ||
+                data?.phone
+            );
+
+        const identity =
+            clean(
+                response?.identity ||
+                response?.user?.identity ||
+                email ||
+                username ||
+                phone
+            );
+
+        const channel =
+            clean(
+                response?.channel ||
+                "email"
+            ).toLowerCase();
+
+
+        try {
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.IDENTITY,
+                identity
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.UID,
+                uid
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.USERNAME,
+                username
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.EMAIL,
+                email
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.GMAIL,
+                email
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.PHONE,
+                phone
+            );
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.CHANNEL,
+                channel
             );
 
 
-        if (!form) {
+            /*
+             * Explicitly indicate that an OTP has NOT
+             * been generated yet.
+             */
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.OTP_READY,
+                "false"
+            );
+
+
+            /*
+             * Never store an OTP produced by registration.
+             */
+
+            sessionStorage.removeItem(
+                STORAGE_KEYS.OTP
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to save verification state:",
+                error
+            );
+        }
+    }
+
+
+    /* =========================================================
+       API ERROR HANDLING
+    ========================================================= */
+
+    function getErrorCode(error) {
+
+        return clean(
+            error?.code ||
+            error?.data?.code ||
+            error?.response?.code ||
+            ""
+        ).toUpperCase();
+    }
+
+
+    function getBackendMessage(error) {
+
+        return clean(
+            error?.message ||
+            error?.data?.message ||
+            error?.response?.message ||
+            ""
+        );
+    }
+
+
+    function getRegistrationErrorMessage(error) {
+
+        const code =
+            getErrorCode(error);
+
+        const backendMessage =
+            getBackendMessage(error);
+
+
+        switch (code) {
+
+            case "USERNAME_EXISTS":
+            case "DUPLICATE_USERNAME":
+                return "Username already exists.";
+
+            case "EMAIL_EXISTS":
+            case "GMAIL_EXISTS":
+            case "DUPLICATE_EMAIL":
+                return "This Gmail address is already registered.";
+
+            case "PHONE_EXISTS":
+            case "DUPLICATE_PHONE":
+                return "This phone number is already registered.";
+
+            case "ACCOUNT_EXISTS":
+            case "DUPLICATE_ACCOUNT":
+                return "An account with these details already exists.";
+
+            case "INVALID_REGISTRATION":
+            case "VALIDATION_ERROR":
+                return backendMessage ||
+                    "Please check your registration information.";
+
+            case "API_URL_MISSING":
+            case "API_URL_INVALID":
+            case "NETWORK_ERROR":
+            case "TIMEOUT":
+            case "EMPTY_RESPONSE":
+            case "INVALID_JSON":
+                return "Unable to connect to the registration system right now. Please try again.";
+
+            default:
+                /*
+                 * Most important rule:
+                 *
+                 * If Code.gs sends a meaningful business
+                 * message, preserve it.
+                 */
+
+                if (backendMessage) {
+                    return backendMessage;
+                }
+
+                return "Registration could not be completed. Please try again.";
+        }
+    }
+
+
+    /* =========================================================
+       VALIDATION
+    ========================================================= */
+
+    function validateForm() {
+
+        const firstName =
+            clean(firstNameInput?.value);
+
+        const lastName =
+            clean(lastNameInput?.value);
+
+        const username =
+            clean(usernameInput?.value);
+
+        const age =
+            clean(ageInput?.value);
+
+        const email =
+            normalizeEmail(emailInput?.value);
+
+        const phone =
+            normalizePhone(phoneInput?.value);
+
+        const password =
+            String(passwordInput?.value ?? "");
+
+        const confirmPassword =
+            String(
+                confirmPasswordInput?.value ?? ""
+            );
+
+
+        if (!isValidName(firstName)) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter a valid first name."
+            };
+        }
+
+
+        if (!isValidName(lastName)) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter a valid last name."
+            };
+        }
+
+
+        if (!isValidUsername(username)) {
+
+            return {
+                valid: false,
+                message:
+                    "Username must be 4–30 characters and may contain only letters, numbers, dots, and underscores."
+            };
+        }
+
+
+        if (!isValidAge(age)) {
+
+            return {
+                valid: false,
+                message:
+                    "Age must be between 18 and 100."
+            };
+        }
+
+
+        if (!isValidGmail(email)) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter a valid Gmail address ending in @gmail.com."
+            };
+        }
+
+
+        if (!isValidPhilippinePhone(phone)) {
+
+            return {
+                valid: false,
+                message:
+                    "Please enter a valid Philippine mobile number in 09XXXXXXXXX format."
+            };
+        }
+
+
+        if (!isStrongPassword(password)) {
+
+            return {
+                valid: false,
+                message:
+                    "Password must be at least 8 characters and include uppercase, lowercase, number, and symbol."
+            };
+        }
+
+
+        if (password !== confirmPassword) {
+
+            return {
+                valid: false,
+                message:
+                    "Passwords do not match."
+            };
+        }
+
+
+        /*
+         * Terms checkbox is required when it exists.
+         */
+
+        if (
+            termsInput &&
+            !termsInput.checked
+        ) {
+
+            return {
+                valid: false,
+                message:
+                    "Please accept the terms and conditions."
+            };
+        }
+
+
+        /*
+         * Communications checkbox is optional.
+         *
+         * We intentionally do not block registration
+         * when it is unchecked.
+         */
+
+        return {
+            valid: true,
+            data: {
+                firstName,
+                lastName,
+                name:
+                    `${firstName} ${lastName}`.trim(),
+
+                username:
+                    normalizeUsername(username),
+
+                age:
+                    Number(age),
+
+                email,
+                gmail:
+                    email,
+
+                phone,
+
+                password,
+                confirmPassword
+            }
+        };
+    }
+
+
+    /* =========================================================
+       API AVAILABILITY
+    ========================================================= */
+
+    function getAPI() {
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.register ===
+                "function"
+        ) {
+            return window.StockFlowAPI;
+        }
+
+        if (
+            window.API &&
+            typeof window.API.register ===
+                "function"
+        ) {
+            return window.API;
+        }
+
+        return null;
+    }
+
+
+    /* =========================================================
+       REGISTRATION
+    ========================================================= */
+
+    async function submitRegistration() {
+
+        showMessage("");
+
+        const validation =
+            validateForm();
+
+        if (!validation.valid) {
+
+            showMessage(
+                validation.message,
+                "error"
+            );
+
             return;
         }
 
 
-        /* =====================================================
-           CONFIGURATION
-           ===================================================== */
+        const API =
+            getAPI();
 
-        const CONFIG =
-            window.STOCKFLOW_CONFIG ||
-            window.CONFIG ||
-            {};
+        if (!API) {
 
-
-        const ROUTES =
-            CONFIG.ROUTES ||
-            {};
-
-
-        const VERIFY_PAGE =
-            ROUTES.VERIFY ||
-            ROUTES.verify ||
-            "verify.html";
-
-
-        const AUTH =
-            CONFIG.AUTH ||
-            {};
-
-
-        /* =====================================================
-           STORAGE KEYS
-           ===================================================== */
-
-        const STORAGE_KEYS = {
-
-            UID:
-                AUTH.OTP_UID_KEY ||
-                "STOCKFLOW_OTP_UID",
-
-            EMAIL:
-                AUTH.OTP_EMAIL_KEY ||
-                "STOCKFLOW_OTP_EMAIL",
-
-            PHONE:
-                AUTH.OTP_PHONE_KEY ||
-                "STOCKFLOW_OTP_PHONE",
-
-            USERNAME:
-                AUTH.OTP_USERNAME_KEY ||
-                "STOCKFLOW_OTP_USERNAME",
-
-            IDENTITY:
-                AUTH.OTP_IDENTITY_KEY ||
-                "STOCKFLOW_OTP_IDENTITY",
-
-            CHANNEL:
-                AUTH.OTP_CHANNEL_KEY ||
-                "STOCKFLOW_OTP_CHANNEL",
-
-            OTP:
-                AUTH.OTP_CODE_KEY ||
-                "STOCKFLOW_OTP_CODE",
-
-            OTP_READY:
-                AUTH.OTP_READY_KEY ||
-                "STOCKFLOW_OTP_CODE_READY"
-
-        };
-
-
-        /* =====================================================
-           ELEMENTS
-           ===================================================== */
-
-        const message =
-            document.getElementById(
-                "registerMessage"
+            showMessage(
+                "The registration system is not available right now.",
+                "error"
             );
 
-
-        const button =
-            document.getElementById(
-                "registerButton"
-            ) ||
-            form.querySelector(
-                'button[type="submit"]'
-            );
-
-
-        /* =====================================================
-           NAME FIELDS
-           ===================================================== */
-
-        const firstNameInput =
-            document.getElementById(
-                "registerFirstName"
-            ) ||
-            document.getElementById(
-                "firstName"
-            );
-
-
-        const lastNameInput =
-            document.getElementById(
-                "registerLastName"
-            ) ||
-            document.getElementById(
-                "lastName"
-            );
-
-
-        const oldNameInput =
-            document.getElementById(
-                "registerName"
-            );
-
-
-        /* =====================================================
-           OTHER FIELDS
-           ===================================================== */
-
-        const usernameInput =
-            document.getElementById(
-                "registerUsername"
-            );
-
-
-        const ageInput =
-            document.getElementById(
-                "registerAge"
-            );
-
-
-        const emailInput =
-            document.getElementById(
-                "registerEmail"
-            );
-
-
-        const phoneInput =
-            document.getElementById(
-                "registerPhone"
-            );
-
-
-        const passwordInput =
-            document.getElementById(
-                "registerPassword"
-            );
-
-
-        const confirmPasswordInput =
-            document.getElementById(
-                "registerConfirmPassword"
-            );
-
-
-        /* =====================================================
-           OPTIONAL CHECKBOXES
-           ===================================================== */
-
-        const termsInput =
-            document.getElementById(
-                "registerTerms"
-            ) ||
-            document.getElementById(
-                "terms"
-            ) ||
-            document.querySelector(
-                '[name="terms"]'
-            );
-
-
-        const communicationsInput =
-            document.getElementById(
-                "registerCommunications"
-            ) ||
-            document.getElementById(
-                "communications"
-            ) ||
-            document.querySelector(
-                '[name="communications"]'
-            );
-
-
-        /* =====================================================
-           MESSAGE
-           ===================================================== */
-
-        function showMessage(
-            text,
-            type = "error"
-        ) {
-
-            if (!message) {
-                return;
-            }
-
-
-            message.textContent =
-                text || "";
-
-
-            message.className =
-                `auth-message ${type}`;
-
+            return;
         }
 
 
-        function clearMessage() {
+        const data =
+            validation.data;
 
-            if (!message) {
-                return;
+
+        /*
+         * Remove old verification information first.
+         * This prevents an old OTP or old account from being
+         * reused accidentally.
+         */
+
+        clearOldVerificationState();
+
+
+        setLoading(true);
+
+
+        try {
+
+            /*
+             * IMPORTANT:
+             *
+             * register() creates the account only.
+             *
+             * It must NOT generate the OTP.
+             *
+             * verify.js handles prepareOtp().
+             */
+
+            const response =
+                await API.register({
+
+                    firstName:
+                        data.firstName,
+
+                    lastName:
+                        data.lastName,
+
+                    name:
+                        data.name,
+
+                    username:
+                        data.username,
+
+                    age:
+                        data.age,
+
+                    email:
+                        data.email,
+
+                    gmail:
+                        data.gmail,
+
+                    phone:
+                        data.phone,
+
+                    password:
+                        data.password,
+
+                    confirmPassword:
+                        data.confirmPassword,
+
+                    role:
+                        "Employee"
+                });
+
+
+            if (
+                !response ||
+                response.success !== true
+            ) {
+
+                const error =
+                    new Error(
+                        response?.message ||
+                        "Registration could not be completed."
+                    );
+
+                error.code =
+                    response?.code ||
+                    "REGISTRATION_FAILED";
+
+                error.data =
+                    response;
+
+                throw error;
             }
 
 
-            message.textContent =
-                "";
+            /*
+             * Save only the identity needed by verify.html.
+             *
+             * No OTP is expected here.
+             */
 
-
-            message.className =
-                "auth-message";
-
-        }
-
-
-        /* =====================================================
-           LOADING
-           ===================================================== */
-
-        function setLoading(
-            loading
-        ) {
-
-            if (!button) {
-                return;
-            }
-
-
-            button.disabled =
-                loading;
-
-
-            button.classList.toggle(
-                "loading",
-                loading
+            saveVerificationState(
+                response,
+                data
             );
 
 
-            button.setAttribute(
-                "aria-busy",
-                String(
-                    loading
-                )
+            /*
+             * Show a short status before redirect.
+             */
+
+            showMessage(
+                response.message ||
+                "Account created successfully. Preparing account verification...",
+                "success"
             );
 
 
-            const text =
-                button.querySelector(
-                    ".button-text"
-                );
+            /*
+             * Give sessionStorage time to finish and allow
+             * the user to see the success message.
+             *
+             * The OTP itself will be generated on verify.html.
+             */
+
+            window.setTimeout(() => {
+
+                window.location.href =
+                    verifyRoute;
+
+            }, 700);
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW registration error:",
+                error
+            );
 
 
-            const loader =
-                button.querySelector(
-                    ".button-loader"
-                );
+            showMessage(
+                getRegistrationErrorMessage(
+                    error
+                ),
+                "error"
+            );
 
+        } finally {
 
-            if (text) {
-
-                text.hidden =
-                    loading;
-
-            }
-
-
-            if (loader) {
-
-                loader.hidden =
-                    !loading;
-
-            }
-
+            setLoading(false);
         }
+    }
 
 
-        /* =====================================================
-           VALUE HELPERS
-           ===================================================== */
+    /* =========================================================
+       FORM SUBMIT
+    ========================================================= */
 
-        function getValue(
-            input
-        ) {
+    form.addEventListener(
+        "submit",
+        (event) => {
 
-            return input
-                ? input.value.trim()
-                : "";
+            event.preventDefault();
 
+            submitRegistration();
         }
+    );
 
 
-        function getPasswordValue(
-            input
-        ) {
+    /* =========================================================
+       LIVE PASSWORD CONFIRMATION
+    ========================================================= */
 
-            return input
-                ? input.value
-                : "";
+    if (confirmPasswordInput) {
 
-        }
+        confirmPasswordInput.addEventListener(
+            "input",
+            () => {
 
+                const password =
+                    String(
+                        passwordInput?.value ??
+                        ""
+                    );
 
-        /* =====================================================
-           PHONE NORMALIZATION
-           ===================================================== */
-
-        function normalizePhone(
-            value
-        ) {
-
-            let phone =
-                String(
-                    value || ""
-                )
-                    .trim()
-                    .replace(
-                        /[\s()-]/g,
+                const confirmPassword =
+                    String(
+                        confirmPasswordInput.value ??
                         ""
                     );
 
 
-            if (
-                phone.startsWith(
-                    "+63"
-                )
-            ) {
+                if (!confirmPassword) {
 
-                phone =
-                    "0" +
-                    phone.substring(
-                        3
-                    );
-
-            } else if (
-                phone.startsWith(
-                    "63"
-                )
-            ) {
-
-                phone =
-                    "0" +
-                    phone.substring(
-                        2
-                    );
-
-            }
-
-
-            return phone;
-
-        }
-
-
-        /* =====================================================
-           VALIDATION
-           ===================================================== */
-
-        function validateRegistration(
-            data
-        ) {
-
-            if (
-                !data.firstName
-            ) {
-
-                return (
-                    "Please enter your first name."
-                );
-
-            }
-
-
-            if (
-                !data.lastName
-            ) {
-
-                return (
-                    "Please enter your last name."
-                );
-
-            }
-
-
-            const namePattern =
-                /^[A-Za-zÀ-ÿ' -]+$/;
-
-
-            if (
-                !namePattern.test(
-                    data.firstName
-                )
-            ) {
-
-                return (
-                    "First name contains invalid characters."
-                );
-
-            }
-
-
-            if (
-                !namePattern.test(
-                    data.lastName
-                )
-            ) {
-
-                return (
-                    "Last name contains invalid characters."
-                );
-
-            }
-
-
-            if (
-                !data.username
-            ) {
-
-                return (
-                    "Please enter a username."
-                );
-
-            }
-
-
-            if (
-                data.username.length < 4 ||
-                data.username.length > 30
-            ) {
-
-                return (
-                    "Username must contain 4–30 characters."
-                );
-
-            }
-
-
-            if (
-                !/^[A-Za-z0-9._-]+$/.test(
-                    data.username
-                )
-            ) {
-
-                return (
-                    "Username may only contain letters, numbers, dots, underscores and hyphens."
-                );
-
-            }
-
-
-            if (
-                !Number.isInteger(
-                    data.age
-                )
-            ) {
-
-                return (
-                    "Please enter your age."
-                );
-
-            }
-
-
-            if (
-                data.age < 18 ||
-                data.age > 100
-            ) {
-
-                return (
-                    "Please enter a valid age between 18 and 100."
-                );
-
-            }
-
-
-            if (
-                !data.email
-            ) {
-
-                return (
-                    "Please enter your Gmail address."
-                );
-
-            }
-
-
-            const emailPattern =
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-
-            if (
-                !emailPattern.test(
-                    data.email
-                )
-            ) {
-
-                return (
-                    "Please enter a valid Gmail address."
-                );
-
-            }
-
-
-            if (
-                !data.email
-                    .toLowerCase()
-                    .endsWith(
-                        "@gmail.com"
-                    )
-            ) {
-
-                return (
-                    "Please use a valid @gmail.com address."
-                );
-
-            }
-
-
-            if (
-                !data.phone
-            ) {
-
-                return (
-                    "Please enter your Philippine mobile number."
-                );
-
-            }
-
-
-            const phonePattern =
-                /^09\d{9}$/;
-
-
-            if (
-                !phonePattern.test(
-                    data.phone
-                )
-            ) {
-
-                return (
-                    "Phone number must be in 09XXXXXXXXX format."
-                );
-
-            }
-
-
-            if (
-                !data.password
-            ) {
-
-                return (
-                    "Please create a password."
-                );
-
-            }
-
-
-            if (
-                data.password.length < 8
-            ) {
-
-                return (
-                    "Password must contain at least 8 characters."
-                );
-
-            }
-
-
-            if (
-                !data.confirmPassword
-            ) {
-
-                return (
-                    "Please confirm your password."
-                );
-
-            }
-
-
-            if (
-                data.password !==
-                data.confirmPassword
-            ) {
-
-                return (
-                    "Passwords do not match."
-                );
-
-            }
-
-
-            if (
-                termsInput &&
-                !termsInput.checked
-            ) {
-
-                return (
-                    "Please agree to the Privacy Policy and Terms before continuing."
-                );
-
-            }
-
-
-            if (
-                communicationsInput &&
-                communicationsInput.dataset.required ===
-                    "true" &&
-                !communicationsInput.checked
-            ) {
-
-                return (
-                    "Please allow account verification communications to continue."
-                );
-
-            }
-
-
-            return null;
-
-        }
-
-
-        /* =====================================================
-           SAVE VERIFICATION STATE
-           ===================================================== */
-        //
-        // IMPORTANT:
-        // otp is the actual OTP generated by Code.gs.
-        //
-        // It is only stored temporarily in sessionStorage so
-        // verify.html can automatically populate the boxes.
-        //
-        // The authoritative OTP remains in Google Sheets and
-        // Firebase.
-        //
-        /* ===================================================== */
-
-        function saveVerificationState(
-            response,
-            data
-        ) {
-
-            response =
-                response || {};
-
-
-            const identity =
-                response.identity ||
-                response.uid ||
-                response.userId ||
-                response.username ||
-                response.email ||
-                response.gmail ||
-                response.phone ||
-                data.username;
-
-
-            const uid =
-                response.uid ||
-                response.userId ||
-                "";
-
-
-            const email =
-                response.email ||
-                response.gmail ||
-                data.email;
-
-
-            const phone =
-                response.phone ||
-                data.phone;
-
-
-            const username =
-                response.username ||
-                data.username;
-
-
-            const id =
-                response.id ||
-                "";
-
-
-            const channel =
-                response.channel ||
-                "both";
-
-
-            const otp =
-                response.otp ||
-                "";
-
-
-            const otpReady =
-                response.otpReady === true &&
-                /^\d{6}$/.test(
-                    String(
-                        otp
-                    )
-                );
-
-
-            if (
-                !identity
-            ) {
-
-                throw new Error(
-                    "Registration completed, but no verification identity was returned by the server."
-                );
-
-            }
-
-
-            if (
-                !otpReady
-            ) {
-
-                throw new Error(
-                    "Registration completed, but the verification OTP was not returned by the server."
-                );
-
-            }
-
-
-            try {
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.UID,
-                    String(
-                        uid
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.EMAIL,
-                    String(
-                        email
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.PHONE,
-                    String(
-                        phone
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.USERNAME,
-                    String(
-                        username
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.IDENTITY,
-                    String(
-                        identity
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.CHANNEL,
-                    String(
-                        channel
-                    )
-                );
-
-
-                /*
-                 * Actual backend-generated OTP.
-                 *
-                 * This is temporary browser state used only
-                 * to populate the verification UI.
-                 */
-                sessionStorage.setItem(
-                    STORAGE_KEYS.OTP,
-                    String(
-                        otp
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    STORAGE_KEYS.OTP_READY,
-                    "true"
-                );
-
-
-                /*
-                 * Numeric account ID.
-                 */
-                sessionStorage.setItem(
-                    "STOCKFLOW_OTP_ID",
-                    String(
-                        id
-                    )
-                );
-
-
-                /*
-                 * Backward-compatible keys.
-                 */
-                sessionStorage.setItem(
-                    "stockflow_otp_identity",
-                    String(
-                        identity
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    "stockflow_otp_email",
-                    String(
-                        email
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    "stockflow_otp_phone",
-                    String(
-                        phone
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    "stockflow_otp_username",
-                    String(
-                        username
-                    )
-                );
-
-
-                sessionStorage.setItem(
-                    "stockflow_otp_code",
-                    String(
-                        otp
-                    )
-                );
-
-
-            } catch (
-                storageError
-            ) {
-
-                console.error(
-                    "STOCKFLOW verification storage error:",
-                    storageError
-                );
-
-
-                throw new Error(
-                    "Registration succeeded, but the verification information could not be saved in this browser."
-                );
-
-            }
-
-
-            return {
-
-                id:
-                    id,
-
-                identity:
-                    identity,
-
-                uid:
-                    uid,
-
-                email:
-                    email,
-
-                phone:
-                    phone,
-
-                username:
-                    username,
-
-                channel:
-                    channel,
-
-                otp:
-                    otp,
-
-                otpReady:
-                    true
-
-            };
-
-        }
-
-
-        /* =====================================================
-           SUCCESS MESSAGE
-           ===================================================== */
-
-        function buildSuccessMessage(
-            response
-        ) {
-
-            if (
-                response &&
-                response.message
-            ) {
-
-                return response.message;
-
-            }
-
-
-            return (
-                "Registration successful. Your verification OTP is ready."
-            );
-
-        }
-
-
-        /* =====================================================
-           REDIRECT
-           ===================================================== */
-
-        function redirectToVerification() {
-
-            window.location.replace(
-                VERIFY_PAGE
-            );
-
-        }
-
-
-        /* =====================================================
-           SUBMIT
-           ===================================================== */
-
-        form.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-
-                clearMessage();
-
-
-                /* =============================================
-                   READ NAME
-                   ============================================= */
-
-                let firstName =
-                    getValue(
-                        firstNameInput
-                    );
-
-
-                let lastName =
-                    getValue(
-                        lastNameInput
-                    );
-
-
-                /* =============================================
-                   OLD FULL NAME COMPATIBILITY
-                   ============================================= */
-
-                if (
-                    (!firstName || !lastName) &&
-                    oldNameInput
-                ) {
-
-                    const oldName =
-                        getValue(
-                            oldNameInput
-                        );
-
-
-                    const nameParts =
-                        oldName.split(
-                            /\s+/
-                        );
-
-
-                    if (
-                        !firstName
-                    ) {
-
-                        firstName =
-                            nameParts.shift() ||
-                            "";
-
-                    }
-
-
-                    if (
-                        !lastName
-                    ) {
-
-                        lastName =
-                            nameParts.join(
-                                " "
-                            ) ||
-                            "";
-
-                    }
-
-                }
-
-
-                /* =============================================
-                   PHONE
-                   ============================================= */
-
-                const phone =
-                    normalizePhone(
-                        getValue(
-                            phoneInput
-                        )
-                    );
-
-
-                /* =============================================
-                   FORM DATA
-                   ============================================= */
-
-                const email =
-                    getValue(
-                        emailInput
-                    )
-                        .toLowerCase();
-
-
-                const data = {
-
-                    firstName:
-                        firstName,
-
-                    lastName:
-                        lastName,
-
-                    name:
-                        `${firstName} ${lastName}`
-                            .replace(
-                                /\s+/g,
-                                " "
-                            )
-                            .trim(),
-
-                    username:
-                        getValue(
-                            usernameInput
-                        ),
-
-                    age:
-                        Number(
-                            getValue(
-                                ageInput
-                            )
-                        ),
-
-                    email:
-                        email,
-
-                    gmail:
-                        email,
-
-                    phone:
-                        phone,
-
-                    password:
-                        getPasswordValue(
-                            passwordInput
-                        ),
-
-                    confirmPassword:
-                        getPasswordValue(
-                            confirmPasswordInput
-                        )
-
-                };
-
-
-                /* =============================================
-                   VALIDATE
-                   ============================================= */
-
-                const validationError =
-                    validateRegistration(
-                        data
-                    );
-
-
-                if (
-                    validationError
-                ) {
-
-                    showMessage(
-                        validationError,
-                        "error"
+                    confirmPasswordInput.setCustomValidity(
+                        ""
                     );
 
                     return;
-
                 }
 
-
-                /* =============================================
-                   LOADING
-                   ============================================= */
-
-                setLoading(
-                    true
-                );
-
-
-                try {
-
-                    /* =========================================
-                       API CHECK
-                       ========================================= */
-
-                    if (
-                        !window.StockFlowAPI ||
-                        typeof window.StockFlowAPI.register !==
-                            "function"
-                    ) {
-
-                        throw new Error(
-                            "Registration API is not available. Please check api.js."
-                        );
-
-                    }
-
-
-                    /* =========================================
-                       REGISTER
-                       ========================================= */
-
-                    const response =
-                        await window.StockFlowAPI.register({
-
-                            firstName:
-                                data.firstName,
-
-                            lastName:
-                                data.lastName,
-
-                            name:
-                                data.name,
-
-                            username:
-                                data.username,
-
-                            age:
-                                data.age,
-
-                            email:
-                                data.email,
-
-                            gmail:
-                                data.gmail,
-
-                            phone:
-                                data.phone,
-
-                            password:
-                                data.password
-
-                        });
-
-
-                    /* =========================================
-                       EMPTY RESPONSE
-                       ========================================= */
-
-                    if (
-                        !response
-                    ) {
-
-                        throw new Error(
-                            "No response was received from the STOCKFLOW server."
-                        );
-
-                    }
-
-
-                    /* =========================================
-                       REGISTRATION FAILED
-                       ========================================= */
-
-                    if (
-                        response.success !== true
-                    ) {
-
-                        throw new Error(
-                            response.message ||
-                            "Registration failed. Please check your information and try again."
-                        );
-
-                    }
-
-
-                    /* =========================================
-                       SAVE REAL OTP + IDENTITY
-                       ========================================= */
-
-                    const verification =
-                        saveVerificationState(
-                            response,
-                            data
-                        );
-
-
-                    /* =========================================
-                       SUCCESS MESSAGE
-                       ========================================= */
-
-                    showMessage(
-                        buildSuccessMessage(
-                            response,
-                            verification
-                        ),
-                        "success"
-                    );
-
-
-                    /* =========================================
-                       REDIRECT
-                       ========================================= */
-
-                    window.setTimeout(
-                        () => {
-
-                            redirectToVerification();
-
-                        },
-                        700
-                    );
-
-
-                } catch (
-                    error
-                ) {
-
-                    console.error(
-                        "STOCKFLOW registration error:",
-                        error
-                    );
-
-
-                    let errorMessage =
-                        error &&
-                        error.message
-                            ? error.message
-                            : "";
-
-
-                    /*
-                     * Keep useful backend errors.
-                     *
-                     * Only replace truly generic network
-                     * errors with the connection message.
-                     */
-                    if (
-                        /failed to fetch|network error|network request|load failed/i
-                            .test(
-                                errorMessage
-                            )
-                    ) {
-
-                        errorMessage =
-                            "Unable to connect to the registration system. Please check that the Google Apps Script Web App is deployed and accessible.";
-
-                    }
-
-
-                    showMessage(
-                        errorMessage ||
-                        "Unable to create your account. Please try again.",
-                        "error"
-                    );
-
-
-                } finally {
-
-                    setLoading(
-                        false
-                    );
-
-                }
-
-            }
-        );
-
-
-        /* =====================================================
-           PREVENT DOUBLE SUBMISSION
-           ===================================================== */
-
-        form.addEventListener(
-            "keydown",
-            event => {
 
                 if (
-                    event.key === "Enter" &&
-                    button &&
-                    button.disabled
+                    password !==
+                    confirmPassword
                 ) {
 
-                    event.preventDefault();
+                    confirmPasswordInput.setCustomValidity(
+                        "Passwords do not match."
+                    );
 
+                } else {
+
+                    confirmPasswordInput.setCustomValidity(
+                        ""
+                    );
                 }
 
             }
         );
-
     }
-);
+
+
+    /* =========================================================
+       NORMALIZE PHONE WHILE TYPING
+    ========================================================= */
+
+    if (phoneInput) {
+
+        phoneInput.addEventListener(
+            "blur",
+            () => {
+
+                phoneInput.value =
+                    normalizePhone(
+                        phoneInput.value
+                    );
+            }
+        );
+    }
+
+
+    /* =========================================================
+       NORMALIZE EMAIL WHILE TYPING
+    ========================================================= */
+
+    if (emailInput) {
+
+        emailInput.addEventListener(
+            "blur",
+            () => {
+
+                emailInput.value =
+                    normalizeEmail(
+                        emailInput.value
+                    );
+            }
+        );
+    }
+
+
+    /* =========================================================
+       NORMALIZE USERNAME
+    ========================================================= */
+
+    if (usernameInput) {
+
+        usernameInput.addEventListener(
+            "blur",
+            () => {
+
+                usernameInput.value =
+                    normalizeUsername(
+                        usernameInput.value
+                    );
+            }
+        );
+    }
+
+
+    /* =========================================================
+       INITIAL STATE
+    ========================================================= */
+
+    clearOldVerificationState();
+
+});
