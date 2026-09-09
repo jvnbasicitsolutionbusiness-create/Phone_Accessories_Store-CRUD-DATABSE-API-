@@ -128,8 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 phone.substring(3);
         }
 
-        if (phone.startsWith("63") &&
-            phone.length === 12) {
+        if (
+            phone.startsWith("63") &&
+            phone.length === 12
+        ) {
 
             phone =
                 "0" +
@@ -199,16 +201,97 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* =========================================================
+       NAME VALIDATION
+       =========================================================
+
+       FIXED ONLY THIS VALIDATION LAYER.
+
+       Previous validator:
+
+           /^[A-Za-zÀ-ÿ .'-]+$/
+
+       was too restrictive.
+
+       This version supports Unicode letters while still
+       allowing normal name characters:
+
+           Letters
+           Spaces
+           Apostrophes
+           Hyphens
+           Periods
+
+       Examples accepted:
+
+           Kimkim
+           Jaime
+           Mary Jane
+           Anne-Marie
+           D'Angelo
+           José
+           Ñ
+
+       Numbers and unrelated symbols remain invalid.
+    ========================================================= */
+
     function isValidName(value) {
 
         const name =
-            clean(value);
+            clean(value)
+                .normalize("NFC");
 
-        return (
-            name.length >= 2 &&
-            name.length <= 50 &&
-            /^[A-Za-zÀ-ÿ .'-]+$/.test(name)
-        );
+
+        /*
+         * A person's name only needs one character
+         * to be technically valid.
+         *
+         * The backend can impose stricter rules if required,
+         * but the frontend should not reject legitimate names
+         * merely because they are short.
+         */
+
+        if (
+            name.length < 1 ||
+            name.length > 50
+        ) {
+
+            return false;
+
+        }
+
+
+        /*
+         * Unicode-aware validation.
+         *
+         * \p{L} = any Unicode letter
+         *
+         * This supports Filipino and international names
+         * much better than A-Z / À-ÿ.
+         */
+
+        try {
+
+            return (
+                /^[\p{L}\p{M} .'-]+$/u.test(
+                    name
+                )
+            );
+
+        } catch (error) {
+
+            /*
+             * Fallback for older browsers that do not support
+             * Unicode property escapes.
+             */
+
+            return (
+                /^[A-Za-zÀ-ÿ .'-]+$/.test(
+                    name
+                )
+            );
+
+        }
     }
 
 
@@ -319,7 +402,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function saveVerificationState(response, data) {
+    function saveVerificationState(
+        response,
+        data
+    ) {
 
         /*
          * IMPORTANT:
@@ -486,25 +572,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
             case "USERNAME_EXISTS":
             case "DUPLICATE_USERNAME":
+
                 return "Username already exists.";
+
 
             case "EMAIL_EXISTS":
             case "GMAIL_EXISTS":
             case "DUPLICATE_EMAIL":
+
                 return "This Gmail address is already registered.";
+
 
             case "PHONE_EXISTS":
             case "DUPLICATE_PHONE":
+
                 return "This phone number is already registered.";
+
 
             case "ACCOUNT_EXISTS":
             case "DUPLICATE_ACCOUNT":
+
                 return "An account with these details already exists.";
+
 
             case "INVALID_REGISTRATION":
             case "VALIDATION_ERROR":
-                return backendMessage ||
-                    "Please check your registration information.";
+
+                return (
+                    backendMessage ||
+                    "Please check your registration information."
+                );
+
 
             case "API_URL_MISSING":
             case "API_URL_INVALID":
@@ -512,21 +610,25 @@ document.addEventListener("DOMContentLoaded", () => {
             case "TIMEOUT":
             case "EMPTY_RESPONSE":
             case "INVALID_JSON":
-                return "Unable to connect to the registration system right now. Please try again.";
+
+                return (
+                    "Unable to connect to the registration system right now. Please try again."
+                );
+
 
             default:
+
                 /*
-                 * Most important rule:
-                 *
-                 * If Code.gs sends a meaningful business
-                 * message, preserve it.
+                 * Preserve meaningful backend business messages.
                  */
 
                 if (backendMessage) {
                     return backendMessage;
                 }
 
-                return "Registration could not be completed. Please try again.";
+                return (
+                    "Registration could not be completed. Please try again."
+                );
         }
     }
 
@@ -550,21 +652,37 @@ document.addEventListener("DOMContentLoaded", () => {
             clean(ageInput?.value);
 
         const email =
-            normalizeEmail(emailInput?.value);
+            normalizeEmail(
+                emailInput?.value
+            );
 
         const phone =
-            normalizePhone(phoneInput?.value);
+            normalizePhone(
+                phoneInput?.value
+            );
 
         const password =
-            String(passwordInput?.value ?? "");
+            String(
+                passwordInput?.value ??
+                ""
+            );
 
         const confirmPassword =
             String(
-                confirmPasswordInput?.value ?? ""
+                confirmPasswordInput?.value ??
+                ""
             );
 
 
-        if (!isValidName(firstName)) {
+        /* =====================================================
+           FIRST NAME
+           ===================================================== */
+
+        if (
+            !isValidName(
+                firstName
+            )
+        ) {
 
             return {
                 valid: false,
@@ -574,7 +692,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isValidName(lastName)) {
+        /* =====================================================
+           LAST NAME
+           ===================================================== */
+
+        if (
+            !isValidName(
+                lastName
+            )
+        ) {
 
             return {
                 valid: false,
@@ -584,7 +710,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isValidUsername(username)) {
+        /* =====================================================
+           USERNAME
+           ===================================================== */
+
+        if (
+            !isValidUsername(
+                username
+            )
+        ) {
 
             return {
                 valid: false,
@@ -594,7 +728,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isValidAge(age)) {
+        /* =====================================================
+           AGE
+           ===================================================== */
+
+        if (
+            !isValidAge(
+                age
+            )
+        ) {
 
             return {
                 valid: false,
@@ -604,7 +746,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isValidGmail(email)) {
+        /* =====================================================
+           GMAIL
+           ===================================================== */
+
+        if (
+            !isValidGmail(
+                email
+            )
+        ) {
 
             return {
                 valid: false,
@@ -614,7 +764,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isValidPhilippinePhone(phone)) {
+        /* =====================================================
+           PHONE
+           ===================================================== */
+
+        if (
+            !isValidPhilippinePhone(
+                phone
+            )
+        ) {
 
             return {
                 valid: false,
@@ -624,7 +782,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (!isStrongPassword(password)) {
+        /* =====================================================
+           PASSWORD
+           ===================================================== */
+
+        if (
+            !isStrongPassword(
+                password
+            )
+        ) {
 
             return {
                 valid: false,
@@ -634,7 +800,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        if (password !== confirmPassword) {
+        /* =====================================================
+           CONFIRM PASSWORD
+           ===================================================== */
+
+        if (
+            password !==
+            confirmPassword
+        ) {
 
             return {
                 valid: false,
@@ -644,9 +817,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * Terms checkbox is required when it exists.
-         */
+        /* =====================================================
+           TERMS
+           ===================================================== */
 
         if (
             termsInput &&
@@ -661,36 +834,47 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * Communications checkbox is optional.
-         *
-         * We intentionally do not block registration
-         * when it is unchecked.
-         */
+        /* =====================================================
+           COMMUNICATIONS
+           =====================================================
+
+           Optional.
+        ===================================================== */
 
         return {
+
             valid: true,
+
             data: {
+
                 firstName,
+
                 lastName,
+
                 name:
                     `${firstName} ${lastName}`.trim(),
 
                 username:
-                    normalizeUsername(username),
+                    normalizeUsername(
+                        username
+                    ),
 
                 age:
                     Number(age),
 
                 email,
+
                 gmail:
                     email,
 
                 phone,
 
                 password,
+
                 confirmPassword
+
             }
+
         };
     }
 
@@ -706,16 +890,20 @@ document.addEventListener("DOMContentLoaded", () => {
             typeof window.StockFlowAPI.register ===
                 "function"
         ) {
+
             return window.StockFlowAPI;
         }
+
 
         if (
             window.API &&
             typeof window.API.register ===
                 "function"
         ) {
+
             return window.API;
         }
+
 
         return null;
     }
@@ -729,10 +917,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showMessage("");
 
+
         const validation =
             validateForm();
 
-        if (!validation.valid) {
+
+        if (
+            !validation.valid
+        ) {
 
             showMessage(
                 validation.message,
@@ -745,6 +937,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const API =
             getAPI();
+
 
         if (!API) {
 
@@ -763,26 +956,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         /*
          * Remove old verification information first.
-         * This prevents an old OTP or old account from being
-         * reused accidentally.
          */
 
         clearOldVerificationState();
 
 
-        setLoading(true);
+        setLoading(
+            true
+        );
 
 
         try {
 
             /*
-             * IMPORTANT:
+             * Registration creates the pending account.
              *
-             * register() creates the account only.
-             *
-             * It must NOT generate the OTP.
-             *
-             * verify.js handles prepareOtp().
+             * OTP generation is handled by verify.js.
              */
 
             const response =
@@ -834,21 +1023,24 @@ document.addEventListener("DOMContentLoaded", () => {
                         "Registration could not be completed."
                     );
 
+
                 error.code =
                     response?.code ||
                     "REGISTRATION_FAILED";
 
+
                 error.data =
                     response;
+
 
                 throw error;
             }
 
 
             /*
-             * Save only the identity needed by verify.html.
+             * Save only verification identity.
              *
-             * No OTP is expected here.
+             * No OTP is stored.
              */
 
             saveVerificationState(
@@ -856,10 +1048,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 data
             );
 
-
-            /*
-             * Show a short status before redirect.
-             */
 
             showMessage(
                 response.message ||
@@ -869,20 +1057,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Give sessionStorage time to finish and allow
-             * the user to see the success message.
+             * Redirect to verify.html.
              *
-             * The OTP itself will be generated on verify.html.
+             * verify.js will then request the real OTP
+             * from Code.gs.
              */
 
-            window.setTimeout(() => {
+            window.setTimeout(
+                () => {
 
-                window.location.href =
-                    verifyRoute;
+                    window.location.href =
+                        verifyRoute;
 
-            }, 700);
+                },
+                700
+            );
 
-        } catch (error) {
+
+        } catch (
+            error
+        ) {
 
             console.error(
                 "STOCKFLOW registration error:",
@@ -897,9 +1091,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "error"
             );
 
+
         } finally {
 
-            setLoading(false);
+            setLoading(
+                false
+            );
+
         }
     }
 
@@ -915,6 +1113,7 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
 
             submitRegistration();
+
         }
     );
 
@@ -923,7 +1122,9 @@ document.addEventListener("DOMContentLoaded", () => {
        LIVE PASSWORD CONFIRMATION
     ========================================================= */
 
-    if (confirmPasswordInput) {
+    if (
+        confirmPasswordInput
+    ) {
 
         confirmPasswordInput.addEventListener(
             "input",
@@ -942,7 +1143,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
 
-                if (!confirmPassword) {
+                if (
+                    !confirmPassword
+                ) {
 
                     confirmPasswordInput.setCustomValidity(
                         ""
@@ -966,6 +1169,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     confirmPasswordInput.setCustomValidity(
                         ""
                     );
+
                 }
 
             }
@@ -974,10 +1178,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       NORMALIZE PHONE WHILE TYPING
+       NORMALIZE PHONE
     ========================================================= */
 
-    if (phoneInput) {
+    if (
+        phoneInput
+    ) {
 
         phoneInput.addEventListener(
             "blur",
@@ -987,16 +1193,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     normalizePhone(
                         phoneInput.value
                     );
+
             }
         );
     }
 
 
     /* =========================================================
-       NORMALIZE EMAIL WHILE TYPING
+       NORMALIZE EMAIL
     ========================================================= */
 
-    if (emailInput) {
+    if (
+        emailInput
+    ) {
 
         emailInput.addEventListener(
             "blur",
@@ -1006,6 +1215,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     normalizeEmail(
                         emailInput.value
                     );
+
             }
         );
     }
@@ -1015,7 +1225,9 @@ document.addEventListener("DOMContentLoaded", () => {
        NORMALIZE USERNAME
     ========================================================= */
 
-    if (usernameInput) {
+    if (
+        usernameInput
+    ) {
 
         usernameInput.addEventListener(
             "blur",
@@ -1025,6 +1237,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     normalizeUsername(
                         usernameInput.value
                     );
+
             }
         );
     }
