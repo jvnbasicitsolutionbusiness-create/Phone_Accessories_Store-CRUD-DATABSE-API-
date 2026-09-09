@@ -41,7 +41,7 @@
    - This file does NOT store OTP.
    - Backend controls authentication.
    - Backend controls account status.
-   - Backend error messages are preserved.
+   - Backend business errors are NOT network errors.
    ============================================================ */
 
 
@@ -86,14 +86,8 @@ document.addEventListener(
             );
 
 
-        /*
-         * login.js may exist on other pages.
-         */
-
         if (!form) {
-
             return;
-
         }
 
 
@@ -270,16 +264,6 @@ document.addEventListener(
 
         /* =====================================================
            SAVE VERIFICATION STATE
-           =====================================================
-
-           IMPORTANT:
-
-           OTP is NOT generated here.
-
-           OTP is NOT stored here.
-
-           This function only stores the account identity
-           required by verify.html.
            ===================================================== */
 
         function saveVerificationState(
@@ -369,9 +353,7 @@ document.addEventListener(
                 );
 
 
-                /*
-                 * Backward-compatible keys.
-                 */
+                /* Backward-compatible keys */
 
                 sessionStorage.setItem(
                     "stockflow_otp_identity",
@@ -458,10 +440,6 @@ document.addEventListener(
 
                 }
 
-
-                /*
-                 * Compatibility fallback.
-                 */
 
                 const rawSession =
                     sessionStorage.getItem(
@@ -567,8 +545,86 @@ document.addEventListener(
 
 
         /* =====================================================
-           ERROR CLASSIFICATION
+           ERROR EXTRACTION
+           =====================================================
+
+           IMPORTANT FIX:
+
+           Apps Script/API errors may arrive as:
+
+           error.code
+           error.errorCode
+           error.response.code
+           error.data.code
+           error.rawResponse.code
+           error.response JSON
+           error.data JSON
+           error.rawResponse JSON
+
+           We inspect all supported locations before deciding
+           that something is a network error.
            ===================================================== */
+
+        function parsePossibleObject(
+            value
+        ) {
+
+            if (
+                !value
+            ) {
+
+                return null;
+
+            }
+
+
+            if (
+                typeof value ===
+                "object"
+            ) {
+
+                return value;
+
+            }
+
+
+            if (
+                typeof value ===
+                "string"
+            ) {
+
+                const text =
+                    value.trim();
+
+
+                if (
+                    !text
+                ) {
+
+                    return null;
+
+                }
+
+
+                try {
+
+                    return JSON.parse(
+                        text
+                    );
+
+                } catch (error) {
+
+                    return null;
+
+                }
+
+            }
+
+
+            return null;
+
+        }
+
 
         function getErrorCode(
             error
@@ -581,21 +637,67 @@ document.addEventListener(
             }
 
 
-            return String(
+            const directCode =
                 error.code ||
                 error.errorCode ||
-                (
-                    error.response &&
-                    error.response.code
-                ) ||
-                (
-                    error.data &&
-                    error.data.code
-                ) ||
-                ""
-            )
-                .trim()
-                .toUpperCase();
+                error.statusCode ||
+                "";
+
+
+            if (
+                directCode
+            ) {
+
+                return String(
+                    directCode
+                )
+                    .trim()
+                    .toUpperCase();
+
+            }
+
+
+            const candidates = [
+
+                error.response,
+                error.data,
+                error.rawResponse,
+                error.result
+
+            ];
+
+
+            for (
+                const candidate of candidates
+            ) {
+
+                const object =
+                    parsePossibleObject(
+                        candidate
+                    );
+
+
+                if (
+                    object &&
+                    (
+                        object.code ||
+                        object.errorCode
+                    )
+                ) {
+
+                    return String(
+                        object.code ||
+                        object.errorCode
+                    )
+                        .trim()
+                        .toUpperCase();
+
+                }
+
+            }
+
+
+            return "";
 
         }
 
@@ -612,63 +714,59 @@ document.addEventListener(
 
 
             /*
-             * First priority:
-             * StockFlowAPIError.message
+             * IMPORTANT:
+
+             * Do NOT immediately trust error.message
+             * if it is a generic transport message.
+
+             * First inspect structured backend data.
+             */
+
+            const candidates = [
+
+                error.response,
+                error.data,
+                error.rawResponse,
+                error.result
+
+            ];
+
+
+            for (
+                const candidate of candidates
+            ) {
+
+                const object =
+                    parsePossibleObject(
+                        candidate
+                    );
+
+
+                if (
+                    object &&
+                    typeof object.message ===
+                        "string" &&
+                    object.message.trim()
+                ) {
+
+                    return object.message.trim();
+
+                }
+
+            }
+
+
+            /*
+             * Direct API error message.
              */
 
             if (
                 typeof error.message ===
-                "string" &&
+                    "string" &&
                 error.message.trim()
             ) {
 
                 return error.message.trim();
-
-            }
-
-
-            /*
-             * Backend response.
-             */
-
-            if (
-                error.response &&
-                typeof error.response ===
-                    "object"
-            ) {
-
-                if (
-                    typeof error.response.message ===
-                        "string" &&
-                    error.response.message.trim()
-                ) {
-
-                    return error.response.message.trim();
-
-                }
-
-            }
-
-
-            /*
-             * Backend data.
-             */
-
-            if (
-                error.data &&
-                typeof error.data ===
-                    "object"
-            ) {
-
-                if (
-                    typeof error.data.message ===
-                        "string" &&
-                    error.data.message.trim()
-                ) {
-
-                    return error.data.message.trim();
-
-                }
 
             }
 
@@ -680,10 +778,6 @@ document.addEventListener(
 
         /* =====================================================
            BUSINESS ERROR MESSAGE
-           =====================================================
-
-           Backend authentication errors must NEVER be
-           classified as network errors.
            ===================================================== */
 
         function getBusinessErrorMessage(
@@ -691,56 +785,37 @@ document.addEventListener(
             messageText
         ) {
 
-            switch (code) {
+            switch (
+                String(
+                    code ||
+                    ""
+                )
+                    .trim()
+                    .toUpperCase()
+            ) {
 
                 case "ACCOUNT_NOT_FOUND":
-
-                    return (
-                        messageText ||
-                        "Account does not exist."
-                    );
-
-
                 case "USER_NOT_FOUND":
+                case "USER_DOES_NOT_EXIST":
+                case "ACCOUNT_DOES_NOT_EXIST":
 
                     return (
                         messageText ||
-                        "Account does not exist."
+                        "Account doesn't exist. Please consider registering first, then try again."
                     );
 
 
                 case "INVALID_CREDENTIALS":
-
-                    return (
-                        messageText ||
-                        "Incorrect username, email, phone number, or password."
-                    );
-
-
                 case "INVALID_LOGIN":
-
-                    return (
-                        messageText ||
-                        "Incorrect username, email, phone number, or password."
-                    );
-
-
                 case "WRONG_PASSWORD":
 
                     return (
                         messageText ||
-                        "Incorrect password."
+                        "Incorrect username, email, phone number, or password."
                     );
 
 
                 case "ACCOUNT_LOCKED":
-
-                    return (
-                        messageText ||
-                        "Your account is temporarily locked. Please try again later."
-                    );
-
-
                 case "TEMPORARILY_LOCKED":
 
                     return (
@@ -765,6 +840,14 @@ document.addEventListener(
                     );
 
 
+                case "ACCOUNT_BLOCKED":
+
+                    return (
+                        messageText ||
+                        "This account is currently blocked."
+                    );
+
+
                 case "ACCOUNT_PENDING":
 
                     return (
@@ -774,13 +857,6 @@ document.addEventListener(
 
 
                 case "REQUIRES_VERIFICATION":
-
-                    return (
-                        messageText ||
-                        "Your account requires verification."
-                    );
-
-
                 case "OTP_REQUIRED":
 
                     return (
@@ -802,7 +878,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           DETERMINE NETWORK ERROR
+           DETERMINE ACTUAL NETWORK ERROR
            ===================================================== */
 
         function isActualNetworkError(
@@ -823,7 +899,7 @@ document.addEventListener(
 
 
             /*
-             * These are explicitly transport/API errors.
+             * Explicit transport/API errors.
              */
 
             if (
@@ -856,8 +932,8 @@ document.addEventListener(
 
 
             /*
-             * Only inspect the ORIGINAL error,
-             * not the user-facing backend message.
+             * Only the original transport error
+             * should be checked for TypeError.
              */
 
             const original =
@@ -874,15 +950,72 @@ document.addEventListener(
                 )
             ) {
 
+                /*
+                 * Before calling this a network error,
+                 * make absolutely sure there isn't a
+                 * structured backend response attached.
+                 */
+
+                const backendCode =
+                    getErrorCode(
+                        error
+                    );
+
+
+                const backendMessage =
+                    getErrorMessage(
+                        error
+                    );
+
+
+                if (
+                    backendCode ||
+                    backendMessage
+                ) {
+
+                    return false;
+
+                }
+
+
                 return true;
 
             }
 
 
             /*
-             * Do NOT classify normal backend
-             * business messages as network errors.
+             * If structured backend data exists,
+             * it is NOT a network error.
              */
+
+            const structuredResponse =
+                parsePossibleObject(
+                    error.response
+                );
+
+
+            const structuredData =
+                parsePossibleObject(
+                    error.data
+                );
+
+
+            const structuredRaw =
+                parsePossibleObject(
+                    error.rawResponse
+                );
+
+
+            if (
+                structuredResponse ||
+                structuredData ||
+                structuredRaw
+            ) {
+
+                return false;
+
+            }
+
 
             return false;
 
@@ -1023,8 +1156,10 @@ document.addEventListener(
                         String(
                             response.code ||
                             ""
-                        ).toUpperCase() ===
-                            "ACCOUNT_LOCKED"
+                        )
+                            .trim()
+                            .toUpperCase() ===
+                                "ACCOUNT_LOCKED"
                     ) {
 
                         showMessage(
@@ -1041,19 +1176,6 @@ document.addEventListener(
 
                     /* =========================================
                        ACCOUNT NOT VERIFIED
-                       =========================================
-
-                       Some backends may return:
-
-                       success: false
-                       verified: false
-
-                       Others may return:
-
-                       success: true
-                       requiresVerification: true
-
-                       Support both.
                        ========================================= */
 
                     const requiresVerification =
@@ -1063,8 +1185,10 @@ document.addEventListener(
                         String(
                             response.code ||
                             ""
-                        ).toUpperCase() ===
-                            "REQUIRES_VERIFICATION";
+                        )
+                            .trim()
+                            .toUpperCase() ===
+                                "REQUIRES_VERIFICATION";
 
 
                     if (
@@ -1129,19 +1253,7 @@ document.addEventListener(
 
                         const backendMessage =
                             getErrorMessage(
-                                {
-                                    message:
-                                        response.message,
-
-                                    response:
-                                        response,
-
-                                    data:
-                                        response.data,
-
-                                    code:
-                                        code
-                                }
+                                response
                             );
 
 
@@ -1179,10 +1291,6 @@ document.addEventListener(
                         );
 
                     } else {
-
-                        /*
-                         * Compatibility fallback.
-                         */
 
                         try {
 
@@ -1243,7 +1351,7 @@ document.addEventListener(
 
 
                     /* =========================================
-                       ERROR CODE
+                       EXTRACT BACKEND ERROR
                        ========================================= */
 
                     const code =
@@ -1252,14 +1360,22 @@ document.addEventListener(
                         );
 
 
-                    /* =========================================
-                       ERROR MESSAGE
-                       ========================================= */
-
                     const backendMessage =
                         getErrorMessage(
                             error
                         );
+
+
+                    console.log(
+                        "[STOCKFLOW LOGIN] Error code:",
+                        code
+                    );
+
+
+                    console.log(
+                        "[STOCKFLOW LOGIN] Error message:",
+                        backendMessage
+                    );
 
 
                     /* =========================================
@@ -1300,6 +1416,26 @@ document.addEventListener(
 
                         showMessage(
                             businessMessage,
+                            "error"
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /* =========================================
+                       FALLBACK BUSINESS MESSAGE
+                       ========================================= */
+
+                    if (
+                        backendMessage &&
+                        backendMessage.trim()
+                    ) {
+
+                        showMessage(
+                            backendMessage,
                             "error"
                         );
 
