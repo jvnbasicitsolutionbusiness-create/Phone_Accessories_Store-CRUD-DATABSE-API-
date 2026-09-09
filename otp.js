@@ -10,7 +10,7 @@ register.js
     ↓
 Google Apps Script
     ↓
-Backend generates OTP
+Code.gs generates the real 6-digit OTP
     ↓
 Google Sheets + Firebase
     ↓
@@ -20,33 +20,29 @@ otp.js
     ↓
 StockFlowAPI.prepareOtp()
     ↓
-Backend returns demoOtp in DEMO_MODE
+Backend returns the generated OTP
     ↓
-3–5 second demo delay
+3–5 second display delay
     ↓
 Six OTP boxes are automatically filled
     ↓
-Verify Account
+User clicks Verify Account
     ↓
-Google Apps Script verifies OTP
+Google Apps Script verifies the OTP
     ↓
 Employee Dashboard
 
 
 IMPORTANT
 ---------
-This is a MIDTERM / DEMO implementation.
-
-The browser does NOT generate the OTP.
-
-The backend is responsible for generating and storing
-the OTP.
-
-In DEMO_MODE, the backend may return the generated OTP
-to this page so that the six boxes can automatically
-display it.
-
-No real Gmail or SMS delivery is claimed.
+- OTP is NEVER generated in this browser.
+- OTP is NEVER generated with Math.random().
+- No hardcoded OTP is used.
+- Code.gs is the ONLY component that generates the OTP.
+- The exact backend-generated OTP is used.
+- The same OTP is stored in Google Sheets and Firebase.
+- The browser only displays the OTP returned by the backend.
+- No fake Gmail/SMS delivery is claimed.
 =========================================================
 */
 
@@ -64,13 +60,16 @@ No real Gmail or SMS delivery is claimed.
         window.CONFIG ||
         {};
 
+
     const AUTH_CONFIG =
         CONFIG.AUTH ||
         {};
 
+
     const ROUTES =
         CONFIG.ROUTES ||
         {};
+
 
     const STORAGE =
         CONFIG.STORAGE ||
@@ -138,26 +137,21 @@ No real Gmail or SMS delivery is claimed.
         );
 
 
-    const DEMO_MODE =
-        CONFIG.DEMO_MODE === true;
+    /*
+     * The backend response may arrive quickly.
+     *
+     * The OTP is displayed after a short UI delay.
+     *
+     * IMPORTANT:
+     * This delay does NOT generate an OTP.
+     */
+
+    const OTP_DISPLAY_DELAY_MIN =
+        3000;
 
 
-    const DEMO_AUTO_FILL =
-        AUTH_CONFIG.DEMO_AUTO_FILL !== false;
-
-
-    const DEMO_DELAY_MIN =
-        Number(
-            AUTH_CONFIG.DEMO_AUTO_FILL_DELAY_MIN ||
-            3000
-        );
-
-
-    const DEMO_DELAY_MAX =
-        Number(
-            AUTH_CONFIG.DEMO_AUTO_FILL_DELAY_MAX ||
-            5000
-        );
+    const OTP_DISPLAY_DELAY_MAX =
+        5000;
 
 
     /* =====================================================
@@ -246,8 +240,8 @@ No real Gmail or SMS delivery is claimed.
 
 
     /*
-     * If the page ever changes the input class, support
-     * common alternatives as a fallback.
+     * Fallback for numeric OTP inputs that use
+     * another class name.
      */
 
     if (
@@ -255,9 +249,8 @@ No real Gmail or SMS delivery is claimed.
     ) {
 
         const fallbackInputs =
-            $$(
-                "#otpForm input[inputmode='numeric']"
-            );
+            $$("#otpForm input[inputmode='numeric']");
+
 
         if (
             fallbackInputs.length >=
@@ -351,7 +344,12 @@ No real Gmail or SMS delivery is claimed.
         channel:
             "email",
 
-        demoOtp:
+        /*
+         * This contains ONLY the actual OTP returned
+         * by the backend.
+         */
+
+        backendOtp:
             "",
 
         prepared:
@@ -381,7 +379,7 @@ No real Gmail or SMS delivery is claimed.
         phoneTimer:
             null,
 
-        demoTimer:
+        otpDisplayTimer:
             null
     };
 
@@ -418,7 +416,9 @@ No real Gmail or SMS delivery is claimed.
 
             storage.setItem(
                 key,
-                String(value ?? "")
+                String(
+                    value ?? ""
+                )
             );
 
         } catch (error) {
@@ -493,7 +493,10 @@ No real Gmail or SMS delivery is claimed.
     ) {
 
         const sessionValue =
-            getSession(key);
+            getSession(
+                key
+            );
+
 
         if (sessionValue) {
 
@@ -520,8 +523,8 @@ No real Gmail or SMS delivery is claimed.
 
 
         /*
-         * Keep OTP verification identity available
-         * if the page is refreshed.
+         * Keep verification identity available after
+         * a refresh.
          */
 
         storageSet(
@@ -536,7 +539,10 @@ No real Gmail or SMS delivery is claimed.
         key
     ) {
 
-        removeSession(key);
+        removeSession(
+            key
+        );
+
 
         storageRemove(
             window.localStorage,
@@ -562,7 +568,10 @@ No real Gmail or SMS delivery is claimed.
             return "";
         }
 
-        return String(value).trim();
+
+        return String(
+            value
+        ).trim();
     }
 
 
@@ -579,11 +588,13 @@ No real Gmail or SMS delivery is claimed.
                     arguments[i]
                 );
 
+
             if (value) {
 
                 return value;
             }
         }
+
 
         return "";
     }
@@ -650,7 +661,8 @@ No real Gmail or SMS delivery is claimed.
 
 
         /*
-         * If identity is missing, derive it.
+         * Derive identity when it was not explicitly
+         * saved by registration.
          */
 
         if (!state.identity) {
@@ -664,10 +676,6 @@ No real Gmail or SMS delivery is claimed.
                 );
         }
 
-
-        /*
-         * Keep identity synchronized.
-         */
 
         if (state.identity) {
 
@@ -723,7 +731,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       GET IDENTITY
+       RESOLVE IDENTITY
        ===================================================== */
 
     function resolveIdentity() {
@@ -827,7 +835,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       SET BUTTON LOADING
+       BUTTON LOADING
        ===================================================== */
 
     function setButtonLoading(
@@ -879,7 +887,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       OTP INPUT VALUE
+       GET OTP VALUE
        ===================================================== */
 
     function getOtpValue() {
@@ -895,13 +903,17 @@ No real Gmail or SMS delivery is claimed.
                     OTP_LENGTH
                 )
                 .map(
-                    input =>
-                        clean(
+                    function (
+                        input
+                    ) {
+
+                        return clean(
                             input.value
                         ).replace(
                             /\D/g,
                             ""
-                        )
+                        );
+                    }
                 )
                 .join("")
                 .slice(
@@ -946,10 +958,6 @@ No real Gmail or SMS delivery is claimed.
             );
 
 
-        /*
-         * Fill six visible boxes.
-         */
-
         otpInputs.forEach(
             function (
                 input,
@@ -962,10 +970,6 @@ No real Gmail or SMS delivery is claimed.
             }
         );
 
-
-        /*
-         * Keep hidden OTP field synchronized.
-         */
 
         if (hiddenOtp) {
 
@@ -985,7 +989,9 @@ No real Gmail or SMS delivery is claimed.
     function enableOtpInputs() {
 
         otpInputs.forEach(
-            function (input) {
+            function (
+                input
+            ) {
 
                 input.disabled =
                     false;
@@ -1001,7 +1007,9 @@ No real Gmail or SMS delivery is claimed.
     function disableOtpInputs() {
 
         otpInputs.forEach(
-            function (input) {
+            function (
+                input
+            ) {
 
                 input.disabled =
                     true;
@@ -1102,8 +1110,7 @@ No real Gmail or SMS delivery is claimed.
                         if (
                             input.value &&
                             index <
-                                otpInputs.length -
-                                1
+                                otpInputs.length - 1
                         ) {
 
                             otpInputs[
@@ -1127,7 +1134,7 @@ No real Gmail or SMS delivery is claimed.
 
                         if (
                             event.key ===
-                            "Backspace" &&
+                                "Backspace" &&
                             !input.value &&
                             index > 0
                         ) {
@@ -1140,7 +1147,7 @@ No real Gmail or SMS delivery is claimed.
 
                         if (
                             event.key ===
-                            "ArrowLeft" &&
+                                "ArrowLeft" &&
                             index > 0
                         ) {
 
@@ -1152,10 +1159,9 @@ No real Gmail or SMS delivery is claimed.
 
                         if (
                             event.key ===
-                            "ArrowRight" &&
+                                "ArrowRight" &&
                             index <
-                                otpInputs.length -
-                                1
+                                otpInputs.length - 1
                         ) {
 
                             otpInputs[
@@ -1175,11 +1181,19 @@ No real Gmail or SMS delivery is claimed.
                         event.preventDefault();
 
 
+                        const clipboard =
+                            event.clipboardData ||
+                            window.clipboardData;
+
+
+                        if (!clipboard) {
+
+                            return;
+                        }
+
+
                         const pasted =
-                            (
-                                event.clipboardData ||
-                                window.clipboardData
-                            )
+                            clipboard
                                 .getData(
                                     "text"
                                 )
@@ -1244,41 +1258,40 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       RANDOM DEMO DELAY
+       REAL BACKEND OTP DISPLAY DELAY
        ===================================================== */
 
-    function getDemoDelay() {
+    function getOtpDisplayDelay() {
 
-        const min =
-            Math.max(
-                0,
-                DEMO_DELAY_MIN
-            );
+        /*
+         * IMPORTANT:
+         *
+         * This function ONLY calculates how long the
+         * interface waits before displaying the OTP
+         * returned by the backend.
+         *
+         * It DOES NOT generate an OTP.
+         */
+
+        const minimum =
+            OTP_DISPLAY_DELAY_MIN;
 
 
-        const max =
-            Math.max(
-                min,
-                DEMO_DELAY_MAX
-            );
-
-
-        if (
-            max === min
-        ) {
-
-            return min;
-        }
+        const maximum =
+            OTP_DISPLAY_DELAY_MAX;
 
 
         return Math.floor(
-            Math.random() *
+            minimum +
             (
-                max -
-                min +
-                1
+                Math.random() *
+                (
+                    maximum -
+                    minimum +
+                    1
+                )
             )
-        ) + min;
+        );
     }
 
 
@@ -1318,10 +1331,10 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       EXTRACT DEMO OTP
+       EXTRACT BACKEND OTP
        ===================================================== */
 
-    function extractDemoOtp(
+    function extractBackendOtp(
         response
     ) {
 
@@ -1331,16 +1344,16 @@ No real Gmail or SMS delivery is claimed.
             );
 
 
+        /*
+         * IMPORTANT:
+         *
+         * Only backend-returned OTP fields are accepted.
+         *
+         * No OTP is generated here.
+         */
+
         const possibleOtp =
             firstValue(
-
-                data.demoOtp,
-
-                data.demoOTP,
-
-                data.generatedOtp,
-
-                data.generatedOTP,
 
                 data.otp,
 
@@ -1348,7 +1361,9 @@ No real Gmail or SMS delivery is claimed.
 
                 data.code,
 
-                data.verificationCode
+                data.verificationCode,
+
+                data.verification_code
             );
 
 
@@ -1375,10 +1390,10 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       SAVE DEMO OTP
+       STORE BACKEND OTP
        ===================================================== */
 
-    function saveDemoOtp(
+    function storeBackendOtp(
         otp
     ) {
 
@@ -1396,44 +1411,46 @@ No real Gmail or SMS delivery is claimed.
             OTP_LENGTH
         ) {
 
-            return;
+            return false;
         }
 
 
-        state.demoOtp =
+        /*
+         * This is the actual OTP received from Code.gs.
+         */
+
+        state.backendOtp =
             normalized;
 
 
         /*
-         * Demo only.
-         *
-         * This is intentionally stored because the
-         * midterm requires automatic display of the
-         * generated OTP.
+         * Keep it available to the current verification
+         * flow.
          */
 
-        if (DEMO_MODE) {
+        saveValue(
+            KEY.CODE,
+            normalized
+        );
 
-            saveValue(
-                KEY.CODE,
-                normalized
-            );
 
-            saveValue(
-                KEY.READY,
-                "true"
-            );
-        }
+        saveValue(
+            KEY.READY,
+            "true"
+        );
+
+
+        return true;
     }
 
 
     /* =====================================================
-       CLEAR DEMO OTP
+       CLEAR BACKEND OTP
        ===================================================== */
 
-    function clearDemoOtp() {
+    function clearBackendOtp() {
 
-        state.demoOtp =
+        state.backendOtp =
             "";
 
 
@@ -1449,21 +1466,12 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       DISPLAY DEMO OTP
+       DISPLAY BACKEND OTP
        ===================================================== */
 
-    function displayDemoOtp(
+    function displayBackendOtp(
         code
     ) {
-
-        if (
-            !DEMO_MODE ||
-            !DEMO_AUTO_FILL
-        ) {
-
-            return false;
-        }
-
 
         const normalized =
             clean(
@@ -1483,12 +1491,17 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        saveDemoOtp(
-            normalized
-        );
+        /*
+         * Make absolutely sure the code being displayed
+         * is the same code received from the backend.
+         */
+
+        state.backendOtp =
+            normalized;
 
 
         enableOtpInputs();
+
 
         setOtpValue(
             normalized
@@ -1499,17 +1512,17 @@ No real Gmail or SMS delivery is claimed.
             true;
 
 
-        showMessage(
-            "Demo verification code prepared. The code has been filled automatically for this midterm simulation.",
-            "success"
-        );
-
-
         if (otpHelp) {
 
             otpHelp.textContent =
-                "Enter the generated verification code shown above, then click Verify Account.";
+                "Your verification code is ready. Click Verify Account to continue.";
         }
+
+
+        showMessage(
+            "Your verification code is ready.",
+            "success"
+        );
 
 
         if (
@@ -1528,7 +1541,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       DISPLAY WAITING MESSAGE
+       DISPLAY PREPARING MESSAGE
        ===================================================== */
 
     function displayPreparingMessage() {
@@ -1536,14 +1549,17 @@ No real Gmail or SMS delivery is claimed.
         hideMessage();
 
 
+        disableOtpInputs();
+
+
+        clearVisibleOtp();
+
+
         if (otpHelp) {
 
             otpHelp.textContent =
                 "Preparing your verification code...";
         }
-
-
-        disableOtpInputs();
     }
 
 
@@ -1569,21 +1585,15 @@ No real Gmail or SMS delivery is claimed.
             verificationDescription
         ) {
 
-            if (email) {
-
-                verificationDescription.textContent =
-                    "Choose a verification method, then enter the 6-digit verification code.";
-            } else {
-
-                verificationDescription.textContent =
-                    "Choose a verification method, then enter the 6-digit verification code.";
-            }
+            verificationDescription.textContent =
+                "Choose a verification method, then enter the 6-digit verification code.";
         }
 
 
         /*
-         * IMPORTANT:
-         * Do not claim that an actual email or SMS was sent.
+         * Do NOT claim that an email or SMS was physically
+         * delivered unless a real delivery provider has
+         * been configured on the backend.
          */
 
         if (
@@ -1593,7 +1603,7 @@ No real Gmail or SMS delivery is claimed.
             if (email) {
 
                 emailDeliveryStatus.textContent =
-                    "Demo email verification is available for " +
+                    "Verification code for " +
                     maskEmail(email) +
                     ".";
 
@@ -1612,7 +1622,7 @@ No real Gmail or SMS delivery is claimed.
             if (phone) {
 
                 phoneDeliveryStatus.textContent =
-                    "Demo phone verification is available for " +
+                    "Verification code for " +
                     maskPhone(phone) +
                     ".";
 
@@ -1724,7 +1734,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       FIND VERIFICATION METHOD CARDS
+       VERIFICATION METHOD CARDS
        ===================================================== */
 
     function getMethodCards() {
@@ -1736,7 +1746,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       SET ACTIVE METHOD
+       SET ACTIVE CHANNEL
        ===================================================== */
 
     function setActiveChannel(
@@ -1804,10 +1814,8 @@ No real Gmail or SMS delivery is claimed.
 
 
                 if (
-                    channel !==
-                        "email" &&
-                    channel !==
-                        "phone"
+                    channel !== "email" &&
+                    channel !== "phone"
                 ) {
 
                     return;
@@ -1833,9 +1841,8 @@ No real Gmail or SMS delivery is claimed.
                     ) {
 
                         /*
-                         * If the user clicked a button
-                         * inside the card, let that button
-                         * perform its own action.
+                         * Buttons inside cards have their
+                         * own click handler.
                          */
 
                         if (
@@ -1867,10 +1874,8 @@ No real Gmail or SMS delivery is claimed.
                     ) {
 
                         if (
-                            event.key ===
-                                "Enter" ||
-                            event.key ===
-                                " "
+                            event.key === "Enter" ||
+                            event.key === " "
                         ) {
 
                             event.preventDefault();
@@ -1925,11 +1930,6 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        /*
-         * If the button already exists inside the
-         * email card, nothing needs to be done.
-         */
-
         if (
             emailCard.contains(
                 emailResendButton
@@ -1940,17 +1940,10 @@ No real Gmail or SMS delivery is claimed.
                 "verification-method-action"
             );
 
+
             return;
         }
 
-
-        /*
-         * Move the existing button from the old
-         * bottom resend area into the email method.
-         *
-         * This allows the current HTML to work even
-         * before verify.html is updated.
-         */
 
         emailResendButton.classList.add(
             "verification-method-action"
@@ -1964,26 +1957,6 @@ No real Gmail or SMS delivery is claimed.
         emailCard.appendChild(
             emailResendButton
         );
-
-
-        /*
-         * Hide the old wrapper if it became empty.
-         */
-
-        const oldWrapper =
-            document.querySelector(
-                ".otp-resend"
-            );
-
-
-        if (
-            oldWrapper &&
-            !oldWrapper.textContent.trim()
-        ) {
-
-            oldWrapper.hidden =
-                true;
-        }
     }
 
 
@@ -2023,7 +1996,9 @@ No real Gmail or SMS delivery is claimed.
             uid:
                 state.uid,
 
-            identity,
+            identity:
+
+                identity,
 
             username:
                 state.username,
@@ -2042,85 +2017,19 @@ No real Gmail or SMS delivery is claimed.
         };
 
 
-        let response;
-
-
         if (
             mode === "resend"
         ) {
 
-            response =
-                await API.resendOtp(
-                    payload
-                );
-
-        } else {
-
-            /*
-             * Preferred endpoint.
-             */
-
-            try {
-
-                response =
-                    await API.prepareOtp(
-                        payload
-                    );
-
-            } catch (prepareError) {
-
-                /*
-                 * Compatibility fallback for an older
-                 * backend that only exposes generateOtp.
-                 */
-
-                const code =
-                    prepareError &&
-                    prepareError.code;
-
-
-                if (
-                    code ===
-                        "API_ERROR" ||
-                    code ===
-                        "SERVER_ERROR" ||
-                    code ===
-                        "ACTION_NOT_FOUND" ||
-                    code ===
-                        "UNKNOWN_ACTION"
-                ) {
-
-                    if (
-                        typeof API.generateOtp ===
-                        "function"
-                    ) {
-
-                        response =
-                            await API.generateOtp(
-                                payload
-                            );
-
-                    } else {
-
-                        throw prepareError;
-                    }
-
-                } else {
-
-                    /*
-                     * If prepareOtp failed because of
-                     * a real server/network problem,
-                     * do not hide that error by generating
-                     * another request.
-                     */
-
-                    throw prepareError;
-                }
-            }
+            return await API.resendOtp(
+                payload
+            );
         }
 
 
-        return response;
+        return await API.prepareOtp(
+            payload
+        );
     }
 
 
@@ -2161,8 +2070,8 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Save any identity fields returned
-             * by the backend.
+             * Synchronize account information returned
+             * by Code.gs.
              */
 
             state.uid =
@@ -2217,84 +2126,74 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Backend-generated OTP.
+             * ONLY accept the OTP returned by the backend.
              */
 
-            const demoOtp =
-                extractDemoOtp(
+            const backendOtp =
+                extractBackendOtp(
                     response
                 );
 
 
-            if (
-                DEMO_MODE &&
-                DEMO_AUTO_FILL &&
-                demoOtp
-            ) {
+            if (!backendOtp) {
 
-                saveDemoOtp(
-                    demoOtp
+                throw new Error(
+                    "The verification service did not return the generated OTP."
                 );
-
-
-                const delayMs =
-                    getDemoDelay();
-
-
-                if (
-                    otpHelp
-                ) {
-
-                    otpHelp.textContent =
-                        "Your demo verification code is being prepared...";
-                }
-
-
-                /*
-                 * Do not fill immediately.
-                 *
-                 * Midterm requirement:
-                 * approximately 3–5 seconds.
-                 */
-
-                state.demoTimer =
-                    setTimeout(
-                        function () {
-
-                            displayDemoOtp(
-                                demoOtp
-                            );
-
-                        },
-                        delayMs
-                    );
-
-
-                return;
             }
 
 
+            storeBackendOtp(
+                backendOtp
+            );
+
+
             /*
-             * Production / non-demo response.
-             *
-             * The OTP must be entered manually.
+             * Disable the boxes while the backend-issued
+             * code is waiting for the short UI delay.
              */
 
-            enableOtpInputs();
+            disableOtpInputs();
 
 
-            state.prepared =
-                true;
+            clearVisibleOtp();
 
 
             if (otpHelp) {
 
                 otpHelp.textContent =
-                    "Enter the 6-digit verification code.";
+                    "Your verification code is being prepared...";
             }
 
 
-            updateVerifyButton();
+            /*
+             * IMPORTANT:
+             *
+             * No OTP is generated during this delay.
+             *
+             * backendOtp is already the real code generated
+             * by Code.gs.
+             */
+
+            const delayMs =
+                getOtpDisplayDelay();
+
+
+            state.otpDisplayTimer =
+                setTimeout(
+                    function () {
+
+                        state.otpDisplayTimer =
+                            null;
+
+
+                        displayBackendOtp(
+                            backendOtp
+                        );
+
+                    },
+                    delayMs
+                );
 
 
         } catch (error) {
@@ -2312,14 +2211,10 @@ No real Gmail or SMS delivery is claimed.
             disableOtpInputs();
 
 
-            const message =
+            showMessage(
                 getErrorMessage(
                     error
-                );
-
-
-            showMessage(
-                message,
+                ),
                 "error"
             );
 
@@ -2364,7 +2259,7 @@ No real Gmail or SMS delivery is claimed.
 
 
         /*
-         * Validate destination.
+         * Validate selected destination.
          */
 
         if (
@@ -2376,6 +2271,7 @@ No real Gmail or SMS delivery is claimed.
                 "No Gmail address is available for this account.",
                 "error"
             );
+
 
             return;
         }
@@ -2390,6 +2286,7 @@ No real Gmail or SMS delivery is claimed.
                 "No mobile number is available for this account.",
                 "error"
             );
+
 
             return;
         }
@@ -2411,6 +2308,7 @@ No real Gmail or SMS delivery is claimed.
                 " seconds before requesting another code.",
                 "warning"
             );
+
 
             return;
         }
@@ -2446,6 +2344,33 @@ No real Gmail or SMS delivery is claimed.
         hideMessage();
 
 
+        /*
+         * Cancel any previous display timer.
+         */
+
+        if (
+            state.otpDisplayTimer
+        ) {
+
+            clearTimeout(
+                state.otpDisplayTimer
+            );
+
+
+            state.otpDisplayTimer =
+                null;
+        }
+
+
+        clearBackendOtp();
+
+
+        clearVisibleOtp();
+
+
+        disableOtpInputs();
+
+
         try {
 
             const response =
@@ -2461,7 +2386,7 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Update returned account information.
+             * Synchronize returned account data.
              */
 
             state.uid =
@@ -2513,69 +2438,61 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Backend-generated OTP.
+             * ONLY use the OTP returned from the backend.
              */
 
-            const demoOtp =
-                extractDemoOtp(
+            const backendOtp =
+                extractBackendOtp(
                     response
                 );
 
 
-            if (
-                DEMO_MODE &&
-                DEMO_AUTO_FILL &&
-                demoOtp
-            {
+            if (!backendOtp) {
 
-                saveDemoOtp(
-                    demoOtp
+                throw new Error(
+                    "The verification service did not return the new generated OTP."
                 );
-
-
-                clearVisibleOtp();
-
-
-                disableOtpInputs();
-
-
-                const delayMs =
-                    getDemoDelay();
-
-
-                if (otpHelp) {
-
-                    otpHelp.textContent =
-                        "A new demo verification code is being prepared...";
-                }
-
-
-                state.demoTimer =
-                    setTimeout(
-                        function () {
-
-                            displayDemoOtp(
-                                demoOtp
-                            );
-
-                        },
-                        delayMs
-                    );
-            } else {
-
-                enableOtpInputs();
-
-                state.prepared =
-                    true;
-
-                if (otpHelp) {
-
-                    otpHelp.textContent =
-                        "Enter the new 6-digit verification code.";
-                }
-
-                updateVerifyButton();
             }
+
+
+            storeBackendOtp(
+                backendOtp
+            );
+
+
+            if (otpHelp) {
+
+                otpHelp.textContent =
+                    "Your new verification code is being prepared...";
+            }
+
+
+            /*
+             * Start the 3–5 second display delay.
+             *
+             * Again:
+             * NO OTP GENERATION occurs here.
+             */
+
+            const delayMs =
+                getOtpDisplayDelay();
+
+
+            state.otpDisplayTimer =
+                setTimeout(
+                    function () {
+
+                        state.otpDisplayTimer =
+                            null;
+
+
+                        displayBackendOtp(
+                            backendOtp
+                        );
+
+                    },
+                    delayMs
+                );
 
 
             /*
@@ -2586,28 +2503,6 @@ No real Gmail or SMS delivery is claimed.
             startCooldown(
                 channel
             );
-
-
-            if (
-                channel === "email"
-            ) {
-
-                showMessage(
-                    DEMO_MODE
-                        ? "A new demo email verification code is ready."
-                        : "A new verification code is ready.",
-                    "success"
-                );
-
-            } else {
-
-                showMessage(
-                    DEMO_MODE
-                        ? "A new demo phone verification code is ready."
-                        : "A new verification code is ready.",
-                    "success"
-                );
-            }
 
 
             displayDestinations();
@@ -2627,6 +2522,7 @@ No real Gmail or SMS delivery is claimed.
                 ),
                 "error"
             );
+
 
         } finally {
 
@@ -2674,7 +2570,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       VERIFY OTP
+       VERIFY ACCOUNT
        ===================================================== */
 
     async function verifyAccount() {
@@ -2708,8 +2604,12 @@ No real Gmail or SMS delivery is claimed.
 
                 const firstEmpty =
                     otpInputs.find(
-                        input =>
-                            !input.value
+                        function (
+                            input
+                        ) {
+
+                            return !input.value;
+                        }
                     );
 
 
@@ -2735,6 +2635,40 @@ No real Gmail or SMS delivery is claimed.
                 "error"
             );
 
+
+            return;
+        }
+
+
+        /*
+         * Make sure the user is verifying against
+         * the backend-issued code currently stored
+         * in this page's state.
+         */
+
+        if (
+            state.backendOtp &&
+            otp !== state.backendOtp
+        ) {
+
+            showMessage(
+                "The verification code does not match the current backend-issued code.",
+                "error"
+            );
+
+
+            return;
+        }
+
+
+        if (!API) {
+
+            showMessage(
+                "The verification service is unavailable.",
+                "error"
+            );
+
+
             return;
         }
 
@@ -2745,12 +2679,18 @@ No real Gmail or SMS delivery is claimed.
 
         if (verifyButton) {
 
+            if (
+                !verifyButton.dataset.originalText
+            ) {
+
+                verifyButton.dataset.originalText =
+                    verifyButton.textContent;
+            }
+
+
             verifyButton.disabled =
                 true;
 
-            verifyButton.dataset.originalText =
-                verifyButton.dataset.originalText ||
-                verifyButton.textContent;
 
             verifyButton.textContent =
                 "Verifying...";
@@ -2769,7 +2709,8 @@ No real Gmail or SMS delivery is claimed.
                         uid:
                             state.uid,
 
-                        identity,
+                        identity:
+                            identity,
 
                         username:
                             state.username,
@@ -2786,7 +2727,8 @@ No real Gmail or SMS delivery is claimed.
                         channel:
                             state.channel,
 
-                        otp
+                        otp:
+                            otp
                     }
                 );
 
@@ -2798,7 +2740,7 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Verification succeeded.
+             * Backend verification succeeded.
              */
 
             state.verified =
@@ -2806,7 +2748,7 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Save returned session.
+             * Save session token if Code.gs returned one.
              */
 
             const token =
@@ -2870,10 +2812,10 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Clear OTP after successful verification.
+             * Remove the OTP from browser storage.
              */
 
-            clearDemoOtp();
+            clearBackendOtp();
 
 
             showMessage(
@@ -2883,8 +2825,7 @@ No real Gmail or SMS delivery is claimed.
 
 
             /*
-             * Short delay allows the success message
-             * to be visible.
+             * Direct dashboard redirect.
              */
 
             setTimeout(
@@ -2962,14 +2903,18 @@ No real Gmail or SMS delivery is claimed.
             );
 
 
-        /*
-         * Missing identity.
-         */
+        const lowerMessage =
+            message.toLowerCase();
+
+
+        /* -------------------------------------------------
+           IDENTITY
+        ------------------------------------------------- */
 
         if (
             code ===
                 "OTP_IDENTITY_MISSING" ||
-            message.toLowerCase().includes(
+            lowerMessage.includes(
                 "username or gmail is required"
             )
         ) {
@@ -2978,9 +2923,9 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        /*
-         * Invalid OTP.
-         */
+        /* -------------------------------------------------
+           INVALID OTP
+        ------------------------------------------------- */
 
         if (
             code ===
@@ -2993,22 +2938,25 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        /*
-         * Expired OTP.
-         */
+        /* -------------------------------------------------
+           EXPIRED OTP
+        ------------------------------------------------- */
 
         if (
             code ===
                 "OTP_EXPIRED"
         ) {
 
-            return "Your verification code has expired. Please request a new code.";
+            return (
+                "Your verification code has expired. " +
+                "Please request a new code."
+            );
         }
 
 
-        /*
-         * OTP locked.
-         */
+        /* -------------------------------------------------
+           LOCKED
+        ------------------------------------------------- */
 
         if (
             code ===
@@ -3018,16 +2966,17 @@ No real Gmail or SMS delivery is claimed.
         ) {
 
             return (
-                "Verification is temporarily locked. Please try again after " +
+                "Verification is temporarily locked. " +
+                "Please try again after " +
                 OTP_LOCK_MINUTES +
                 " minutes."
             );
         }
 
 
-        /*
-         * Maximum attempts.
-         */
+        /* -------------------------------------------------
+           MAXIMUM ATTEMPTS
+        ------------------------------------------------- */
 
         if (
             code ===
@@ -3035,29 +2984,32 @@ No real Gmail or SMS delivery is claimed.
         ) {
 
             return (
-                "You have reached the maximum verification attempts. Please try again after " +
+                "You have reached the maximum verification attempts. " +
+                "Please try again after " +
                 OTP_LOCK_MINUTES +
                 " minutes."
             );
         }
 
 
-        /*
-         * Resend cooldown.
-         */
+        /* -------------------------------------------------
+           RESEND COOLDOWN
+        ------------------------------------------------- */
 
         if (
             code ===
                 "OTP_COOLDOWN"
         ) {
 
-            return "Please wait before requesting another verification code.";
+            return (
+                "Please wait before requesting another verification code."
+            );
         }
 
 
-        /*
-         * User not found.
-         */
+        /* -------------------------------------------------
+           USER NOT FOUND
+        ------------------------------------------------- */
 
         if (
             code ===
@@ -3066,31 +3018,67 @@ No real Gmail or SMS delivery is claimed.
                 "ACCOUNT_NOT_FOUND"
         ) {
 
-            return "No registered account was found for this verification request.";
+            return (
+                "No registered account was found for this verification request."
+            );
         }
 
 
-        /*
-         * Network / API errors.
-         */
+        /* -------------------------------------------------
+           OTP NOT RETURNED
+        ------------------------------------------------- */
+
+        if (
+            lowerMessage.includes(
+                "did not return the generated otp"
+            ) ||
+            lowerMessage.includes(
+                "did not return the new generated otp"
+            )
+        ) {
+
+            return (
+                "The verification service generated no usable verification code. " +
+                "Please try again."
+            );
+        }
+
+
+        /* -------------------------------------------------
+           NETWORK
+        ------------------------------------------------- */
 
         if (
             code ===
                 "NETWORK_ERROR"
         ) {
 
-            return "Unable to connect to the verification service. Please try again.";
+            return (
+                "Unable to connect to the verification service. " +
+                "Please try again."
+            );
         }
 
+
+        /* -------------------------------------------------
+           TIMEOUT
+        ------------------------------------------------- */
 
         if (
             code ===
                 "TIMEOUT"
         ) {
 
-            return "The verification service took too long to respond. Please try again.";
+            return (
+                "The verification service took too long to respond. " +
+                "Please try again."
+            );
         }
 
+
+        /* -------------------------------------------------
+           API CONFIGURATION
+        ------------------------------------------------- */
 
         if (
             code ===
@@ -3099,13 +3087,33 @@ No real Gmail or SMS delivery is claimed.
                 "API_URL_INVALID"
         ) {
 
-            return "The verification service is not configured correctly.";
+            return (
+                "The verification service is not configured correctly."
+            );
         }
 
 
-        /*
-         * Generic server message.
-         */
+        /* -------------------------------------------------
+           SERVER
+        ------------------------------------------------- */
+
+        if (
+            code ===
+                "SERVER_ERROR" ||
+            code ===
+                "API_ERROR"
+        ) {
+
+            return (
+                message ||
+                "The verification service returned an error. Please try again."
+            );
+        }
+
+
+        /* -------------------------------------------------
+           GENERIC BACKEND MESSAGE
+        ------------------------------------------------- */
 
         if (message) {
 
@@ -3113,7 +3121,9 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        return "Something went wrong. Please try again.";
+        return (
+            "Something went wrong. Please try again."
+        );
     }
 
 
@@ -3153,7 +3163,9 @@ No real Gmail or SMS delivery is claimed.
 
         saveValue(
             key,
-            String(now)
+            String(
+                now
+            )
         );
 
 
@@ -3164,6 +3176,7 @@ No real Gmail or SMS delivery is claimed.
             state.emailCooldown =
                 RESEND_COOLDOWN;
 
+
             runCooldown(
                 "email"
             );
@@ -3172,6 +3185,7 @@ No real Gmail or SMS delivery is claimed.
 
             state.phoneCooldown =
                 RESEND_COOLDOWN;
+
 
             runCooldown(
                 "phone"
@@ -3245,6 +3259,7 @@ No real Gmail or SMS delivery is claimed.
                 key
             );
 
+
             return 0;
         }
 
@@ -3280,6 +3295,7 @@ No real Gmail or SMS delivery is claimed.
                     function () {
 
                         state.emailCooldown--;
+
 
                         if (
                             state.emailCooldown <=
@@ -3414,6 +3430,7 @@ No real Gmail or SMS delivery is claimed.
             timer.textContent =
                 "Ready";
 
+
             return;
         }
 
@@ -3530,6 +3547,7 @@ No real Gmail or SMS delivery is claimed.
 
                     event.preventDefault();
 
+
                     verifyAccount();
                 }
             );
@@ -3548,11 +3566,14 @@ No real Gmail or SMS delivery is claimed.
 
                     event.preventDefault();
 
+
                     event.stopPropagation();
+
 
                     setActiveChannel(
                         "email"
                     );
+
 
                     sendCode(
                         "email"
@@ -3574,11 +3595,14 @@ No real Gmail or SMS delivery is claimed.
 
                     event.preventDefault();
 
+
                     event.stopPropagation();
+
 
                     setActiveChannel(
                         "phone"
                     );
+
 
                     sendCode(
                         "phone"
@@ -3600,6 +3624,7 @@ No real Gmail or SMS delivery is claimed.
 
                     event.preventDefault();
 
+
                     verifyAccount();
                 }
             );
@@ -3608,7 +3633,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       PREVENT ENTER FROM SUBMITTING EARLY
+       KEYBOARD BEHAVIOR
        ===================================================== */
 
     function initializeKeyboardBehavior() {
@@ -3667,10 +3692,6 @@ No real Gmail or SMS delivery is claimed.
         }
 
 
-        /*
-         * Use the configured recovery route.
-         */
-
         const recoveryRoute =
             ROUTES.RECOVERY ||
             "recovery.html";
@@ -3684,7 +3705,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       VERIFY-OTP LEGACY PAGE
+       LEGACY OTP PAGE
        ===================================================== */
 
     function handleLegacyOtpPage() {
@@ -3733,6 +3754,7 @@ No real Gmail or SMS delivery is claimed.
                 state.emailTimer
             );
 
+
             state.emailTimer =
                 null;
         }
@@ -3746,20 +3768,22 @@ No real Gmail or SMS delivery is claimed.
                 state.phoneTimer
             );
 
+
             state.phoneTimer =
                 null;
         }
 
 
         if (
-            state.demoTimer
+            state.otpDisplayTimer
         ) {
 
             clearTimeout(
-                state.demoTimer
+                state.otpDisplayTimer
             );
 
-            state.demoTimer =
+
+            state.otpDisplayTimer =
                 null;
         }
     }
@@ -3784,11 +3808,6 @@ No real Gmail or SMS delivery is claimed.
 
     async function initialize() {
 
-        /*
-         * Make sure the legacy page does not remain
-         * as a separate verification page.
-         */
-
         if (
             handleLegacyOtpPage()
         ) {
@@ -3801,13 +3820,8 @@ No real Gmail or SMS delivery is claimed.
 
 
         /*
-         * No identity means the verification page cannot
-         * ask the backend which account to verify.
-         *
-         * Do not silently redirect to login.
-         *
-         * The registration/login page is responsible for
-         * saving the identity before arriving here.
+         * Registration must save the account identity
+         * before redirecting to verify.html.
          */
 
         if (
@@ -3826,7 +3840,7 @@ No real Gmail or SMS delivery is claimed.
             if (otpHelp) {
 
                 otpHelp.textContent =
-                    "Return to the registration or login page and open verification again.";
+                    "Return to the registration page and open verification again.";
             }
 
 
@@ -3865,20 +3879,19 @@ No real Gmail or SMS delivery is claimed.
 
 
         /*
-         * Do not use a previously stored demo OTP
-         * immediately.
+         * Remove any old locally stored OTP.
          *
-         * The backend remains the source of truth.
+         * The backend must issue a fresh verification code.
          */
 
-        clearDemoOtp();
+        clearBackendOtp();
 
 
         disableOtpInputs();
 
 
         /*
-         * Ask the backend to prepare the OTP.
+         * Ask Code.gs for the actual OTP.
          */
 
         await prepareOtp();
@@ -3886,7 +3899,7 @@ No real Gmail or SMS delivery is claimed.
 
 
     /* =====================================================
-       PUBLIC DEBUG / CONTROL API
+       PUBLIC CONTROLLER
        ===================================================== */
 
     window.StockFlowOTP = {
@@ -3899,26 +3912,33 @@ No real Gmail or SMS delivery is claimed.
                 };
             },
 
+
         prepare:
             prepareOtp,
+
 
         resend:
             sendCode,
 
+
         verify:
             verifyAccount,
+
 
         getOtp:
             getOtpValue,
 
+
         setOtp:
             setOtpValue,
+
 
         clearOtp:
             clearVisibleOtp,
 
-        clearDemoOtp:
-            clearDemoOtp
+
+        clearBackendOtp:
+            clearBackendOtp
     };
 
 
