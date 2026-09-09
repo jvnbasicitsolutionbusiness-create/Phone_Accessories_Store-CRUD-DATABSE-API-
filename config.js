@@ -21,20 +21,31 @@
 
         ENVIRONMENT: "development",
 
+
+        /* =====================================================
+           DEMO / OTP MODE
+           ===================================================== */
+
         /*
-         * MIDTERM / DEMO MODE
+         * IMPORTANT
          *
-         * true:
-         * - Backend generates the real OTP.
-         * - OTP is stored in Google Sheets.
-         * - OTP is synchronized with Firebase.
-         * - Backend may return the generated OTP to the
-         *   frontend for the school-project auto-fill flow.
+         * Real OTP delivery is now enabled.
          *
-         * IMPORTANT:
-         * The frontend NEVER generates the OTP.
+         * The Google Apps Script backend:
+         *
+         * 1. Generates the OTP.
+         * 2. Stores the OTP in Google Sheets.
+         * 3. Stores the OTP expiration.
+         * 4. Sends the OTP through the configured
+         *    delivery channel.
+         *
+         * The frontend MUST NOT receive or display
+         * the actual OTP.
+         *
+         * Therefore DEMO_MODE is disabled.
          */
-        DEMO_MODE: true,
+
+        DEMO_MODE: false,
 
 
         /* =====================================================
@@ -43,9 +54,20 @@
 
         /*
          * CURRENT WORKING DEPLOYMENT
+         *
+         * IMPORTANT:
+         *
+         * The "65Lq4gCX" portion is intentional.
+         *
+         * Do NOT change it to:
+         *
+         * 65Lqg4CX
+         *
+         * The correct deployment URL is:
          */
+
         API_URL:
-            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
+            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lq4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
 
 
         /* =====================================================
@@ -66,10 +88,7 @@
                 "https://midtermexamproject-default-rtdb.firebaseio.com/",
 
             /*
-             * Leave empty for the current midterm/demo setup.
-             *
-             * Production should use proper Firebase
-             * Authentication and Database Security Rules.
+             * Leave empty for the current setup.
              */
             AUTH_TOKEN: ""
         },
@@ -116,14 +135,17 @@
 
 
             /* -----------------------------------------------
-               OTP BACKEND RESPONSE STORAGE
+               OTP RESPONSE STORAGE
                ----------------------------------------------- */
 
             /*
-             * These keys are used by the frontend to temporarily
-             * store the REAL OTP returned by Code.gs.
+             * These keys are retained for backward
+             * compatibility with older JavaScript files.
              *
-             * The OTP is NOT generated here.
+             * IMPORTANT:
+             *
+             * The current verification flow must NOT store
+             * or display the actual OTP in browser storage.
              */
 
             OTP_CODE_KEY:
@@ -146,57 +168,67 @@
             /*
              * Exactly six digits.
              */
+
             OTP_LENGTH: 6,
 
+
             /*
-             * OTP remains valid for 10 minutes.
+             * OTP validity:
+             * 10 minutes.
              */
+
             OTP_EXPIRATION_MINUTES: 10,
 
+
             /*
-             * IMPORTANT:
-             * Email and phone resend cooldowns use 120 seconds.
+             * Email and phone cooldown:
+             * 120 seconds.
              *
-             * Code.gs is also configured for 120 seconds.
+             * These should match Code.gs.
              */
+
             OTP_RESEND_COOLDOWN_SECONDS: 120,
 
-            /*
-             * After 4 incorrect verification attempts,
-             * verification is temporarily locked.
-             */
-            MAX_OTP_ATTEMPTS: 4,
 
             /*
-             * Temporary verification lock duration.
+             * Four incorrect verification attempts.
              */
+
+            MAX_OTP_ATTEMPTS: 4,
+
+
+            /*
+             * Temporary lock:
+             * 30 minutes.
+             */
+
             OTP_LOCK_MINUTES: 30,
 
 
             /* -----------------------------------------------
-               DEMO AUTO-FILL
+               REAL OTP DELIVERY MODE
                ----------------------------------------------- */
 
             /*
-             * The backend returns the actual generated OTP
-             * for this midterm/demo flow.
+             * Browser auto-fill is DISABLED.
              *
-             * otp.js receives that backend OTP and displays it
-             * after a short delay.
+             * The user must manually enter the OTP received
+             * through the selected delivery channel.
              */
-            DEMO_AUTO_FILL: true,
+
+            DEMO_AUTO_FILL: false,
+
 
             /*
-             * Minimum auto-display delay:
-             * 3 seconds
+             * Retained for backward compatibility.
+             *
+             * No verification code should be displayed after
+             * this delay because DEMO_AUTO_FILL is false.
              */
-            DEMO_AUTO_FILL_DELAY_MIN: 3000,
 
-            /*
-             * Maximum auto-display delay:
-             * 5 seconds
-             */
-            DEMO_AUTO_FILL_DELAY_MAX: 5000
+            DEMO_AUTO_FILL_DELAY_MIN: 0,
+
+            DEMO_AUTO_FILL_DELAY_MAX: 0
         },
 
 
@@ -212,22 +244,31 @@
              * text/plain prevents the browser from performing
              * the normal JSON CORS preflight against Apps Script.
              */
+
             CONTENT_TYPE:
                 "text/plain;charset=utf-8",
 
+
             /*
-             * Maximum time to wait for Apps Script.
+             * Maximum request time:
+             * 30 seconds.
              */
+
             TIMEOUT: 30000,
 
-            /*
-             * Number of retry attempts for recoverable requests.
-             */
-            RETRY_COUNT: 1,
 
             /*
-             * Delay before retrying.
+             * One retry for recoverable requests.
              */
+
+            RETRY_COUNT: 1,
+
+
+            /*
+             * Retry delay:
+             * 1 second.
+             */
+
             RETRY_DELAY: 1000
         },
 
@@ -259,15 +300,9 @@
                OTP VERIFICATION
                ----------------------------------------------- */
 
-            /*
-             * Main verification page.
-             */
             VERIFY:
                 "verify.html",
 
-            /*
-             * Backward-compatible OTP route.
-             */
             OTP:
                 "verify.html",
 
@@ -282,9 +317,6 @@
             FORGOT_PASSWORD:
                 "forgot-password.html",
 
-            /*
-             * Legacy compatibility route.
-             */
             FORGOT_PASSWORD_LEGACY:
                 "forgotpassword.html",
 
@@ -351,9 +383,6 @@
 
             MIN_STOCK: 0,
 
-            /*
-             * Negative inventory is not permitted.
-             */
             ALLOW_NEGATIVE_STOCK: false,
 
             CURRENCY: "PHP",
@@ -475,6 +504,14 @@
             OTP_CHANNEL:
                 "STOCKFLOW_OTP_CHANNEL",
 
+
+            /*
+             * Retained for compatibility.
+             *
+             * The new verification flow should NOT store
+             * the actual OTP here.
+             */
+
             OTP_CODE:
                 "STOCKFLOW_OTP_CODE",
 
@@ -571,6 +608,23 @@
 
             errors.push(
                 "API_URL does not appear to be a valid Google Apps Script Web App URL."
+            );
+        }
+
+
+        /* -----------------------------------------------
+           API DEPLOYMENT FORMAT
+           ----------------------------------------------- */
+
+        if (
+            STOCKFLOW_CONFIG.API_URL &&
+            !STOCKFLOW_CONFIG.API_URL.endsWith(
+                "/exec"
+            )
+        ) {
+
+            errors.push(
+                "API_URL must point to the Google Apps Script /exec deployment."
             );
         }
 
@@ -690,39 +744,32 @@
 
 
         /* -----------------------------------------------
-           DEMO AUTO-FILL MINIMUM DELAY
+           REAL OTP MODE
            ----------------------------------------------- */
 
         if (
-            Number(
-                STOCKFLOW_CONFIG.AUTH
-                    .DEMO_AUTO_FILL_DELAY_MIN
-            ) < 0
+            STOCKFLOW_CONFIG.DEMO_MODE === true
         ) {
 
-            errors.push(
-                "DEMO_AUTO_FILL_DELAY_MIN cannot be negative."
+            console.warn(
+                "[STOCKFLOW] DEMO_MODE is enabled. " +
+                "The verification flow may expose backend OTP data."
             );
         }
 
 
         /* -----------------------------------------------
-           DEMO AUTO-FILL MAXIMUM DELAY
+           DEMO AUTO-FILL
            ----------------------------------------------- */
 
         if (
-            Number(
-                STOCKFLOW_CONFIG.AUTH
-                    .DEMO_AUTO_FILL_DELAY_MAX
-            ) <
-            Number(
-                STOCKFLOW_CONFIG.AUTH
-                    .DEMO_AUTO_FILL_DELAY_MIN
-            )
+            STOCKFLOW_CONFIG.AUTH
+                .DEMO_AUTO_FILL === true
         ) {
 
-            errors.push(
-                "DEMO_AUTO_FILL_DELAY_MAX must be greater than or equal to DEMO_AUTO_FILL_DELAY_MIN."
+            console.warn(
+                "[STOCKFLOW] DEMO_AUTO_FILL is enabled. " +
+                "The real OTP must not be displayed automatically."
             );
         }
 
@@ -893,9 +940,6 @@
                         .OTP_EXPIRATION_MINUTES
                 ),
 
-            /*
-             * 120 seconds.
-             */
             resendCooldownSeconds:
                 Number(
                     STOCKFLOW_CONFIG.AUTH
@@ -914,23 +958,20 @@
                         .OTP_LOCK_MINUTES
                 ),
 
+            /*
+             * FALSE:
+             *
+             * The frontend does not display the OTP.
+             */
+
             demoAutoFill:
-                Boolean(
-                    STOCKFLOW_CONFIG.AUTH
-                        .DEMO_AUTO_FILL
-                ),
+                false,
 
             demoAutoFillDelayMin:
-                Number(
-                    STOCKFLOW_CONFIG.AUTH
-                        .DEMO_AUTO_FILL_DELAY_MIN
-                ),
+                0,
 
             demoAutoFillDelayMax:
-                Number(
-                    STOCKFLOW_CONFIG.AUTH
-                        .DEMO_AUTO_FILL_DELAY_MAX
-                )
+                0
         };
     }
 
@@ -940,39 +981,17 @@
        ========================================================= */
 
     /*
-     * IMPORTANT:
+     * LEGACY COMPATIBILITY FUNCTION
      *
-     * This function does NOT generate an OTP.
+     * The new real-delivery verification flow does NOT use
+     * this function to display an OTP.
      *
-     * It only selects a visual delay between 3 and 5 seconds
-     * before otp.js displays the OTP returned by Code.gs.
-     *
-     * The actual OTP is generated ONLY by the Apps Script
-     * backend.
+     * It always returns 0.
      */
+
     function getDemoAutoFillDelay() {
 
-        const min =
-            Number(
-                STOCKFLOW_CONFIG.AUTH
-                    .DEMO_AUTO_FILL_DELAY_MIN
-            );
-
-        const max =
-            Number(
-                STOCKFLOW_CONFIG.AUTH
-                    .DEMO_AUTO_FILL_DELAY_MAX
-            );
-
-        if (max <= min) {
-
-            return min;
-        }
-
-        return Math.floor(
-            Math.random() *
-            (max - min + 1)
-        ) + min;
+        return 0;
     }
 
 
@@ -980,23 +999,22 @@
        GLOBAL CONFIGURATION EXPORT
        ========================================================= */
 
-    /*
-     * Main configuration object.
-     */
     window.STOCKFLOW_CONFIG =
         STOCKFLOW_CONFIG;
 
 
-    /*
-     * Backward-compatible alias.
-     */
+    /* =========================================================
+       BACKWARD-COMPATIBLE ALIAS
+       ========================================================= */
+
     window.CONFIG =
         STOCKFLOW_CONFIG;
 
 
-    /*
-     * Public configuration helper API.
-     */
+    /* =========================================================
+       PUBLIC CONFIGURATION HELPER API
+       ========================================================= */
+
     window.StockFlowConfig = {
 
         config:
@@ -1128,6 +1146,11 @@
         );
 
         console.log(
+            "Real OTP Delivery:",
+            !STOCKFLOW_CONFIG.DEMO_MODE
+        );
+
+        console.log(
             "API:",
             STOCKFLOW_CONFIG.API_URL
         );
@@ -1181,22 +1204,6 @@
             "Demo Auto Fill:",
             STOCKFLOW_CONFIG.AUTH
                 .DEMO_AUTO_FILL
-        );
-
-        console.log(
-            "Demo Auto Fill Delay:",
-            STOCKFLOW_CONFIG.AUTH
-                .DEMO_AUTO_FILL_DELAY_MIN +
-            "ms - " +
-            STOCKFLOW_CONFIG.AUTH
-                .DEMO_AUTO_FILL_DELAY_MAX +
-            "ms"
-        );
-
-        console.log(
-            "Recovery Route:",
-            STOCKFLOW_CONFIG.ROUTES
-                .RECOVERY
         );
 
         console.log(
