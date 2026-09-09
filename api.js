@@ -22,20 +22,45 @@ IMPORTANT
 - api.js DOES NOT redirect pages.
 - api.js DOES NOT store passwords.
 - OTP generation is handled by the backend.
-- In DEMO_MODE, the backend may return demoOtp.
+- Backend controls authentication.
+- Backend controls OTP generation.
+- Backend controls account status.
+- Backend controls password recovery.
 
-IMPORTANT FOR GOOGLE APPS SCRIPT
---------------------------------
-The frontend sends JSON using:
+GOOGLE APPS SCRIPT
+------------------
+Frontend sends JSON using:
 
     Content-Type: text/plain;charset=utf-8
 
 This avoids an unnecessary CORS preflight request.
 
-The Apps Script Web App must be deployed as:
+Apps Script Web App should be deployed as:
 
     Execute as: Me
     Who has access: Anyone
+
+ERROR HANDLING
+--------------
+Backend/business errors are preserved.
+
+Examples:
+
+    ACCOUNT_NOT_FOUND
+    INVALID_CREDENTIALS
+    ACCOUNT_SUSPENDED
+    ACCOUNT_DISABLED
+    ACCOUNT_BLOCKED
+    ACCOUNT_PENDING
+    REQUIRES_VERIFICATION
+    INVALID_OTP
+    OTP_EXPIRED
+    OTP_LOCKED
+
+These are NOT network errors.
+
+Only actual communication/transport problems are
+classified as network/API errors.
 
 =========================================================
 */
@@ -54,8 +79,10 @@ The Apps Script Web App must be deployed as:
         window.CONFIG ||
         {};
 
+
     const API_CONFIG =
-        CONFIG.API || {};
+        CONFIG.API ||
+        {};
 
 
     const API_URL =
@@ -70,8 +97,8 @@ The Apps Script Web App must be deployed as:
 
     const REQUEST_TIMEOUT =
         Number(
-            API_CONFIG.TIMEOUT ||
-            CONFIG.API_TIMEOUT ||
+            API_CONFIG.TIMEOUT ??
+            CONFIG.API_TIMEOUT ??
             30000
         );
 
@@ -100,8 +127,10 @@ The Apps Script Web App must be deployed as:
 
 
     const CONTENT_TYPE =
-        API_CONFIG.CONTENT_TYPE ||
-        "text/plain;charset=utf-8";
+        String(
+            API_CONFIG.CONTENT_TYPE ||
+            "text/plain;charset=utf-8"
+        );
 
 
     /* =====================================================
@@ -110,40 +139,91 @@ The Apps Script Web App must be deployed as:
 
     class StockFlowAPIError extends Error {
 
-        constructor(message, options = {}) {
+        constructor(
+            message,
+            options = {}
+        ) {
 
             super(
                 message ||
                 "An unknown API error occurred."
             );
 
+
             this.name =
                 "StockFlowAPIError";
 
+
             this.code =
-                options.code ||
-                "API_ERROR";
+                String(
+                    options.code ||
+                    "API_ERROR"
+                )
+                    .trim()
+                    .toUpperCase();
+
 
             this.status =
                 options.status ??
                 null;
 
+
             this.action =
                 options.action ||
                 null;
+
 
             this.response =
                 options.response ??
                 null;
 
+
             this.data =
                 options.data ??
                 null;
 
+
             this.originalError =
                 options.originalError ??
                 null;
+
+
+            /*
+             * Useful when debugging the
+             * actual HTTP response.
+             */
+
+            this.rawResponse =
+                options.rawResponse ??
+                null;
+
+
+            this.isNetworkError =
+                this.code ===
+                "NETWORK_ERROR";
+
+
+            this.isTimeout =
+                this.code ===
+                "TIMEOUT";
+
+
+            this.isBackendError =
+                !this.isNetworkError &&
+                !this.isTimeout &&
+                this.code !==
+                    "API_URL_MISSING" &&
+                this.code !==
+                    "API_URL_INVALID" &&
+                this.code !==
+                    "EMPTY_RESPONSE" &&
+                this.code !==
+                    "INVALID_JSON" &&
+                this.code !==
+                    "HTTP_ERROR";
+
         }
+
     }
 
 
@@ -151,27 +231,38 @@ The Apps Script Web App must be deployed as:
        BASIC HELPERS
        ===================================================== */
 
-    function isObject(value) {
+    function isObject(
+        value
+    ) {
 
         return (
             value !== null &&
             typeof value === "object" &&
             !Array.isArray(value)
         );
+
     }
 
 
-    function cleanValue(value) {
+    function cleanValue(
+        value
+    ) {
 
         if (
             value === null ||
-            typeof value === "undefined"
+            typeof value ===
+                "undefined"
         ) {
 
             return "";
+
         }
 
-        return String(value).trim();
+
+        return String(
+            value
+        ).trim();
+
     }
 
 
@@ -184,15 +275,38 @@ The Apps Script Web App must be deployed as:
         ) {
 
             const value =
-                cleanValue(arguments[i]);
+                cleanValue(
+                    arguments[i]
+                );
+
 
             if (value) {
 
                 return value;
+
             }
+
         }
 
+
         return "";
+
+    }
+
+
+    function normalizeCode(
+        value
+    ) {
+
+        return cleanValue(
+            value
+        )
+            .toUpperCase()
+            .replace(
+                /\s+/g,
+                "_"
+            );
+
     }
 
 
@@ -200,11 +314,16 @@ The Apps Script Web App must be deployed as:
        IDENTITY RESOLUTION
        ===================================================== */
 
-    function resolveIdentity(data = {}) {
+    function resolveIdentity(
+        data = {}
+    ) {
 
-        if (!isObject(data)) {
+        if (
+            !isObject(data)
+        ) {
 
             return "";
+
         }
 
 
@@ -231,7 +350,9 @@ The Apps Script Web App must be deployed as:
             data.userId,
 
             data.UID
+
         );
+
     }
 
 
@@ -239,16 +360,22 @@ The Apps Script Web App must be deployed as:
        OTP DATA NORMALIZATION
        ===================================================== */
 
-    function normalizeOtpData(data = {}) {
+    function normalizeOtpData(
+        data = {}
+    ) {
 
         const input =
             isObject(data)
-                ? { ...data }
+                ? {
+                    ...data
+                }
                 : {};
 
 
         const identity =
-            resolveIdentity(input);
+            resolveIdentity(
+                input
+            );
 
 
         const username =
@@ -312,7 +439,9 @@ The Apps Script Web App must be deployed as:
             uid,
 
             channel
+
         };
+
     }
 
 
@@ -322,85 +451,131 @@ The Apps Script Web App must be deployed as:
 
     function validateApiUrl() {
 
-        if (!API_URL) {
+        if (
+            !API_URL
+        ) {
 
             throw new StockFlowAPIError(
                 "The Google Apps Script API URL is missing.",
                 {
+
                     code:
                         "API_URL_MISSING"
+
                 }
             );
+
         }
 
 
         if (
             !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i
-                .test(API_URL)
+                .test(
+                    API_URL
+                )
         ) {
 
             throw new StockFlowAPIError(
                 "The configured API URL is not a valid Google Apps Script Web App URL.",
                 {
+
                     code:
                         "API_URL_INVALID"
+
                 }
             );
+
         }
+
     }
 
 
     /* =====================================================
-       SAFE JSON PARSER
+       JSON PARSER
        ===================================================== */
 
-    function parseJson(text) {
+    function parseJson(
+        text,
+        action
+    ) {
 
         const raw =
-            cleanValue(text);
+            typeof text ===
+                "string"
+                ? text.trim()
+                : "";
 
 
-        if (!raw) {
+        if (
+            !raw
+        ) {
 
             throw new StockFlowAPIError(
                 "The Google Apps Script returned an empty response.",
                 {
+
                     code:
                         "EMPTY_RESPONSE",
 
+                    action,
+
                     response:
+                        raw,
+
+                    rawResponse:
                         raw
+
                 }
             );
+
         }
 
 
         try {
 
-            return JSON.parse(raw);
+            return JSON.parse(
+                raw
+            );
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "[STOCKFLOW API] Invalid JSON response:",
-                raw
+                {
+
+                    action,
+
+                    raw
+
+                }
             );
 
 
             throw new StockFlowAPIError(
                 "The server returned an invalid response. Check the Google Apps Script Web App deployment.",
                 {
+
                     code:
                         "INVALID_JSON",
+
+                    action,
 
                     response:
                         raw,
 
+                    rawResponse:
+                        raw,
+
                     originalError:
                         error
+
                 }
             );
+
         }
+
     }
 
 
@@ -408,9 +583,13 @@ The Apps Script Web App must be deployed as:
        RESPONSE NORMALIZATION
        ===================================================== */
 
-    function normalizeResponse(result) {
+    function normalizeResponse(
+        result
+    ) {
 
-        if (!isObject(result)) {
+        if (
+            !isObject(result)
+        ) {
 
             return {
 
@@ -419,31 +598,37 @@ The Apps Script Web App must be deployed as:
 
                 data:
                     result
+
             };
+
         }
 
 
         /*
-         * Keep the backend response intact.
+         * Do not destroy or rewrite the backend response.
          *
-         * This is important because different
-         * StockFlow modules may return:
-         *
-         * {
-         *     success: true,
-         *     data: {...}
-         * }
-         *
-         * OR:
+         * The backend may return:
          *
          * {
          *     success: true,
-         *     token: "...",
          *     user: {...}
          * }
+         *
+         * or:
+         *
+         * {
+         *     success: false,
+         *     code: "ACCOUNT_NOT_FOUND",
+         *     message: "Account does not exist."
+         * }
+         *
+         * Both must remain intact.
          */
 
-        return result;
+        return {
+            ...result
+        };
+
     }
 
 
@@ -451,34 +636,55 @@ The Apps Script Web App must be deployed as:
        SUCCESS CHECK
        ===================================================== */
 
-    function isSuccessfulResponse(result) {
+    function isSuccessfulResponse(
+        result
+    ) {
 
-        if (!isObject(result)) {
+        if (
+            !isObject(result)
+        ) {
 
             return true;
+
         }
 
 
         if (
-            result.success === false ||
-            result.ok === false
+            result.success ===
+                false
         ) {
 
             return false;
+
+        }
+
+
+        if (
+            result.ok ===
+                false
+        ) {
+
+            return false;
+
         }
 
 
         if (
             result.status &&
-            String(result.status)
-                .toLowerCase() === "error"
+            String(
+                result.status
+            )
+                .toLowerCase() ===
+                "error"
         ) {
 
             return false;
+
         }
 
 
         return true;
+
     }
 
 
@@ -486,19 +692,28 @@ The Apps Script Web App must be deployed as:
        SERVER ERROR MESSAGE
        ===================================================== */
 
-    function getServerErrorMessage(result) {
+    function getServerErrorMessage(
+        result
+    ) {
 
-        if (!result) {
+        if (
+            !result
+        ) {
 
-            return "The server returned an unknown error.";
+            return (
+                "The server returned an unknown error."
+            );
+
         }
 
 
         if (
-            typeof result === "string"
+            typeof result ===
+                "string"
         ) {
 
             return result;
+
         }
 
 
@@ -506,8 +721,19 @@ The Apps Script Web App must be deployed as:
             !isObject(result)
         ) {
 
-            return "The server rejected the request.";
+            return (
+                "The server rejected the request."
+            );
+
         }
+
+
+        const nestedData =
+            isObject(
+                result.data
+            )
+                ? result.data
+                : null;
 
 
         return firstValue(
@@ -520,14 +746,124 @@ The Apps Script Web App must be deployed as:
 
             result.reason,
 
-            result.data &&
-            result.data.message,
+            nestedData &&
+                nestedData.message,
 
-            result.data &&
-            result.data.error,
+            nestedData &&
+                nestedData.error,
 
             "The server rejected the request."
+
         );
+
+    }
+
+
+    /* =====================================================
+       SERVER ERROR CODE
+       ===================================================== */
+
+    function getServerErrorCode(
+        result
+    ) {
+
+        if (
+            !result
+        ) {
+
+            return "SERVER_ERROR";
+
+        }
+
+
+        if (
+            typeof result ===
+                "string"
+        ) {
+
+            return "SERVER_ERROR";
+
+        }
+
+
+        if (
+            !isObject(result)
+        ) {
+
+            return "SERVER_ERROR";
+
+        }
+
+
+        const nestedData =
+            isObject(
+                result.data
+            )
+                ? result.data
+                : null;
+
+
+        return normalizeCode(
+
+            firstValue(
+
+                result.code,
+
+                result.errorCode,
+
+                result.error_code,
+
+                nestedData &&
+                    nestedData.code,
+
+                nestedData &&
+                    nestedData.errorCode,
+
+                "SERVER_ERROR"
+
+            )
+
+        ) || "SERVER_ERROR";
+
+    }
+
+
+    /* =====================================================
+       DEBUG RESPONSE
+       ===================================================== */
+
+    function debugResponse(
+        action,
+        response,
+        result
+    ) {
+
+        if (
+            CONFIG.DEBUG !== true
+        ) {
+
+            return;
+
+        }
+
+
+        console.log(
+            "[STOCKFLOW API] Server response:",
+            {
+
+                action,
+
+                httpStatus:
+                    response.status,
+
+                httpOk:
+                    response.ok,
+
+                result
+
+            }
+        );
+
     }
 
 
@@ -535,7 +871,9 @@ The Apps Script Web App must be deployed as:
        DELAY
        ===================================================== */
 
-    function delay(ms) {
+    function delay(
+        ms
+    ) {
 
         return new Promise(
             resolve =>
@@ -544,6 +882,7 @@ The Apps Script Web App must be deployed as:
                     ms
                 )
         );
+
     }
 
 
@@ -552,24 +891,16 @@ The Apps Script Web App must be deployed as:
        ===================================================== */
 
     /*
-     * NEVER automatically retry operations that can
-     * create or modify data.
+     * Only safe operations may automatically retry.
      *
-     * Examples:
-     *
-     * register
-     * createProduct
-     * updateProduct
-     * deleteProduct
-     * createStockIn
-     * createStockOut
-     * resetPassword
-     *
-     * Automatic retry is only allowed for safe
-     * read/session/health operations.
+     * Authentication, registration, OTP generation,
+     * password reset and data modification are NOT
+     * automatically retried.
      */
 
-    function canRetryAction(action) {
+    function canRetryAction(
+        action
+    ) {
 
         const safeActions = [
 
@@ -594,12 +925,63 @@ The Apps Script Web App must be deployed as:
             "listTransactions",
 
             "dashboard"
+
         ];
 
 
         return safeActions.includes(
-            String(action)
+            String(
+                action
+            )
         );
+
+    }
+
+
+    /* =====================================================
+       TRANSPORT ERROR DETECTION
+       ===================================================== */
+
+    function isNativeTransportError(
+        error
+    ) {
+
+        if (
+            !error
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            error.name ===
+                "AbortError"
+        ) {
+
+            return true;
+
+        }
+
+
+        /*
+         * Browsers commonly report failed
+         * cross-origin fetches as TypeError.
+         */
+
+        if (
+            error.name ===
+                "TypeError"
+        ) {
+
+            return true;
+
+        }
+
+
+        return false;
+
     }
 
 
@@ -616,15 +998,20 @@ The Apps Script Web App must be deployed as:
         validateApiUrl();
 
 
-        if (!action) {
+        if (
+            !action
+        ) {
 
             throw new StockFlowAPIError(
                 "API action is required.",
                 {
+
                     code:
                         "ACTION_MISSING"
+
                 }
             );
+
         }
 
 
@@ -637,12 +1024,12 @@ The Apps Script Web App must be deployed as:
                     ? payload
                     : {}
             )
+
         };
 
 
         /*
-         * Only use configured retries when the
-         * action is safe to retry.
+         * Only safe read operations may use retry.
          */
 
         const configuredRetries =
@@ -656,7 +1043,9 @@ The Apps Script Web App must be deployed as:
 
 
         const attempts =
-            canRetryAction(action)
+            canRetryAction(
+                action
+            )
                 ? configuredRetries
                 : 0;
 
@@ -678,7 +1067,9 @@ The Apps Script Web App must be deployed as:
             const timeoutId =
                 setTimeout(
                     () => {
+
                         controller.abort();
+
                     },
                     REQUEST_TIMEOUT
                 );
@@ -686,13 +1077,35 @@ The Apps Script Web App must be deployed as:
 
             try {
 
-                /*
-                 * IMPORTANT:
-                 *
-                 * credentials are omitted because
-                 * Google Apps Script authentication
-                 * is handled by the Web App deployment.
-                 */
+                if (
+                    CONFIG.DEBUG ===
+                        true
+                ) {
+
+                    console.log(
+                        "[STOCKFLOW API] Request:",
+                        {
+
+                            action,
+
+                            url:
+                                API_URL,
+
+                            attempt:
+                                attempt + 1,
+
+                            payload:
+                                body
+
+                        }
+                    );
+
+                }
+
+
+                /* =========================================
+                   FETCH
+                   ========================================= */
 
                 const response =
                     await fetch(
@@ -709,6 +1122,7 @@ The Apps Script Web App must be deployed as:
 
                                 "Accept":
                                     "application/json"
+
                             },
 
                             body:
@@ -727,6 +1141,7 @@ The Apps Script Web App must be deployed as:
 
                             signal:
                                 controller.signal
+
                         }
                     );
 
@@ -736,39 +1151,90 @@ The Apps Script Web App must be deployed as:
                 );
 
 
-                const text =
-                    await response.text();
+                /* =========================================
+                   READ RESPONSE
+                   ========================================= */
+
+                let text = "";
 
 
-                console.log(
-                    "[STOCKFLOW API] Response",
-                    {
-                        action,
-                        status:
-                            response.status,
-                        ok:
-                            response.ok
-                    }
-                );
+                try {
 
+                    text =
+                        await response.text();
+
+                } catch (
+                    readError
+                ) {
+
+                    throw new StockFlowAPIError(
+                        "Unable to read the response from the Google Apps Script Web App.",
+                        {
+
+                            code:
+                                "RESPONSE_READ_ERROR",
+
+                            status:
+                                response.status,
+
+                            action,
+
+                            originalError:
+                                readError
+
+                        }
+                    );
+
+                }
+
+
+                if (
+                    CONFIG.DEBUG ===
+                        true
+                ) {
+
+                    console.log(
+                        "[STOCKFLOW API] Raw response:",
+                        {
+
+                            action,
+
+                            status:
+                                response.status,
+
+                            ok:
+                                response.ok,
+
+                            text
+
+                        }
+                    );
+
+                }
+
+
+                /* =========================================
+                   PARSE JSON
+                   ========================================= */
 
                 let result;
 
 
-                /*
-                 * Parse the response.
-                 */
-
                 try {
 
                     result =
-                        parseJson(text);
+                        parseJson(
+                            text,
+                            action
+                        );
 
-                } catch (parseError) {
+                } catch (
+                    parseError
+                ) {
 
                     /*
-                     * If HTTP itself failed, expose
-                     * the HTTP status instead of hiding it.
+                     * If HTTP failed AND response is
+                     * not valid JSON, expose HTTP error.
                      */
 
                     if (
@@ -790,13 +1256,22 @@ The Apps Script Web App must be deployed as:
                                 action,
 
                                 response:
-                                    text
+                                    text,
+
+                                rawResponse:
+                                    text,
+
+                                originalError:
+                                    parseError
+
                             }
                         );
+
                     }
 
 
                     throw parseError;
+
                 }
 
 
@@ -804,6 +1279,13 @@ The Apps Script Web App must be deployed as:
                     normalizeResponse(
                         result
                     );
+
+
+                debugResponse(
+                    action,
+                    response,
+                    result
+                );
 
 
                 /* =========================================
@@ -816,15 +1298,32 @@ The Apps Script Web App must be deployed as:
                     )
                 ) {
 
-                    throw new StockFlowAPIError(
+                    const serverCode =
+                        getServerErrorCode(
+                            result
+                        );
+
+
+                    const serverMessage =
                         getServerErrorMessage(
                             result
-                        ),
+                        );
+
+
+                    /*
+                     * CRITICAL:
+                     *
+                     * This is a backend/business error.
+                     *
+                     * It MUST NOT become NETWORK_ERROR.
+                     */
+
+                    throw new StockFlowAPIError(
+                        serverMessage,
                         {
 
                             code:
-                                result.code ||
-                                "SERVER_ERROR",
+                                serverCode,
 
                             status:
                                 response.status,
@@ -836,9 +1335,14 @@ The Apps Script Web App must be deployed as:
 
                             data:
                                 result.data ||
-                                null
+                                null,
+
+                            rawResponse:
+                                text
+
                         }
                     );
+
                 }
 
 
@@ -869,20 +1373,27 @@ The Apps Script Web App must be deployed as:
 
                             data:
                                 result.data ||
-                                null
+                                null,
+
+                            rawResponse:
+                                text
+
                         }
                     );
+
                 }
 
 
-                /*
-                 * SUCCESS
-                 */
+                /* =========================================
+                   SUCCESS
+                   ========================================= */
 
                 return result;
 
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 clearTimeout(
                     timeoutId
@@ -890,7 +1401,7 @@ The Apps Script Web App must be deployed as:
 
 
                 /* =========================================
-                   OUR OWN API ERROR
+                   ALREADY NORMALIZED API ERROR
                    ========================================= */
 
                 if (
@@ -911,7 +1422,7 @@ The Apps Script Web App must be deployed as:
                 else if (
                     error &&
                     error.name ===
-                    "AbortError"
+                        "AbortError"
                 ) {
 
                     lastError =
@@ -926,52 +1437,52 @@ The Apps Script Web App must be deployed as:
 
                                 originalError:
                                     error
+
                             }
                         );
+
                 }
 
 
                 /* =========================================
-                   NETWORK / CORS / FETCH ERROR
+                   NATIVE NETWORK/FETCH ERROR
                    ========================================= */
 
-                else {
+                else if (
+                    isNativeTransportError(
+                        error
+                    )
+                ) {
 
                     console.error(
-                        "[STOCKFLOW API] Fetch failed.",
+                        "[STOCKFLOW API] Fetch failed:",
                         {
+
                             action,
+
                             url:
                                 API_URL,
-                            error:
-                                error
+
+                            error
+
                         }
                     );
 
 
                     let message =
-                        "Unable to connect to the verification service.";
+                        "Unable to connect to the Google Apps Script Web App.";
 
-
-                    /*
-                     * Give a useful development
-                     * message instead of hiding the
-                     * actual problem.
-                     */
 
                     if (
-                        CONFIG.DEBUG === true
+                        CONFIG.DEBUG ===
+                            true &&
+                        error &&
+                        error.message
                     ) {
 
-                        if (
-                            error &&
-                            error.message
-                        ) {
-
-                            message =
-                                "Unable to connect to the Google Apps Script Web App. " +
-                                error.message;
-                        }
+                        message +=
+                            " " +
+                            error.message;
 
                     }
 
@@ -988,8 +1499,51 @@ The Apps Script Web App must be deployed as:
 
                                 originalError:
                                     error
+
                             }
                         );
+
+                }
+
+
+                /* =========================================
+                   UNKNOWN JAVASCRIPT ERROR
+                   ========================================= */
+
+                else {
+
+                    console.error(
+                        "[STOCKFLOW API] Unexpected request error:",
+                        {
+
+                            action,
+
+                            error
+
+                        }
+                    );
+
+
+                    lastError =
+                        new StockFlowAPIError(
+                            (
+                                error &&
+                                error.message
+                            ) ||
+                            "An unexpected error occurred while communicating with the server.",
+                            {
+
+                                code:
+                                    "REQUEST_ERROR",
+
+                                action,
+
+                                originalError:
+                                    error
+
+                            }
+                        );
+
                 }
 
 
@@ -998,17 +1552,22 @@ The Apps Script Web App must be deployed as:
                    ========================================= */
 
                 if (
-                    attempt < attempts
+                    attempt <
+                    attempts
                 ) {
 
                     console.warn(
-                        "[STOCKFLOW API] Retrying:",
+                        "[STOCKFLOW API] Retrying safe request:",
                         {
+
                             action,
+
                             attempt:
                                 attempt + 1,
+
                             maxRetries:
                                 attempts
+
                         }
                     );
 
@@ -1019,11 +1578,14 @@ The Apps Script Web App must be deployed as:
 
 
                     continue;
+
                 }
 
 
                 throw lastError;
+
             }
+
         }
 
 
@@ -1035,8 +1597,10 @@ The Apps Script Web App must be deployed as:
                     "REQUEST_FAILED",
 
                 action
+
             }
         );
+
     }
 
 
@@ -1044,7 +1608,9 @@ The Apps Script Web App must be deployed as:
        REGISTER
        ===================================================== */
 
-    async function register(data = {}) {
+    async function register(
+        data = {}
+    ) {
 
         return request(
             "register",
@@ -1055,8 +1621,34 @@ The Apps Script Web App must be deployed as:
                 role:
                     data.role ||
                     "Employee"
+
             }
         );
+
+    }
+
+
+    /* =====================================================
+       REGISTER ADMIN
+       ===================================================== */
+
+    async function registerAdmin(
+        data = {}
+    ) {
+
+        return request(
+            "registerAdmin",
+            {
+
+                ...data,
+
+                role:
+                    data.role ||
+                    "Admin"
+
+            }
+        );
+
     }
 
 
@@ -1064,7 +1656,9 @@ The Apps Script Web App must be deployed as:
        LOGIN
        ===================================================== */
 
-    async function login(data = {}) {
+    async function login(
+        data = {}
+    ) {
 
         const identity =
             resolveIdentity(
@@ -1072,7 +1666,9 @@ The Apps Script Web App must be deployed as:
             );
 
 
-        if (!identity) {
+        if (
+            !identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1083,8 +1679,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "login"
+
                 }
             );
+
         }
 
 
@@ -1095,8 +1693,10 @@ The Apps Script Web App must be deployed as:
                 ...data,
 
                 identity
+
             }
         );
+
     }
 
 
@@ -1114,7 +1714,9 @@ The Apps Script Web App must be deployed as:
             );
 
 
-        if (!otpData.identity) {
+        if (
+            !otpData.identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1125,8 +1727,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "prepareOtp"
+
                 }
             );
+
         }
 
 
@@ -1134,6 +1738,7 @@ The Apps Script Web App must be deployed as:
             "prepareOtp",
             otpData
         );
+
     }
 
 
@@ -1151,7 +1756,9 @@ The Apps Script Web App must be deployed as:
             );
 
 
-        if (!otpData.identity) {
+        if (
+            !otpData.identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1162,8 +1769,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "generateOtp"
+
                 }
             );
+
         }
 
 
@@ -1171,6 +1780,79 @@ The Apps Script Web App must be deployed as:
             "generateOtp",
             otpData
         );
+
+    }
+
+
+    /* =====================================================
+       RESEND OTP
+       ===================================================== */
+
+    async function resendOtp(
+        data = {}
+    ) {
+
+        const otpData =
+            normalizeOtpData(
+                data
+            );
+
+
+        if (
+            !otpData.identity
+        ) {
+
+            throw new StockFlowAPIError(
+                "Username, Gmail, or phone number is required.",
+                {
+
+                    code:
+                        "OTP_IDENTITY_MISSING",
+
+                    action:
+                        "resendOtp"
+
+                }
+            );
+
+        }
+
+
+        return request(
+            "resendOtp",
+            otpData
+        );
+
+    }
+
+
+    /* =====================================================
+       REQUEST OTP
+       ===================================================== */
+
+    async function requestOtp(
+        data = {}
+    ) {
+
+        return resendOtp(
+            data
+        );
+
+    }
+
+
+    /* =====================================================
+       UPDATE OTP
+       ===================================================== */
+
+    async function updateOtp(
+        data = {}
+    ) {
+
+        return resendOtp(
+            data
+        );
+
     }
 
 
@@ -1196,10 +1878,13 @@ The Apps Script Web App must be deployed as:
                 otpData.code,
 
                 otpData.OTP
+
             );
 
 
-        if (!otpData.identity) {
+        if (
+            !otpData.identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1210,12 +1895,16 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "verifyOtp"
+
                 }
             );
+
         }
 
 
-        if (!otp) {
+        if (
+            !otp
+        ) {
 
             throw new StockFlowAPIError(
                 "Please enter the verification code.",
@@ -1226,8 +1915,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "verifyOtp"
+
                 }
             );
+
         }
 
 
@@ -1238,59 +1929,10 @@ The Apps Script Web App must be deployed as:
                 ...otpData,
 
                 otp
+
             }
         );
-    }
 
-
-    /* =====================================================
-       RESEND OTP
-       ===================================================== */
-
-    async function resendOtp(
-        data = {}
-    ) {
-
-        const otpData =
-            normalizeOtpData(
-                data
-            );
-
-
-        if (!otpData.identity) {
-
-            throw new StockFlowAPIError(
-                "Username, Gmail, or phone number is required.",
-                {
-
-                    code:
-                        "OTP_IDENTITY_MISSING",
-
-                    action:
-                        "resendOtp"
-                }
-            );
-        }
-
-
-        return request(
-            "resendOtp",
-            otpData
-        );
-    }
-
-
-    /* =====================================================
-       UPDATE OTP
-       ===================================================== */
-
-    async function updateOtp(
-        data = {}
-    ) {
-
-        return resendOtp(
-            data
-        );
     }
 
 
@@ -1306,6 +1948,7 @@ The Apps Script Web App must be deployed as:
             "session",
             data
         );
+
     }
 
 
@@ -1321,6 +1964,7 @@ The Apps Script Web App must be deployed as:
             "session",
             data
         );
+
     }
 
 
@@ -1336,6 +1980,7 @@ The Apps Script Web App must be deployed as:
             "logout",
             data
         );
+
     }
 
 
@@ -1353,7 +1998,9 @@ The Apps Script Web App must be deployed as:
             );
 
 
-        if (!identity) {
+        if (
+            !identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1364,8 +2011,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "forgotPassword"
+
                 }
             );
+
         }
 
 
@@ -1376,8 +2025,10 @@ The Apps Script Web App must be deployed as:
                 ...data,
 
                 identity
+
             }
         );
+
     }
 
 
@@ -1403,10 +2054,13 @@ The Apps Script Web App must be deployed as:
                 otpData.code,
 
                 otpData.OTP
+
             );
 
 
-        if (!otpData.identity) {
+        if (
+            !otpData.identity
+        ) {
 
             throw new StockFlowAPIError(
                 "Username, Gmail, or phone number is required.",
@@ -1417,12 +2071,16 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "verifyRecoveryOtp"
+
                 }
             );
+
         }
 
 
-        if (!otp) {
+        if (
+            !otp
+        ) {
 
             throw new StockFlowAPIError(
                 "Please enter the recovery verification code.",
@@ -1433,8 +2091,10 @@ The Apps Script Web App must be deployed as:
 
                     action:
                         "verifyRecoveryOtp"
+
                 }
             );
+
         }
 
 
@@ -1445,8 +2105,10 @@ The Apps Script Web App must be deployed as:
                 ...otpData,
 
                 otp
+
             }
         );
+
     }
 
 
@@ -1458,10 +2120,19 @@ The Apps Script Web App must be deployed as:
         data = {}
     ) {
 
+        const input =
+            isObject(data)
+                ? {
+                    ...data
+                }
+                : {};
+
+
         return request(
             "resetPassword",
-            data
+            input
         );
+
     }
 
 
@@ -1477,6 +2148,7 @@ The Apps Script Web App must be deployed as:
             "listActivity",
             data
         );
+
     }
 
 
@@ -1492,6 +2164,7 @@ The Apps Script Web App must be deployed as:
             "inventory",
             data
         );
+
     }
 
 
@@ -1507,6 +2180,7 @@ The Apps Script Web App must be deployed as:
             "listProducts",
             data
         );
+
     }
 
 
@@ -1518,6 +2192,7 @@ The Apps Script Web App must be deployed as:
             "createProduct",
             data
         );
+
     }
 
 
@@ -1529,6 +2204,7 @@ The Apps Script Web App must be deployed as:
             "updateProduct",
             data
         );
+
     }
 
 
@@ -1540,6 +2216,7 @@ The Apps Script Web App must be deployed as:
             "deleteProduct",
             data
         );
+
     }
 
 
@@ -1555,6 +2232,7 @@ The Apps Script Web App must be deployed as:
             "listCategories",
             data
         );
+
     }
 
 
@@ -1566,6 +2244,7 @@ The Apps Script Web App must be deployed as:
             "createCategory",
             data
         );
+
     }
 
 
@@ -1577,6 +2256,7 @@ The Apps Script Web App must be deployed as:
             "updateCategory",
             data
         );
+
     }
 
 
@@ -1588,6 +2268,7 @@ The Apps Script Web App must be deployed as:
             "deleteCategory",
             data
         );
+
     }
 
 
@@ -1603,6 +2284,7 @@ The Apps Script Web App must be deployed as:
             "listSuppliers",
             data
         );
+
     }
 
 
@@ -1614,6 +2296,7 @@ The Apps Script Web App must be deployed as:
             "createSupplier",
             data
         );
+
     }
 
 
@@ -1625,6 +2308,7 @@ The Apps Script Web App must be deployed as:
             "updateSupplier",
             data
         );
+
     }
 
 
@@ -1636,6 +2320,7 @@ The Apps Script Web App must be deployed as:
             "deleteSupplier",
             data
         );
+
     }
 
 
@@ -1651,6 +2336,7 @@ The Apps Script Web App must be deployed as:
             "listStockIn",
             data
         );
+
     }
 
 
@@ -1662,6 +2348,7 @@ The Apps Script Web App must be deployed as:
             "createStockIn",
             data
         );
+
     }
 
 
@@ -1677,6 +2364,7 @@ The Apps Script Web App must be deployed as:
             "listStockOut",
             data
         );
+
     }
 
 
@@ -1688,6 +2376,7 @@ The Apps Script Web App must be deployed as:
             "createStockOut",
             data
         );
+
     }
 
 
@@ -1703,6 +2392,7 @@ The Apps Script Web App must be deployed as:
             "listTransactions",
             data
         );
+
     }
 
 
@@ -1718,6 +2408,7 @@ The Apps Script Web App must be deployed as:
             "dashboard",
             data
         );
+
     }
 
 
@@ -1733,6 +2424,7 @@ The Apps Script Web App must be deployed as:
             "health",
             data
         );
+
     }
 
 
@@ -1747,6 +2439,7 @@ The Apps Script Web App must be deployed as:
 
         /* Authentication */
         register,
+        registerAdmin,
         login,
         session,
         requireSession,
@@ -1755,9 +2448,10 @@ The Apps Script Web App must be deployed as:
         /* OTP */
         prepareOtp,
         generateOtp,
-        verifyOtp,
         resendOtp,
+        requestOtp,
         updateOtp,
+        verifyOtp,
 
         /* Password Recovery */
         forgotPassword,
@@ -1808,6 +2502,7 @@ The Apps Script Web App must be deployed as:
 
         /* Error */
         StockFlowAPIError
+
     };
 
 
@@ -1876,6 +2571,7 @@ The Apps Script Web App must be deployed as:
         console.log(
             "=========================================="
         );
+
     }
 
 })();
