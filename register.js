@@ -1385,7 +1385,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
 
                 showMessage(
-                    "Registration successful. A verification code has been sent to your Gmail. Redirecting...",
+                    "REGISTERED SUCCESSFULLY. REDIRECTING TO VERIFY PAGE",
                     "success"
                 );
             }
