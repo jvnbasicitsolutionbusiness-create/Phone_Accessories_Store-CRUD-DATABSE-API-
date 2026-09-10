@@ -3,27 +3,34 @@
  * STOCKFLOW - OTP HELPER MODULE
  * ================================================================
  *
- * Purpose:
- *   Helper functions used by the main Code.gs authentication/OTP
- *   system.
+ * File:
+ *   otp.gs
  *
- * IMPORTANT:
- *   - Code.gs is the SINGLE source of truth for the API.
- *   - This file does NOT define:
- *       doGet()
- *       doPost()
- *       generateOtp()
- *       verifyOtp()
- *       resendOtp()
- *       prepareOtp()
- *       requestOtp()
+ * PURPOSE:
+ *   Safe helper functions used by Code.gs for OTP processing.
  *
- *   - Do NOT generate OTPs in the frontend.
- *   - OTP generation happens in Code.gs.
- *   - OTP storage/verification is controlled by Code.gs.
+ * IMPORTANT SECURITY RULES:
  *
- * This module only provides uniquely named helper functions so it
- * cannot conflict with the main API functions.
+ *   1. OTP generation happens ONLY in Code.gs.
+ *   2. OTP delivery happens ONLY through Code.gs.
+ *   3. This file NEVER generates an OTP.
+ *   4. This file NEVER sends an OTP.
+ *   5. This file NEVER returns an OTP.
+ *   6. This file NEVER exposes an OTP.
+ *   7. This file NEVER auto-fills an OTP.
+ *   8. Frontend verification boxes remain EMPTY until the
+ *      USER manually types the code received through email/SMS.
+ *   9. Code.gs remains the single source of truth.
+ *
+ * COMPATIBILITY:
+ *   This helper uses the actual StockFlow sheet field names:
+ *
+ *      OTP
+ *      OTP EXPIRES
+ *      OTP ATTEMPTS
+ *      OTP LOCK UNTIL
+ *      OTP CHANNEL
+ *
  * ================================================================
  */
 
@@ -33,10 +40,15 @@
    ================================================================ */
 
 var SF_OTP_HELPER = {
+
     LENGTH: 6,
+
     EXPIRATION_MINUTES: 10,
+
     MAX_ATTEMPTS: 4,
+
     LOCK_MINUTES: 30,
+
     RESEND_COOLDOWN_SECONDS: 120
 };
 
@@ -46,16 +58,18 @@ var SF_OTP_HELPER = {
    ================================================================ */
 
 /**
- * Converts an OTP value into a clean six-digit string.
+ * Converts an OTP value into a clean string.
  *
- * Example:
- *   123456       -> "123456"
- *   "123456"     -> "123456"
- *   " 123456 "   -> "123456"
+ * IMPORTANT:
+ *   This does NOT generate an OTP.
  */
 function sfOtpHelperNormalizeCode(value) {
 
-    if (value === null || value === undefined) {
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
         return "";
     }
 
@@ -70,197 +84,439 @@ function sfOtpHelperNormalizeCode(value) {
    ================================================================ */
 
 /**
- * Returns true only when the value is exactly six digits.
+ * Returns true only when the value contains exactly six digits.
  */
 function sfOtpHelperIsValidFormat(value) {
 
-    var otp = sfOtpHelperNormalizeCode(value);
+    var otp =
+        sfOtpHelperNormalizeCode(value);
 
     return /^\d{6}$/.test(otp);
 }
 
 
 /* ================================================================
-   4. OTP EXPIRATION
+   4. DATE PARSER
    ================================================================ */
 
 /**
- * Creates an expiration Date from a creation time.
+ * Safely parses:
  *
- * @param {Date|string|number} createdAt
- * @param {number} minutes
- * @return {Date|null}
+ *   Date
+ *   ISO date string
+ *   numeric timestamp
+ *   Google Sheets date values
  */
-function sfOtpHelperCreateExpiration(createdAt, minutes) {
+function sfOtpHelperParseDate(value) {
 
-    var date = sfOtpHelperParseDate(createdAt);
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+
+        return null;
+    }
+
+
+    /* ------------------------------------------------------------
+       Date object
+       ------------------------------------------------------------ */
+
+    if (
+        Object.prototype.toString.call(value) ===
+        "[object Date]"
+    ) {
+
+        if (
+            isNaN(
+                value.getTime()
+            )
+        ) {
+
+            return null;
+        }
+
+        return new Date(
+            value.getTime()
+        );
+    }
+
+
+    /* ------------------------------------------------------------
+       Numeric timestamp
+       ------------------------------------------------------------ */
+
+    if (
+        typeof value === "number"
+    ) {
+
+        var numericDate =
+            new Date(value);
+
+
+        if (
+            isNaN(
+                numericDate.getTime()
+            )
+        ) {
+
+            return null;
+        }
+
+
+        return numericDate;
+    }
+
+
+    /* ------------------------------------------------------------
+       String date
+       ------------------------------------------------------------ */
+
+    var stringValue =
+        String(value).trim();
+
+
+    if (!stringValue) {
+        return null;
+    }
+
+
+    var parsed =
+        new Date(stringValue);
+
+
+    if (
+        isNaN(
+            parsed.getTime()
+        )
+    ) {
+
+        return null;
+    }
+
+
+    return parsed;
+}
+
+
+/* ================================================================
+   5. CREATE OTP EXPIRATION
+   ================================================================ */
+
+/**
+ * Creates an expiration date.
+ *
+ * This does NOT generate the OTP itself.
+ */
+function sfOtpHelperCreateExpiration(
+    createdAt,
+    minutes
+) {
+
+    var date =
+        sfOtpHelperParseDate(
+            createdAt
+        );
+
 
     if (!date) {
         return null;
     }
 
+
     var expirationMinutes =
         Number(minutes);
 
-    if (!isFinite(expirationMinutes) ||
-        expirationMinutes <= 0) {
+
+    if (
+        !isFinite(
+            expirationMinutes
+        ) ||
+        expirationMinutes <= 0
+    ) {
 
         expirationMinutes =
             SF_OTP_HELPER.EXPIRATION_MINUTES;
     }
 
+
     return new Date(
         date.getTime() +
-        (expirationMinutes * 60 * 1000)
+        (
+            expirationMinutes *
+            60 *
+            1000
+        )
     );
 }
 
 
 /* ================================================================
-   5. CHECK OTP EXPIRATION
+   6. CHECK OTP EXPIRATION
    ================================================================ */
 
-/**
- * Determines whether an OTP has expired.
- *
- * @param {Date|string|number} expiresAt
- * @return {boolean}
- */
-function sfOtpHelperIsExpired(expiresAt) {
+function sfOtpHelperIsExpired(
+    expiresAt
+) {
 
     var expiration =
-        sfOtpHelperParseDate(expiresAt);
+        sfOtpHelperParseDate(
+            expiresAt
+        );
+
 
     if (!expiration) {
         return true;
     }
 
-    return new Date().getTime() >=
-        expiration.getTime();
+
+    return (
+        Date.now() >=
+        expiration.getTime()
+    );
 }
 
 
 /* ================================================================
-   6. CHECK OTP ACTIVE
+   7. CHECK OTP ACTIVE
    ================================================================ */
 
 /**
- * Determines whether an OTP is still usable.
+ * Checks whether an OTP record is still usable.
  *
- * @param {Object} record
- * @return {boolean}
+ * Supports the actual StockFlow field names:
+ *
+ *   OTP
+ *   OTP EXPIRES
+ *   OTP ATTEMPTS
+ *   OTP LOCK UNTIL
+ *   VERIFIED
  */
-function sfOtpHelperIsActive(record) {
+function sfOtpHelperIsActive(
+    record
+) {
 
-    if (!record || typeof record !== "object") {
+    if (
+        !record ||
+        typeof record !== "object"
+    ) {
+
         return false;
     }
 
+
+    /* ------------------------------------------------------------
+       ACTUAL SHEET FIELD:
+       OTP
+       ------------------------------------------------------------ */
+
     var otp =
         sfOtpHelperNormalizeCode(
+            record.OTP ||
             record.OTP_CODE ||
             record.otp ||
             record.code ||
             ""
         );
 
-    if (!sfOtpHelperIsValidFormat(otp)) {
+
+    if (
+        !sfOtpHelperIsValidFormat(
+            otp
+        )
+    ) {
+
         return false;
     }
 
+
+    /* ------------------------------------------------------------
+       VERIFIED CHECK
+       ------------------------------------------------------------ */
+
     var verified =
         String(
-            record.VERIFIED || ""
-        ).toUpperCase();
+            record.VERIFIED ||
+            ""
+        )
+        .trim()
+        .toUpperCase();
+
 
     if (
         verified === "TRUE" ||
         verified === "YES" ||
         verified === "VERIFIED"
     ) {
+
         return false;
     }
 
+
+    /* ------------------------------------------------------------
+       ACTUAL SHEET FIELD:
+       OTP EXPIRES
+       ------------------------------------------------------------ */
+
     var expiresAt =
+        record["OTP EXPIRES"] ||
+        record.OTP_EXPIRES ||
         record.OTP_EXPIRES_AT ||
         record.otpExpiresAt ||
         record.expiresAt ||
         "";
 
+
     if (!expiresAt) {
         return false;
     }
 
-    return !sfOtpHelperIsExpired(expiresAt);
+
+    if (
+        sfOtpHelperIsExpired(
+            expiresAt
+        )
+    ) {
+
+        return false;
+    }
+
+
+    /* ------------------------------------------------------------
+       LOCK CHECK
+       ------------------------------------------------------------ */
+
+    var lockUntil =
+        record["OTP LOCK UNTIL"] ||
+        record.OTP_LOCK_UNTIL ||
+        record.OTP_LOCKED_UNTIL ||
+        record.otpLockedUntil ||
+        "";
+
+
+    if (
+        lockUntil &&
+        sfOtpHelperIsLocked(
+            lockUntil
+        )
+    ) {
+
+        return false;
+    }
+
+
+    return true;
 }
 
 
 /* ================================================================
-   7. SAFE OTP COMPARISON
+   8. SAFE OTP COMPARISON
    ================================================================ */
 
 /**
- * Compares two OTP values after normalization.
+ * Compares the OTP stored by Code.gs with the OTP manually
+ * entered by the user.
+ *
+ * This helper does NOT retrieve the OTP from the spreadsheet.
+ * Code.gs must provide the expected value.
  */
-function sfOtpHelperCompareCodes(expected, provided) {
+function sfOtpHelperCompareCodes(
+    expected,
+    provided
+) {
 
     var expectedOtp =
-        sfOtpHelperNormalizeCode(expected);
+        sfOtpHelperNormalizeCode(
+            expected
+        );
+
 
     var providedOtp =
-        sfOtpHelperNormalizeCode(provided);
+        sfOtpHelperNormalizeCode(
+            provided
+        );
 
-    if (!sfOtpHelperIsValidFormat(expectedOtp)) {
+
+    if (
+        !sfOtpHelperIsValidFormat(
+            expectedOtp
+        )
+    ) {
+
         return false;
     }
 
-    if (!sfOtpHelperIsValidFormat(providedOtp)) {
+
+    if (
+        !sfOtpHelperIsValidFormat(
+            providedOtp
+        )
+    ) {
+
         return false;
     }
 
-    return expectedOtp === providedOtp;
+
+    return (
+        expectedOtp ===
+        providedOtp
+    );
 }
 
 
 /* ================================================================
-   8. ATTEMPT COUNTER
+   9. NORMALIZE ATTEMPTS
    ================================================================ */
 
-/**
- * Converts an attempt value into a safe integer.
- */
-function sfOtpHelperNormalizeAttempts(value) {
+function sfOtpHelperNormalizeAttempts(
+    value
+) {
 
-    var attempts = Number(value);
+    var attempts =
+        Number(value);
 
-    if (!isFinite(attempts) || attempts < 0) {
+
+    if (
+        !isFinite(attempts) ||
+        attempts < 0
+    ) {
+
         return 0;
     }
 
-    return Math.floor(attempts);
-}
 
-
-/**
- * Returns true if the maximum OTP attempts have been reached.
- */
-function sfOtpHelperMaxAttemptsReached(value) {
-
-    var attempts =
-        sfOtpHelperNormalizeAttempts(value);
-
-    return attempts >=
-        SF_OTP_HELPER.MAX_ATTEMPTS;
+    return Math.floor(
+        attempts
+    );
 }
 
 
 /* ================================================================
-   9. OTP LOCK
+   10. MAX ATTEMPTS
    ================================================================ */
 
-/**
- * Creates an OTP lock expiration date.
- */
+function sfOtpHelperMaxAttemptsReached(
+    value
+) {
+
+    var attempts =
+        sfOtpHelperNormalizeAttempts(
+            value
+        );
+
+
+    return (
+        attempts >=
+        SF_OTP_HELPER.MAX_ATTEMPTS
+    );
+}
+
+
+/* ================================================================
+   11. CREATE OTP LOCK
+   ================================================================ */
+
 function sfOtpHelperCreateLockExpiration(
     lockMinutes
 ) {
@@ -268,42 +524,58 @@ function sfOtpHelperCreateLockExpiration(
     var minutes =
         Number(lockMinutes);
 
-    if (!isFinite(minutes) || minutes <= 0) {
+
+    if (
+        !isFinite(minutes) ||
+        minutes <= 0
+    ) {
+
         minutes =
             SF_OTP_HELPER.LOCK_MINUTES;
     }
 
+
     return new Date(
         Date.now() +
-        (minutes * 60 * 1000)
+        (
+            minutes *
+            60 *
+            1000
+        )
     );
 }
 
 
-/**
- * Determines whether the current OTP lock is still active.
- */
-function sfOtpHelperIsLocked(lockUntil) {
+/* ================================================================
+   12. CHECK OTP LOCK
+   ================================================================ */
+
+function sfOtpHelperIsLocked(
+    lockUntil
+) {
 
     var date =
-        sfOtpHelperParseDate(lockUntil);
+        sfOtpHelperParseDate(
+            lockUntil
+        );
+
 
     if (!date) {
         return false;
     }
 
-    return Date.now() <
-        date.getTime();
+
+    return (
+        Date.now() <
+        date.getTime()
+    );
 }
 
 
 /* ================================================================
-   10. RESEND COOLDOWN
+   13. CREATE RESEND COOLDOWN
    ================================================================ */
 
-/**
- * Creates a future cooldown timestamp.
- */
 function sfOtpHelperCreateCooldown(
     seconds
 ) {
@@ -311,24 +583,33 @@ function sfOtpHelperCreateCooldown(
     var cooldownSeconds =
         Number(seconds);
 
+
     if (
-        !isFinite(cooldownSeconds) ||
+        !isFinite(
+            cooldownSeconds
+        ) ||
         cooldownSeconds < 0
     ) {
+
         cooldownSeconds =
             SF_OTP_HELPER.RESEND_COOLDOWN_SECONDS;
     }
 
+
     return new Date(
         Date.now() +
-        (cooldownSeconds * 1000)
+        (
+            cooldownSeconds *
+            1000
+        )
     );
 }
 
 
-/**
- * Determines whether a resend cooldown is active.
- */
+/* ================================================================
+   14. CHECK RESEND COOLDOWN
+   ================================================================ */
+
 function sfOtpHelperIsCooldownActive(
     cooldownUntil
 ) {
@@ -338,18 +619,23 @@ function sfOtpHelperIsCooldownActive(
             cooldownUntil
         );
 
+
     if (!date) {
         return false;
     }
 
-    return Date.now() <
-        date.getTime();
+
+    return (
+        Date.now() <
+        date.getTime()
+    );
 }
 
 
-/**
- * Returns remaining cooldown seconds.
- */
+/* ================================================================
+   15. GET REMAINING COOLDOWN
+   ================================================================ */
+
 function sfOtpHelperGetCooldownSeconds(
     cooldownUntil
 ) {
@@ -359,17 +645,24 @@ function sfOtpHelperGetCooldownSeconds(
             cooldownUntil
         );
 
+
     if (!date) {
         return 0;
     }
+
 
     var remaining =
         date.getTime() -
         Date.now();
 
-    if (remaining <= 0) {
+
+    if (
+        remaining <= 0
+    ) {
+
         return 0;
     }
+
 
     return Math.ceil(
         remaining / 1000
@@ -378,12 +671,9 @@ function sfOtpHelperGetCooldownSeconds(
 
 
 /* ================================================================
-   11. CHANNEL NORMALIZATION
+   16. NORMALIZE CHANNEL
    ================================================================ */
 
-/**
- * Normalizes email/phone channel names.
- */
 function sfOtpHelperNormalizeChannel(
     channel
 ) {
@@ -392,47 +682,45 @@ function sfOtpHelperNormalizeChannel(
         channel === null ||
         channel === undefined
     ) {
+
         return "";
     }
+
 
     var value =
         String(channel)
             .trim()
             .toLowerCase();
 
+
     if (
         value === "email" ||
         value === "gmail" ||
         value === "mail"
     ) {
+
         return "email";
     }
+
 
     if (
         value === "phone" ||
         value === "mobile" ||
         value === "sms"
     ) {
+
         return "phone";
     }
+
 
     return "";
 }
 
 
 /* ================================================================
-   12. IDENTITY NORMALIZATION
+   17. NORMALIZE IDENTITY
    ================================================================ */
 
-/**
- * Creates a normalized identity value.
- *
- * Email:
- *   lowercase + trim
- *
- * Phone:
- *   digits only, preserving Philippine country code when supplied.
- */
 function sfOtpHelperNormalizeIdentity(
     value,
     channel
@@ -443,44 +731,49 @@ function sfOtpHelperNormalizeIdentity(
             channel
         );
 
+
     if (
         value === null ||
         value === undefined
     ) {
+
         return "";
     }
+
 
     var identity =
         String(value).trim();
 
-    if (normalizedChannel === "email") {
+
+    if (
+        normalizedChannel ===
+        "email"
+    ) {
+
         return identity.toLowerCase();
     }
 
-    if (normalizedChannel === "phone") {
 
-        identity =
-            identity.replace(
-                /[^\d+]/g,
-                ""
-            );
+    if (
+        normalizedChannel ===
+        "phone"
+    ) {
 
-        return identity;
+        return identity.replace(
+            /[^\d+]/g,
+            ""
+        );
     }
+
 
     return identity.toLowerCase();
 }
 
 
 /* ================================================================
-   13. MASK EMAIL
+   18. MASK EMAIL
    ================================================================ */
 
-/**
- * Example:
- *   john.doe@gmail.com
- *   -> j******e@gmail.com
- */
 function sfOtpHelperMaskEmail(
     email
 ) {
@@ -491,16 +784,23 @@ function sfOtpHelperMaskEmail(
             "email"
         );
 
+
     if (!value) {
         return "";
     }
 
+
     var atIndex =
         value.indexOf("@");
 
-    if (atIndex <= 0) {
+
+    if (
+        atIndex <= 0
+    ) {
+
         return value;
     }
+
 
     var local =
         value.substring(
@@ -508,12 +808,16 @@ function sfOtpHelperMaskEmail(
             atIndex
         );
 
+
     var domain =
         value.substring(
             atIndex
         );
 
-    if (local.length <= 2) {
+
+    if (
+        local.length <= 2
+    ) {
 
         return (
             local.charAt(0) +
@@ -521,6 +825,7 @@ function sfOtpHelperMaskEmail(
             domain
         );
     }
+
 
     return (
         local.charAt(0) +
@@ -539,14 +844,9 @@ function sfOtpHelperMaskEmail(
 
 
 /* ================================================================
-   14. MASK PHONE
+   19. MASK PHONE
    ================================================================ */
 
-/**
- * Example:
- *   09171234567
- *   -> 0917******67
- */
 function sfOtpHelperMaskPhone(
     phone
 ) {
@@ -557,9 +857,11 @@ function sfOtpHelperMaskPhone(
             "phone"
         );
 
+
     if (!value) {
         return "";
     }
+
 
     var digits =
         value.replace(
@@ -567,15 +869,21 @@ function sfOtpHelperMaskPhone(
             ""
         );
 
-    if (digits.length <= 4) {
+
+    if (
+        digits.length <= 4
+    ) {
+
         return value;
     }
+
 
     var visibleStart =
         Math.min(
             4,
             digits.length
         );
+
 
     var visibleEnd =
         Math.min(
@@ -587,14 +895,20 @@ function sfOtpHelperMaskPhone(
             )
         );
 
+
     var middleLength =
         digits.length -
         visibleStart -
         visibleEnd;
 
-    if (middleLength <= 0) {
+
+    if (
+        middleLength <= 0
+    ) {
+
         return value;
     }
+
 
     return (
         digits.substring(
@@ -613,14 +927,13 @@ function sfOtpHelperMaskPhone(
 
 
 /* ================================================================
-   15. OTP METADATA BUILDER
+   20. SAFE OTP METADATA
    ================================================================ */
 
 /**
- * Creates a safe metadata object for logging/debugging.
+ * Builds diagnostic metadata.
  *
- * IMPORTANT:
- *   The OTP itself is intentionally NOT returned here.
+ * NEVER includes the actual OTP.
  */
 function sfOtpHelperBuildMetadata(
     channel,
@@ -633,30 +946,46 @@ function sfOtpHelperBuildMetadata(
             channel
         );
 
+
     var normalizedIdentity =
         sfOtpHelperNormalizeIdentity(
             identity,
             normalizedChannel
         );
 
+
     return {
-        channel: normalizedChannel,
+
+        channel:
+            normalizedChannel,
+
+
         username:
             username === null ||
             username === undefined
                 ? ""
-                : String(username).trim(),
+                : String(
+                    username
+                ).trim(),
+
 
         maskedIdentity:
-            normalizedChannel === "email"
+            normalizedChannel ===
+            "email"
+
                 ? sfOtpHelperMaskEmail(
                     normalizedIdentity
                 )
-                : normalizedChannel === "phone"
+
+                : normalizedChannel ===
+                  "phone"
+
                     ? sfOtpHelperMaskPhone(
                         normalizedIdentity
                     )
+
                     : "",
+
 
         timestamp:
             new Date().toISOString()
@@ -665,44 +994,62 @@ function sfOtpHelperBuildMetadata(
 
 
 /* ================================================================
-   16. OTP FIELD CLEARING OBJECT
+   21. OTP CLEAR FIELDS
    ================================================================ */
 
 /**
- * Returns the standard OTP fields that should be cleared
- * after successful verification or invalidation.
+ * Returns field names compatible with the actual StockFlow
+ * Google Sheet.
  *
- * This function DOES NOT write to the spreadsheet.
- * Code.gs remains responsible for database writes.
+ * Code.gs remains responsible for writing them.
  */
 function sfOtpHelperGetClearFields() {
 
     return {
-        OTP_CODE: "",
-        OTP_CREATED_AT: "",
-        OTP_EXPIRES_AT: "",
-        OTP_ATTEMPTS: 0,
-        OTP_LOCKED_UNTIL: "",
-        OTP_CHANNEL: "",
-        OTP_REQUESTED_AT: "",
-        OTP_EMAIL_SENT: false,
-        OTP_PHONE_SENT: false
+
+        OTP:
+            "",
+
+        "OTP EXPIRES":
+            "",
+
+        "OTP ATTEMPTS":
+            0,
+
+        "OTP LOCK UNTIL":
+            "",
+
+        "OTP CHANNEL":
+            "",
+
+        "OTP REQUESTED AT":
+            "",
+
+        "OTP EMAIL SENT":
+            false,
+
+        "OTP PHONE SENT":
+            false
     };
 }
 
 
 /* ================================================================
-   17. OTP RECORD BUILDER
+   22. OTP RECORD BUILDER
    ================================================================ */
 
 /**
- * Builds OTP metadata without generating an OTP.
+ * Builds OTP metadata only.
  *
  * IMPORTANT:
- *   This helper does NOT call Math.random().
- *   It does NOT create a verification code.
  *
- * Code.gs must generate the actual OTP.
+ * This function does NOT:
+ *
+ *   - generate an OTP
+ *   - call Math.random()
+ *   - send an email
+ *   - send an SMS
+ *   - expose an OTP
  */
 function sfOtpHelperBuildRecord(
     channel,
@@ -715,52 +1062,55 @@ function sfOtpHelperBuildRecord(
             channel
         );
 
+
     var created =
         sfOtpHelperParseDate(
             createdAt
         );
+
 
     var expires =
         sfOtpHelperParseDate(
             expiresAt
         );
 
+
     return {
-        OTP_CHANNEL:
+
+        "OTP CHANNEL":
             normalizedChannel,
 
-        OTP_CREATED_AT:
+
+        "OTP CREATED AT":
             created
                 ? created.toISOString()
                 : "",
 
-        OTP_EXPIRES_AT:
+
+        "OTP EXPIRES":
             expires
                 ? expires.toISOString()
                 : "",
 
-        OTP_ATTEMPTS:
+
+        "OTP ATTEMPTS":
             0,
 
-        OTP_LOCKED_UNTIL:
+
+        "OTP LOCK UNTIL":
             "",
 
-        OTP_REQUESTED_AT:
+
+        "OTP REQUESTED AT":
             new Date().toISOString()
     };
 }
 
 
 /* ================================================================
-   18. VERIFY RESULT BUILDER
+   23. RESULT BUILDER
    ================================================================ */
 
-/**
- * Creates a consistent helper result object.
- *
- * This is only a data helper.
- * It does not verify the OTP itself.
- */
 function sfOtpHelperResult(
     success,
     status,
@@ -769,6 +1119,7 @@ function sfOtpHelperResult(
 ) {
 
     var result = {
+
         success:
             Boolean(success),
 
@@ -779,114 +1130,32 @@ function sfOtpHelperResult(
             message || ""
     };
 
+
     if (
         extra &&
         typeof extra === "object"
     ) {
 
         Object.keys(extra)
-            .forEach(function (key) {
+            .forEach(
+                function (key) {
 
-                result[key] =
-                    extra[key];
+                    result[key] =
+                        extra[key];
 
-            });
+                }
+            );
     }
+
 
     return result;
 }
 
 
 /* ================================================================
-   19. DATE PARSER
+   24. SAFE STRING
    ================================================================ */
 
-/**
- * Safely parses dates used by the OTP system.
- *
- * Supports:
- *   Date
- *   ISO string
- *   numeric timestamp
- *   Google Sheets date values
- */
-function sfOtpHelperParseDate(
-    value
-) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return null;
-    }
-
-    if (
-        Object.prototype.toString.call(value) ===
-        "[object Date]"
-    ) {
-
-        if (
-            isNaN(
-                value.getTime()
-            )
-        ) {
-            return null;
-        }
-
-        return new Date(
-            value.getTime()
-        );
-    }
-
-    if (
-        typeof value === "number"
-    ) {
-
-        var numericDate =
-            new Date(value);
-
-        if (
-            isNaN(
-                numericDate.getTime()
-            )
-        ) {
-            return null;
-        }
-
-        return numericDate;
-    }
-
-    var stringValue =
-        String(value).trim();
-
-    if (!stringValue) {
-        return null;
-    }
-
-    var parsed =
-        new Date(stringValue);
-
-    if (
-        isNaN(
-            parsed.getTime()
-        )
-    ) {
-        return null;
-    }
-
-    return parsed;
-}
-
-
-/* ================================================================
-   20. SAFE STRING
-   ================================================================ */
-
-/**
- * Converts values safely to trimmed strings.
- */
 function sfOtpHelperSafeString(
     value
 ) {
@@ -895,21 +1164,20 @@ function sfOtpHelperSafeString(
         value === null ||
         value === undefined
     ) {
+
         return "";
     }
 
-    return String(value).trim();
+
+    return String(value)
+        .trim();
 }
 
 
 /* ================================================================
-   21. BOOLEAN NORMALIZATION
+   25. BOOLEAN NORMALIZATION
    ================================================================ */
 
-/**
- * Converts common Sheet/API boolean representations
- * into an actual Boolean.
- */
 function sfOtpHelperToBoolean(
     value
 ) {
@@ -918,20 +1186,25 @@ function sfOtpHelperToBoolean(
         value === true ||
         value === false
     ) {
+
         return value;
     }
+
 
     if (
         value === null ||
         value === undefined
     ) {
+
         return false;
     }
+
 
     var normalized =
         String(value)
             .trim()
             .toLowerCase();
+
 
     return (
         normalized === "true" ||
@@ -944,20 +1217,13 @@ function sfOtpHelperToBoolean(
 
 
 /* ================================================================
-   22. CONFIGURATION READER
+   26. OTP SETTINGS
    ================================================================ */
 
-/**
- * Attempts to read OTP settings from the main SF_CONFIG
- * if Code.gs exposes one.
- *
- * Falls back to the helper defaults.
- *
- * This does not create or modify the main configuration.
- */
 function sfOtpHelperGetSettings() {
 
     var settings = {
+
         length:
             SF_OTP_HELPER.LENGTH,
 
@@ -975,10 +1241,17 @@ function sfOtpHelperGetSettings() {
     };
 
 
+    /*
+     * If Code.gs exposes SF_CONFIG, use it.
+     *
+     * Otherwise the safe helper defaults remain active.
+     */
+
     try {
 
         if (
-            typeof SF_CONFIG !== "undefined" &&
+            typeof SF_CONFIG !==
+            "undefined" &&
             SF_CONFIG &&
             SF_CONFIG.AUTH
         ) {
@@ -994,6 +1267,7 @@ function sfOtpHelperGetSettings() {
                     );
             }
 
+
             if (
                 SF_CONFIG.AUTH.OTP_EXPIRATION_MINUTES !==
                 undefined
@@ -1004,6 +1278,7 @@ function sfOtpHelperGetSettings() {
                         SF_CONFIG.AUTH.OTP_EXPIRATION_MINUTES
                     );
             }
+
 
             if (
                 SF_CONFIG.AUTH.MAX_OTP_ATTEMPTS !==
@@ -1016,6 +1291,7 @@ function sfOtpHelperGetSettings() {
                     );
             }
 
+
             if (
                 SF_CONFIG.AUTH.OTP_LOCK_MINUTES !==
                 undefined
@@ -1026,6 +1302,7 @@ function sfOtpHelperGetSettings() {
                         SF_CONFIG.AUTH.OTP_LOCK_MINUTES
                     );
             }
+
 
             if (
                 SF_CONFIG.AUTH.OTP_RESEND_COOLDOWN_SECONDS !==
@@ -1055,16 +1332,14 @@ function sfOtpHelperGetSettings() {
 
 
 /* ================================================================
-   23. VALIDATE OTP SETTINGS
+   27. VALIDATE SETTINGS
    ================================================================ */
 
-/**
- * Checks OTP configuration without modifying it.
- */
 function sfOtpHelperValidateSettings() {
 
     var settings =
         sfOtpHelperGetSettings();
+
 
     var errors = [];
 
@@ -1077,7 +1352,7 @@ function sfOtpHelperValidateSettings() {
     ) {
 
         errors.push(
-            "OTP length must be 6."
+            "OTP length must be exactly 6."
         );
     }
 
@@ -1135,6 +1410,7 @@ function sfOtpHelperValidateSettings() {
 
 
     return {
+
         valid:
             errors.length === 0,
 
@@ -1148,20 +1424,17 @@ function sfOtpHelperValidateSettings() {
 
 
 /* ================================================================
-   24. DEBUG SUMMARY
+   28. DIAGNOSTICS
    ================================================================ */
 
-/**
- * Returns a safe diagnostic summary.
- *
- * Does NOT expose OTP codes.
- */
 function sfOtpHelperDiagnostics() {
 
     var validation =
         sfOtpHelperValidateSettings();
 
+
     return {
+
         module:
             "STOCKFLOW OTP HELPER",
 
@@ -1182,7 +1455,10 @@ function sfOtpHelperDiagnostics() {
         frontendGeneration:
             false,
 
-        randomOtpGeneration:
+        frontendAutofill:
+            false,
+
+        otpReturnedToFrontend:
             false,
 
         resendCooldown:
@@ -1194,13 +1470,14 @@ function sfOtpHelperDiagnostics() {
 
 
 /* ================================================================
-   25. STARTUP LOG
+   29. STARTUP DIAGNOSTIC
    ================================================================ */
 
 try {
 
     var sfOtpHelperCheck =
         sfOtpHelperValidateSettings();
+
 
     if (
         sfOtpHelperCheck.valid
@@ -1211,10 +1488,50 @@ try {
             "Loaded successfully."
         );
 
+
         console.log(
             "[STOCKFLOW OTP HELPER] " +
             "OTP generation source: Code.gs"
         );
+
+
+        console.log(
+            "[STOCKFLOW OTP HELPER] " +
+            "Frontend OTP generation: DISABLED"
+        );
+
+
+        console.log(
+            "[STOCKFLOW OTP HELPER] " +
+            "Frontend OTP autofill: DISABLED"
+        );
+
+
+        console.log(
+            "[STOCKFLOW OTP HELPER] " +
+            "OTP expiration: " +
+            sfOtpHelperCheck.settings
+                .expirationMinutes +
+            " minutes"
+        );
+
+
+        console.log(
+            "[STOCKFLOW OTP HELPER] " +
+            "Maximum attempts: " +
+            sfOtpHelperCheck.settings
+                .maxAttempts
+        );
+
+
+        console.log(
+            "[STOCKFLOW OTP HELPER] " +
+            "Temporary lock: " +
+            sfOtpHelperCheck.settings
+                .lockMinutes +
+            " minutes"
+        );
+
 
         console.log(
             "[STOCKFLOW OTP HELPER] " +
