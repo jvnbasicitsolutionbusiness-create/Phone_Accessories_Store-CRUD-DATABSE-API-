@@ -4,12 +4,22 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================================================
        STOCKFLOW — REGISTER.JS
        =========================================================
-       Purpose:
-       - Validate registration form
-       - Register account through StockFlowAPI
-       - Save verification identity
-       - Redirect to verify.html
-       - NEVER generate or auto-fill OTP
+       Registration flow:
+
+       1. Validate registration form
+       2. Send registration data to Code.gs
+       3. Code.gs creates the account
+       4. Code.gs automatically generates and sends
+          the INITIAL EMAIL OTP
+       5. Frontend stores verification information
+       6. Redirect to verify.html
+       7. verify.js handles manual OTP entry
+
+       IMPORTANT:
+       - Frontend NEVER generates OTP
+       - Frontend NEVER auto-fills OTP
+       - OTP is generated ONLY by Code.gs
+       - OTP is sent ONLY by Code.gs
        ========================================================= */
 
 
@@ -29,61 +39,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     const message =
-        document.getElementById(
-            "registerMessage"
-        );
+        document.getElementById("registerMessage");
 
 
     const button =
-        document.getElementById(
-            "registerButton"
-        );
+        document.getElementById("registerButton");
 
-
-    /*
-     * These IDs MUST match register.html.
-     */
 
     const firstNameInput =
-        document.getElementById(
-            "registerFirstName"
-        );
+        document.getElementById("registerFirstName");
 
 
     const lastNameInput =
-        document.getElementById(
-            "registerLastName"
-        );
+        document.getElementById("registerLastName");
 
 
     const usernameInput =
-        document.getElementById(
-            "registerUsername"
-        );
+        document.getElementById("registerUsername");
 
 
     const ageInput =
-        document.getElementById(
-            "registerAge"
-        );
+        document.getElementById("registerAge");
 
 
     const emailInput =
-        document.getElementById(
-            "registerEmail"
-        );
+        document.getElementById("registerEmail");
 
 
     const phoneInput =
-        document.getElementById(
-            "registerPhone"
-        );
+        document.getElementById("registerPhone");
 
 
     const passwordInput =
-        document.getElementById(
-            "registerPassword"
-        );
+        document.getElementById("registerPassword");
 
 
     const confirmPasswordInput =
@@ -93,15 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     const termsInput =
-        document.getElementById(
-            "terms"
-        );
+        document.getElementById("terms");
 
 
     const communicationsInput =
-        document.getElementById(
-            "communications"
-        );
+        document.getElementById("communications");
 
 
     /* =========================================================
@@ -124,6 +108,41 @@ document.addEventListener("DOMContentLoaded", () => {
             communications: !!communicationsInput
         }
     );
+
+
+    /*
+     * Required registration inputs.
+     */
+
+    const requiredInputs = [
+        firstNameInput,
+        lastNameInput,
+        usernameInput,
+        ageInput,
+        emailInput,
+        phoneInput,
+        passwordInput,
+        confirmPasswordInput
+    ];
+
+
+    if (
+        requiredInputs.some(
+            input => !input
+        )
+    ) {
+
+        console.error(
+            "StockFlow: one or more required registration fields are missing."
+        );
+
+        showMessage(
+            "Registration form could not be loaded correctly. Please refresh the page.",
+            "error"
+        );
+
+        return;
+    }
 
 
     /* =========================================================
@@ -177,6 +196,18 @@ document.addEventListener("DOMContentLoaded", () => {
         OTP_READY:
             "STOCKFLOW_OTP_READY",
 
+        OTP_EXPIRES:
+            "STOCKFLOW_OTP_EXPIRES",
+
+        OTP_COOLDOWN:
+            "STOCKFLOW_OTP_COOLDOWN",
+
+        EMAIL_SENT:
+            "STOCKFLOW_EMAIL_OTP_SENT",
+
+        PHONE_SENT:
+            "STOCKFLOW_PHONE_OTP_SENT",
+
         OTP:
             "STOCKFLOW_OTP"
     };
@@ -191,6 +222,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return String(
             value ?? ""
         ).trim();
+    }
+
+
+    function normalizeName(value) {
+
+        return clean(value)
+            .replace(/\s+/g, " ");
     }
 
 
@@ -216,12 +254,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Convert:
-         *
          * +639XXXXXXXXX
-         *
-         * to:
-         *
+         * →
          * 09XXXXXXXXX
          */
 
@@ -236,12 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Convert:
-         *
          * 639XXXXXXXXX
-         *
-         * to:
-         *
+         * →
          * 09XXXXXXXXX
          */
 
@@ -343,8 +373,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Fallback for buttons that do not
-         * contain .button-text / .button-loader.
+         * Fallback for buttons without
+         * .button-text / .button-loader.
          */
 
         if (
@@ -362,9 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            if (
-                isLoading
-            ) {
+            if (isLoading) {
 
                 button.textContent =
                     "Creating account...";
@@ -387,12 +415,10 @@ document.addEventListener("DOMContentLoaded", () => {
        VALIDATORS
        ========================================================= */
 
-    function isValidName(
-        value
-    ) {
+    function isValidName(value) {
 
         const name =
-            clean(value);
+            normalizeName(value);
 
 
         if (!name) {
@@ -411,20 +437,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         /*
          * Allows:
-         * - Letters
-         * - Accented letters
-         * - Combining marks
-         * - Spaces
-         * - Apostrophes
-         * - Hyphens
-         * - Periods
-         *
-         * Examples:
-         * Juan
-         * Maria Clara
-         * Anne-Marie
-         * O'Connor
-         * Dr. Reyes
+         * letters
+         * accented letters
+         * spaces
+         * apostrophes
+         * hyphens
+         * periods
          */
 
         return /^[\p{L}\p{M} .'-]+$/u.test(
@@ -433,14 +451,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidUsername(
-        value
-    ) {
+    function isValidUsername(value) {
 
         const username =
-            normalizeUsername(
-                value
-            );
+            normalizeUsername(value);
 
 
         return /^[a-z0-9._]{4,30}$/.test(
@@ -449,9 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidAge(
-        value
-    ) {
+    function isValidAge(value) {
 
         const age =
             Number(value);
@@ -465,19 +477,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidEmail(
-        value
-    ) {
+    function isValidEmail(value) {
 
         const email =
-            normalizeEmail(
-                value
-            );
+            normalizeEmail(value);
 
 
         /*
-         * Registration currently accepts
-         * Gmail accounts only.
+         * Registration accepts Gmail only.
          */
 
         return /^[a-z0-9._%+-]+@gmail\.com$/i.test(
@@ -486,23 +493,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isValidPhone(
-        value
-    ) {
+    function isValidPhone(value) {
 
         const phone =
-            normalizePhone(
-                value
-            );
+            normalizePhone(value);
 
-
-        /*
-         * Philippine mobile format:
-         *
-         * 09XXXXXXXXX
-         *
-         * 11 digits.
-         */
 
         return /^09\d{9}$/.test(
             phone
@@ -510,9 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function isStrongPassword(
-        value
-    ) {
+    function isStrongPassword(value) {
 
         const password =
             String(
@@ -520,55 +513,13 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (
-            password.length < 8
-        ) {
-
-            return false;
-        }
-
-
-        if (
-            !/[A-Z]/.test(
-                password
-            )
-        ) {
-
-            return false;
-        }
-
-
-        if (
-            !/[a-z]/.test(
-                password
-            )
-        ) {
-
-            return false;
-        }
-
-
-        if (
-            !/[0-9]/.test(
-                password
-            )
-        ) {
-
-            return false;
-        }
-
-
-        if (
-            !/[^A-Za-z0-9]/.test(
-                password
-            )
-        ) {
-
-            return false;
-        }
-
-
-        return true;
+        return (
+            password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /[0-9]/.test(password) &&
+            /[^A-Za-z0-9]/.test(password)
+        );
     }
 
 
@@ -579,52 +530,50 @@ document.addEventListener("DOMContentLoaded", () => {
     function validateForm() {
 
         const firstName =
-            clean(
-                firstNameInput?.value
+            normalizeName(
+                firstNameInput.value
             );
 
 
         const lastName =
-            clean(
-                lastNameInput?.value
+            normalizeName(
+                lastNameInput.value
             );
 
 
         const username =
             normalizeUsername(
-                usernameInput?.value
+                usernameInput.value
             );
 
 
         const age =
             clean(
-                ageInput?.value
+                ageInput.value
             );
 
 
         const email =
             normalizeEmail(
-                emailInput?.value
+                emailInput.value
             );
 
 
         const phone =
             normalizePhone(
-                phoneInput?.value
+                phoneInput.value
             );
 
 
         const password =
             String(
-                passwordInput?.value ??
-                ""
+                passwordInput.value ?? ""
             );
 
 
         const confirmPassword =
             String(
-                confirmPasswordInput?.value ??
-                ""
+                confirmPasswordInput.value ?? ""
             );
 
 
@@ -632,11 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
            FIRST NAME
            ===================================================== */
 
-        if (
-            !isValidName(
-                firstName
-            )
-        ) {
+        if (!isValidName(firstName)) {
 
             return {
                 valid: false,
@@ -650,11 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
            LAST NAME
            ===================================================== */
 
-        if (
-            !isValidName(
-                lastName
-            )
-        ) {
+        if (!isValidName(lastName)) {
 
             return {
                 valid: false,
@@ -668,11 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
            USERNAME
            ===================================================== */
 
-        if (
-            !isValidUsername(
-                username
-            )
-        ) {
+        if (!isValidUsername(username)) {
 
             return {
                 valid: false,
@@ -686,11 +623,7 @@ document.addEventListener("DOMContentLoaded", () => {
            AGE
            ===================================================== */
 
-        if (
-            !isValidAge(
-                age
-            )
-        ) {
+        if (!isValidAge(age)) {
 
             return {
                 valid: false,
@@ -704,11 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
            GMAIL
            ===================================================== */
 
-        if (
-            !isValidEmail(
-                email
-            )
-        ) {
+        if (!isValidEmail(email)) {
 
             return {
                 valid: false,
@@ -722,11 +651,7 @@ document.addEventListener("DOMContentLoaded", () => {
            PHONE
            ===================================================== */
 
-        if (
-            !isValidPhone(
-                phone
-            )
-        ) {
+        if (!isValidPhone(phone)) {
 
             return {
                 valid: false,
@@ -740,11 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
            PASSWORD
            ===================================================== */
 
-        if (
-            !isStrongPassword(
-                password
-            )
-        ) {
+        if (!isStrongPassword(password)) {
 
             return {
                 valid: false,
@@ -829,7 +750,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       CLEAR OLD VERIFICATION STATE
+       CLEAR VERIFICATION STATE
        ========================================================= */
 
     function clearVerificationState() {
@@ -871,7 +792,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const identity =
                 clean(
                     data.email ||
-                    data.phone ||
                     data.username
                 );
 
@@ -886,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Identity used by verify.js.
+             * Account identity.
              */
 
             sessionStorage.setItem(
@@ -896,7 +816,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * UID returned by backend.
+             * UID.
              */
 
             if (uid) {
@@ -914,11 +834,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
+            /*
+             * Username.
+             */
+
             sessionStorage.setItem(
                 STORAGE_KEYS.USERNAME,
                 data.username
             );
 
+
+            /*
+             * Email.
+             */
 
             sessionStorage.setItem(
                 STORAGE_KEYS.EMAIL,
@@ -926,11 +854,19 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
+            /*
+             * Gmail.
+             */
+
             sessionStorage.setItem(
                 STORAGE_KEYS.GMAIL,
                 data.gmail
             );
 
+
+            /*
+             * Phone.
+             */
 
             sessionStorage.setItem(
                 STORAGE_KEYS.PHONE,
@@ -939,11 +875,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /*
-             * Initial verification channel.
+             * INITIAL OTP CHANNEL.
              *
-             * The backend's registration flow
-             * uses email as the initial OTP
-             * delivery channel.
+             * Code.gs automatically sends the
+             * registration OTP through EMAIL.
              */
 
             sessionStorage.setItem(
@@ -952,26 +887,113 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            /*
-             * OTP is NOT generated here.
-             */
+            /* =================================================
+               OTP STATUS FROM BACKEND
+               ================================================= */
+
+            const otpReady =
+                Boolean(
+                    response?.otpReady
+                );
+
+
+            const emailSent =
+                Boolean(
+                    response?.emailSent
+                );
+
+
+            const phoneSent =
+                Boolean(
+                    response?.phoneSent
+                );
+
+
+            const otpExpiresAt =
+                clean(
+                    response?.otpExpiresAt ||
+                    ""
+                );
+
+
+            const otpCooldownSeconds =
+                Number(
+                    response?.otpCooldownSeconds ||
+                    0
+                );
+
 
             sessionStorage.setItem(
                 STORAGE_KEYS.OTP_READY,
-                "false"
+                otpReady
+                    ? "true"
+                    : "false"
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.EMAIL_SENT,
+                emailSent
+                    ? "true"
+                    : "false"
+            );
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.PHONE_SENT,
+                phoneSent
+                    ? "true"
+                    : "false"
+            );
+
+
+            if (otpExpiresAt) {
+
+                sessionStorage.setItem(
+                    STORAGE_KEYS.OTP_EXPIRES,
+                    otpExpiresAt
+                );
+
+            } else {
+
+                sessionStorage.removeItem(
+                    STORAGE_KEYS.OTP_EXPIRES
+                );
+            }
+
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.OTP_COOLDOWN,
+                String(
+                    otpCooldownSeconds
+                )
             );
 
 
             /*
-             * Never save an OTP returned from
-             * registration.
+             * CRITICAL:
              *
-             * verify.js will request the OTP
-             * from the backend.
+             * Never store an OTP returned from
+             * the backend.
              */
 
             sessionStorage.removeItem(
                 STORAGE_KEYS.OTP
+            );
+
+
+            console.log(
+                "StockFlow verification state saved:",
+                {
+                    identity,
+                    uid,
+                    channel: "email",
+                    otpReady,
+                    emailSent,
+                    phoneSent,
+                    otpExpiresAt,
+                    otpCooldownSeconds
+                }
             );
 
 
@@ -993,9 +1015,7 @@ document.addEventListener("DOMContentLoaded", () => {
        API ERROR HELPERS
        ========================================================= */
 
-    function getErrorCode(
-        error
-    ) {
+    function getErrorCode(error) {
 
         return clean(
             error?.code ||
@@ -1007,9 +1027,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function getBackendMessage(
-        error
-    ) {
+    function getBackendMessage(error) {
 
         return clean(
             error?.data?.message ||
@@ -1021,27 +1039,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function getRegistrationErrorMessage(
-        error
-    ) {
+    function getRegistrationErrorMessage(error) {
 
         const code =
-            getErrorCode(
-                error
-            );
+            getErrorCode(error);
 
 
         const backendMessage =
-            getBackendMessage(
-                error
-            );
+            getBackendMessage(error);
 
 
         switch (code) {
-
-            /* =================================================
-               DUPLICATE USERNAME
-               ================================================= */
 
             case "USERNAME_EXISTS":
 
@@ -1051,10 +1059,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Username already exists. Please choose another username."
                 );
 
-
-            /* =================================================
-               DUPLICATE EMAIL
-               ================================================= */
 
             case "EMAIL_EXISTS":
 
@@ -1067,10 +1071,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /* =================================================
-               DUPLICATE PHONE
-               ================================================= */
-
             case "PHONE_EXISTS":
 
             case "DUPLICATE_PHONE":
@@ -1080,10 +1080,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /* =================================================
-               ACCOUNT ALREADY EXISTS
-               ================================================= */
-
             case "ACCOUNT_EXISTS":
 
             case "DUPLICATE_ACCOUNT":
@@ -1092,10 +1088,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     "An account with these details already exists."
                 );
 
-
-            /* =================================================
-               VALIDATION
-               ================================================= */
 
             case "INVALID_REGISTRATION":
 
@@ -1107,9 +1099,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /* =================================================
-               API / NETWORK
-               ================================================= */
+            case "EMAIL_SEND_FAILED":
+
+            case "OTP_DELIVERY_FAILED":
+
+                return (
+                    backendMessage ||
+                    "Your account was created, but the verification email could not be sent. Please try again."
+                );
+
 
             case "API_URL_MISSING":
 
@@ -1128,15 +1126,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /* =================================================
-               DEFAULT
-               ================================================= */
-
             default:
 
-                if (
-                    backendMessage
-                ) {
+                if (backendMessage) {
 
                     return backendMessage;
                 }
@@ -1155,10 +1147,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function getAPI() {
 
-        /*
-         * Preferred API namespace.
-         */
-
         if (
             window.StockFlowAPI &&
             typeof window.StockFlowAPI.register ===
@@ -1168,10 +1156,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return window.StockFlowAPI;
         }
 
-
-        /*
-         * Backward-compatible API namespace.
-         */
 
         if (
             window.API &&
@@ -1197,36 +1181,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /* =====================================================
-           CHECK REQUIRED ELEMENTS
-           ===================================================== */
-
-        if (
-            !firstNameInput ||
-            !lastNameInput ||
-            !usernameInput ||
-            !ageInput ||
-            !emailInput ||
-            !phoneInput ||
-            !passwordInput ||
-            !confirmPasswordInput
-        ) {
-
-            console.error(
-                "StockFlow registration fields are missing."
-            );
-
-
-            showMessage(
-                "Registration form could not be loaded correctly. Please refresh the page.",
-                "error"
-            );
-
-
-            return;
-        }
-
-
-        /* =====================================================
            VALIDATE
            ===================================================== */
 
@@ -1234,15 +1188,12 @@ document.addEventListener("DOMContentLoaded", () => {
             validateForm();
 
 
-        if (
-            !validation.valid
-        ) {
+        if (!validation.valid) {
 
             showMessage(
                 validation.message,
                 "error"
             );
-
 
             return;
         }
@@ -1298,12 +1249,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             /* =================================================
                REGISTRATION REQUEST
-               =================================================
-               IMPORTANT:
-               No OTP is generated here.
-               The backend registration endpoint creates
-               the account only.
                ================================================= */
+
+            console.log(
+                "StockFlow: sending registration request..."
+            );
+
 
             const response =
                 await API.register({
@@ -1350,12 +1301,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* =================================================
-               CHECK RESPONSE
+               RESPONSE VALIDATION
                ================================================= */
 
-            if (
-                !response
-            ) {
+            if (!response) {
 
                 throw {
                     code:
@@ -1374,24 +1323,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw response;
             }
 
-
-            /*
-             * Some API wrappers may return:
-             *
-             * {
-             *   success: true,
-             *   user: {...}
-             * }
-             *
-             * while older wrappers may return:
-             *
-             * {
-             *   success: true,
-             *   uid: "..."
-             * }
-             *
-             * Both are supported.
-             */
 
             if (
                 response.error &&
@@ -1413,23 +1344,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             /* =================================================
-               SUCCESS MESSAGE
+               CHECK INITIAL OTP DELIVERY
                ================================================= */
 
-            showMessage(
-                "Registration successful. Redirecting to verification...",
-                "success"
-            );
+            const otpReady =
+                Boolean(
+                    response.otpReady
+                );
+
+
+            const emailSent =
+                Boolean(
+                    response.emailSent
+                );
+
+
+            /*
+             * The backend should automatically send
+             * the initial registration OTP through email.
+             *
+             * Do NOT request another OTP here.
+             */
+
+            if (
+                !otpReady ||
+                !emailSent
+            ) {
+
+                console.warn(
+                    "StockFlow: account registration succeeded, but initial email OTP delivery was not confirmed.",
+                    response
+                );
+
+
+                showMessage(
+                    "Account created, but the verification email could not be confirmed. Please continue to verification and use Resend Code if needed.",
+                    "warning"
+                );
+
+            } else {
+
+                showMessage(
+                    "Registration successful. A verification code has been sent to your Gmail. Redirecting...",
+                    "success"
+                );
+            }
 
 
             /* =================================================
-               REDIRECT
-               =================================================
-               verify.js will:
-               1. Read the saved identity.
-               2. Request the initial email OTP.
-               3. Start the email cooldown.
-               4. Keep the OTP input empty.
+               REDIRECT TO VERIFY
                ================================================= */
 
             window.setTimeout(
@@ -1439,7 +1402,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         verifyRoute;
 
                 },
-                700
+                900
             );
 
 
@@ -1476,10 +1439,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
-            /*
-             * Prevent duplicate submissions while
-             * the first request is still processing.
-             */
 
             if (
                 button?.disabled
@@ -1498,9 +1457,7 @@ document.addEventListener("DOMContentLoaded", () => {
        USERNAME NORMALIZATION
        ========================================================= */
 
-    if (
-        usernameInput
-    ) {
+    if (usernameInput) {
 
         usernameInput.addEventListener(
             "input",
@@ -1526,9 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
        EMAIL NORMALIZATION
        ========================================================= */
 
-    if (
-        emailInput
-    ) {
+    if (emailInput) {
 
         emailInput.addEventListener(
             "input",
@@ -1547,9 +1502,7 @@ document.addEventListener("DOMContentLoaded", () => {
        PHONE NORMALIZATION
        ========================================================= */
 
-    if (
-        phoneInput
-    ) {
+    if (phoneInput) {
 
         phoneInput.addEventListener(
             "input",
@@ -1564,12 +1517,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 /*
-                 * Convert:
-                 *
                  * 639XXXXXXXXX
-                 *
-                 * to:
-                 *
+                 * →
                  * 09XXXXXXXXX
                  */
 
@@ -1585,7 +1534,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 /*
-                 * Keep only 11 digits.
+                 * Keep maximum 11 digits.
                  */
 
                 phoneInput.value =
@@ -1602,17 +1551,11 @@ document.addEventListener("DOMContentLoaded", () => {
        AGE NORMALIZATION
        ========================================================= */
 
-    if (
-        ageInput
-    ) {
+    if (ageInput) {
 
         ageInput.addEventListener(
             "input",
             () => {
-
-                /*
-                 * Numbers only.
-                 */
 
                 ageInput.value =
                     ageInput.value
@@ -1651,10 +1594,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 .togglePassword;
 
 
-                        if (
-                            !targetId
-                        ) {
-
+                        if (!targetId) {
                             return;
                         }
 
@@ -1665,10 +1605,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             );
 
 
-                        if (
-                            !input
-                        ) {
-
+                        if (!input) {
                             return;
                         }
 
@@ -1683,12 +1620,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ? "text"
                                 : "password";
 
-
-                        /*
-                         * Preserve existing design.
-                         * Only change the button text/
-                         * accessibility state.
-                         */
 
                         toggle.textContent =
                             isPassword
@@ -1720,9 +1651,7 @@ document.addEventListener("DOMContentLoaded", () => {
        PASSWORD STRENGTH
        ========================================================= */
 
-    if (
-        passwordInput
-    ) {
+    if (passwordInput) {
 
         passwordInput.addEventListener(
             "input",
@@ -1759,14 +1688,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
 
 
-                /*
-                 * Update optional password
-                 * requirement indicators.
-                 *
-                 * This does not require CSS
-                 * changes.
-                 */
-
                 Object.entries(
                     checks
                 ).forEach(
@@ -1778,9 +1699,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             );
 
 
-                        if (
-                            element
-                        ) {
+                        if (element) {
 
                             element.classList.toggle(
                                 "valid",
@@ -1798,6 +1717,53 @@ document.addEventListener("DOMContentLoaded", () => {
        CONFIRM PASSWORD
        ========================================================= */
 
+    function updateConfirmPasswordState() {
+
+        if (
+            !confirmPasswordInput ||
+            !passwordInput
+        ) {
+
+            return;
+        }
+
+
+        if (
+            !confirmPasswordInput.value
+        ) {
+
+            confirmPasswordInput
+                .classList
+                .remove(
+                    "invalid"
+                );
+
+            return;
+        }
+
+
+        if (
+            confirmPasswordInput.value ===
+            passwordInput.value
+        ) {
+
+            confirmPasswordInput
+                .classList
+                .remove(
+                    "invalid"
+                );
+
+        } else {
+
+            confirmPasswordInput
+                .classList
+                .add(
+                    "invalid"
+                );
+        }
+    }
+
+
     if (
         confirmPasswordInput &&
         passwordInput
@@ -1805,88 +1771,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         confirmPasswordInput.addEventListener(
             "input",
-            () => {
-
-                if (
-                    !confirmPasswordInput.value
-                ) {
-
-                    confirmPasswordInput
-                        .classList
-                        .remove(
-                            "invalid"
-                        );
-
-                    return;
-                }
-
-
-                if (
-                    confirmPasswordInput.value ===
-                    passwordInput.value
-                ) {
-
-                    confirmPasswordInput
-                        .classList
-                        .remove(
-                            "invalid"
-                        );
-
-                } else {
-
-                    confirmPasswordInput
-                        .classList
-                        .add(
-                            "invalid"
-                        );
-                }
-            }
+            updateConfirmPasswordState
         );
 
 
-        /*
-         * Also update confirmation state when
-         * the main password is changed.
-         */
-
         passwordInput.addEventListener(
             "input",
-            () => {
-
-                if (
-                    !confirmPasswordInput.value
-                ) {
-
-                    confirmPasswordInput
-                        .classList
-                        .remove(
-                            "invalid"
-                        );
-
-                    return;
-                }
-
-
-                if (
-                    confirmPasswordInput.value ===
-                    passwordInput.value
-                ) {
-
-                    confirmPasswordInput
-                        .classList
-                        .remove(
-                            "invalid"
-                        );
-
-                } else {
-
-                    confirmPasswordInput
-                        .classList
-                        .add(
-                            "invalid"
-                        );
-                }
-            }
+            updateConfirmPasswordState
         );
     }
 
