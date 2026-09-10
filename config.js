@@ -67,7 +67,7 @@
          */
 
         API_URL:
-            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lq4gCXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
+            "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
 
 
         /* =====================================================
