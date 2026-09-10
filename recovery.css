@@ -1,0 +1,934 @@
+/* =========================================================
+   STOCKFLOW — RECOVERY PAGE
+   recovery.css
+
+   Purpose:
+   Dedicated styling for recovery.html.
+
+   This file is loaded AFTER:
+   - style.css
+   - dashboard.css
+   - auth.css
+
+   It intentionally overrides recovery-specific UI only.
+========================================================= */
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.auth-page {
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 40px 24px;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(37, 99, 235, 0.08),
+            transparent 32%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(37, 99, 235, 0.06),
+            transparent 32%
+        ),
+        #f8fafc;
+}
+
+
+/* =========================================================
+   RECOVERY SHELL
+========================================================= */
+
+.auth-shell.compact-shell {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.auth-shell .auth-brand {
+    width: 100%;
+    margin-bottom: 22px;
+
+    display: flex;
+    justify-content: center;
+}
+
+.auth-shell .auth-brand .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+
+    color: #111827;
+    text-decoration: none;
+
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.auth-shell .auth-brand .brand:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.auth-shell .brand-mark {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    font-size: 19px;
+    font-weight: 700;
+
+    box-shadow:
+        0 8px 20px rgba(37, 99, 235, 0.20);
+}
+
+.auth-shell .brand span:last-child span {
+    color: #2563eb;
+}
+
+
+/* =========================================================
+   RECOVERY CARD
+========================================================= */
+
+.verification-card {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 42px 44px 44px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+
+    box-shadow:
+        0 24px 70px rgba(15, 23, 42, 0.10),
+        0 4px 18px rgba(15, 23, 42, 0.04);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+
+/* =========================================================
+   VERIFICATION ICON
+========================================================= */
+
+.verification-card .verify-icon {
+    width: 52px;
+    height: 52px;
+
+    margin-bottom: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eff6ff;
+    color: #2563eb;
+
+    border: 1px solid #dbeafe;
+
+    font-size: 25px;
+    font-weight: 700;
+
+    box-shadow:
+        0 8px 22px rgba(37, 99, 235, 0.10);
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.verification-card .auth-card-head {
+    margin-bottom: 25px;
+}
+
+.verification-card .auth-card-head h2 {
+    margin: 0 0 10px;
+
+    color: #0f172a;
+
+    font-size: 28px;
+    line-height: 1.25;
+    font-weight: 700;
+
+    letter-spacing: -0.6px;
+}
+
+.verification-card .auth-card-head p {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   DESTINATION
+========================================================= */
+
+.verification-card .destination {
+    margin-bottom: 18px;
+
+    color: #334155;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    padding: 12px 14px;
+
+    background: #f8fafc;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+
+    word-break: break-word;
+}
+
+
+/* =========================================================
+   FORM MESSAGE
+========================================================= */
+
+.verification-card .form-message {
+    display: none;
+
+    width: 100%;
+    box-sizing: border-box;
+
+    margin-bottom: 18px;
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.verification-card .form-message.show {
+    display: block;
+}
+
+
+/* Error */
+
+.verification-card .form-message.error {
+    color: #991b1b;
+
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+
+/* Success */
+
+.verification-card .form-message.success {
+    color: #166534;
+
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+
+/* =========================================================
+   OTP INPUT AREA
+========================================================= */
+
+.verification-card .otp-inputs {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-bottom: 22px;
+}
+
+
+/* =========================================================
+   OTP INPUTS
+========================================================= */
+
+.verification-card .otp-inputs input {
+    width: 100%;
+    min-width: 0;
+    height: 62px;
+
+    box-sizing: border-box;
+
+    padding: 0;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    text-align: center;
+
+    font-size: 24px;
+    font-weight: 700;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        transform 0.15s ease;
+}
+
+.verification-card .otp-inputs input:hover {
+    border-color: #94a3b8;
+}
+
+.verification-card .otp-inputs input:focus {
+    border-color: #2563eb;
+
+    background: #f8fbff;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.12);
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+========================================================= */
+
+.verification-card .btn-full {
+    width: 100%;
+    min-height: 52px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    box-shadow:
+        0 10px 24px rgba(37, 99, 235, 0.20);
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.verification-card .btn-full:hover {
+    background: #1d4ed8;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 14px 28px rgba(37, 99, 235, 0.24);
+}
+
+.verification-card .btn-full:active {
+    transform: translateY(0);
+}
+
+.verification-card .btn-full:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    transform: none;
+
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   RESEND ROW
+========================================================= */
+
+.verification-card .resend-row {
+    width: 100%;
+
+    margin-top: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    color: #64748b;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.verification-card .resend-row button {
+    padding: 0;
+
+    border: none;
+    background: transparent;
+
+    color: #2563eb;
+
+    font: inherit;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.verification-card .resend-row button:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.verification-card .resend-row button:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.verification-card .resend-row b {
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   SECURITY / DEMO HINT
+========================================================= */
+
+.verification-card .demo-hint {
+    box-sizing: border-box;
+
+    width: 100%;
+
+    padding: 15px 16px;
+
+    color: #475569;
+
+    background: #f8fafc;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.verification-card .demo-hint strong {
+    display: inline-block;
+
+    margin-bottom: 3px;
+
+    color: #0f172a;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+}
+
+
+/* =========================================================
+   PASSWORD STEP
+========================================================= */
+
+#newPasswordStep {
+    width: 100%;
+}
+
+#newPasswordStep .auth-card-head {
+    margin-bottom: 24px;
+}
+
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.verification-card .field {
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.verification-card .field label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #334155;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   PASSWORD WRAPPER
+========================================================= */
+
+.verification-card .password-wrap {
+    position: relative;
+
+    width: 100%;
+}
+
+.verification-card .password-wrap input {
+    width: 100%;
+    height: 50px;
+
+    box-sizing: border-box;
+
+    padding: 0 76px 0 14px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.verification-card .password-wrap input::placeholder {
+    color: #94a3b8;
+}
+
+.verification-card .password-wrap input:hover {
+    border-color: #94a3b8;
+}
+
+.verification-card .password-wrap input:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+
+/* =========================================================
+   PASSWORD TOGGLE
+========================================================= */
+
+.verification-card .password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 10px;
+
+    transform: translateY(-50%);
+
+    min-width: 52px;
+    height: 32px;
+
+    padding: 0 8px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+
+    color: #2563eb;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    outline: none;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.verification-card .password-toggle:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.verification-card .password-toggle:focus {
+    outline: none;
+
+    box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+
+/* =========================================================
+   PASSWORD METER
+========================================================= */
+
+.verification-card .password-meter {
+    width: 100%;
+    height: 6px;
+
+    margin-top: 9px;
+
+    overflow: hidden;
+
+    background: #e2e8f0;
+
+    border-radius: 999px;
+}
+
+.verification-card .password-meter span {
+    display: block;
+
+    width: 0;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #2563eb;
+
+    transition:
+        width 0.25s ease,
+        background 0.25s ease;
+}
+
+
+/* =========================================================
+   PASSWORD HINT
+========================================================= */
+
+.verification-card .password-hint {
+    display: block;
+
+    margin-top: 7px;
+
+    color: #64748b;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FIELD ERROR
+========================================================= */
+
+.verification-card .field-error {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #dc2626;
+
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   SECURITY NOTE
+========================================================= */
+
+.verification-card .security-note {
+    width: 100%;
+    box-sizing: border-box;
+
+    margin-top: 22px;
+    padding: 15px 16px;
+
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    background: #f8fafc;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.verification-card .security-note > span {
+    flex-shrink: 0;
+
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: #eff6ff;
+
+    font-size: 15px;
+}
+
+.verification-card .security-note strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #334155;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.verification-card .security-note small {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   SUCCESS STEP
+========================================================= */
+
+#recoverySuccessStep {
+    width: 100%;
+}
+
+#recoverySuccessStep .auth-card-head {
+    margin-bottom: 22px;
+}
+
+#recoverySuccessStep .form-message.success {
+    margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   SUCCESS BUTTON
+========================================================= */
+
+#recoveryLoginButton {
+    width: 100%;
+}
+
+
+/* =========================================================
+   FOCUS ACCESSIBILITY
+========================================================= */
+
+.verification-card button:focus-visible,
+.verification-card input:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .auth-page {
+        padding: 30px 18px;
+    }
+
+    .verification-card {
+        padding: 34px 30px 36px;
+        border-radius: 20px;
+    }
+
+    .verification-card .auth-card-head h2 {
+        font-size: 25px;
+    }
+
+    .verification-card .otp-inputs {
+        gap: 8px;
+    }
+
+    .verification-card .otp-inputs input {
+        height: 58px;
+        font-size: 22px;
+        border-radius: 10px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+
+    .auth-page {
+        min-height: 100vh;
+        padding: 22px 14px;
+        align-items: flex-start;
+    }
+
+    .auth-shell.compact-shell {
+        margin-top: 18px;
+    }
+
+    .auth-shell .auth-brand {
+        margin-bottom: 18px;
+    }
+
+    .auth-shell .auth-brand .brand {
+        font-size: 18px;
+    }
+
+    .auth-shell .brand-mark {
+        width: 38px;
+        height: 38px;
+
+        border-radius: 10px;
+
+        font-size: 17px;
+    }
+
+    .verification-card {
+        padding: 28px 20px 30px;
+
+        border-radius: 18px;
+    }
+
+    .verification-card .verify-icon {
+        width: 46px;
+        height: 46px;
+
+        margin-bottom: 17px;
+
+        font-size: 22px;
+    }
+
+    .verification-card .auth-card-head {
+        margin-bottom: 21px;
+    }
+
+    .verification-card .auth-card-head h2 {
+        font-size: 23px;
+        letter-spacing: -0.4px;
+    }
+
+    .verification-card .auth-card-head p {
+        font-size: 14px;
+    }
+
+    .verification-card .destination {
+        padding: 11px 12px;
+
+        font-size: 13px;
+    }
+
+    .verification-card .otp-inputs {
+        gap: 6px;
+
+        margin-bottom: 18px;
+    }
+
+    .verification-card .otp-inputs input {
+        height: 52px;
+
+        border-radius: 9px;
+
+        font-size: 20px;
+    }
+
+    .verification-card .btn-full {
+        min-height: 50px;
+
+        font-size: 14px;
+    }
+
+    .verification-card .resend-row {
+        font-size: 13px;
+    }
+
+    .verification-card .demo-hint {
+        padding: 13px 14px;
+
+        font-size: 12px;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 360px) {
+
+    .auth-page {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .verification-card {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .verification-card .otp-inputs {
+        gap: 4px;
+    }
+
+    .verification-card .otp-inputs input {
+        height: 48px;
+
+        font-size: 18px;
+    }
+
+    .verification-card .auth-card-head h2 {
+        font-size: 21px;
+    }
+}
