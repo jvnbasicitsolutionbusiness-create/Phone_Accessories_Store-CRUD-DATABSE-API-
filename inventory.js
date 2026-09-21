@@ -3,27 +3,25 @@
    ============================================================
    Inventory Monitoring Module
 
-   Connected Modules:
-   - Authentication
-   - Products
-   - Stock In
-   - Stock Out
-   - Categories
-   - Suppliers
-   - Google Apps Script API
-   - Firebase-ready API layer
-
-   HTML IDs USED:
-   - pc
-   - ts
-   - ls
-   - os
-   - rows
-   - alert
-
-   API:
-   - StockFlowAuth.requireAuth()
-   - StockFlowAPI.listProducts()
+   FIXED VERSION
+   ------------------------------------------------------------
+   FEATURES
+   - Authentication protection
+   - Employee account UI
+   - System connection status
+   - Working notification panel
+   - Mobile sidebar
+   - Product inventory loading
+   - Product statistics
+   - Low-stock detection
+   - Out-of-stock detection
+   - Loading states
+   - Empty states
+   - Error states
+   - Manual refresh
+   - Auto refresh
+   - Online/offline detection
+   - API response compatibility
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -38,6 +36,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     const $ = (id) =>
         document.getElementById(id);
 
+
+    const qs = (selector) =>
+        document.querySelector(selector);
+
+
+    const qsa = (selector) =>
+        document.querySelectorAll(selector);
+
+
+    /* ========================================================
+       MAIN ELEMENTS
+       ======================================================== */
 
     const rows =
         $("rows");
@@ -72,6 +82,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     let isLoading = false;
 
     let refreshTimer = null;
+
+    let notificationBound = false;
+
+    let sidebarBound = false;
 
 
     /* ========================================================
@@ -114,18 +128,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function formatNumber(value) {
 
-        const number =
-            Number(value);
+        const parsed =
+            Number(
+                String(value ?? "")
+                    .replace(/,/g, "")
+            );
+
 
         if (
-            Number.isNaN(number)
+            !Number.isFinite(parsed)
         ) {
 
             return "0";
 
         }
 
-        return number.toLocaleString();
+
+        return parsed.toLocaleString();
 
     }
 
@@ -150,15 +169,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        const number =
+        const parsed =
             Number(
                 String(value)
                     .replace(/,/g, "")
             );
 
 
-        return Number.isFinite(number)
-            ? number
+        return Number.isFinite(parsed)
+            ? parsed
             : fallback;
 
     }
@@ -176,16 +195,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             return {
 
+                id: "",
+
                 sku: "",
-                name: "Unnamed Product",
-                category: "-",
-                supplier: "-",
-                stock: 0,
-                reorder: 5
+
+                name:
+                    "Unnamed Product",
+
+                category:
+                    "-",
+
+                supplier:
+                    "-",
+
+                stock:
+                    0,
+
+                reorder:
+                    5
 
             };
 
         }
+
+
+        const id =
+            product.id ??
+            product.ID ??
+            product.productId ??
+            product.PRODUCT_ID ??
+            product.uid ??
+            "";
 
 
         const sku =
@@ -226,6 +266,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             numberValue(
                 product.STOCK ??
                 product.stock ??
+                product.CURRENT_STOCK ??
+                product.currentStock ??
                 product.QUANTITY ??
                 product.quantity ??
                 product.QTY ??
@@ -245,6 +287,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         return {
+
+            id:
+                String(id),
 
             sku:
                 String(sku),
@@ -279,7 +324,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         const quantity =
-            numberValue(stock);
+            numberValue(
+                stock
+            );
 
 
         const reorderLevel =
@@ -289,7 +336,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-        if (quantity <= 0) {
+        if (
+            quantity <= 0
+        ) {
 
             return {
 
@@ -364,15 +413,936 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             <span class="badge ${status.key}">
 
-                <i class="fa-solid ${status.icon}"
-                   aria-hidden="true">
-                </i>
+                <i
+                    class="fa-solid ${status.icon}"
+                    aria-hidden="true"
+                ></i>
 
-                ${esc(status.label)}
+                ${esc(
+                    status.label
+                )}
 
             </span>
 
         `;
+
+    }
+
+
+    /* ========================================================
+       SYSTEM CONNECTION STATUS
+       ======================================================== */
+
+    function setSystemConnection(
+        connected = true
+    ) {
+
+        const text =
+            connected
+                ? "SYSTEM CONNECTED"
+                : "SYSTEM OFFLINE";
+
+
+        /* ----------------------------------------------------
+           Common connection elements
+           ---------------------------------------------------- */
+
+        const connectionIds = [
+
+            "connectionStatus",
+
+            "connectionTitle",
+
+            "connectionMessage",
+
+            "footerSystemStatus",
+
+            "systemStatus",
+
+            "systemConnectionStatus"
+
+        ];
+
+
+        connectionIds.forEach(
+            id => {
+
+                const element =
+                    $(id);
+
+
+                if (!element) {
+                    return;
+                }
+
+
+                /*
+                 * Do not overwrite the whole connection card.
+                 * Only update text-bearing elements.
+                 */
+
+                if (
+                    element.tagName ===
+                    "INPUT"
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    element.children.length === 0
+                ) {
+
+                    element.textContent =
+                        text;
+
+                    return;
+
+                }
+
+
+                const span =
+                    element.querySelector(
+                        "span:last-child"
+                    );
+
+
+                if (span) {
+
+                    span.textContent =
+                        text;
+
+                    return;
+
+                }
+
+
+                const textNode =
+                    Array.from(
+                        element.childNodes
+                    )
+                    .find(
+                        node =>
+                            node.nodeType ===
+                            Node.TEXT_NODE &&
+                            node.textContent.trim()
+                    );
+
+
+                if (textNode) {
+
+                    textNode.textContent =
+                        ` ${text}`;
+
+                }
+
+            }
+        );
+
+
+        /* ----------------------------------------------------
+           Connection badges
+           ---------------------------------------------------- */
+
+        const badges =
+            qsa(
+                "#connectionBadge, .connection-status, .system-status, .connection-badge"
+            );
+
+
+        badges.forEach(
+            badge => {
+
+                badge.classList.remove(
+                    "connected",
+                    "offline",
+                    "online",
+                    "system-connected",
+                    "system-offline"
+                );
+
+
+                if (connected) {
+
+                    badge.classList.add(
+                        "connected",
+                        "online",
+                        "system-connected"
+                    );
+
+                }
+
+                else {
+
+                    badge.classList.add(
+                        "offline",
+                        "system-offline"
+                    );
+
+                }
+
+
+                const badgeText =
+                    badge.querySelector(
+                        "span:last-child"
+                    );
+
+
+                if (badgeText) {
+
+                    badgeText.textContent =
+                        text;
+
+                }
+
+            }
+        );
+
+
+        /* ----------------------------------------------------
+           Body-level system state
+           ---------------------------------------------------- */
+
+        document.body.classList.toggle(
+            "system-online",
+            connected
+        );
+
+
+        document.body.classList.toggle(
+            "system-offline",
+            !connected
+        );
+
+    }
+
+
+    /* ========================================================
+       REMOVE DUPLICATE BRAND MARK
+       ======================================================== */
+
+    function normalizeBrandLogo() {
+
+        /*
+         * The Inventory page should display only the
+         * SF / StockFlow logo.
+         *
+         * If an old standalone S mark exists beside the
+         * proper SF logo, hide the old mark.
+         */
+
+        const brandContainers =
+            qsa(
+                ".sf-brand, .sidebar-brand, .brand, .brand-link, .logo-container"
+            );
+
+
+        brandContainers.forEach(
+            container => {
+
+                const logos =
+                    Array.from(
+                        container.querySelectorAll(
+                            "img, .brand-logo, .logo, .brand-mark, .logo-mark"
+                        )
+                    );
+
+
+                if (
+                    logos.length < 2
+                ) {
+
+                    return;
+
+                }
+
+
+                const sfLogo =
+                    logos.find(
+                        logo => {
+
+                            const text =
+                                (
+                                    logo.alt ||
+                                    logo.getAttribute(
+                                        "aria-label"
+                                    ) ||
+                                    logo.textContent ||
+                                    ""
+                                )
+                                .toLowerCase();
+
+
+                            const src =
+                                (
+                                    logo.getAttribute(
+                                        "src"
+                                    ) ||
+                                    ""
+                                )
+                                .toLowerCase();
+
+
+                            return (
+                                text.includes("sf") ||
+                                text.includes("stockflow") ||
+                                src.includes("sf") ||
+                                src.includes("stockflow")
+                            );
+
+                        }
+                    );
+
+
+                if (!sfLogo) {
+
+                    return;
+
+                }
+
+
+                logos.forEach(
+                    logo => {
+
+                        if (
+                            logo ===
+                            sfLogo
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const text =
+                            (
+                                logo.alt ||
+                                logo.getAttribute(
+                                    "aria-label"
+                                ) ||
+                                logo.textContent ||
+                                ""
+                            )
+                            .trim()
+                            .toUpperCase();
+
+
+                        const src =
+                            (
+                                logo.getAttribute(
+                                    "src"
+                                ) ||
+                                ""
+                            )
+                            .toLowerCase();
+
+
+                        /*
+                         * Hide obvious old S logo.
+                         */
+
+                        if (
+                            text === "S" ||
+                            text === "STOCKFLOW S" ||
+                            src.endsWith(
+                                "/s.svg"
+                            ) ||
+                            src.includes(
+                                "logo-s"
+                            )
+                        ) {
+
+                            logo.style.display =
+                                "none";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       NOTIFICATION SYSTEM
+       ======================================================== */
+
+    function initializeNotifications() {
+
+        if (
+            notificationBound
+        ) {
+
+            return;
+
+        }
+
+
+        notificationBound =
+            true;
+
+
+        /*
+         * Support multiple possible IDs so the same
+         * notification controller works with Dashboard
+         * and Inventory markup.
+         */
+
+        const notificationButton =
+            qs(
+                "#notificationBtn, #notificationButton, [data-notifications], [data-notification-btn]"
+            );
+
+
+        const notificationPanel =
+            qs(
+                "#notificationPanel, .notification-panel"
+            );
+
+
+        const closeButton =
+            qs(
+                "#closeNotificationBtn, #notificationCloseBtn, .notification-close"
+            );
+
+
+        if (
+            !notificationButton &&
+            !notificationPanel
+        ) {
+
+            return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           OPEN / CLOSE
+           ---------------------------------------------------- */
+
+        function openNotifications(
+            event
+        ) {
+
+            if (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+            }
+
+
+            if (!notificationPanel) {
+
+                return;
+
+            }
+
+
+            notificationPanel.classList.add(
+                "show"
+            );
+
+
+            notificationPanel.classList.add(
+                "active"
+            );
+
+
+            notificationPanel.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            if (notificationButton) {
+
+                notificationButton.classList.add(
+                    "active"
+                );
+
+
+                notificationButton.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+
+            }
+
+        }
+
+
+        function closeNotifications(
+            event
+        ) {
+
+            if (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+            }
+
+
+            if (!notificationPanel) {
+
+                return;
+
+            }
+
+
+            notificationPanel.classList.remove(
+                "show"
+            );
+
+
+            notificationPanel.classList.remove(
+                "active"
+            );
+
+
+            notificationPanel.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            if (notificationButton) {
+
+                notificationButton.classList.remove(
+                    "active"
+                );
+
+
+                notificationButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+
+        }
+
+
+        function toggleNotifications(
+            event
+        ) {
+
+            if (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+            }
+
+
+            if (
+                !notificationPanel
+            ) {
+
+                return;
+
+            }
+
+
+            const isOpen =
+                notificationPanel.classList.contains(
+                    "show"
+                ) ||
+                notificationPanel.classList.contains(
+                    "active"
+                );
+
+
+            if (isOpen) {
+
+                closeNotifications();
+
+            }
+
+            else {
+
+                openNotifications();
+
+            }
+
+        }
+
+
+        /* ----------------------------------------------------
+           BUTTON
+           ---------------------------------------------------- */
+
+        if (
+            notificationButton
+        ) {
+
+            notificationButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            notificationButton.addEventListener(
+                "click",
+                toggleNotifications
+            );
+
+        }
+
+
+        /* ----------------------------------------------------
+           CLOSE BUTTON
+           ---------------------------------------------------- */
+
+        if (
+            closeButton
+        ) {
+
+            closeButton.addEventListener(
+                "click",
+                closeNotifications
+            );
+
+        }
+
+
+        /* ----------------------------------------------------
+           CLICK OUTSIDE
+           ---------------------------------------------------- */
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    !notificationPanel
+                ) {
+
+                    return;
+
+                }
+
+
+                const clickedPanel =
+                    notificationPanel.contains(
+                        event.target
+                    );
+
+
+                const clickedButton =
+                    notificationButton &&
+                    notificationButton.contains(
+                        event.target
+                    );
+
+
+                if (
+                    !clickedPanel &&
+                    !clickedButton
+                ) {
+
+                    closeNotifications();
+
+                }
+
+            }
+        );
+
+
+        /* ----------------------------------------------------
+           ESCAPE
+           ---------------------------------------------------- */
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key !==
+                    "Escape"
+                ) {
+
+                    return;
+
+                }
+
+
+                closeNotifications();
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       NOTIFICATION DATA
+       ======================================================== */
+
+    function updateNotificationBadge() {
+
+        const low =
+            inventoryProducts.filter(
+                product =>
+                    numberValue(
+                        product.stock
+                    ) > 0 &&
+                    numberValue(
+                        product.stock
+                    ) <=
+                    numberValue(
+                        product.reorder,
+                        5
+                    )
+            ).length;
+
+
+        const out =
+            inventoryProducts.filter(
+                product =>
+                    numberValue(
+                        product.stock
+                    ) <= 0
+            ).length;
+
+
+        const total =
+            low + out;
+
+
+        const badges =
+            qsa(
+                "#notificationBadge, .notification-dot, .notification-count, [data-notification-count]"
+            );
+
+
+        badges.forEach(
+            badge => {
+
+                if (
+                    total > 0
+                ) {
+
+                    badge.textContent =
+                        total > 99
+                            ? "99+"
+                            : String(total);
+
+                    badge.classList.add(
+                        "has-notifications"
+                    );
+
+
+                    badge.style.display =
+                        "";
+
+                }
+
+                else {
+
+                    badge.textContent =
+                        "";
+
+                    badge.classList.remove(
+                        "has-notifications"
+                    );
+
+
+                    /*
+                     * Keep the dot hidden when
+                     * there are no inventory alerts.
+                     */
+
+                    if (
+                        badge.classList.contains(
+                            "notification-dot"
+                        )
+                    ) {
+
+                        badge.style.display =
+                            "none";
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       REFRESH NOTIFICATION CONTENT
+       ======================================================== */
+
+    function updateNotificationContent() {
+
+        const list =
+            qs(
+                "#notificationList, .notification-list"
+            );
+
+
+        if (!list) {
+
+            return;
+
+        }
+
+
+        const lowProducts =
+            inventoryProducts.filter(
+                product =>
+                    numberValue(
+                        product.stock
+                    ) > 0 &&
+                    numberValue(
+                        product.stock
+                    ) <=
+                    numberValue(
+                        product.reorder,
+                        5
+                    )
+            );
+
+
+        const outProducts =
+            inventoryProducts.filter(
+                product =>
+                    numberValue(
+                        product.stock
+                    ) <= 0
+            );
+
+
+        const notifications = [];
+
+
+        outProducts.forEach(
+            product => {
+
+                notifications.push({
+
+                    type:
+                        "danger",
+
+                    icon:
+                        "fa-circle-xmark",
+
+                    title:
+                        "Out of stock",
+
+                    message:
+                        `${product.name} has no available stock.`
+
+                });
+
+            }
+        );
+
+
+        lowProducts.forEach(
+            product => {
+
+                notifications.push({
+
+                    type:
+                        "warning",
+
+                    icon:
+                        "fa-triangle-exclamation",
+
+                    title:
+                        "Low stock",
+
+                    message:
+                        `${product.name} is at ${formatNumber(product.stock)} unit${product.stock === 1 ? "" : "s"}.`
+
+                });
+
+            }
+        );
+
+
+        if (
+            notifications.length === 0
+        ) {
+
+            list.innerHTML = `
+
+                <div class="notification-empty">
+
+                    <i
+                        class="fa-solid fa-circle-check"
+                        aria-hidden="true"
+                    ></i>
+
+                    <strong>
+                        All caught up
+                    </strong>
+
+                    <span>
+                        No inventory alerts at the moment.
+                    </span>
+
+                </div>
+
+            `;
+
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            notifications
+                .slice(0, 20)
+                .map(
+                    notification => `
+
+                        <div class="notification-item ${esc(notification.type)}">
+
+                            <div class="notification-icon">
+
+                                <i
+                                    class="fa-solid ${esc(notification.icon)}"
+                                    aria-hidden="true"
+                                ></i>
+
+                            </div>
+
+                            <div class="notification-content">
+
+                                <strong>
+                                    ${esc(
+                                        notification.title
+                                    )}
+                                </strong>
+
+                                <span>
+                                    ${esc(
+                                        notification.message
+                                    )}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `
+                )
+                .join("");
 
     }
 
@@ -387,7 +1357,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         if (!alertBox) {
+
             return;
+
         }
 
 
@@ -399,7 +1371,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             "sf-alert";
 
 
-        if (message) {
+        if (
+            message
+        ) {
 
             alertBox.classList.add(
                 "show"
@@ -422,7 +1396,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function clearAlert() {
 
         if (!alertBox) {
+
             return;
+
         }
 
 
@@ -443,7 +1419,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function showLoading() {
 
         if (!rows) {
+
             return;
+
         }
 
 
@@ -489,7 +1467,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function renderEmpty() {
 
         if (!rows) {
+
             return;
+
         }
 
 
@@ -524,12 +1504,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         href="products.html"
                         class="sf-btn"
                     >
+
                         <i
                             class="fa-solid fa-plus"
                             aria-hidden="true"
                         ></i>
 
                         Add Product
+
                     </a>
 
                 </td>
@@ -550,7 +1532,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         if (!rows) {
+
             return;
+
         }
 
 
@@ -707,6 +1691,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+
+        updateNotificationBadge();
+
+        updateNotificationContent();
+
     }
 
 
@@ -719,7 +1708,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         if (!rows) {
+
             return;
+
         }
 
 
@@ -727,6 +1718,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             !Array.isArray(products) ||
             products.length === 0
         ) {
+
+            inventoryProducts =
+                [];
+
 
             updateSummary([]);
 
@@ -915,8 +1910,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadInventory() {
 
-        if (isLoading) {
+        if (
+            isLoading
+        ) {
+
             return false;
+
         }
 
 
@@ -930,11 +1929,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         showLoading();
 
 
+        setSystemConnection(
+            true
+        );
+
+
         try {
 
             /* ------------------------------------------------
                AUTHENTICATION
                ------------------------------------------------ */
+
+            if (
+                typeof StockFlowAuth ===
+                "undefined"
+            ) {
+
+                throw new Error(
+                    "StockFlow authentication module is not available."
+                );
+
+            }
+
 
             const currentUser =
                 await StockFlowAuth.requireAuth();
@@ -947,14 +1963,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
+            /*
+             * Keep the registered employee account.
+             * Do NOT replace the current user with an admin.
+             */
+
+            if (
+                typeof StockFlowAuth.bindUserUI ===
+                "function"
+            ) {
+
+                StockFlowAuth.bindUserUI(
+                    currentUser
+                );
+
+            }
+
+
             /* ------------------------------------------------
                API REQUEST
                ------------------------------------------------ */
 
             if (
-                !window.StockFlowAPI ||
-                typeof StockFlowAPI.listProducts !==
-                    "function"
+                !window.StockFlowAPI
             ) {
 
                 throw new Error(
@@ -964,8 +1995,54 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
-            const response =
-                await StockFlowAPI.listProducts();
+            let response;
+
+
+            /*
+             * Preferred method.
+             */
+
+            if (
+                typeof StockFlowAPI.listProducts ===
+                "function"
+            ) {
+
+                response =
+                    await StockFlowAPI.listProducts();
+
+            }
+
+            /*
+             * Compatibility fallback.
+             */
+
+            else if (
+                typeof StockFlowAPI.products ===
+                "function"
+            ) {
+
+                response =
+                    await StockFlowAPI.products();
+
+            }
+
+            else if (
+                typeof StockFlowAPI.getProducts ===
+                "function"
+            ) {
+
+                response =
+                    await StockFlowAPI.getProducts();
+
+            }
+
+            else {
+
+                throw new Error(
+                    "Products API method is not available."
+                );
+
+            }
 
 
             /* ------------------------------------------------
@@ -1014,7 +2091,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 ? response.result
 
-                                : [];
+                                : Array.isArray(
+                                    response.items
+                                )
+
+                                    ? response.items
+
+                                    : [];
 
 
             /* ------------------------------------------------
@@ -1037,6 +2120,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             /* ------------------------------------------------
+               CONNECTION STATUS
+               ------------------------------------------------ */
+
+            setSystemConnection(
+                true
+            );
+
+
+            /* ------------------------------------------------
                SUCCESS MESSAGE
                ------------------------------------------------ */
 
@@ -1049,11 +2141,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "success"
                 );
 
-
-                /*
-                 * Automatically hide successful
-                 * message after a short delay.
-                 */
 
                 window.setTimeout(
                     () => {
@@ -1108,6 +2195,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
+            setSystemConnection(
+                false
+            );
+
+
             return false;
 
         }
@@ -1129,7 +2221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function bindRefreshButtons() {
 
         const buttons =
-            document.querySelectorAll(
+            qsa(
                 "[data-refresh-inventory]"
             );
 
@@ -1167,102 +2259,173 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       OPTIONAL REFRESH BUTTON
+       SIDEBAR
        ======================================================== */
 
-    bindRefreshButtons();
+    function initializeSidebar() {
+
+        if (
+            sidebarBound
+        ) {
+
+            return;
+
+        }
 
 
-    /* ========================================================
-       OPTIONAL MENU BUTTON
-       ======================================================== */
-
-    const menuButton =
-        document.querySelector(
-            "[data-menu]"
-        );
+        sidebarBound =
+            true;
 
 
-    const sidebar =
-        document.querySelector(
-            ".sf-side"
-        );
+        const menuButton =
+            qs(
+                "[data-menu], #mobileMenuBtn, .mobile-menu"
+            );
 
 
-    if (
-        menuButton &&
-        sidebar
-    ) {
+        const sidebar =
+            qs(
+                ".sf-side, #sidebar, .sidebar"
+            );
 
-        menuButton.addEventListener(
+
+        const overlay =
+            qs(
+                "#sidebarOverlay, .sidebar-overlay"
+            );
+
+
+        if (
+            menuButton &&
+            sidebar
+        ) {
+
+            menuButton.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    sidebar.classList.toggle(
+                        "open"
+                    );
+
+
+                    document.body.classList.toggle(
+                        "sidebar-open"
+                    );
+
+
+                    if (
+                        overlay
+                    ) {
+
+                        overlay.classList.toggle(
+                            "show"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        if (
+            overlay
+        ) {
+
+            overlay.addEventListener(
+                "click",
+                () => {
+
+                    sidebar?.classList.remove(
+                        "open"
+                    );
+
+
+                    document.body.classList.remove(
+                        "sidebar-open"
+                    );
+
+
+                    overlay.classList.remove(
+                        "show"
+                    );
+
+                }
+            );
+
+        }
+
+
+        document.addEventListener(
             "click",
-            () => {
+            event => {
 
-                sidebar.classList.toggle(
-                    "open"
-                );
+                if (
+                    window.innerWidth > 900
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    !sidebar ||
+                    !sidebar.classList.contains(
+                        "open"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const clickedInsideSidebar =
+                    sidebar.contains(
+                        event.target
+                    );
+
+
+                const clickedMenu =
+                    menuButton &&
+                    menuButton.contains(
+                        event.target
+                    );
+
+
+                if (
+                    !clickedInsideSidebar &&
+                    !clickedMenu
+                ) {
+
+                    sidebar.classList.remove(
+                        "open"
+                    );
+
+
+                    document.body.classList.remove(
+                        "sidebar-open"
+                    );
+
+
+                    overlay?.classList.remove(
+                        "show"
+                    );
+
+                }
 
             }
         );
 
     }
-
-
-    /* ========================================================
-       CLOSE MOBILE SIDEBAR
-       ======================================================== */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            if (
-                window.innerWidth > 767
-            ) {
-
-                return;
-
-            }
-
-
-            if (
-                !sidebar ||
-                !sidebar.classList.contains(
-                    "open"
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            const clickedInsideSidebar =
-                sidebar.contains(
-                    event.target
-                );
-
-
-            const clickedMenu =
-                menuButton &&
-                menuButton.contains(
-                    event.target
-                );
-
-
-            if (
-                !clickedInsideSidebar &&
-                !clickedMenu
-            ) {
-
-                sidebar.classList.remove(
-                    "open"
-                );
-
-            }
-
-        }
-    );
 
 
     /* ========================================================
@@ -1272,6 +2435,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener(
         "online",
         () => {
+
+            setSystemConnection(
+                true
+            );
+
 
             loadInventory();
 
@@ -1286,6 +2454,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener(
         "offline",
         () => {
+
+            setSystemConnection(
+                false
+            );
+
 
             showAlert(
                 "Your browser is offline. Inventory data may be unavailable.",
@@ -1302,7 +2475,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function startAutoRefresh() {
 
-        if (refreshTimer) {
+        if (
+            refreshTimer
+        ) {
 
             clearInterval(
                 refreshTimer
@@ -1344,11 +2519,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "visible"
             ) {
 
-                /*
-                 * Refresh when user returns
-                 * to the inventory page.
-                 */
-
                 loadInventory();
 
             }
@@ -1377,9 +2547,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         getSummary:
             () => {
 
-                let total = 0;
-                let low = 0;
-                let out = 0;
+                let total =
+                    0;
+
+                let low =
+                    0;
+
+                let out =
+                    0;
 
 
                 inventoryProducts.forEach(
@@ -1411,7 +2586,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
 
                         else if (
-                            stock <= reorder
+                            stock <=
+                            reorder
                         ) {
 
                             low++;
@@ -1438,9 +2614,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 };
 
-            }
+            },
+
+        refreshNotifications:
+            () => {
+
+                updateNotificationBadge();
+
+                updateNotificationContent();
+
+            },
+
+        setSystemConnection:
+            setSystemConnection
 
     };
+
+
+    /* ========================================================
+       INITIAL UI SETUP
+       ======================================================== */
+
+    normalizeBrandLogo();
+
+    initializeNotifications();
+
+    initializeSidebar();
+
+    bindRefreshButtons();
+
+
+    /* ========================================================
+       INITIAL CONNECTION STATE
+       ======================================================== */
+
+    setSystemConnection(
+        true
+    );
 
 
     /* ========================================================
