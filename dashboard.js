@@ -3,178 +3,286 @@
    ============================================================
    Dashboard Controller
    ------------------------------------------------------------
-   Connected modules:
-   - Products
-   - Categories
-   - Stock In
-   - Stock Out
-   - Suppliers
-   - Inventory Monitoring
-   - Dashboard Reports
+   Features:
    - Authentication
-   - Google Apps Script API
-   - Firebase-ready API layer
-
-   UI:
    - Responsive sidebar
-   - Hamburger menu
-   - Sidebar overlay
+   - Mobile sidebar overlay
    - Desktop sidebar collapse
-   - Notification dropdown
-   - ESC key controls
-   - User UI
-   - Dashboard refresh
-   - Auto refresh
+   - Notification panel
+   - Dashboard statistics
+   - Inventory overview
+   - Recent transactions
+   - Recent activity
+   - Quick actions
+   - Connection monitoring
+   - Manual refresh
+   - Automatic refresh
+   - Online / Offline handling
+   - Safe HTML rendering
    ============================================================ */
 
-
-/* ============================================================
-   MAIN DASHBOARD CONTROLLER
-   ============================================================ */
-
-document.addEventListener("DOMContentLoaded", async () => {
-
+document.addEventListener("DOMContentLoaded", () => {
     "use strict";
 
-
     /* ========================================================
-       AUTHENTICATION
+       CONFIGURATION
        ======================================================== */
 
-    let currentUser = null;
-
-    try {
-
-        if (
-            typeof StockFlowAuth === "undefined"
-        ) {
-
-            console.error(
-                "StockFlowAuth is not available."
-            );
-
-            return;
-        }
-
-
-        currentUser =
-            await StockFlowAuth.requireAuth();
-
-
-        if (!currentUser) {
-            return;
-        }
-
-
-        if (
-            typeof StockFlowAuth.bindUserUI === "function"
-        ) {
-
-            StockFlowAuth.bindUserUI(
-                currentUser
-            );
-
-        }
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Authentication error:",
-            error
-        );
-
-        return;
-    }
+    const MOBILE_BREAKPOINT = 900;
+    const AUTO_REFRESH_INTERVAL = 60000;
+    const MAX_ACTIVITY_ITEMS = 8;
 
 
     /* ========================================================
        DOM HELPERS
        ======================================================== */
 
-    const $ = (selector) =>
-        document.querySelector(selector);
-
-
-    const $$ = (selector) =>
-        document.querySelectorAll(selector);
-
-
     const get = (id) =>
         document.getElementById(id);
 
+    const $ = (selector) =>
+        document.querySelector(selector);
 
-    const setText = (
-        id,
-        value
-    ) => {
+    const $$ = (selector) =>
+        Array.from(document.querySelectorAll(selector));
 
-        const element =
-            get(id);
+
+    const setText = (id, value) => {
+        const element = get(id);
 
         if (element) {
-
             element.textContent =
                 value ?? "0";
-
         }
-
     };
 
 
-    const setHTML = (
-        id,
-        html
-    ) => {
-
-        const element =
-            get(id);
+    const setHTML = (id, html) => {
+        const element = get(id);
 
         if (element) {
+            element.innerHTML = html;
+        }
+    };
 
-            element.innerHTML =
-                html;
+
+    /* ========================================================
+       SECURITY / FORMAT HELPERS
+       ======================================================== */
+
+    function esc(value) {
+
+        return String(value ?? "")
+            .replace(
+                /[&<>"']/g,
+                character => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#039;"
+                })[character]
+            );
+
+    }
+
+
+    function toNumber(value, fallback = 0) {
+
+        const number =
+            Number(value);
+
+        return Number.isFinite(number)
+            ? number
+            : fallback;
+
+    }
+
+
+    function formatNumber(value) {
+
+        return toNumber(value)
+            .toLocaleString();
+
+    }
+
+
+    function formatDate(value) {
+
+        if (!value) {
+            return "—";
+        }
+
+        const date =
+            new Date(value);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return esc(value);
+        }
+
+        return date.toLocaleString(
+            undefined,
+            {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
+
+    }
+
+
+    function getValue(
+        object,
+        ...keys
+    ) {
+
+        if (!object) {
+            return "";
+        }
+
+        for (const key of keys) {
+
+            const value =
+                object[key];
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                value !== ""
+            ) {
+                return value;
+            }
 
         }
+
+        return "";
+
+    }
+
+
+    /* ========================================================
+       STATE
+       ======================================================== */
+
+    const state = {
+
+        currentUser: null,
+
+        isLoading: false,
+
+        refreshTimer: null,
+
+        previousMobileState:
+            window.innerWidth <= MOBILE_BREAKPOINT,
+
+        notificationPanel: null
 
     };
 
 
     /* ========================================================
-       GLOBAL UI REFERENCES
+       DOM REFERENCES
        ======================================================== */
 
     const sidebar =
         get("sidebar");
 
-
     const mobileMenuBtn =
         get("mobileMenuBtn");
-
 
     const sidebarOverlay =
         get("sidebarOverlay");
 
-
     const notificationBtn =
         get("notificationBtn");
 
+    const logoutBtn =
+        get("logoutBtn");
 
-    let notificationPanel =
-        get("notificationPanel");
+
+    /* ========================================================
+       AUTHENTICATION
+       ======================================================== */
+
+    async function initializeAuthentication() {
+
+        try {
+
+            if (
+                typeof StockFlowAuth ===
+                "undefined"
+            ) {
+
+                throw new Error(
+                    "StockFlowAuth is not available."
+                );
+
+            }
+
+
+            state.currentUser =
+                await StockFlowAuth.requireAuth();
+
+
+            if (!state.currentUser) {
+                return false;
+            }
+
+
+            if (
+                typeof StockFlowAuth.bindUserUI ===
+                "function"
+            ) {
+
+                StockFlowAuth.bindUserUI(
+                    state.currentUser
+                );
+
+            }
+
+
+            return true;
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "StockFlow authentication error:",
+                error
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    /* ========================================================
+       RESPONSIVE HELPERS
+       ======================================================== */
+
+    function isMobile() {
+
+        return (
+            window.innerWidth <=
+            MOBILE_BREAKPOINT
+        );
+
+    }
 
 
     /* ========================================================
        SIDEBAR CONTROLLER
        ======================================================== */
-
-    function isMobile() {
-
-        return window.innerWidth <= 900;
-
-    }
-
 
     function openMobileSidebar() {
 
@@ -182,16 +290,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-
         sidebar.classList.add(
             "open"
         );
 
-
         document.body.classList.add(
             "sidebar-open"
         );
-
 
         if (sidebarOverlay) {
 
@@ -200,7 +305,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
         }
-
 
         if (mobileMenuBtn) {
 
@@ -224,11 +328,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-
         document.body.classList.remove(
             "sidebar-open"
         );
-
 
         if (sidebarOverlay) {
 
@@ -237,7 +339,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
         }
-
 
         if (mobileMenuBtn) {
 
@@ -259,7 +360,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /* ----------------------------------------------------
-           MOBILE
+           MOBILE SIDEBAR
            ---------------------------------------------------- */
 
         if (isMobile()) {
@@ -272,20 +373,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 closeMobileSidebar();
 
-            }
-
-            else {
+            } else {
 
                 openMobileSidebar();
 
             }
 
             return;
+
         }
 
 
         /* ----------------------------------------------------
-           DESKTOP
+           DESKTOP SIDEBAR
            ---------------------------------------------------- */
 
         document.body.classList.toggle(
@@ -311,189 +411,161 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    /* ========================================================
-       HAMBURGER BUTTON
-       ======================================================== */
+    function initializeSidebar() {
 
-    if (mobileMenuBtn) {
+        if (mobileMenuBtn) {
 
-        mobileMenuBtn.setAttribute(
-            "type",
-            "button"
-        );
+            mobileMenuBtn.type =
+                "button";
 
+            mobileMenuBtn.setAttribute(
+                "aria-label",
+                "Toggle navigation menu"
+            );
 
-        mobileMenuBtn.setAttribute(
-            "aria-label",
-            "Toggle navigation menu"
-        );
-
-
-        mobileMenuBtn.setAttribute(
-            "aria-expanded",
-            "false"
-        );
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
 
 
-        mobileMenuBtn.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-                toggleSidebar();
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       SIDEBAR OVERLAY
-       ======================================================== */
-
-    if (sidebarOverlay) {
-
-        sidebarOverlay.addEventListener(
-            "click",
-            () => {
-
-                closeMobileSidebar();
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       SIDEBAR LINKS
-       ======================================================== */
-
-    $$(".sidebar-link")
-        .forEach(link => {
-
-            link.addEventListener(
+            mobileMenuBtn.addEventListener(
                 "click",
-                () => {
+                event => {
 
-                    /*
-                     * Only close the sidebar on mobile.
-                     * Do not interfere with navigation.
-                     */
+                    event.preventDefault();
 
-                    if (isMobile()) {
+                    event.stopPropagation();
 
-                        closeMobileSidebar();
-
-                    }
+                    toggleSidebar();
 
                 }
             );
 
-        });
+        }
 
 
-    /* ========================================================
-       WINDOW RESIZE
-       ======================================================== */
+        if (sidebarOverlay) {
 
-    let previousMobileState =
-        isMobile();
-
-
-    window.addEventListener(
-        "resize",
-        () => {
-
-            const currentMobileState =
-                isMobile();
-
-
-            /*
-             * If switching between desktop
-             * and mobile, clean up the
-             * previous sidebar state.
-             */
-
-            if (
-                currentMobileState !==
-                previousMobileState
-            ) {
-
-                closeMobileSidebar();
-
-            }
-
-
-            previousMobileState =
-                currentMobileState;
+            sidebarOverlay.addEventListener(
+                "click",
+                closeMobileSidebar
+            );
 
         }
-    );
+
+
+        $$(".sidebar-link")
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    () => {
+
+                        if (isMobile()) {
+                            closeMobileSidebar();
+                        }
+
+                    }
+                );
+
+            });
+
+
+        window.addEventListener(
+            "resize",
+            handleResize
+        );
+
+    }
+
+
+    function handleResize() {
+
+        const currentMobileState =
+            isMobile();
+
+
+        if (
+            currentMobileState !==
+            state.previousMobileState
+        ) {
+
+            closeMobileSidebar();
+
+        }
+
+
+        state.previousMobileState =
+            currentMobileState;
+
+    }
 
 
     /* ========================================================
        LOGOUT
        ======================================================== */
 
-    const logoutBtn =
-        get("logoutBtn");
+    function initializeLogout() {
+
+        if (!logoutBtn) {
+            return;
+        }
 
 
-    if (logoutBtn) {
+        logoutBtn.type =
+            "button";
+
 
         logoutBtn.addEventListener(
             "click",
-            async () => {
+            handleLogout
+        );
 
-                try {
-
-                    logoutBtn.disabled =
-                        true;
+    }
 
 
-                    logoutBtn.classList.add(
-                        "loading"
-                    );
+    async function handleLogout() {
+
+        try {
+
+            logoutBtn.disabled =
+                true;
+
+            logoutBtn.classList.add(
+                "loading"
+            );
 
 
-                    if (
-                        typeof StockFlowAuth !==
-                        "undefined" &&
-                        typeof StockFlowAuth.logout ===
-                        "function"
-                    ) {
+            if (
+                typeof StockFlowAuth !==
+                    "undefined" &&
+                typeof StockFlowAuth.logout ===
+                    "function"
+            ) {
 
-                        await StockFlowAuth.logout();
-
-                    }
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
-
-
-                    logoutBtn.disabled =
-                        false;
-
-
-                    logoutBtn.classList.remove(
-                        "loading"
-                    );
-
-                }
+                await StockFlowAuth.logout();
 
             }
-        );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
+            );
+
+
+            logoutBtn.disabled =
+                false;
+
+            logoutBtn.classList.remove(
+                "loading"
+            );
+
+        }
 
     }
 
@@ -504,31 +576,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function ensureNotificationPanel() {
 
-        /*
-         * If notificationPanel already exists
-         * in dashboard.html, use it.
-         */
+        if (
+            state.notificationPanel
+        ) {
 
-        notificationPanel =
-            get("notificationPanel");
-
-
-        if (notificationPanel) {
-
-            return notificationPanel;
+            return state.notificationPanel;
 
         }
 
 
-        /*
-         * Fallback:
-         * Create notification panel automatically.
-         */
+        const existing =
+            get("notificationPanel");
+
+
+        if (existing) {
+
+            state.notificationPanel =
+                existing;
+
+            return existing;
+
+        }
+
 
         if (!notificationBtn) {
-
             return null;
-
         }
 
 
@@ -539,27 +611,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         if (!wrapper) {
-
             return null;
-
         }
 
 
-        notificationPanel =
+        const panel =
             document.createElement(
                 "div"
             );
 
 
-        notificationPanel.id =
+        panel.id =
             "notificationPanel";
 
 
-        notificationPanel.className =
+        panel.className =
             "notification-panel";
 
 
-        notificationPanel.innerHTML = `
+        panel.innerHTML = `
 
             <div class="notification-header">
 
@@ -586,7 +656,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             </div>
 
-
             <div
                 class="notification-list"
                 id="notificationList"
@@ -612,23 +681,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         wrapper.appendChild(
-            notificationPanel
+            panel
         );
 
 
-        return notificationPanel;
+        state.notificationPanel =
+            panel;
+
+
+        return panel;
 
     }
 
 
     function closeNotifications() {
 
-        if (!notificationPanel) {
+        const panel =
+            state.notificationPanel ||
+            get("notificationPanel");
+
+
+        if (!panel) {
             return;
         }
 
 
-        notificationPanel.classList.remove(
+        panel.classList.remove(
             "show"
         );
 
@@ -647,12 +725,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function openNotifications() {
 
-        if (!notificationPanel) {
+        const panel =
+            ensureNotificationPanel();
+
+
+        if (!panel) {
             return;
         }
 
 
-        notificationPanel.classList.add(
+        panel.classList.add(
             "show"
         );
 
@@ -671,31 +753,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function toggleNotifications() {
 
-        if (!notificationPanel) {
-
+        const panel =
             ensureNotificationPanel();
 
-        }
 
-
-        if (!notificationPanel) {
+        if (!panel) {
             return;
         }
 
 
-        const isOpen =
-            notificationPanel.classList.contains(
+        const open =
+            panel.classList.contains(
                 "show"
             );
 
 
-        if (isOpen) {
+        if (open) {
 
             closeNotifications();
 
-        }
-
-        else {
+        } else {
 
             openNotifications();
 
@@ -704,12 +781,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    if (notificationBtn) {
+    function initializeNotifications() {
 
-        notificationBtn.setAttribute(
-            "type",
-            "button"
-        );
+        if (!notificationBtn) {
+            return;
+        }
+
+
+        notificationBtn.type =
+            "button";
 
 
         notificationBtn.setAttribute(
@@ -726,7 +806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         notificationBtn.addEventListener(
             "click",
-            (event) => {
+            event => {
 
                 event.preventDefault();
 
@@ -737,99 +817,97 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         );
 
+
+        ensureNotificationPanel();
+
     }
 
 
     /* ========================================================
-       NOTIFICATION CLOSE BUTTON
+       GLOBAL CLICK / KEYBOARD CONTROLS
        ======================================================== */
 
-    document.addEventListener(
-        "click",
-        (event) => {
+    function initializeGlobalControls() {
 
-            const closeBtn =
-                event.target.closest(
-                    "#notificationCloseBtn"
-                );
+        document.addEventListener(
+            "click",
+            event => {
+
+                const closeButton =
+                    event.target.closest(
+                        "#notificationCloseBtn"
+                    );
 
 
-            if (closeBtn) {
+                if (closeButton) {
+
+                    closeNotifications();
+
+                    return;
+
+                }
+
+
+                const panel =
+                    state.notificationPanel;
+
+
+                if (!panel) {
+                    return;
+                }
+
+
+                if (
+                    panel.contains(
+                        event.target
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    notificationBtn &&
+                    notificationBtn.contains(
+                        event.target
+                    )
+                ) {
+
+                    return;
+
+                }
+
 
                 closeNotifications();
 
             }
-
-        }
-    );
+        );
 
 
-    /* ========================================================
-       CLOSE NOTIFICATION WHEN CLICKING OUTSIDE
-       ======================================================== */
+        document.addEventListener(
+            "keydown",
+            event => {
 
-    document.addEventListener(
-        "click",
-        (event) => {
+                if (
+                    event.key !==
+                    "Escape"
+                ) {
 
-            if (!notificationPanel) {
-                return;
-            }
+                    return;
+
+                }
 
 
-            if (
-                notificationPanel.contains(
-                    event.target
-                )
-            ) {
+                closeMobileSidebar();
 
-                return;
+                closeNotifications();
 
             }
+        );
 
-
-            if (
-                notificationBtn &&
-                notificationBtn.contains(
-                    event.target
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            closeNotifications();
-
-        }
-    );
-
-
-    /* ========================================================
-       ESC KEY
-       ======================================================== */
-
-    document.addEventListener(
-        "keydown",
-        (event) => {
-
-            if (
-                event.key !==
-                "Escape"
-            ) {
-
-                return;
-
-            }
-
-
-            closeMobileSidebar();
-
-            closeNotifications();
-
-        }
-    );
+    }
 
 
     /* ========================================================
@@ -844,17 +922,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const badge =
             get("connectionBadge");
 
-
         const connectionMessage =
             get("connectionMessage");
 
 
         if (badge) {
-
-            /*
-             * Keep existing dashboard
-             * connection classes.
-             */
 
             badge.textContent =
                 online
@@ -892,116 +964,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       NUMBER FORMAT
+       EMPTY STATE
        ======================================================== */
 
-    function formatNumber(
-        value
+    function emptyState(
+        icon,
+        title,
+        message
     ) {
 
-        const number =
-            Number(value);
+        return `
 
+            <div class="empty-state">
 
-        if (
-            Number.isNaN(number)
-        ) {
+                <i class="${esc(icon)}"></i>
 
-            return "0";
+                <strong>
+                    ${esc(title)}
+                </strong>
 
-        }
+                <span>
+                    ${esc(message)}
+                </span>
 
+            </div>
 
-        return number.toLocaleString();
-
-    }
-
-
-    /* ========================================================
-       ESCAPE HTML
-       ======================================================== */
-
-    function esc(
-        value
-    ) {
-
-        return String(
-            value ?? ""
-        )
-        .replace(
-            /[&<>"']/g,
-            character => ({
-
-                "&":
-                    "&amp;",
-
-                "<":
-                    "&lt;",
-
-                ">":
-                    "&gt;",
-
-                '"':
-                    "&quot;",
-
-                "'":
-                    "&#039;"
-
-            })[character]
-        );
-
-    }
-
-
-    /* ========================================================
-       DATE FORMATTER
-       ======================================================== */
-
-    function formatDate(
-        value
-    ) {
-
-        if (!value) {
-
-            return "—";
-
-        }
-
-
-        const date =
-            new Date(value);
-
-
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-
-            return esc(value);
-
-        }
-
-
-        return date.toLocaleString(
-            undefined,
-            {
-                year:
-                    "numeric",
-
-                month:
-                    "short",
-
-                day:
-                    "numeric",
-
-                hour:
-                    "numeric",
-
-                minute:
-                    "2-digit"
-            }
-        );
+        `;
 
     }
 
@@ -1017,12 +1005,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const value =
             String(
                 type ?? ""
-            )
-            .toLowerCase();
+            ).toLowerCase();
 
 
         if (
             value.includes("stock in") ||
+            value.includes("stock-in") ||
             value.includes("inbound") ||
             value.includes("receive")
         ) {
@@ -1036,6 +1024,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (
             value.includes("stock out") ||
+            value.includes("stock-out") ||
             value.includes("outbound") ||
             value.includes("sale")
         ) {
@@ -1080,6 +1069,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
+        if (
+            value.includes("login") ||
+            value.includes("logout") ||
+            value.includes("auth")
+        ) {
+
+            return `
+                <i class="fa-solid fa-user-shield"></i>
+            `;
+
+        }
+
+
         return `
             <i class="fa-solid fa-clock-rotate-left"></i>
         `;
@@ -1088,7 +1090,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       RENDER NOTIFICATIONS
+       NOTIFICATIONS
        ======================================================== */
 
     function renderNotifications(
@@ -1096,9 +1098,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         const list =
-            get(
-                "notificationList"
-            );
+            get("notificationList");
 
 
         if (!list) {
@@ -1106,39 +1106,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
+        const products =
+            toNumber(
+                getValue(
+                    stats,
+                    "products",
+                    "totalProducts",
+                    "productCount"
+                )
+            );
+
+
         const lowStock =
-            Number(
-                stats?.lowStock ??
-                0
+            toNumber(
+                getValue(
+                    stats,
+                    "lowStock",
+                    "lowStockCount"
+                )
             );
 
 
         const outOfStock =
-            Number(
-                stats?.outOfStock ??
-                0
+            toNumber(
+                getValue(
+                    stats,
+                    "outOfStock",
+                    "outOfStockCount"
+                )
             );
 
 
-        const products =
-            Number(
-                stats?.products ??
-                stats?.totalProducts ??
-                0
-            );
-
-
-        const notifications =
-            [];
+        const notifications = [];
 
 
         /* ----------------------------------------------------
            OUT OF STOCK
            ---------------------------------------------------- */
 
-        if (
-            outOfStock > 0
-        ) {
+        if (outOfStock > 0) {
 
             notifications.push({
 
@@ -1155,7 +1161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "Restock these products to keep inventory available.",
 
                 link:
-                    "inventory.html"
+                    "./inventory.html"
 
             });
 
@@ -1166,9 +1172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
            LOW STOCK
            ---------------------------------------------------- */
 
-        if (
-            lowStock > 0
-        ) {
+        if (lowStock > 0) {
 
             notifications.push({
 
@@ -1185,7 +1189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "Review inventory levels and consider a stock-in.",
 
                 link:
-                    "inventory.html"
+                    "./inventory.html"
 
             });
 
@@ -1196,9 +1200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
            NO PRODUCTS
            ---------------------------------------------------- */
 
-        if (
-            products === 0
-        ) {
+        if (products === 0) {
 
             notifications.push({
 
@@ -1215,7 +1217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "Start by adding your first product.",
 
                 link:
-                    "products.html"
+                    "./products.html"
 
             });
 
@@ -1223,7 +1225,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /* ----------------------------------------------------
-           NOTHING TO REPORT
+           ALL CLEAR
            ---------------------------------------------------- */
 
         if (
@@ -1253,49 +1255,43 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        /* ----------------------------------------------------
-           RENDER
-           ---------------------------------------------------- */
-
         list.innerHTML =
             notifications
-                .map(
-                    item => `
+                .map(item => `
 
-                        <a
-                            href="${esc(item.link)}"
-                            class="notification-item ${esc(item.type)}"
-                        >
+                    <a
+                        href="${esc(item.link)}"
+                        class="notification-item ${esc(item.type)}"
+                    >
 
-                            <div class="notification-icon">
+                        <div class="notification-icon">
 
-                                <i class="${esc(item.icon)}"></i>
+                            <i class="${esc(item.icon)}"></i>
 
-                            </div>
+                        </div>
 
-                            <div class="notification-content">
+                        <div class="notification-content">
 
-                                <strong>
-                                    ${esc(item.title)}
-                                </strong>
+                            <strong>
+                                ${esc(item.title)}
+                            </strong>
 
-                                <span>
-                                    ${esc(item.message)}
-                                </span>
+                            <span>
+                                ${esc(item.message)}
+                            </span>
 
-                            </div>
+                        </div>
 
-                        </a>
+                    </a>
 
-                    `
-                )
+                `)
                 .join("");
 
     }
 
 
     /* ========================================================
-       RENDER RECENT TRANSACTIONS
+       RECENT TRANSACTIONS
        ======================================================== */
 
     function renderTransactions(
@@ -1303,9 +1299,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         const container =
-            get(
-                "recentTransactions"
-            );
+            get("recentTransactions");
 
 
         if (!container) {
@@ -1320,24 +1314,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             transactions.length === 0
         ) {
 
-            container.innerHTML = `
-
-                <div class="empty-state">
-
-                    <i class="fa-solid fa-inbox"></i>
-
-                    <strong>
-                        No recent transactions
-                    </strong>
-
-                    <span>
-                        Stock In and Stock Out
-                        transactions will appear here.
-                    </span>
-
-                </div>
-
-            `;
+            container.innerHTML =
+                emptyState(
+                    "fa-solid fa-inbox",
+                    "No recent transactions",
+                    "Stock In and Stock Out transactions will appear here."
+                );
 
             return;
 
@@ -1346,95 +1328,106 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         container.innerHTML =
             transactions
-                .slice(0, 8)
-                .map(
-                    transaction => {
+                .slice(
+                    0,
+                    MAX_ACTIVITY_ITEMS
+                )
+                .map(transaction => {
 
-                        const product =
-                            transaction.PRODUCT_NAME ||
-                            transaction.productName ||
-                            transaction.PRODUCT ||
-                            transaction.product ||
-                            transaction.NAME ||
-                            transaction.name ||
-                            "Inventory Item";
-
-
-                        const type =
-                            transaction.TYPE ||
-                            transaction.type ||
-                            transaction.ACTION ||
-                            transaction.action ||
-                            transaction.TRANSACTION_TYPE ||
-                            transaction.transactionType ||
-                            "Inventory Activity";
+                    const product =
+                        getValue(
+                            transaction,
+                            "PRODUCT_NAME",
+                            "productName",
+                            "PRODUCT",
+                            "product",
+                            "NAME",
+                            "name"
+                        ) ||
+                        "Inventory Item";
 
 
-                        const quantity =
-                            transaction.QUANTITY ??
-                            transaction.quantity ??
-                            transaction.QTY ??
-                            transaction.qty ??
-                            0;
+                    const type =
+                        getValue(
+                            transaction,
+                            "TYPE",
+                            "type",
+                            "ACTION",
+                            "action",
+                            "TRANSACTION_TYPE",
+                            "transactionType"
+                        ) ||
+                        "Inventory Activity";
 
 
-                        const date =
-                            transaction.DATE ||
-                            transaction.date ||
-                            transaction.CREATED_AT ||
-                            transaction.createdAt ||
-                            "";
+                    const quantity =
+                        getValue(
+                            transaction,
+                            "QUANTITY",
+                            "quantity",
+                            "QTY",
+                            "qty"
+                        );
 
 
-                        return `
-
-                            <div class="activity-row">
-
-                                <div class="activity-icon">
-
-                                    ${activityIcon(type)}
-
-                                </div>
-
-
-                                <div class="activity-content">
-
-                                    <strong>
-                                        ${esc(product)}
-                                    </strong>
-
-                                    <small>
-                                        ${esc(type)}
-                                    </small>
-
-                                </div>
+                    const date =
+                        getValue(
+                            transaction,
+                            "DATE",
+                            "date",
+                            "CREATED_AT",
+                            "createdAt",
+                            "UPDATED_AT",
+                            "updatedAt"
+                        );
 
 
-                                <div class="activity-meta">
+                    return `
 
-                                    <strong>
-                                        ${formatNumber(quantity)}
-                                    </strong>
+                        <div class="activity-row">
 
-                                    <small>
-                                        ${formatDate(date)}
-                                    </small>
+                            <div class="activity-icon">
 
-                                </div>
+                                ${activityIcon(type)}
 
                             </div>
 
-                        `;
+                            <div class="activity-content">
 
-                    }
-                )
+                                <strong>
+                                    ${esc(product)}
+                                </strong>
+
+                                <small>
+                                    ${esc(type)}
+                                </small>
+
+                            </div>
+
+                            <div class="activity-meta">
+
+                                <strong>
+                                    ${formatNumber(quantity)}
+                                </strong>
+
+                                <small>
+                                    ${formatDate(date)}
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                })
                 .join("");
 
     }
 
 
     /* ========================================================
-       RENDER RECENT ACTIVITY
+       RECENT ACTIVITY
        ======================================================== */
 
     function renderActivity(
@@ -1442,9 +1435,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         const container =
-            get(
-                "recentActivity"
-            );
+            get("recentActivity");
 
 
         if (!container) {
@@ -1459,24 +1450,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             activities.length === 0
         ) {
 
-            container.innerHTML = `
-
-                <div class="empty-state">
-
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-
-                    <strong>
-                        No recent activity
-                    </strong>
-
-                    <span>
-                        Your latest inventory activities
-                        will appear here.
-                    </span>
-
-                </div>
-
-            `;
+            container.innerHTML =
+                emptyState(
+                    "fa-solid fa-clock-rotate-left",
+                    "No recent activity",
+                    "Your latest inventory activities will appear here."
+                );
 
             return;
 
@@ -1485,74 +1464,83 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         container.innerHTML =
             activities
-                .slice(0, 8)
-                .map(
-                    activity => {
+                .slice(
+                    0,
+                    MAX_ACTIVITY_ITEMS
+                )
+                .map(activity => {
 
-                        const name =
-                            activity.PRODUCT_NAME ||
-                            activity.productName ||
-                            activity.NAME ||
-                            activity.name ||
-                            activity.DESCRIPTION ||
-                            activity.description ||
-                            "Inventory activity";
-
-
-                        const type =
-                            activity.TYPE ||
-                            activity.type ||
-                            activity.ACTION ||
-                            activity.action ||
-                            "Activity";
+                    const name =
+                        getValue(
+                            activity,
+                            "PRODUCT_NAME",
+                            "productName",
+                            "NAME",
+                            "name",
+                            "DESCRIPTION",
+                            "description"
+                        ) ||
+                        "Inventory activity";
 
 
-                        const date =
-                            activity.DATE ||
-                            activity.date ||
-                            activity.CREATED_AT ||
-                            activity.createdAt ||
-                            "";
+                    const type =
+                        getValue(
+                            activity,
+                            "TYPE",
+                            "type",
+                            "ACTION",
+                            "action"
+                        ) ||
+                        "Activity";
 
 
-                        return `
-
-                            <div class="activity-row">
-
-                                <div class="activity-icon">
-
-                                    ${activityIcon(type)}
-
-                                </div>
-
-
-                                <div class="activity-content">
-
-                                    <strong>
-                                        ${esc(name)}
-                                    </strong>
-
-                                    <small>
-                                        ${esc(type)}
-                                    </small>
-
-                                </div>
+                    const date =
+                        getValue(
+                            activity,
+                            "DATE",
+                            "date",
+                            "CREATED_AT",
+                            "createdAt",
+                            "UPDATED_AT",
+                            "updatedAt"
+                        );
 
 
-                                <div class="activity-meta">
+                    return `
 
-                                    <small>
-                                        ${formatDate(date)}
-                                    </small>
+                        <div class="activity-row">
 
-                                </div>
+                            <div class="activity-icon">
+
+                                ${activityIcon(type)}
 
                             </div>
 
-                        `;
+                            <div class="activity-content">
 
-                    }
-                )
+                                <strong>
+                                    ${esc(name)}
+                                </strong>
+
+                                <small>
+                                    ${esc(type)}
+                                </small>
+
+                            </div>
+
+                            <div class="activity-meta">
+
+                                <small>
+                                    ${formatDate(date)}
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                })
                 .join("");
 
     }
@@ -1567,9 +1555,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         const container =
-            get(
-                "inventoryOverview"
-            );
+            get("inventoryOverview");
 
 
         if (!container) {
@@ -1578,25 +1564,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const totalStock =
-            Number(
-                stats.totalStock ??
-                stats.stock ??
-                stats.total ??
-                0
+            toNumber(
+                getValue(
+                    stats,
+                    "totalStock",
+                    "stock",
+                    "totalUnits"
+                )
             );
 
 
         const lowStock =
-            Number(
-                stats.lowStock ??
-                0
+            toNumber(
+                getValue(
+                    stats,
+                    "lowStock",
+                    "lowStockCount"
+                )
             );
 
 
         const outOfStock =
-            Number(
-                stats.outOfStock ??
-                0
+            toNumber(
+                getValue(
+                    stats,
+                    "outOfStock",
+                    "outOfStockCount"
+                )
             );
 
 
@@ -1680,41 +1674,128 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
+       RESET DASHBOARD
+       ======================================================== */
+
+    function resetDashboard() {
+
+        const counters = [
+
+            "productsCount",
+            "categoriesCount",
+            "suppliersCount",
+            "totalStockCount",
+            "stockInCount",
+            "stockOutCount",
+            "lowStockCount",
+            "outOfStockCount"
+
+        ];
+
+
+        counters.forEach(
+            id => setText(id, "—")
+        );
+
+
+        const overview =
+            get("inventoryOverview");
+
+
+        if (overview) {
+
+            overview.innerHTML =
+                emptyState(
+                    "fa-solid fa-cloud-arrow-down",
+                    "Inventory data unavailable",
+                    "Unable to load the latest inventory information."
+                );
+
+        }
+
+    }
+
+
+    /* ========================================================
+       API VALIDATION
+       ======================================================== */
+
+    function validateDashboardAPI() {
+
+        if (
+            typeof StockFlowAPI ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "StockFlowAPI is not available. Check api.js."
+            );
+
+        }
+
+
+        if (
+            typeof StockFlowAPI.dashboardStats !==
+            "function"
+        ) {
+
+            throw new Error(
+                "dashboardStats() is not available in api.js."
+            );
+
+        }
+
+    }
+
+
+    /* ========================================================
        LOAD DASHBOARD
        ======================================================== */
 
-    async function loadDashboard() {
+    async function loadDashboard(
+        options = {}
+    ) {
+
+        const {
+            silent = false
+        } = options;
+
+
+        /* ----------------------------------------------------
+           PREVENT DUPLICATE REQUESTS
+           ---------------------------------------------------- */
+
+        if (state.isLoading) {
+            return false;
+        }
+
+
+        state.isLoading =
+            true;
+
 
         try {
 
-            setConnectionStatus(
-                false,
-                "Connecting to StockFlow..."
-            );
+            if (!silent) {
 
-
-            if (
-                typeof StockFlowAPI ===
-                "undefined"
-            ) {
-
-                throw new Error(
-                    "StockFlowAPI is not available. Check API.js."
+                setConnectionStatus(
+                    false,
+                    "Connecting to StockFlow..."
                 );
 
             }
 
 
-            if (
-                typeof StockFlowAPI.dashboardStats !==
-                "function"
-            ) {
+            if (!navigator.onLine) {
 
                 throw new Error(
-                    "dashboardStats() is not available in API.js."
+                    "Your browser is offline."
                 );
 
             }
+
+
+            validateDashboardAPI();
 
 
             const response =
@@ -1734,69 +1815,107 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
+            /* ------------------------------------------------
+               NORMALIZE RESPONSE
+               ------------------------------------------------ */
+
             const stats =
                 response.stats ||
                 response.data ||
                 response;
 
 
-            /* =================================================
-               MAIN COUNTERS
-               ================================================= */
+            /* ------------------------------------------------
+               MAIN STATISTICS
+               ------------------------------------------------ */
 
             const products =
-                stats.products ??
-                stats.totalProducts ??
-                stats.productCount ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "products",
+                        "totalProducts",
+                        "productCount"
+                    )
+                );
 
 
             const categories =
-                stats.categories ??
-                stats.totalCategories ??
-                stats.categoryCount ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "categories",
+                        "totalCategories",
+                        "categoryCount"
+                    )
+                );
 
 
             const suppliers =
-                stats.suppliers ??
-                stats.totalSuppliers ??
-                stats.supplierCount ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "suppliers",
+                        "totalSuppliers",
+                        "supplierCount"
+                    )
+                );
 
 
             const totalStock =
-                stats.totalStock ??
-                stats.stock ??
-                stats.totalUnits ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "totalStock",
+                        "stock",
+                        "totalUnits"
+                    )
+                );
 
 
             const stockIn =
-                stats.stockIn ??
-                stats.totalStockIn ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "stockIn",
+                        "totalStockIn"
+                    )
+                );
 
 
             const stockOut =
-                stats.stockOut ??
-                stats.totalStockOut ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "stockOut",
+                        "totalStockOut"
+                    )
+                );
 
 
             const lowStock =
-                stats.lowStock ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "lowStock",
+                        "lowStockCount"
+                    )
+                );
 
 
             const outOfStock =
-                stats.outOfStock ??
-                0;
+                toNumber(
+                    getValue(
+                        stats,
+                        "outOfStock",
+                        "outOfStockCount"
+                    )
+                );
 
 
-            /* =================================================
-               DASHBOARD CARDS
-               ================================================= */
+            /* ------------------------------------------------
+               DASHBOARD COUNTERS
+               ------------------------------------------------ */
 
             setText(
                 "productsCount",
@@ -1846,9 +1965,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* =================================================
+            /* ------------------------------------------------
                INVENTORY OVERVIEW
-               ================================================= */
+               ------------------------------------------------ */
 
             renderInventoryOverview({
 
@@ -1859,37 +1978,41 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
 
-            /* =================================================
-               RECENT TRANSACTIONS
-               ================================================= */
+            /* ------------------------------------------------
+               TRANSACTIONS
+               ------------------------------------------------ */
 
-            renderTransactions(
-
+            const transactions =
                 response.recentTransactions ||
                 stats.recentTransactions ||
                 response.transactions ||
-                []
+                [];
 
+
+            renderTransactions(
+                transactions
             );
 
 
-            /* =================================================
-               RECENT ACTIVITY
-               ================================================= */
+            /* ------------------------------------------------
+               ACTIVITY
+               ------------------------------------------------ */
 
-            renderActivity(
-
+            const activities =
                 response.recentActivity ||
                 stats.recentActivity ||
                 response.activity ||
-                []
+                [];
 
+
+            renderActivity(
+                activities
             );
 
 
-            /* =================================================
+            /* ------------------------------------------------
                NOTIFICATIONS
-               ================================================= */
+               ------------------------------------------------ */
 
             renderNotifications({
 
@@ -1900,9 +2023,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
 
-            /* =================================================
-               CONNECTION
-               ================================================= */
+            /* ------------------------------------------------
+               CONNECTION STATUS
+               ------------------------------------------------ */
 
             setConnectionStatus(
                 true,
@@ -1910,31 +2033,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* =================================================
+            /* ------------------------------------------------
                LAST UPDATED
-               ================================================= */
+               ------------------------------------------------ */
 
             const lastUpdated =
-                get(
-                    "lastUpdated"
-                );
+                get("lastUpdated");
 
 
             if (lastUpdated) {
 
                 lastUpdated.textContent =
-                    "Updated " +
-                    new Date()
-                        .toLocaleTimeString(
-                            undefined,
-                            {
-                                hour:
-                                    "numeric",
-
-                                minute:
-                                    "2-digit"
-                            }
-                        );
+                    `Updated ${
+                        new Date()
+                            .toLocaleTimeString(
+                                undefined,
+                                {
+                                    hour: "numeric",
+                                    minute: "2-digit"
+                                }
+                            )
+                    }`;
 
             }
 
@@ -1951,69 +2070,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* =================================================
-               FALLBACK COUNTERS
-               ================================================= */
+            resetDashboard();
 
-            [
-
-                "productsCount",
-                "categoriesCount",
-                "suppliersCount",
-                "totalStockCount",
-                "stockInCount",
-                "stockOutCount",
-                "lowStockCount",
-                "outOfStockCount"
-
-            ].forEach(
-                id =>
-                    setText(
-                        id,
-                        "—"
-                    )
-            );
-
-
-            /* =================================================
-               FALLBACK INVENTORY
-               ================================================= */
-
-            const overview =
-                get(
-                    "inventoryOverview"
-                );
-
-
-            if (overview) {
-
-                overview.innerHTML = `
-
-                    <div class="empty-state">
-
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-
-                        <strong>
-                            Inventory data unavailable
-                        </strong>
-
-                        <span>
-                            ${esc(
-                                error.message ||
-                                "Unable to connect to the database."
-                            )}
-                        </span>
-
-                    </div>
-
-                `;
-
-            }
-
-
-            /* =================================================
-               CONNECTION ERROR
-               ================================================= */
 
             setConnectionStatus(
                 false,
@@ -2026,68 +2084,74 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+        finally {
+
+            state.isLoading =
+                false;
+
+        }
+
     }
 
 
     /* ========================================================
-       REFRESH DASHBOARD
+       REFRESH BUTTON STATE
+       ======================================================== */
+
+    function setRefreshButtonsLoading(
+        loading
+    ) {
+
+        const buttons = [
+
+            get("refreshDashboardBtn"),
+            get("refreshBtn")
+
+        ].filter(Boolean);
+
+
+        buttons.forEach(button => {
+
+            button.disabled =
+                loading;
+
+
+            button.classList.toggle(
+                "loading",
+                loading
+            );
+
+        });
+
+    }
+
+
+    /* ========================================================
+       MANUAL REFRESH
        ======================================================== */
 
     async function refreshDashboard() {
 
-        const refreshBtn =
-            get(
-                "refreshDashboardBtn"
-            );
+        if (state.isLoading) {
+            return false;
+        }
 
 
-        const refreshBtn2 =
-            get(
-                "refreshBtn"
-            );
-
-
-        const buttons =
-            [
-                refreshBtn,
-                refreshBtn2
-            ]
-            .filter(Boolean);
-
-
-        buttons.forEach(
-            button => {
-
-                button.disabled =
-                    true;
-
-                button.classList.add(
-                    "loading"
-                );
-
-            }
+        setRefreshButtonsLoading(
+            true
         );
 
 
         try {
 
-            await loadDashboard();
+            return await loadDashboard();
 
         }
 
         finally {
 
-            buttons.forEach(
-                button => {
-
-                    button.disabled =
-                        false;
-
-                    button.classList.remove(
-                        "loading"
-                    );
-
-                }
+            setRefreshButtonsLoading(
+                false
             );
 
         }
@@ -2099,22 +2163,41 @@ document.addEventListener("DOMContentLoaded", async () => {
        REFRESH BUTTONS
        ======================================================== */
 
-    get(
-        "refreshDashboardBtn"
-    )
-    ?.addEventListener(
-        "click",
-        refreshDashboard
-    );
+    function initializeRefreshButtons() {
+
+        const refreshButtons = [
+
+            "refreshDashboardBtn",
+            "refreshBtn"
+
+        ];
 
 
-    get(
-        "refreshBtn"
-    )
-    ?.addEventListener(
-        "click",
-        refreshDashboard
-    );
+        refreshButtons.forEach(
+            id => {
+
+                const button =
+                    get(id);
+
+
+                if (!button) {
+                    return;
+                }
+
+
+                button.type =
+                    "button";
+
+
+                button.addEventListener(
+                    "click",
+                    refreshDashboard
+                );
+
+            }
+        );
+
+    }
 
 
     /* ========================================================
@@ -2137,7 +2220,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         button.addEventListener(
             "click",
-            () => {
+            event => {
+
+                event.preventDefault();
 
                 window.location.href =
                     destination;
@@ -2148,165 +2233,269 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    bindQuickAction(
-        "addProductBtn",
-        "products.html"
-    );
+    function initializeQuickActions() {
+
+        bindQuickAction(
+            "addProductBtn",
+            "./products.html"
+        );
 
 
-    bindQuickAction(
-        "stockInBtn",
-        "stock-in.html"
-    );
+        bindQuickAction(
+            "stockInBtn",
+            "./stock-in.html"
+        );
 
 
-    bindQuickAction(
-        "stockOutBtn",
-        "stock-out.html"
-    );
+        bindQuickAction(
+            "stockOutBtn",
+            "./stock-out.html"
+        );
 
 
-    bindQuickAction(
-        "manageProductsBtn",
-        "products.html"
-    );
+        bindQuickAction(
+            "manageProductsBtn",
+            "./products.html"
+        );
 
 
-    bindQuickAction(
-        "manageCategoriesBtn",
-        "categories.html"
-    );
+        bindQuickAction(
+            "manageCategoriesBtn",
+            "./categories.html"
+        );
 
 
-    bindQuickAction(
-        "manageSuppliersBtn",
-        "suppliers.html"
-    );
+        bindQuickAction(
+            "manageSuppliersBtn",
+            "./suppliers.html"
+        );
+
+    }
 
 
     /* ========================================================
        AUTO REFRESH
        ======================================================== */
 
-    let refreshTimer =
-        null;
+    function stopAutoRefresh() {
+
+        if (state.refreshTimer) {
+
+            clearInterval(
+                state.refreshTimer
+            );
+
+            state.refreshTimer =
+                null;
+
+        }
+
+    }
 
 
     function startAutoRefresh() {
 
-        if (refreshTimer) {
-
-            clearInterval(
-                refreshTimer
-            );
-
-        }
+        stopAutoRefresh();
 
 
-        refreshTimer =
+        state.refreshTimer =
             setInterval(
                 () => {
 
-                    loadDashboard();
+                    /*
+                     * Silent refresh prevents the dashboard
+                     * from showing a fake "Connecting..."
+                     * state every 60 seconds.
+                     */
+
+                    loadDashboard({
+                        silent: true
+                    });
 
                 },
-                60000
+                AUTO_REFRESH_INTERVAL
             );
 
     }
 
 
     /* ========================================================
-       INITIAL NOTIFICATION PANEL
+       ONLINE / OFFLINE EVENTS
        ======================================================== */
 
-    ensureNotificationPanel();
+    function initializeConnectionEvents() {
+
+        window.addEventListener(
+            "online",
+            () => {
+
+                setConnectionStatus(
+                    true,
+                    "Internet connection restored. Refreshing..."
+                );
+
+
+                loadDashboard();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "offline",
+            () => {
+
+                setConnectionStatus(
+                    false,
+                    "Your browser is offline."
+                );
+
+            }
+        );
+
+    }
 
 
     /* ========================================================
-       INITIAL DASHBOARD LOAD
+       VISIBILITY CHANGE
        ======================================================== */
 
-    await loadDashboard();
+    function initializeVisibilityHandler() {
+
+        document.addEventListener(
+            "visibilitychange",
+            () => {
+
+                if (
+                    document.visibilityState !==
+                    "visible"
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * Refresh when the user returns
+                 * to the dashboard.
+                 */
+
+                loadDashboard({
+                    silent: true
+                });
+
+            }
+        );
+
+    }
 
 
     /* ========================================================
-       AUTO REFRESH
-       ======================================================== */
-
-    startAutoRefresh();
-
-
-    /* ========================================================
-       ONLINE EVENT
+       CLEANUP
        ======================================================== */
 
     window.addEventListener(
-        "online",
-        () => {
-
-            setConnectionStatus(
-                true,
-                "Internet connection restored. Refreshing..."
-            );
-
-
-            loadDashboard();
-
-        }
+        "beforeunload",
+        stopAutoRefresh
     );
 
 
     /* ========================================================
-       OFFLINE EVENT
+       PUBLIC DASHBOARD API
        ======================================================== */
 
-    window.addEventListener(
-        "offline",
-        () => {
+    function exposeDashboardAPI() {
 
-            setConnectionStatus(
-                false,
-                "Your browser is offline."
-            );
+        window.StockFlowDashboard = {
 
-        }
-    );
+            refresh:
+                refreshDashboard,
+
+            reload:
+                loadDashboard,
+
+            currentUser:
+                () => state.currentUser,
+
+            openSidebar:
+                openMobileSidebar,
+
+            closeSidebar:
+                closeMobileSidebar,
+
+            toggleSidebar:
+                toggleSidebar,
+
+            openNotifications:
+                openNotifications,
+
+            closeNotifications:
+                closeNotifications,
+
+            toggleNotifications:
+                toggleNotifications
+
+        };
+
+    }
 
 
     /* ========================================================
-       EXPOSE DASHBOARD API
+       INITIALIZE DASHBOARD
        ======================================================== */
 
-    window.StockFlowDashboard = {
+    async function initializeDashboard() {
 
-        refresh:
-            refreshDashboard,
+        const authenticated =
+            await initializeAuthentication();
 
-        reload:
-            loadDashboard,
 
-        currentUser:
-            () => currentUser,
+        if (!authenticated) {
+            return;
+        }
 
-        openSidebar:
-            openMobileSidebar,
 
-        closeSidebar:
-            closeMobileSidebar,
+        initializeSidebar();
 
-        toggleSidebar:
-            toggleSidebar,
+        initializeLogout();
 
-        openNotifications:
-            openNotifications,
+        initializeNotifications();
 
-        closeNotifications:
-            closeNotifications,
+        initializeGlobalControls();
 
-        toggleNotifications:
-            toggleNotifications
+        initializeRefreshButtons();
 
-    };
+        initializeQuickActions();
+
+        initializeConnectionEvents();
+
+        initializeVisibilityHandler();
+
+
+        exposeDashboardAPI();
+
+
+        /* ----------------------------------------------------
+           INITIAL LOAD
+           ---------------------------------------------------- */
+
+        await loadDashboard();
+
+
+        /* ----------------------------------------------------
+           AUTO REFRESH
+           ---------------------------------------------------- */
+
+        startAutoRefresh();
+
+    }
+
+
+    /* ========================================================
+       START
+       ======================================================== */
+
+    initializeDashboard();
 
 });
