@@ -1,6 +1,6 @@
 /* =====================================================
    STOCKFLOW
-   MANUAL OTP VERIFICATION
+   MANUAL EMAIL / PHONE OTP VERIFICATION
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -56,310 +56,519 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
+       STORAGE KEYS
+    ===================================================== */
+
+    const STORAGE_KEYS = [
+
+        "STOCKFLOW_VERIFICATION_STATE",
+        "STOCKFLOW_SESSION",
+        "STOCKFLOW_AUTH",
+        "STOCKFLOW_USER",
+
+        "STOCKFLOW_OTP_EMAIL",
+        "STOCKFLOW_OTP_PHONE",
+        "STOCKFLOW_OTP_USERNAME",
+        "STOCKFLOW_OTP_IDENTITY",
+        "STOCKFLOW_OTP_CHANNEL",
+
+        "STOCKFLOW_PENDING_VERIFICATION",
+        "STOCKFLOW_PENDING_REGISTRATION",
+        "STOCKFLOW_REGISTRATION",
+        "STOCKFLOW_REGISTER_DATA",
+        "STOCKFLOW_USER_DATA"
+
+    ];
+
+
+    /* =====================================================
        STORAGE HELPERS
     ===================================================== */
 
-    const STORAGE_KEYS = {
-
-        verification:
-            "STOCKFLOW_VERIFICATION_STATE",
-
-        session:
-            "STOCKFLOW_SESSION",
-
-        auth:
-            "STOCKFLOW_AUTH",
-
-        user:
-            "STOCKFLOW_USER",
-
-        email:
-            "STOCKFLOW_OTP_EMAIL",
-
-        phone:
-            "STOCKFLOW_OTP_PHONE",
-
-        username:
-            "STOCKFLOW_OTP_USERNAME",
-
-        identity:
-            "STOCKFLOW_OTP_IDENTITY",
-
-        channel:
-            "STOCKFLOW_OTP_CHANNEL",
-
-        emailSent:
-            "STOCKFLOW_OTP_EMAIL_SENT",
-
-        phoneSent:
-            "STOCKFLOW_OTP_PHONE_SENT"
-
-    };
-
-
-    function readStorage(key) {
+    function safeGet(storage, key) {
 
         try {
 
-            return localStorage.getItem(key);
+            return storage.getItem(key);
 
         } catch (error) {
 
             console.error(
-                "localStorage error:",
+                "Storage read error:",
                 error
             );
 
             return null;
+
         }
 
     }
 
 
-    function readSession(key) {
+    function getStoredValue(key) {
 
-        try {
-
-            return sessionStorage.getItem(key);
-
-        } catch (error) {
-
-            console.error(
-                "sessionStorage error:",
-                error
+        const sessionValue =
+            safeGet(
+                sessionStorage,
+                key
             );
 
-            return null;
+        if (sessionValue !== null) {
+
+            return sessionValue;
+
         }
 
-    }
 
-
-    function getValue(key) {
-
-        return (
-            readSession(key) ||
-            readStorage(key)
+        return safeGet(
+            localStorage,
+            key
         );
 
     }
 
 
-    function parseJSON(value) {
+    function parseObject(value) {
 
         if (!value) {
+
             return null;
+
         }
+
+
+        if (
+            typeof value ===
+            "object"
+        ) {
+
+            return value;
+
+        }
+
 
         try {
 
-            return JSON.parse(value);
-
-        } catch (error) {
-
-            return null;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET VERIFICATION STATE
-    ===================================================== */
-
-    function getVerificationState() {
-
-        const possibleValues = [
-
-            getValue(
-                STORAGE_KEYS.verification
-            ),
-
-            getValue(
-                STORAGE_KEYS.session
-            ),
-
-            getValue(
-                STORAGE_KEYS.auth
-            ),
-
-            getValue(
-                STORAGE_KEYS.user
-            )
-
-        ];
-
-
-        for (const value of possibleValues) {
-
             const parsed =
-                parseJSON(value);
+                JSON.parse(value);
+
 
             if (
                 parsed &&
-                typeof parsed === "object"
+                typeof parsed ===
+                "object"
             ) {
 
                 return parsed;
 
             }
 
+        } catch (error) {
+
+            // Value is not JSON.
+
         }
 
 
-        return {};
+        return null;
 
     }
 
 
-    const verificationState =
-        getVerificationState();
+    /* =====================================================
+       FIND USER VERIFICATION DATA
+    ===================================================== */
+
+    function getVerificationData() {
+
+        const result = {
+
+            email: "",
+            phone: "",
+            username: "",
+            identity: "",
+            uid: "",
+            channel: "email"
+
+        };
+
+
+        /*
+         * First check known STOCKFLOW storage keys.
+         */
+
+        for (
+            const key of STORAGE_KEYS
+        ) {
+
+            const raw =
+                getStoredValue(key);
+
+
+            if (!raw) {
+
+                continue;
+
+            }
+
+
+            const data =
+                parseObject(raw);
+
+
+            if (!data) {
+
+                /*
+                 * Some keys may contain
+                 * a plain email/phone.
+                 */
+
+                if (
+                    key ===
+                    "STOCKFLOW_OTP_EMAIL" &&
+                    raw.includes("@")
+                ) {
+
+                    result.email =
+                        raw.trim();
+
+                }
+
+
+                if (
+                    key ===
+                    "STOCKFLOW_OTP_PHONE"
+                ) {
+
+                    result.phone =
+                        raw.trim();
+
+                }
+
+
+                if (
+                    key ===
+                    "STOCKFLOW_OTP_USERNAME"
+                ) {
+
+                    result.username =
+                        raw.trim();
+
+                }
+
+
+                if (
+                    key ===
+                    "STOCKFLOW_OTP_IDENTITY"
+                ) {
+
+                    result.identity =
+                        raw.trim();
+
+                }
+
+
+                continue;
+
+            }
+
+
+            /*
+             * Accept several possible
+             * registration property names.
+             */
+
+            result.email =
+                result.email ||
+                data.email ||
+                data.gmail ||
+                data.emailAddress ||
+                data.gmailAddress ||
+                "";
+
+
+            result.phone =
+                result.phone ||
+                data.phone ||
+                data.phoneNumber ||
+                data.mobile ||
+                data.mobileNumber ||
+                "";
+
+
+            result.username =
+                result.username ||
+                data.username ||
+                data.userName ||
+                "";
+
+
+            result.uid =
+                result.uid ||
+                data.uid ||
+                data.userId ||
+                data.id ||
+                "";
+
+
+            result.identity =
+                result.identity ||
+                data.identity ||
+                data.uid ||
+                data.userId ||
+                data.username ||
+                data.email ||
+                "";
+
+
+            result.channel =
+                data.channel ||
+                data.verificationMethod ||
+                data.method ||
+                result.channel;
+
+        }
+
+
+        /* =================================================
+           SCAN STORAGE AS FALLBACK
+        ================================================= */
+
+        if (
+            !result.email &&
+            !result.phone
+        ) {
+
+            const storages = [
+
+                localStorage,
+                sessionStorage
+
+            ];
+
+
+            for (
+                const storage of storages
+            ) {
+
+                for (
+                    let i = 0;
+                    i < storage.length;
+                    i++
+                ) {
+
+                    const key =
+                        storage.key(i);
+
+
+                    if (!key) {
+
+                        continue;
+
+                    }
+
+
+                    const raw =
+                        safeGet(
+                            storage,
+                            key
+                        );
+
+
+                    const data =
+                        parseObject(raw);
+
+
+                    if (!data) {
+
+                        continue;
+
+                    }
+
+
+                    const foundEmail =
+                        data.email ||
+                        data.gmail ||
+                        data.emailAddress ||
+                        data.gmailAddress ||
+                        "";
+
+
+                    const foundPhone =
+                        data.phone ||
+                        data.phoneNumber ||
+                        data.mobile ||
+                        data.mobileNumber ||
+                        "";
+
+
+                    if (
+                        foundEmail ||
+                        foundPhone
+                    ) {
+
+                        result.email =
+                            result.email ||
+                            foundEmail;
+
+
+                        result.phone =
+                            result.phone ||
+                            foundPhone;
+
+
+                        result.username =
+                            result.username ||
+                            data.username ||
+                            data.userName ||
+                            "";
+
+
+                        result.uid =
+                            result.uid ||
+                            data.uid ||
+                            data.userId ||
+                            data.id ||
+                            "";
+
+
+                        result.identity =
+                            result.identity ||
+                            data.identity ||
+                            data.uid ||
+                            data.userId ||
+                            data.username ||
+                            foundEmail ||
+                            "";
+
+
+                        break;
+
+                    }
+
+                }
+
+
+                if (
+                    result.email ||
+                    result.phone
+                ) {
+
+                    break;
+
+                }
+
+            }
+
+        }
+
+
+        /* =================================================
+           URL PARAMETER FALLBACK
+        ================================================= */
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        result.email =
+            result.email ||
+            params.get("email") ||
+            params.get("gmail") ||
+            "";
+
+
+        result.phone =
+            result.phone ||
+            params.get("phone") ||
+            "";
+
+
+        result.username =
+            result.username ||
+            params.get("username") ||
+            "";
+
+
+        result.uid =
+            result.uid ||
+            params.get("uid") ||
+            "";
+
+
+        result.identity =
+            result.identity ||
+            params.get("identity") ||
+            result.uid ||
+            result.username ||
+            result.email ||
+            "";
+
+
+        return result;
+
+    }
 
 
     /* =====================================================
-       NORMALIZE USER INFORMATION
+       USER DATA
     ===================================================== */
 
+    const verificationData =
+        getVerificationData();
+
+
     const email =
-        verificationState.email ||
-        verificationState.gmail ||
-        getValue(STORAGE_KEYS.email) ||
-        "";
+        String(
+            verificationData.email || ""
+        ).trim();
 
 
     const phone =
-        verificationState.phone ||
-        getValue(STORAGE_KEYS.phone) ||
-        "";
+        String(
+            verificationData.phone || ""
+        ).trim();
 
 
     const username =
-        verificationState.username ||
-        getValue(STORAGE_KEYS.username) ||
-        "";
+        String(
+            verificationData.username || ""
+        ).trim();
 
 
     const identity =
-        verificationState.identity ||
-        verificationState.uid ||
-        getValue(STORAGE_KEYS.identity) ||
-        email ||
-        username ||
-        "";
-
-
-    const channel =
-        verificationState.channel ||
-        getValue(STORAGE_KEYS.channel) ||
-        "email";
+        String(
+            verificationData.identity ||
+            email ||
+            username ||
+            ""
+        ).trim();
 
 
     const uid =
-        verificationState.uid ||
-        verificationState.userId ||
-        "";
+        String(
+            verificationData.uid || ""
+        ).trim();
 
 
-    /* =====================================================
-       CHECK VERIFICATION INFORMATION
-    ===================================================== */
-
-    if (!email && !phone && !identity) {
-
-        console.error(
-            "STOCKFLOW verification information is missing.",
-            verificationState
-        );
+    const channel =
+        verificationData.channel ||
+        "email";
 
 
-        if (description) {
-
-            description.textContent =
-                "Verification information is missing. Please return to registration.";
-
+    console.log(
+        "STOCKFLOW verification data:",
+        {
+            email: email,
+            phone: phone,
+            username: username,
+            identity: identity,
+            uid: uid,
+            channel: channel
         }
-
-
-        if (otpHelp) {
-
-            otpHelp.textContent =
-                "Please return to registration and register again.";
-
-        }
-
-
-        disableOTP();
-
-        return;
-
-    }
-
-
-    /* =====================================================
-       DISPLAY DESTINATION
-    ===================================================== */
-
-    if (email) {
-
-        if (emailStatus) {
-
-            emailStatus.textContent =
-                "A 6-digit verification code will be sent to your registered Gmail.";
-
-        }
-
-    }
-
-
-    if (phone) {
-
-        if (phoneStatus) {
-
-            phoneStatus.textContent =
-                "Your registered phone can be used as a backup.";
-
-        }
-
-    }
-
-
-    if (description) {
-
-        description.textContent =
-            "Enter the 6-digit verification code sent to your registered email.";
-
-    }
-
-
-    if (destination) {
-
-        if (email) {
-
-            destination.textContent =
-                "Verification code destination: " +
-                maskEmail(email);
-
-        } else if (phone) {
-
-            destination.textContent =
-                "Verification code destination: " +
-                maskPhone(phone);
-
-        }
-
-    }
-
-
-    /* =====================================================
-       ENABLE OTP INPUTS
-    ===================================================== */
-
-    otpBoxes.forEach(input => {
-
-        input.disabled = false;
-
-    });
+    );
 
 
     /* =====================================================
@@ -368,7 +577,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function maskEmail(value) {
 
-        if (!value || !value.includes("@")) {
+        if (
+            !value ||
+            !value.includes("@")
+        ) {
 
             return value;
 
@@ -378,14 +590,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const parts =
             value.split("@");
 
+
         const name =
             parts[0];
+
 
         const domain =
             parts[1];
 
 
-        if (name.length <= 2) {
+        if (
+            name.length <= 2
+        ) {
 
             return (
                 name.charAt(0) +
@@ -422,7 +638,9 @@ document.addEventListener("DOMContentLoaded", () => {
             String(value);
 
 
-        if (clean.length <= 4) {
+        if (
+            clean.length <= 4
+        ) {
 
             return "****";
 
@@ -443,150 +661,429 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       OTP INPUT
-       MANUAL ENTRY ONLY
+       MESSAGE
     ===================================================== */
 
-    otpBoxes.forEach((input, index) => {
+    function showMessage(
+        message,
+        type = "error"
+    ) {
+
+        if (!otpMessage) {
+
+            return;
+
+        }
 
 
-        input.addEventListener(
-            "input",
-            () => {
+        otpMessage.textContent =
+            message;
 
-                let value =
-                    input.value.replace(
-                        /\D/g,
-                        ""
-                    );
 
+        otpMessage.hidden =
+            false;
+
+
+        otpMessage.className =
+            "otp-message " + type;
+
+    }
+
+
+    function hideMessage() {
+
+        if (!otpMessage) {
+
+            return;
+
+        }
+
+
+        otpMessage.hidden =
+            true;
+
+
+        otpMessage.textContent =
+            "";
+
+    }
+
+
+    /* =====================================================
+       DISABLE OTP
+    ===================================================== */
+
+    function disableOTP() {
+
+        otpBoxes.forEach(
+            input => {
+
+                input.disabled =
+                    true;
 
                 input.value =
-                    value.slice(0, 1);
-
-
-                if (
-                    value &&
-                    index <
-                    otpBoxes.length - 1
-                ) {
-
-                    otpBoxes[index + 1]
-                        .focus();
-
-                }
-
-
-                updateOTP();
+                    "";
 
             }
         );
 
 
-        input.addEventListener(
-            "keydown",
-            event => {
+        if (otpInput) {
+
+            otpInput.value =
+                "";
+
+        }
 
 
-                if (
-                    event.key ===
-                    "Backspace" &&
-                    !input.value &&
-                    index > 0
-                ) {
+        if (verifyBtn) {
 
-                    otpBoxes[index - 1]
-                        .focus();
+            verifyBtn.disabled =
+                true;
 
-                }
+        }
+
+    }
 
 
-                if (
-                    event.key ===
-                    "ArrowLeft" &&
-                    index > 0
-                ) {
+    /* =====================================================
+       ENABLE OTP
+    ===================================================== */
 
-                    otpBoxes[index - 1]
-                        .focus();
+    function enableOTP() {
 
-                }
+        otpBoxes.forEach(
+            input => {
 
-
-                if (
-                    event.key ===
-                    "ArrowRight" &&
-                    index <
-                    otpBoxes.length - 1
-                ) {
-
-                    otpBoxes[index + 1]
-                        .focus();
-
-                }
+                input.disabled =
+                    false;
 
             }
         );
 
 
-        input.addEventListener(
-            "paste",
-            event => {
+        updateOTP();
 
-                event.preventDefault();
+    }
 
 
-                const pasted =
-                    (
+    /* =====================================================
+       CHECK USER INFORMATION
+    ===================================================== */
+
+    if (
+        !email &&
+        !phone &&
+        !identity
+    ) {
+
+        console.error(
+            "STOCKFLOW: No verification identity found."
+        );
+
+
+        if (description) {
+
+            description.textContent =
+                "We could not find your registration information.";
+
+        }
+
+
+        if (otpHelp) {
+
+            otpHelp.textContent =
+                "Please return to registration and register again.";
+
+        }
+
+
+        if (emailStatus) {
+
+            emailStatus.textContent =
+                "No registered email was found.";
+
+        }
+
+
+        disableOTP();
+
+    } else {
+
+        /*
+         * User information exists.
+         * OTP boxes can now be manually used.
+         */
+
+        enableOTP();
+
+
+        if (description) {
+
+            if (email) {
+
+                description.textContent =
+                    "Enter the 6-digit verification code sent to your registered Gmail.";
+
+            } else {
+
+                description.textContent =
+                    "Enter the 6-digit verification code sent to your registered phone.";
+
+            }
+
+        }
+
+
+        if (emailStatus) {
+
+            if (email) {
+
+                emailStatus.textContent =
+                    "A 6-digit code will be sent to " +
+                    maskEmail(email) +
+                    ".";
+
+            } else {
+
+                emailStatus.textContent =
+                    "No registered Gmail address was found.";
+
+            }
+
+        }
+
+
+        if (phoneStatus) {
+
+            if (phone) {
+
+                phoneStatus.textContent =
+                    "Your registered phone can be used as a backup.";
+
+            } else {
+
+                phoneStatus.textContent =
+                    "No registered phone number was found.";
+
+            }
+
+        }
+
+
+        if (destination) {
+
+            if (email) {
+
+                destination.textContent =
+                    "Verification code destination: " +
+                    maskEmail(email);
+
+            } else if (phone) {
+
+                destination.textContent =
+                    "Verification code destination: " +
+                    maskPhone(phone);
+
+            }
+
+        }
+
+
+        if (otpHelp) {
+
+            otpHelp.textContent =
+                "Check your Gmail for the 6-digit verification code, then enter it manually.";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       OTP INPUT
+    ===================================================== */
+
+    otpBoxes.forEach(
+        (input, index) => {
+
+            input.addEventListener(
+                "input",
+                () => {
+
+                    let value =
+                        input.value
+                            .replace(/\D/g, "")
+                            .slice(0, 1);
+
+
+                    input.value =
+                        value;
+
+
+                    if (
+                        value &&
+                        index <
+                        otpBoxes.length - 1
+                    ) {
+
+                        otpBoxes[index + 1]
+                            .focus();
+
+                    }
+
+
+                    updateOTP();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key ===
+                        "Backspace" &&
+                        !input.value &&
+                        index > 0
+                    ) {
+
+                        otpBoxes[index - 1]
+                            .focus();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        "ArrowLeft" &&
+                        index > 0
+                    ) {
+
+                        event.preventDefault();
+
+
+                        otpBoxes[index - 1]
+                            .focus();
+
+                    }
+
+
+                    if (
+                        event.key ===
+                        "ArrowRight" &&
+                        index <
+                        otpBoxes.length - 1
+                    ) {
+
+                        event.preventDefault();
+
+
+                        otpBoxes[index + 1]
+                            .focus();
+
+                    }
+
+                }
+            );
+
+
+            input.addEventListener(
+                "paste",
+                event => {
+
+                    event.preventDefault();
+
+
+                    const clipboard =
                         event.clipboardData ||
-                        window.clipboardData
-                    )
-                    .getData("text")
-                    .replace(/\D/g, "")
-                    .slice(0, 6);
+                        window.clipboardData;
 
 
-                if (!pasted) {
-                    return;
-                }
+                    if (!clipboard) {
+
+                        return;
+
+                    }
 
 
-                pasted
-                    .split("")
-                    .forEach(
-                        (digit, digitIndex) => {
+                    const pasted =
+                        clipboard
+                            .getData("text")
+                            .replace(/\D/g, "")
+                            .slice(0, 6);
 
-                            if (
-                                otpBoxes[digitIndex]
-                            ) {
 
-                                otpBoxes[digitIndex]
-                                    .value =
-                                    digit;
+                    if (!pasted) {
+
+                        return;
+
+                    }
+
+
+                    pasted
+                        .split("")
+                        .forEach(
+                            (
+                                digit,
+                                digitIndex
+                            ) => {
+
+                                if (
+                                    otpBoxes[
+                                        digitIndex
+                                    ]
+                                ) {
+
+                                    otpBoxes[
+                                        digitIndex
+                                    ].value =
+                                        digit;
+
+                                }
 
                             }
-
-                        }
-                    );
+                        );
 
 
-                updateOTP();
+                    updateOTP();
 
 
-                const lastIndex =
-                    Math.min(
-                        pasted.length - 1,
-                        otpBoxes.length - 1
-                    );
+                    const lastIndex =
+                        Math.min(
+                            pasted.length - 1,
+                            otpBoxes.length - 1
+                        );
 
 
-                otpBoxes[lastIndex]
-                    .focus();
+                    otpBoxes[
+                        lastIndex
+                    ].focus();
 
-            }
-        );
+                }
+            );
 
-    });
+        }
+    );
+
+
+    /* =====================================================
+       GET OTP
+    ===================================================== */
+
+    function getOTP() {
+
+        return Array
+            .from(otpBoxes)
+            .map(
+                input =>
+                    input.value
+            )
+            .join("");
+
+    }
 
 
     /* =====================================================
@@ -596,14 +1093,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateOTP() {
 
         const otp =
-            Array.from(otpBoxes)
-                .map(input => input.value)
-                .join("");
+            getOTP();
 
 
         if (otpInput) {
 
-            otpInput.value = otp;
+            otpInput.value =
+                otp;
 
         }
 
@@ -619,29 +1115,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       DISABLE OTP
+       CLEAR OTP
     ===================================================== */
 
-    function disableOTP() {
+    function clearOTP() {
 
-        otpBoxes.forEach(input => {
+        otpBoxes.forEach(
+            input => {
 
-            input.disabled = true;
-            input.value = "";
+                input.value =
+                    "";
 
-        });
+            }
+        );
 
 
         if (otpInput) {
 
-            otpInput.value = "";
+            otpInput.value =
+                "";
 
         }
 
 
         if (verifyBtn) {
 
-            verifyBtn.disabled = true;
+            verifyBtn.disabled =
+                true;
 
         }
 
@@ -649,46 +1149,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       MESSAGE
+       LOADING
     ===================================================== */
 
-    function showMessage(
-        message,
-        type = "error"
-    ) {
+    function setLoading(loading) {
 
-        if (!otpMessage) {
+        if (!verifyBtn) {
+
             return;
+
         }
 
 
-        otpMessage.textContent =
-            message;
+        const buttonText =
+            verifyBtn.querySelector(
+                ".button-text"
+            );
 
 
-        otpMessage.hidden = false;
+        const buttonLoader =
+            verifyBtn.querySelector(
+                ".button-loader"
+            );
 
 
-        otpMessage.className =
-            "otp-message " + type;
+        verifyBtn.disabled =
+            loading ||
+            getOTP().length !== 6;
 
-    }
 
+        if (buttonText) {
 
-    /* =====================================================
-       HIDE MESSAGE
-    ===================================================== */
+            buttonText.hidden =
+                loading;
 
-    function hideMessage() {
-
-        if (!otpMessage) {
-            return;
         }
 
 
-        otpMessage.hidden = true;
+        if (buttonLoader) {
 
-        otpMessage.textContent = "";
+            buttonLoader.hidden =
+                !loading;
+
+        }
 
     }
 
@@ -707,12 +1210,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 const otp =
-                    Array.from(otpBoxes)
-                        .map(input => input.value)
-                        .join("");
+                    getOTP();
 
 
-                if (!/^\d{6}$/.test(otp)) {
+                if (
+                    !/^\d{6}$/.test(otp)
+                ) {
 
                     showMessage(
                         "Please enter the complete 6-digit verification code.",
@@ -731,13 +1234,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     "function"
                 ) {
 
+                    console.error(
+                        "API.verifyOtp() is not available."
+                    );
+
+
                     showMessage(
                         "Verification service is unavailable.",
                         "error"
-                    );
-
-                    console.error(
-                        "API.verifyOtp() is not available."
                     );
 
                     return;
@@ -800,11 +1304,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         );
 
 
-                        /*
-                         * Give the success message
-                         * a moment before redirecting.
-                         */
-
                         setTimeout(
                             () => {
 
@@ -865,102 +1364,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       CLEAR OTP
-    ===================================================== */
-
-    function clearOTP() {
-
-        otpBoxes.forEach(input => {
-
-            input.value = "";
-
-        });
-
-
-        if (otpInput) {
-
-            otpInput.value = "";
-
-        }
-
-
-        if (verifyBtn) {
-
-            verifyBtn.disabled = true;
-
-        }
-
-
-        if (otpBoxes[0]) {
-
-            otpBoxes[0].focus();
-
-        }
-
-    }
-
-
-    /* =====================================================
-       LOADING STATE
-    ===================================================== */
-
-    function setLoading(loading) {
-
-        if (!verifyBtn) {
-            return;
-        }
-
-
-        const buttonText =
-            verifyBtn.querySelector(
-                ".button-text"
-            );
-
-
-        const buttonLoader =
-            verifyBtn.querySelector(
-                ".button-loader"
-            );
-
-
-        verifyBtn.disabled =
-            loading ||
-            getOTP().length !== 6;
-
-
-        if (buttonText) {
-
-            buttonText.hidden =
-                loading;
-
-        }
-
-
-        if (buttonLoader) {
-
-            buttonLoader.hidden =
-                !loading;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GET CURRENT OTP
-    ===================================================== */
-
-    function getOTP() {
-
-        return Array.from(otpBoxes)
-            .map(input => input.value)
-            .join("");
-
-    }
-
-
-    /* =====================================================
-       RESEND EMAIL CODE
+       SEND / RESEND OTP
     ===================================================== */
 
     if (sendEmailBtn) {
@@ -969,17 +1373,13 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             async () => {
 
-                await resendCode("email");
+                await sendCode("email");
 
             }
         );
 
     }
 
-
-    /* =====================================================
-       RESEND PHONE CODE
-    ===================================================== */
 
     if (sendPhoneBtn) {
 
@@ -987,7 +1387,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             async () => {
 
-                await resendCode("phone");
+                await sendCode("phone");
 
             }
         );
@@ -996,10 +1396,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       RESEND CODE
+       SEND CODE
     ===================================================== */
 
-    async function resendCode(method) {
+    async function sendCode(method) {
+
+        const button =
+            method === "email"
+                ? sendEmailBtn
+                : sendPhoneBtn;
+
+
+        const timer =
+            method === "email"
+                ? emailTimer
+                : phoneTimer;
+
+
+        if (method === "email" && !email) {
+
+            showMessage(
+                "No registered Gmail address was found.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        if (method === "phone" && !phone) {
+
+            showMessage(
+                "No registered phone number was found.",
+                "error"
+            );
+
+            return;
+
+        }
+
 
         if (
             typeof API ===
@@ -1008,13 +1444,14 @@ document.addEventListener("DOMContentLoaded", () => {
             "function"
         ) {
 
+            console.error(
+                "API.resendOtp() is not available."
+            );
+
+
             showMessage(
                 "Verification service is unavailable.",
                 "error"
-            );
-
-            console.error(
-                "API.resendOtp() is not available."
             );
 
             return;
@@ -1022,17 +1459,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        const button =
-            method === "email"
-                ? sendEmailBtn
-                : sendPhoneBtn;
-
-
         if (button) {
 
-            button.disabled = true;
+            button.disabled =
+                true;
 
         }
+
+
+        hideMessage();
 
 
         try {
@@ -1065,7 +1500,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             console.log(
-                "Resend response:",
+                "OTP send response:",
                 result
             );
 
@@ -1075,37 +1510,69 @@ document.addEventListener("DOMContentLoaded", () => {
                 result.success
             ) {
 
-                showMessage(
+                if (
+                    method ===
+                    "email"
+                ) {
 
-                    method === "email"
+                    if (emailStatus) {
 
-                        ? "A new verification code has been sent to your Gmail."
+                        emailStatus.textContent =
+                            "Verification code sent to " +
+                            maskEmail(email) +
+                            ".";
 
-                        : "A new verification code has been sent to your phone.",
-
-                    "success"
-
-                );
+                    }
 
 
-                if (method === "email") {
+                    if (description) {
 
-                    startCooldown(
-                        sendEmailBtn,
-                        emailTimer
+                        description.textContent =
+                            "Check your Gmail and enter the 6-digit verification code.";
+
+                    }
+
+
+                    if (otpHelp) {
+
+                        otpHelp.textContent =
+                            "The code was sent to your Gmail. Enter it manually below.";
+
+                    }
+
+
+                    showMessage(
+                        "Verification code sent to your Gmail.",
+                        "success"
                     );
 
                 } else {
 
-                    startCooldown(
-                        sendPhoneBtn,
-                        phoneTimer
+                    if (phoneStatus) {
+
+                        phoneStatus.textContent =
+                            "Verification code sent to " +
+                            maskPhone(phone) +
+                            ".";
+
+                    }
+
+
+                    showMessage(
+                        "Verification code sent to your phone.",
+                        "success"
                     );
 
                 }
 
 
                 clearOTP();
+
+
+                startCooldown(
+                    button,
+                    timer
+                );
 
 
                 return;
@@ -1127,25 +1594,32 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
+            if (button) {
+
+                button.disabled =
+                    false;
+
+            }
+
+
         } catch (error) {
 
             console.error(
-                "Resend OTP error:",
+                "OTP send error:",
                 error
             );
 
 
             showMessage(
-                "Unable to send verification code.",
+                "Unable to send verification code. Please try again.",
                 "error"
             );
 
 
-        } finally {
-
             if (button) {
 
-                button.disabled = false;
+                button.disabled =
+                    false;
 
             }
 
@@ -1163,15 +1637,21 @@ document.addEventListener("DOMContentLoaded", () => {
         timerElement
     ) {
 
-        if (!button || !timerElement) {
+        if (
+            !button ||
+            !timerElement
+        ) {
+
             return;
+
         }
 
 
         let seconds = 120;
 
 
-        button.disabled = true;
+        button.disabled =
+            true;
 
 
         const originalText =
@@ -1187,6 +1667,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             seconds / 60
                         );
 
+
                     const remaining =
                         seconds % 60;
 
@@ -1197,13 +1678,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         ":" +
                         String(
                             remaining
-                        ).padStart(2, "0");
+                        ).padStart(
+                            2,
+                            "0"
+                        );
 
 
                     seconds--;
 
 
-                    if (seconds < 0) {
+                    if (
+                        seconds < 0
+                    ) {
 
                         clearInterval(
                             interval
@@ -1238,19 +1724,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /*
-     * IMPORTANT:
+     * IMPORTANT
      *
-     * We DO NOT call:
+     * NO OTP IS GENERATED HERE.
      *
-     * API.prepareOtp()
-     * API.generateOtp()
-     * API.generateOtp()
+     * NO OTP IS STORED IN localStorage.
      *
-     * and we DO NOT retrieve an OTP from
-     * localStorage/sessionStorage.
+     * NO OTP IS AUTOMATICALLY PLACED
+     * INTO THE SIX INPUT BOXES.
      *
-     * The user must manually enter the
-     * code received through Gmail.
+     * FLOW:
+     *
+     * 1. User registers.
+     * 2. Registration information is stored.
+     * 3. User opens verification page.
+     * 4. User clicks "Send code by email".
+     * 5. API/backend sends the OTP to Gmail.
+     * 6. User opens Gmail.
+     * 7. User manually types the 6-digit code.
+     * 8. User clicks "Verify Account".
+     * 9. API.verifyOtp() checks the code.
      */
 
 });
