@@ -1,6 +1,8 @@
 /* ============================================================
    STOCKFLOW | DASHBOARD.JS
    ============================================================
+   Dashboard Controller
+   ------------------------------------------------------------
    Connected modules:
    - Products
    - Categories
@@ -12,9 +14,28 @@
    - Authentication
    - Google Apps Script API
    - Firebase-ready API layer
+
+   UI:
+   - Responsive sidebar
+   - Hamburger menu
+   - Sidebar overlay
+   - Desktop sidebar collapse
+   - Notification dropdown
+   - ESC key controls
+   - User UI
+   - Dashboard refresh
+   - Auto refresh
+   ============================================================ */
+
+
+/* ============================================================
+   MAIN DASHBOARD CONTROLLER
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+    "use strict";
+
 
     /* ========================================================
        AUTHENTICATION
@@ -24,16 +45,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
 
+        if (
+            typeof StockFlowAuth === "undefined"
+        ) {
+
+            console.error(
+                "StockFlowAuth is not available."
+            );
+
+            return;
+        }
+
+
         currentUser =
             await StockFlowAuth.requireAuth();
+
 
         if (!currentUser) {
             return;
         }
 
-        StockFlowAuth.bindUserUI(currentUser);
 
-    } catch (error) {
+        if (
+            typeof StockFlowAuth.bindUserUI === "function"
+        ) {
+
+            StockFlowAuth.bindUserUI(
+                currentUser
+            );
+
+        }
+
+    }
+
+    catch (error) {
 
         console.error(
             "Authentication error:",
@@ -51,59 +96,341 @@ document.addEventListener("DOMContentLoaded", async () => {
     const $ = (selector) =>
         document.querySelector(selector);
 
+
     const $$ = (selector) =>
         document.querySelectorAll(selector);
+
 
     const get = (id) =>
         document.getElementById(id);
 
 
-    const setText = (id, value) => {
+    const setText = (
+        id,
+        value
+    ) => {
 
-        const element = get(id);
+        const element =
+            get(id);
 
         if (element) {
+
             element.textContent =
-                value ?? 0;
+                value ?? "0";
+
         }
 
     };
 
 
-    const setHTML = (id, html) => {
+    const setHTML = (
+        id,
+        html
+    ) => {
 
-        const element = get(id);
+        const element =
+            get(id);
 
         if (element) {
-            element.innerHTML = html;
+
+            element.innerHTML =
+                html;
+
         }
 
     };
 
 
     /* ========================================================
-       SIDEBAR / MOBILE MENU
+       GLOBAL UI REFERENCES
        ======================================================== */
 
-    $("#mobileMenuBtn")?.addEventListener(
-        "click",
-        () => {
+    const sidebar =
+        get("sidebar");
 
-            document.body.classList.toggle(
-                "sidebar-open"
+
+    const mobileMenuBtn =
+        get("mobileMenuBtn");
+
+
+    const sidebarOverlay =
+        get("sidebarOverlay");
+
+
+    const notificationBtn =
+        get("notificationBtn");
+
+
+    let notificationPanel =
+        get("notificationPanel");
+
+
+    /* ========================================================
+       SIDEBAR CONTROLLER
+       ======================================================== */
+
+    function isMobile() {
+
+        return window.innerWidth <= 900;
+
+    }
+
+
+    function openMobileSidebar() {
+
+        if (!sidebar) {
+            return;
+        }
+
+
+        sidebar.classList.add(
+            "open"
+        );
+
+
+        document.body.classList.add(
+            "sidebar-open"
+        );
+
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.add(
+                "show"
             );
 
         }
-    );
 
 
-    $("#sidebarOverlay")?.addEventListener(
-        "click",
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+    }
+
+
+    function closeMobileSidebar() {
+
+        if (sidebar) {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+        }
+
+
+        document.body.classList.remove(
+            "sidebar-open"
+        );
+
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.remove(
+                "show"
+            );
+
+        }
+
+
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    function toggleSidebar() {
+
+        if (!sidebar) {
+            return;
+        }
+
+
+        /* ----------------------------------------------------
+           MOBILE
+           ---------------------------------------------------- */
+
+        if (isMobile()) {
+
+            if (
+                sidebar.classList.contains(
+                    "open"
+                )
+            ) {
+
+                closeMobileSidebar();
+
+            }
+
+            else {
+
+                openMobileSidebar();
+
+            }
+
+            return;
+        }
+
+
+        /* ----------------------------------------------------
+           DESKTOP
+           ---------------------------------------------------- */
+
+        document.body.classList.toggle(
+            "sidebar-collapsed"
+        );
+
+
+        const collapsed =
+            document.body.classList.contains(
+                "sidebar-collapsed"
+            );
+
+
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                String(!collapsed)
+            );
+
+        }
+
+    }
+
+
+    /* ========================================================
+       HAMBURGER BUTTON
+       ======================================================== */
+
+    if (mobileMenuBtn) {
+
+        mobileMenuBtn.setAttribute(
+            "type",
+            "button"
+        );
+
+
+        mobileMenuBtn.setAttribute(
+            "aria-label",
+            "Toggle navigation menu"
+        );
+
+
+        mobileMenuBtn.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+
+        mobileMenuBtn.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                toggleSidebar();
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       SIDEBAR OVERLAY
+       ======================================================== */
+
+    if (sidebarOverlay) {
+
+        sidebarOverlay.addEventListener(
+            "click",
+            () => {
+
+                closeMobileSidebar();
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       SIDEBAR LINKS
+       ======================================================== */
+
+    $$(".sidebar-link")
+        .forEach(link => {
+
+            link.addEventListener(
+                "click",
+                () => {
+
+                    /*
+                     * Only close the sidebar on mobile.
+                     * Do not interfere with navigation.
+                     */
+
+                    if (isMobile()) {
+
+                        closeMobileSidebar();
+
+                    }
+
+                }
+            );
+
+        });
+
+
+    /* ========================================================
+       WINDOW RESIZE
+       ======================================================== */
+
+    let previousMobileState =
+        isMobile();
+
+
+    window.addEventListener(
+        "resize",
         () => {
 
-            document.body.classList.remove(
-                "sidebar-open"
-            );
+            const currentMobileState =
+                isMobile();
+
+
+            /*
+             * If switching between desktop
+             * and mobile, clean up the
+             * previous sidebar state.
+             */
+
+            if (
+                currentMobileState !==
+                previousMobileState
+            ) {
+
+                closeMobileSidebar();
+
+            }
+
+
+            previousMobileState =
+                currentMobileState;
 
         }
     );
@@ -113,20 +440,323 @@ document.addEventListener("DOMContentLoaded", async () => {
        LOGOUT
        ======================================================== */
 
-    $("#logoutBtn")?.addEventListener(
+    const logoutBtn =
+        get("logoutBtn");
+
+
+    if (logoutBtn) {
+
+        logoutBtn.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    logoutBtn.disabled =
+                        true;
+
+
+                    logoutBtn.classList.add(
+                        "loading"
+                    );
+
+
+                    if (
+                        typeof StockFlowAuth !==
+                        "undefined" &&
+                        typeof StockFlowAuth.logout ===
+                        "function"
+                    ) {
+
+                        await StockFlowAuth.logout();
+
+                    }
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+
+                    logoutBtn.disabled =
+                        false;
+
+
+                    logoutBtn.classList.remove(
+                        "loading"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       NOTIFICATION PANEL
+       ======================================================== */
+
+    function ensureNotificationPanel() {
+
+        /*
+         * If notificationPanel already exists
+         * in dashboard.html, use it.
+         */
+
+        notificationPanel =
+            get("notificationPanel");
+
+
+        if (notificationPanel) {
+
+            return notificationPanel;
+
+        }
+
+
+        /*
+         * Fallback:
+         * Create notification panel automatically.
+         */
+
+        if (!notificationBtn) {
+
+            return null;
+
+        }
+
+
+        const wrapper =
+            notificationBtn.closest(
+                ".notification-wrapper"
+            );
+
+
+        if (!wrapper) {
+
+            return null;
+
+        }
+
+
+        notificationPanel =
+            document.createElement(
+                "div"
+            );
+
+
+        notificationPanel.id =
+            "notificationPanel";
+
+
+        notificationPanel.className =
+            "notification-panel";
+
+
+        notificationPanel.innerHTML = `
+
+            <div class="notification-header">
+
+                <div>
+
+                    <strong>
+                        Notifications
+                    </strong>
+
+                    <span>
+                        StockFlow alerts
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="notification-close"
+                    id="notificationCloseBtn"
+                    aria-label="Close notifications"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <div
+                class="notification-list"
+                id="notificationList"
+            >
+
+                <div class="notification-empty">
+
+                    <i class="fa-regular fa-bell-slash"></i>
+
+                    <strong>
+                        No notifications
+                    </strong>
+
+                    <span>
+                        You're all caught up.
+                    </span>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        wrapper.appendChild(
+            notificationPanel
+        );
+
+
+        return notificationPanel;
+
+    }
+
+
+    function closeNotifications() {
+
+        if (!notificationPanel) {
+            return;
+        }
+
+
+        notificationPanel.classList.remove(
+            "show"
+        );
+
+
+        if (notificationBtn) {
+
+            notificationBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    function openNotifications() {
+
+        if (!notificationPanel) {
+            return;
+        }
+
+
+        notificationPanel.classList.add(
+            "show"
+        );
+
+
+        if (notificationBtn) {
+
+            notificationBtn.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+    }
+
+
+    function toggleNotifications() {
+
+        if (!notificationPanel) {
+
+            ensureNotificationPanel();
+
+        }
+
+
+        if (!notificationPanel) {
+            return;
+        }
+
+
+        const isOpen =
+            notificationPanel.classList.contains(
+                "show"
+            );
+
+
+        if (isOpen) {
+
+            closeNotifications();
+
+        }
+
+        else {
+
+            openNotifications();
+
+        }
+
+    }
+
+
+    if (notificationBtn) {
+
+        notificationBtn.setAttribute(
+            "type",
+            "button"
+        );
+
+
+        notificationBtn.setAttribute(
+            "aria-label",
+            "Notifications"
+        );
+
+
+        notificationBtn.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+
+        notificationBtn.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                toggleNotifications();
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       NOTIFICATION CLOSE BUTTON
+       ======================================================== */
+
+    document.addEventListener(
         "click",
-        async () => {
+        (event) => {
 
-            try {
-
-                await StockFlowAuth.logout();
-
-            } catch (error) {
-
-                console.error(
-                    "Logout error:",
-                    error
+            const closeBtn =
+                event.target.closest(
+                    "#notificationCloseBtn"
                 );
+
+
+            if (closeBtn) {
+
+                closeNotifications();
 
             }
 
@@ -135,34 +765,71 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       SIDEBAR NAVIGATION
+       CLOSE NOTIFICATION WHEN CLICKING OUTSIDE
        ======================================================== */
 
-    $$(".sidebar-link").forEach(link => {
+    document.addEventListener(
+        "click",
+        (event) => {
 
-        link.addEventListener(
-            "click",
-            () => {
+            if (!notificationPanel) {
+                return;
+            }
 
-                $$(".sidebar-link")
-                    .forEach(item =>
-                        item.classList.remove(
-                            "active"
-                        )
-                    );
 
-                link.classList.add(
-                    "active"
-                );
+            if (
+                notificationPanel.contains(
+                    event.target
+                )
+            ) {
 
-                document.body.classList.remove(
-                    "sidebar-open"
-                );
+                return;
 
             }
-        );
 
-    });
+
+            if (
+                notificationBtn &&
+                notificationBtn.contains(
+                    event.target
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            closeNotifications();
+
+        }
+    );
+
+
+    /* ========================================================
+       ESC KEY
+       ======================================================== */
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+
+            if (
+                event.key !==
+                "Escape"
+            ) {
+
+                return;
+
+            }
+
+
+            closeMobileSidebar();
+
+            closeNotifications();
+
+        }
+    );
 
 
     /* ========================================================
@@ -177,21 +844,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         const badge =
             get("connectionBadge");
 
+
         const connectionMessage =
             get("connectionMessage");
 
 
         if (badge) {
 
+            /*
+             * Keep existing dashboard
+             * connection classes.
+             */
+
             badge.textContent =
                 online
                     ? "ONLINE"
                     : "OFFLINE";
 
+
             badge.classList.toggle(
                 "online",
                 online
             );
+
 
             badge.classList.toggle(
                 "offline",
@@ -220,10 +895,13 @@ document.addEventListener("DOMContentLoaded", async () => {
        NUMBER FORMAT
        ======================================================== */
 
-    function formatNumber(value) {
+    function formatNumber(
+        value
+    ) {
 
         const number =
             Number(value);
+
 
         if (
             Number.isNaN(number)
@@ -232,6 +910,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return "0";
 
         }
+
 
         return number.toLocaleString();
 
@@ -242,7 +921,9 @@ document.addEventListener("DOMContentLoaded", async () => {
        ESCAPE HTML
        ======================================================== */
 
-    function esc(value) {
+    function esc(
+        value
+    ) {
 
         return String(
             value ?? ""
@@ -276,14 +957,20 @@ document.addEventListener("DOMContentLoaded", async () => {
        DATE FORMATTER
        ======================================================== */
 
-    function formatDate(value) {
+    function formatDate(
+        value
+    ) {
 
         if (!value) {
+
             return "—";
+
         }
+
 
         const date =
             new Date(value);
+
 
         if (
             Number.isNaN(
@@ -295,85 +982,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+
         return date.toLocaleString(
             undefined,
             {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit"
+                year:
+                    "numeric",
+
+                month:
+                    "short",
+
+                day:
+                    "numeric",
+
+                hour:
+                    "numeric",
+
+                minute:
+                    "2-digit"
             }
         );
-
-    }
-
-
-    /* ========================================================
-       STATUS BADGE
-       ======================================================== */
-
-    function statusBadge(
-        status
-    ) {
-
-        const value =
-            String(
-                status ?? ""
-            )
-            .trim()
-            .toUpperCase();
-
-
-        let className =
-            "status-badge";
-
-
-        if (
-            value === "ACTIVE" ||
-            value === "IN STOCK" ||
-            value === "COMPLETED"
-        ) {
-
-            className +=
-                " success";
-
-        }
-
-        else if (
-            value === "LOW STOCK" ||
-            value === "PENDING"
-        ) {
-
-            className +=
-                " warning";
-
-        }
-
-        else if (
-            value === "OUT OF STOCK" ||
-            value === "DISABLED" ||
-            value === "CANCELLED"
-        ) {
-
-            className +=
-                " danger";
-
-        }
-
-        else {
-
-            className +=
-                " neutral";
-
-        }
-
-
-        return `
-            <span class="${className}">
-                ${esc(status || "Unknown")}
-            </span>
-        `;
 
     }
 
@@ -455,6 +1083,213 @@ document.addEventListener("DOMContentLoaded", async () => {
         return `
             <i class="fa-solid fa-clock-rotate-left"></i>
         `;
+
+    }
+
+
+    /* ========================================================
+       RENDER NOTIFICATIONS
+       ======================================================== */
+
+    function renderNotifications(
+        stats
+    ) {
+
+        const list =
+            get(
+                "notificationList"
+            );
+
+
+        if (!list) {
+            return;
+        }
+
+
+        const lowStock =
+            Number(
+                stats?.lowStock ??
+                0
+            );
+
+
+        const outOfStock =
+            Number(
+                stats?.outOfStock ??
+                0
+            );
+
+
+        const products =
+            Number(
+                stats?.products ??
+                stats?.totalProducts ??
+                0
+            );
+
+
+        const notifications =
+            [];
+
+
+        /* ----------------------------------------------------
+           OUT OF STOCK
+           ---------------------------------------------------- */
+
+        if (
+            outOfStock > 0
+        ) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-circle-xmark",
+
+                type:
+                    "danger",
+
+                title:
+                    `${formatNumber(outOfStock)} product${outOfStock === 1 ? "" : "s"} out of stock`,
+
+                message:
+                    "Restock these products to keep inventory available.",
+
+                link:
+                    "inventory.html"
+
+            });
+
+        }
+
+
+        /* ----------------------------------------------------
+           LOW STOCK
+           ---------------------------------------------------- */
+
+        if (
+            lowStock > 0
+        ) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-triangle-exclamation",
+
+                type:
+                    "warning",
+
+                title:
+                    `${formatNumber(lowStock)} product${lowStock === 1 ? "" : "s"} low on stock`,
+
+                message:
+                    "Review inventory levels and consider a stock-in.",
+
+                link:
+                    "inventory.html"
+
+            });
+
+        }
+
+
+        /* ----------------------------------------------------
+           NO PRODUCTS
+           ---------------------------------------------------- */
+
+        if (
+            products === 0
+        ) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-box-open",
+
+                type:
+                    "info",
+
+                title:
+                    "No products registered",
+
+                message:
+                    "Start by adding your first product.",
+
+                link:
+                    "products.html"
+
+            });
+
+        }
+
+
+        /* ----------------------------------------------------
+           NOTHING TO REPORT
+           ---------------------------------------------------- */
+
+        if (
+            notifications.length === 0
+        ) {
+
+            list.innerHTML = `
+
+                <div class="notification-empty">
+
+                    <i class="fa-regular fa-circle-check"></i>
+
+                    <strong>
+                        All caught up
+                    </strong>
+
+                    <span>
+                        No inventory alerts right now.
+                    </span>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        /* ----------------------------------------------------
+           RENDER
+           ---------------------------------------------------- */
+
+        list.innerHTML =
+            notifications
+                .map(
+                    item => `
+
+                        <a
+                            href="${esc(item.link)}"
+                            class="notification-item ${esc(item.type)}"
+                        >
+
+                            <div class="notification-icon">
+
+                                <i class="${esc(item.icon)}"></i>
+
+                            </div>
+
+                            <div class="notification-content">
+
+                                <strong>
+                                    ${esc(item.title)}
+                                </strong>
+
+                                <span>
+                                    ${esc(item.message)}
+                                </span>
+
+                            </div>
+
+                        </a>
+
+                    `
+                )
+                .join("");
 
     }
 
@@ -556,8 +1391,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                             <div class="activity-row">
 
                                 <div class="activity-icon">
+
                                     ${activityIcon(type)}
+
                                 </div>
+
 
                                 <div class="activity-content">
 
@@ -570,6 +1408,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     </small>
 
                                 </div>
+
 
                                 <div class="activity-meta">
 
@@ -686,6 +1525,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 </div>
 
+
                                 <div class="activity-content">
 
                                     <strong>
@@ -697,6 +1537,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     </small>
 
                                 </div>
+
 
                                 <div class="activity-meta">
 
@@ -839,7 +1680,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       DASHBOARD STATS
+       LOAD DASHBOARD
        ======================================================== */
 
     async function loadDashboard() {
@@ -852,13 +1693,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /*
-             * dashboardStats() is supplied by API.js.
-             *
-             * API.js can retrieve the combined dashboard
-             * information from Google Apps Script and/or
-             * Firebase depending on the current configuration.
-             */
+            if (
+                typeof StockFlowAPI ===
+                "undefined"
+            ) {
+
+                throw new Error(
+                    "StockFlowAPI is not available. Check API.js."
+                );
+
+            }
+
+
+            if (
+                typeof StockFlowAPI.dashboardStats !==
+                "function"
+            ) {
+
+                throw new Error(
+                    "dashboardStats() is not available in API.js."
+                );
+
+            }
+
 
             const response =
                 await StockFlowAPI.dashboardStats();
@@ -883,9 +1740,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 response;
 
 
-            /* ------------------------------------------------
+            /* =================================================
                MAIN COUNTERS
-               ------------------------------------------------ */
+               ================================================= */
 
             const products =
                 stats.products ??
@@ -937,9 +1794,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 0;
 
 
-            /* ------------------------------------------------
+            /* =================================================
                DASHBOARD CARDS
-               ------------------------------------------------ */
+               ================================================= */
 
             setText(
                 "productsCount",
@@ -989,9 +1846,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* ------------------------------------------------
+            /* =================================================
                INVENTORY OVERVIEW
-               ------------------------------------------------ */
+               ================================================= */
 
             renderInventoryOverview({
 
@@ -1002,9 +1859,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
 
-            /* ------------------------------------------------
-               TRANSACTIONS
-               ------------------------------------------------ */
+            /* =================================================
+               RECENT TRANSACTIONS
+               ================================================= */
 
             renderTransactions(
 
@@ -1016,9 +1873,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* ------------------------------------------------
-               ACTIVITY
-               ------------------------------------------------ */
+            /* =================================================
+               RECENT ACTIVITY
+               ================================================= */
 
             renderActivity(
 
@@ -1030,9 +1887,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* ------------------------------------------------
+            /* =================================================
+               NOTIFICATIONS
+               ================================================= */
+
+            renderNotifications({
+
+                products,
+                lowStock,
+                outOfStock
+
+            });
+
+
+            /* =================================================
                CONNECTION
-               ------------------------------------------------ */
+               ================================================= */
 
             setConnectionStatus(
                 true,
@@ -1040,9 +1910,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* ------------------------------------------------
+            /* =================================================
                LAST UPDATED
-               ------------------------------------------------ */
+               ================================================= */
 
             const lastUpdated =
                 get(
@@ -1081,11 +1951,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-            /* ------------------------------------------------
-               SHOW FALLBACK STATE
-               ------------------------------------------------ */
+            /* =================================================
+               FALLBACK COUNTERS
+               ================================================= */
 
             [
+
                 "productsCount",
                 "categoriesCount",
                 "suppliersCount",
@@ -1103,6 +1974,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     )
             );
 
+
+            /* =================================================
+               FALLBACK INVENTORY
+               ================================================= */
 
             const overview =
                 get(
@@ -1136,6 +2011,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
+            /* =================================================
+               CONNECTION ERROR
+               ================================================= */
+
             setConnectionStatus(
                 false,
                 error.message ||
@@ -1162,16 +2041,32 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-        if (refreshBtn) {
-
-            refreshBtn.disabled =
-                true;
-
-            refreshBtn.classList.add(
-                "loading"
+        const refreshBtn2 =
+            get(
+                "refreshBtn"
             );
 
-        }
+
+        const buttons =
+            [
+                refreshBtn,
+                refreshBtn2
+            ]
+            .filter(Boolean);
+
+
+        buttons.forEach(
+            button => {
+
+                button.disabled =
+                    true;
+
+                button.classList.add(
+                    "loading"
+                );
+
+            }
+        );
 
 
         try {
@@ -1182,16 +2077,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         finally {
 
-            if (refreshBtn) {
+            buttons.forEach(
+                button => {
 
-                refreshBtn.disabled =
-                    false;
+                    button.disabled =
+                        false;
 
-                refreshBtn.classList.remove(
-                    "loading"
-                );
+                    button.classList.remove(
+                        "loading"
+                    );
 
-            }
+                }
+            );
 
         }
 
@@ -1199,21 +2096,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       REFRESH BUTTON
+       REFRESH BUTTONS
        ======================================================== */
 
-    $("#refreshDashboardBtn")
-        ?.addEventListener(
-            "click",
-            refreshDashboard
-        );
+    get(
+        "refreshDashboardBtn"
+    )
+    ?.addEventListener(
+        "click",
+        refreshDashboard
+    );
 
 
-    $("#refreshBtn")
-        ?.addEventListener(
-            "click",
-            refreshDashboard
-        );
+    get(
+        "refreshBtn"
+    )
+    ?.addEventListener(
+        "click",
+        refreshDashboard
+    );
 
 
     /* ========================================================
@@ -1228,9 +2129,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const button =
             get(id);
 
+
         if (!button) {
             return;
         }
+
 
         button.addEventListener(
             "click",
@@ -1307,7 +2210,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     loadDashboard();
 
                 },
-
                 60000
             );
 
@@ -1315,28 +2217,49 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       INITIAL LOAD
+       INITIAL NOTIFICATION PANEL
+       ======================================================== */
+
+    ensureNotificationPanel();
+
+
+    /* ========================================================
+       INITIAL DASHBOARD LOAD
        ======================================================== */
 
     await loadDashboard();
 
 
+    /* ========================================================
+       AUTO REFRESH
+       ======================================================== */
+
     startAutoRefresh();
 
 
     /* ========================================================
-       ONLINE / OFFLINE EVENTS
+       ONLINE EVENT
        ======================================================== */
 
     window.addEventListener(
         "online",
         () => {
 
+            setConnectionStatus(
+                true,
+                "Internet connection restored. Refreshing..."
+            );
+
+
             loadDashboard();
 
         }
     );
 
+
+    /* ========================================================
+       OFFLINE EVENT
+       ======================================================== */
 
     window.addEventListener(
         "offline",
@@ -1352,7 +2275,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     /* ========================================================
-       EXPOSE DASHBOARD REFRESH
+       EXPOSE DASHBOARD API
        ======================================================== */
 
     window.StockFlowDashboard = {
@@ -1364,173 +2287,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             loadDashboard,
 
         currentUser:
-            () => currentUser
+            () => currentUser,
+
+        openSidebar:
+            openMobileSidebar,
+
+        closeSidebar:
+            closeMobileSidebar,
+
+        toggleSidebar:
+            toggleSidebar,
+
+        openNotifications:
+            openNotifications,
+
+        closeNotifications:
+            closeNotifications,
+
+        toggleNotifications:
+            toggleNotifications
 
     };
-
-});
-
-/* =========================================================
-   STOCKFLOW DASHBOARD UI CONTROLS
-   ========================================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* -----------------------------------------------------
-       SIDEBAR / HAMBURGER
-       ----------------------------------------------------- */
-
-    const sidebar =
-        document.getElementById("sidebar");
-
-    const mobileMenuBtn =
-        document.getElementById("mobileMenuBtn");
-
-    const sidebarOverlay =
-        document.getElementById("sidebarOverlay");
-
-
-    if (mobileMenuBtn && sidebar) {
-
-        mobileMenuBtn.addEventListener("click", () => {
-
-            const isMobile =
-                window.innerWidth <= 900;
-
-            if (isMobile) {
-
-                sidebar.classList.toggle("open");
-
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.toggle(
-                        "show",
-                        sidebar.classList.contains("open")
-                    );
-                }
-
-            } else {
-
-                document.body.classList.toggle(
-                    "sidebar-collapsed"
-                );
-
-            }
-
-        });
-
-    }
-
-
-    /* -----------------------------------------------------
-       SIDEBAR OVERLAY
-       ----------------------------------------------------- */
-
-    if (sidebarOverlay && sidebar) {
-
-        sidebarOverlay.addEventListener("click", () => {
-
-            sidebar.classList.remove("open");
-
-            sidebarOverlay.classList.remove("show");
-
-        });
-
-    }
-
-
-    /* -----------------------------------------------------
-       CLOSE SIDEBAR AFTER CLICKING A LINK ON MOBILE
-       ----------------------------------------------------- */
-
-    if (sidebar) {
-
-        const sidebarLinks =
-            sidebar.querySelectorAll(".sidebar-link");
-
-        sidebarLinks.forEach(link => {
-
-            link.addEventListener("click", () => {
-
-                if (window.innerWidth <= 900) {
-
-                    sidebar.classList.remove("open");
-
-                    if (sidebarOverlay) {
-                        sidebarOverlay.classList.remove("show");
-                    }
-
-                }
-
-            });
-
-        });
-
-    }
-
-
-    /* -----------------------------------------------------
-       NOTIFICATION
-       ----------------------------------------------------- */
-
-    const notificationBtn =
-        document.getElementById("notificationBtn");
-
-    const notificationPanel =
-        document.getElementById("notificationPanel");
-
-
-    if (notificationBtn && notificationPanel) {
-
-        notificationBtn.addEventListener("click", (event) => {
-
-            event.stopPropagation();
-
-            notificationPanel.classList.toggle("show");
-
-        });
-
-
-        /* Close notification when clicking elsewhere */
-
-        document.addEventListener("click", (event) => {
-
-            if (
-                !notificationPanel.contains(event.target) &&
-                !notificationBtn.contains(event.target)
-            ) {
-
-                notificationPanel.classList.remove("show");
-
-            }
-
-        });
-
-    }
-
-
-    /* -----------------------------------------------------
-       ESC KEY
-       ----------------------------------------------------- */
-
-    document.addEventListener("keydown", (event) => {
-
-        if (event.key !== "Escape") {
-            return;
-        }
-
-
-        if (sidebar) {
-            sidebar.classList.remove("open");
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.remove("show");
-        }
-
-        if (notificationPanel) {
-            notificationPanel.classList.remove("show");
-        }
-
-    });
 
 });
