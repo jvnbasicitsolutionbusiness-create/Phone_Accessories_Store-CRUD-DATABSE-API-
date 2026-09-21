@@ -5,6 +5,7 @@
    ------------------------------------------------------------
    FEATURES
    - Authentication protection
+   - Employee session support
    - Load products
    - Load categories
    - Search products
@@ -44,6 +45,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let editingProductId = null;
 
+  let productToDelete = null;
+
 
   /* ==========================================================
      DOM HELPERS
@@ -51,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const $ = (selector) =>
     document.querySelector(selector);
+
 
   const $$ = (selector) =>
     document.querySelectorAll(selector);
@@ -274,6 +278,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* ==========================================================
      AUTHENTICATION
+     ==========================================================
+     
+     IMPORTANT:
+     This module does NOT create its own authentication system.
+
+     The existing StockFlowAuth system handles:
+     - Login
+     - Session
+     - Employee account
+     - Admin account
+     - Logout
+
+     Products only checks whether a valid session exists.
      ========================================================== */
 
   let currentUser = null;
@@ -281,7 +298,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
 
     if (
-      typeof StockFlowAuth === "undefined"
+      typeof StockFlowAuth ===
+      "undefined"
     ) {
 
       throw new Error(
@@ -291,6 +309,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    /*
+     * Require an authenticated user.
+     *
+     * This allows the registered Employee account
+     * to access the Products module.
+     *
+     * The Admin account remains separate.
+     */
     currentUser =
       await StockFlowAuth.requireAuth();
 
@@ -302,6 +328,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT hard-code:
+     *
+     *     Admin
+     *
+     * or:
+     *
+     *     Employee
+     *
+     * here.
+     *
+     * The existing authentication system already knows
+     * which account is currently logged in.
+     */
     if (
       typeof StockFlowAuth.bindUserUI ===
       "function"
@@ -312,6 +354,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
     }
+
+
+    /*
+     * Helpful console information for development.
+     *
+     * This does NOT modify the session.
+     */
+    console.log(
+      "StockFlow authenticated user:",
+      {
+        username:
+          currentUser.username ||
+          currentUser.email ||
+          currentUser.name ||
+          "User",
+
+        role:
+          currentUser.role ||
+          currentUser.accountStatus ||
+          "Employee"
+      }
+    );
 
   }
 
@@ -396,6 +460,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function initialize() {
 
+    /*
+     * First state:
+     *
+     * CONNECTING
+     */
     setConnection(
       "CONNECTING"
     );
@@ -403,6 +472,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
 
+      /*
+       * Load categories and products.
+       */
       await Promise.all([
 
         loadCategories(),
@@ -412,10 +484,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       ]);
 
 
+      /*
+       * Refresh statistics.
+       */
       updateStatistics();
 
+
+      /*
+       * Apply filters and render products.
+       */
       applyFilters();
 
+
+      /*
+       * IMPORTANT:
+       *
+       * Only show CONNECTED after the API requests
+       * completed successfully.
+       */
       setConnection(
         "CONNECTED"
       );
@@ -429,9 +515,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         error
       );
 
+
+      /*
+       * API failed.
+       */
       setConnection(
         "OFFLINE"
       );
+
 
       showToast(
         error.message ||
@@ -450,26 +541,101 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function setConnection(status) {
 
+    /*
+     * Your different StockFlow pages may use either:
+     *
+     * connectionBadge
+     *
+     * or:
+     *
+     * connectionStatus
+     *
+     * Support both.
+     */
     const badge =
-      byId("connectionBadge");
-
-    if (!badge) return;
-
-
-    const text =
-      badge.querySelector(
-        "span:last-child"
-      );
+      byId("connectionBadge") ||
+      byId("connectionStatus");
 
 
-    if (text) {
+    if (!badge) {
 
-      text.textContent =
-        status;
+      return;
 
     }
 
 
+    const normalized =
+      String(status || "")
+        .trim()
+        .toUpperCase();
+
+
+    /*
+     * Find connection text.
+     */
+    let text =
+      badge.querySelector(
+        ".connection-text"
+      );
+
+
+    if (!text) {
+
+      text =
+        badge.querySelector(
+          "span:last-child"
+        );
+
+    }
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Only update the connection text.
+     *
+     * This does NOT touch:
+     * - User
+     * - Employee
+     * - username
+     * - avatar
+     * - role
+     */
+    if (text) {
+
+      if (
+        normalized ===
+        "CONNECTED"
+      ) {
+
+        text.textContent =
+          "Connected";
+
+      }
+
+      else if (
+        normalized ===
+        "OFFLINE"
+      ) {
+
+        text.textContent =
+          "Offline";
+
+      }
+
+      else {
+
+        text.textContent =
+          "Connecting";
+
+      }
+
+    }
+
+
+    /*
+     * Remove previous states.
+     */
     badge.classList.remove(
       "connected",
       "offline",
@@ -477,14 +643,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
 
-    const normalized =
-      String(status)
-        .toLowerCase();
-
-
+    /*
+     * Apply current state.
+     */
     if (
       normalized ===
-      "connected"
+      "CONNECTED"
     ) {
 
       badge.classList.add(
@@ -495,7 +659,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     else if (
       normalized ===
-      "offline"
+      "OFFLINE"
     ) {
 
       badge.classList.add(
@@ -590,14 +754,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       /*
-       * Preferred API method:
+       * Preferred:
        *
        * StockFlowAPI.products()
-       *
-       * Compatibility fallbacks are included so the module
-       * can continue working if API.js exposes another name.
        */
-
       if (
         typeof StockFlowAPI.products ===
         "function"
@@ -608,6 +768,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       }
 
+      /*
+       * Compatibility:
+       *
+       * StockFlowAPI.getProducts()
+       */
       else if (
         typeof StockFlowAPI.getProducts ===
         "function"
@@ -618,6 +783,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       }
 
+      /*
+       * Compatibility:
+       *
+       * StockFlowAPI.listProducts()
+       */
       else if (
         typeof StockFlowAPI.listProducts ===
         "function"
@@ -675,13 +845,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         error
       );
 
+
       allProducts = [];
 
       filteredProducts = [];
 
+
       renderProducts([]);
 
+
       updateStatistics();
+
 
       throw error;
 
@@ -735,9 +909,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         /*
          * Categories API may not exist yet.
-         * Product page can still operate.
+         *
+         * Products can still work.
          */
-
         categories = [];
 
         populateCategorySelects();
@@ -771,7 +945,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         error
       );
 
+
       categories = [];
+
 
       populateCategorySelects();
 
@@ -788,6 +964,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const filter =
       byId("categoryFilter");
+
 
     const form =
       byId("productCategory");
@@ -849,11 +1026,14 @@ document.addEventListener("DOMContentLoaded", async () => {
               "option"
             );
 
+
           option.value =
             category;
 
+
           option.textContent =
             category;
+
 
           filter.appendChild(
             option
@@ -879,11 +1059,14 @@ document.addEventListener("DOMContentLoaded", async () => {
               "option"
             );
 
+
           option.value =
             category;
 
+
           option.textContent =
             category;
+
 
           form.appendChild(
             option
@@ -1002,8 +1185,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           const matchesCategory =
             !category ||
-            product.category
-              .toLowerCase() ===
+            String(
+              product.category
+            )
+            .toLowerCase() ===
             category;
 
 
@@ -1027,6 +1212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       filteredProducts
     );
 
+
     updatePagination();
 
   }
@@ -1039,18 +1225,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderProducts(products) {
 
     const tbody =
-      byId("productsTableBody");
+      byId(
+        "productsTableBody"
+      );
+
 
     const empty =
-      byId("emptyProducts");
+      byId(
+        "emptyProducts"
+      );
 
 
-    if (!tbody) return;
+    if (!tbody) {
+
+      return;
+
+    }
 
 
     if (!products.length) {
 
       tbody.innerHTML = "";
+
 
       if (empty) {
 
@@ -1060,9 +1256,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       }
 
+
       updateProductCountLabel(
         0
       );
+
 
       return;
 
@@ -1144,6 +1342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       stockClass =
         "stock-danger";
 
+
       stockLabel =
         "Out of Stock";
 
@@ -1155,6 +1354,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       stockClass =
         "stock-warning";
+
 
       stockLabel =
         "Low Stock";
@@ -1420,6 +1620,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               product.stock
             );
 
+
           const reorder =
             number(
               product.reorderLevel
@@ -1449,15 +1650,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       total
     );
 
+
     setText(
       "activeProducts",
       active
     );
 
+
     setText(
       "lowStockProducts",
       lowStock
     );
+
 
     setText(
       "outOfStockProducts",
@@ -1481,7 +1685,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
 
-    if (!label) return;
+    if (!label) {
+
+      return;
+
+    }
 
 
     label.textContent =
@@ -1529,6 +1737,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     editingProductId =
       null;
 
+
     selectedProduct =
       null;
 
@@ -1540,36 +1749,68 @@ document.addEventListener("DOMContentLoaded", async () => {
     form?.reset();
 
 
-    byId("productId")
-      .value = "";
+    const productId =
+      byId("productId");
 
 
-    byId("productModalTitle")
-      .textContent =
-      "Add Product";
+    if (productId) {
+
+      productId.value =
+        "";
+
+    }
 
 
-    byId("saveProductText")
-      .textContent =
-      "Save Product";
+    setText(
+      "productModalTitle",
+      "Add Product"
+    );
 
 
-    byId("productStatus")
-      .value =
-      "ACTIVE";
+    setText(
+      "saveProductText",
+      "Save Product"
+    );
 
 
-    byId("productUnit")
-      .value =
-      "PCS";
+    const status =
+      byId("productStatus");
 
 
-    byId("productReorder")
-      .value =
-      "10";
+    if (status) {
+
+      status.value =
+        "ACTIVE";
+
+    }
+
+
+    const unit =
+      byId("productUnit");
+
+
+    if (unit) {
+
+      unit.value =
+        "PCS";
+
+    }
+
+
+    const reorder =
+      byId("productReorder");
+
+
+    if (reorder) {
+
+      reorder.value =
+        "10";
+
+    }
 
 
     clearFormMessages();
+
 
     openModal(
       "productModal"
@@ -1612,14 +1853,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       product.id;
 
 
-    byId("productModalTitle")
-      .textContent =
-      "Edit Product";
+    setText(
+      "productModalTitle",
+      "Edit Product"
+    );
 
 
-    byId("saveProductText")
-      .textContent =
-      "Update Product";
+    setText(
+      "saveProductText",
+      "Update Product"
+    );
 
 
     setFormValue(
@@ -1627,25 +1870,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       product.id
     );
 
+
     setFormValue(
       "productName",
       product.name
     );
+
 
     setFormValue(
       "productSku",
       product.sku
     );
 
+
     setFormValue(
       "productCategory",
       product.category
     );
 
+
     setFormValue(
       "productBrand",
       product.brand
     );
+
 
     setFormValue(
       "productUnit",
@@ -1653,30 +1901,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       "PCS"
     );
 
+
     setFormValue(
       "productPrice",
       product.price
     );
+
 
     setFormValue(
       "productCost",
       product.cost
     );
 
+
     setFormValue(
       "productStock",
       product.stock
     );
+
 
     setFormValue(
       "productReorder",
       product.reorderLevel
     );
 
+
     setFormValue(
       "productStatus",
       product.status
     );
+
 
     setFormValue(
       "productDescription",
@@ -1685,6 +1939,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     clearFormMessages();
+
 
     openModal(
       "productModal"
@@ -1959,6 +2214,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadProducts();
 
 
+      /*
+       * The API operation succeeded,
+       * therefore connection is still valid.
+       */
       setConnection(
         "CONNECTED"
       );
@@ -2003,43 +2262,60 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function collectFormData() {
 
+    const productId =
+      byId("productId")
+        ?.value
+        .trim() ||
+      "";
+
+
+    const productName =
+      byId("productName")
+        ?.value
+        .trim() ||
+      "";
+
+
+    const productSku =
+      byId("productSku")
+        ?.value
+        .trim() ||
+      "";
+
+
+    const productPrice =
+      number(
+        byId("productPrice")
+          ?.value
+      );
+
+
+    const productCost =
+      number(
+        byId("productCost")
+          ?.value
+      );
+
+
     return {
 
       id:
-        byId("productId")
-          ?.value
-          .trim() ||
-        "",
+        productId,
 
       productId:
-        byId("productId")
-          ?.value
-          .trim() ||
-        "",
+        productId,
 
       name:
-        byId("productName")
-          ?.value
-          .trim() ||
-        "",
+        productName,
 
       productName:
-        byId("productName")
-          ?.value
-          .trim() ||
-        "",
+        productName,
 
       sku:
-        byId("productSku")
-          ?.value
-          .trim() ||
-        "",
+        productSku,
 
       productSku:
-        byId("productSku")
-          ?.value
-          .trim() ||
-        "",
+        productSku,
 
       category:
         byId("productCategory")
@@ -2060,28 +2336,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         "PCS",
 
       price:
-        number(
-          byId("productPrice")
-            ?.value
-        ),
+        productPrice,
 
       sellingPrice:
-        number(
-          byId("productPrice")
-            ?.value
-        ),
+        productPrice,
 
       cost:
-        number(
-          byId("productCost")
-            ?.value
-        ),
+        productCost,
 
       costPrice:
-        number(
-          byId("productCost")
-            ?.value
-        ),
+        productCost,
 
       stock:
         number(
@@ -2339,12 +2603,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* ==========================================================
-     DELETE PRODUCT BUTTON
+     DELETE PRODUCT
      ========================================================== */
-
-  let productToDelete =
-    null;
-
 
   async function deleteProduct(
     id
@@ -2406,12 +2666,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        const button =
-          byId(
-            "confirmDeleteBtn"
-          );
-
-
         setButtonLoading(
           "confirmDeleteBtn",
           true
@@ -2457,8 +2711,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           await loadProducts();
 
 
+          /*
+           * Delete succeeded, so API is connected.
+           */
           setConnection(
-            "CONNECTED"
+            "SYSTEM CONNECTED"
           );
 
         }
@@ -2574,6 +2831,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         productToDelete =
           null;
 
+
         closeModal(
           "deleteModal"
         );
@@ -2632,7 +2890,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       byId(id);
 
 
-    if (!modal) return;
+    if (!modal) {
+
+      return;
+
+    }
 
 
     modal.classList.add(
@@ -2661,7 +2923,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       byId(id);
 
 
-    if (!modal) return;
+    if (!modal) {
+
+      return;
+
+    }
 
 
     modal.classList.remove(
@@ -2745,9 +3011,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         currentPage--;
 
+
         renderProducts(
           filteredProducts
         );
+
 
         updatePagination();
 
@@ -2782,9 +3050,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         currentPage++;
 
+
         renderProducts(
           filteredProducts
         );
+
 
         updatePagination();
 
@@ -2921,7 +3191,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    if (!tbody) return;
+    if (!tbody) {
+
+      return;
+
+    }
 
 
     tbody.innerHTML = `
@@ -3137,7 +3411,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         class="toast-close"
         aria-label="Close notification"
       >
+
         <i class="fa-solid fa-xmark"></i>
+
       </button>
 
     `;
@@ -3193,7 +3469,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     toast
   ) {
 
-    if (!toast) return;
+    if (!toast) {
+
+      return;
+
+    }
 
 
     toast.classList.remove(
@@ -3226,7 +3506,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       byId(id);
 
 
-    if (!button) return;
+    if (!button) {
+
+      return;
+
+    }
 
 
     if (
@@ -3311,7 +3595,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       byId(id);
 
 
-    if (!element) return;
+    if (!element) {
+
+      return;
+
+    }
 
 
     element.value =
@@ -3321,11 +3609,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* ==========================================================
-     INITIAL CONNECTION CHECK
-     ========================================================== */
+     INITIAL CONNECTION STATE
+     ==========================================================
+     
+     IMPORTANT:
+     Do NOT put:
 
-  setConnection(
-    "CONNECTED"
-  );
+         setConnection("CONNECTED");
+
+     here.
+
+     initialize() is responsible for determining whether
+     the API is actually connected.
+     ========================================================== */
 
 });
