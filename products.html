@@ -1,1359 +1,1688 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Products | StockFlow</title>
+    <meta charset="UTF-8">
 
-  <!-- =========================================================
-       STOCKFLOW | PRODUCTS
-       Phone Accessories Inventory
-       ========================================================= -->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-  <!-- Font Awesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-  >
+    <title>Products | StockFlow</title>
 
-  <!-- Google Font -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  >
 
-  <!-- Main Styles -->
-  <link rel="stylesheet" href="style.css">
+    <!-- =====================================================
+         STOCKFLOW PRODUCTS
+         ===================================================== -->
 
-  <!-- Products Styles -->
-  <link rel="stylesheet" href="products.css">
 
-  <!-- Configuration -->
-  <script src="config.js"></script>
+    <!-- GOOGLE FONT -->
 
-  <!-- API -->
-  <script src="API.js"></script>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
 
-  <!-- Authentication -->
-  <script src="auth.js"></script>
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
-  <!-- Products JS -->
-  <script src="products.js" defer></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- FONT AWESOME -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+    <!-- GLOBAL STOCKFLOW CSS -->
+
+    <link
+        rel="stylesheet"
+        href="./style.css?v=20260921"
+    >
+
+
+    <!-- PRODUCTS CSS -->
+
+    <link
+        rel="stylesheet"
+        href="./products.css?v=20260921"
+    >
+
+
+    <!-- CONFIG -->
+
+    <script src="./config.js?v=20260921"></script>
+
+
+    <!-- API -->
+
+    <script src="./api.js?v=20260921"></script>
+
+
+    <!-- AUTH -->
+
+    <script src="./auth.js?v=20260921"></script>
+
+
+    <!-- PRODUCTS JS -->
+
+    <script
+        src="./products.js?v=20260921"
+        defer
+    ></script>
+
 </head>
 
-<body>
 
-  <!-- =========================================================
-       MOBILE OVERLAY
-       ========================================================= -->
-
-  <div
-    id="sidebarOverlay"
-    class="sidebar-overlay"
-  ></div>
+<body class="dashboard-page products-page">
 
 
-  <!-- =========================================================
-       SIDEBAR
-       ========================================================= -->
+    <!-- =====================================================
+         MOBILE OVERLAY
+         ===================================================== -->
 
-  <aside
-    id="sidebar"
-    class="sidebar"
-  >
-
-    <!-- BRAND -->
-    <div class="sidebar-brand">
-
-      <div class="brand-logo">
-        <span>SF</span>
-      </div>
-
-      <div class="brand-text">
-        <strong>StockFlow</strong>
-        <small>Inventory System</small>
-      </div>
-
-    </div>
+    <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+    ></div>
 
 
-    <!-- NAVIGATION -->
-    <nav class="sidebar-nav">
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
-      <div class="nav-section-title">
-        MAIN
-      </div>
-
-      <a
-        href="dashboard.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Dashboard</span>
-      </a>
+    <aside
+        id="sidebar"
+        class="sidebar"
+    >
 
 
-      <a
-        href="products.html"
-        class="nav-item active"
-      >
-        <i class="fa-solid fa-boxes-stacked"></i>
-        <span>Products</span>
-      </a>
+        <!-- BRAND -->
 
+        <div class="sidebar-brand">
 
-      <a
-        href="categories.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-layer-group"></i>
-        <span>Categories</span>
-      </a>
+            <div class="brand-logo">
+                <span>SF</span>
+            </div>
 
+            <div class="brand-text">
 
-      <div class="nav-section-title">
-        INVENTORY
-      </div>
+                <strong>
+                    StockFlow
+                </strong>
 
+                <span>
+                    Inventory System
+                </span>
 
-      <a
-        href="stock-in.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-arrow-down"></i>
-        <span>Stock In</span>
-      </a>
-
-
-      <a
-        href="stock-out.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-arrow-up"></i>
-        <span>Stock Out</span>
-      </a>
-
-
-      <a
-        href="inventory.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-warehouse"></i>
-        <span>Inventory</span>
-      </a>
-
-
-      <div class="nav-section-title">
-        MANAGEMENT
-      </div>
-
-
-      <a
-        href="suppliers.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-truck-field"></i>
-        <span>Suppliers</span>
-      </a>
-
-
-      <a
-        href="reports.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-file-chart-column"></i>
-        <span>Reports</span>
-      </a>
-
-
-      <a
-        href="activity.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-clock-rotate-left"></i>
-        <span>Activity Logs</span>
-      </a>
-
-
-      <div class="nav-section-title">
-        ACCOUNT
-      </div>
-
-
-      <a
-        href="profile.html"
-        class="nav-item"
-      >
-        <i class="fa-solid fa-user"></i>
-        <span>My Profile</span>
-      </a>
-
-    </nav>
-
-
-    <!-- SIDEBAR FOOTER -->
-
-    <div class="sidebar-footer">
-
-      <button
-        type="button"
-        id="logoutBtn"
-        class="logout-btn"
-      >
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Logout</span>
-      </button>
-
-    </div>
-
-  </aside>
-
-
-  <!-- =========================================================
-       MAIN WRAPPER
-       ========================================================= -->
-
-  <main class="main-content">
-
-
-    <!-- =======================================================
-         TOPBAR
-         ======================================================= -->
-
-    <header class="topbar">
-
-      <div class="topbar-left">
-
-        <button
-          type="button"
-          id="mobileMenuBtn"
-          class="mobile-menu-btn"
-          aria-label="Open menu"
-        >
-          <i class="fa-solid fa-bars"></i>
-        </button>
-
-
-        <div class="page-heading">
-
-          <span class="eyebrow">
-            INVENTORY MANAGEMENT
-          </span>
-
-          <h1>
-            Products
-          </h1>
-
-          <p>
-            Manage your phone accessories and product inventory.
-          </p>
+            </div>
 
         </div>
 
-      </div>
 
+        <!-- NAVIGATION -->
 
-      <div class="topbar-right">
+        <nav class="sidebar-nav">
 
-        <!-- CONNECTION STATUS -->
 
-        <div
-          id="connectionBadge"
-          class="connection-badge"
-        >
-          <span class="connection-dot"></span>
-          <span>CONNECTED</span>
-        </div>
+            <!-- OVERVIEW -->
 
+            <div class="sidebar-section-title">
+                Overview
+            </div>
 
-        <!-- USER -->
 
-        <div class="topbar-user">
+            <a
+                href="dashboard.html"
+                class="sidebar-link"
+            >
 
-          <div
-            id="userAvatar"
-            class="user-avatar"
-          >
-            U
-          </div>
+                <i class="fa-solid fa-chart-line"></i>
 
-          <div class="user-info">
+                <span>
+                    Dashboard
+                </span>
 
-            <strong id="userName">
-              User
-            </strong>
+            </a>
 
-            <small id="userRole">
-              Employee
-            </small>
 
-          </div>
+            <!-- INVENTORY -->
 
-        </div>
+            <div class="sidebar-section-title">
+                Inventory
+            </div>
 
-      </div>
 
-    </header>
+            <a
+                href="products.html"
+                class="sidebar-link active"
+            >
 
+                <i class="fa-solid fa-boxes-stacked"></i>
 
-    <!-- =======================================================
-         CONTENT
-         ======================================================= -->
+                <span>
+                    Products
+                </span>
 
-    <section class="content-container">
+            </a>
 
 
-      <!-- =====================================================
-           PAGE ACTION BAR
-           ===================================================== -->
+            <a
+                href="inventory.html"
+                class="sidebar-link"
+            >
 
-      <div class="content-header">
+                <i class="fa-solid fa-warehouse"></i>
 
-        <div>
+                <span>
+                    Inventory
+                </span>
 
-          <h2>
-            Product Catalog
-          </h2>
+            </a>
 
-          <p>
-            Add, update, monitor and manage your products.
-          </p>
 
-        </div>
+            <a
+                href="stock-in.html"
+                class="sidebar-link"
+            >
 
+                <i class="fa-solid fa-arrow-down"></i>
 
-        <button
-          type="button"
-          id="addProductBtn"
-          class="primary-btn"
-        >
-          <i class="fa-solid fa-plus"></i>
-          Add Product
-        </button>
+                <span>
+                    Stock In
+                </span>
 
-      </div>
+            </a>
 
 
-      <!-- =====================================================
-           STAT CARDS
-           ===================================================== -->
+            <a
+                href="stock-out.html"
+                class="sidebar-link"
+            >
 
-      <div class="stats-grid">
+                <i class="fa-solid fa-arrow-up"></i>
 
+                <span>
+                    Stock Out
+                </span>
 
-        <!-- TOTAL PRODUCTS -->
+            </a>
 
-        <div class="stat-card">
 
-          <div class="stat-icon">
-            <i class="fa-solid fa-box"></i>
-          </div>
+            <!-- MANAGEMENT -->
 
-          <div class="stat-content">
+            <div class="sidebar-section-title">
+                Management
+            </div>
 
-            <span>
-              Total Products
-            </span>
 
-            <strong id="totalProducts">
-              0
-            </strong>
+            <a
+                href="categories.html"
+                class="sidebar-link"
+            >
 
-          </div>
+                <i class="fa-solid fa-layer-group"></i>
 
-        </div>
+                <span>
+                    Categories
+                </span>
 
+            </a>
 
-        <!-- ACTIVE PRODUCTS -->
 
-        <div class="stat-card">
+            <a
+                href="suppliers.html"
+                class="sidebar-link"
+            >
 
-          <div class="stat-icon">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
+                <i class="fa-solid fa-truck-field"></i>
 
-          <div class="stat-content">
+                <span>
+                    Suppliers
+                </span>
 
-            <span>
-              Active Products
-            </span>
+            </a>
 
-            <strong id="activeProducts">
-              0
-            </strong>
 
-          </div>
+            <a
+                href="transactions.html"
+                class="sidebar-link"
+            >
 
-        </div>
+                <i class="fa-solid fa-arrow-right-arrow-left"></i>
 
+                <span>
+                    Transactions
+                </span>
 
-        <!-- LOW STOCK -->
+            </a>
 
-        <div class="stat-card">
 
-          <div class="stat-icon warning">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
+            <a
+                href="activity.html"
+                class="sidebar-link"
+            >
 
-          <div class="stat-content">
+                <i class="fa-solid fa-clock-rotate-left"></i>
 
-            <span>
-              Low Stock
-            </span>
+                <span>
+                    Activity Logs
+                </span>
 
-            <strong id="lowStockProducts">
-              0
-            </strong>
+            </a>
 
-          </div>
 
-        </div>
+            <!-- ACCOUNT -->
 
+            <div class="sidebar-section-title">
+                Account
+            </div>
 
-        <!-- OUT OF STOCK -->
 
-        <div class="stat-card">
+            <a
+                href="profile.html"
+                class="sidebar-link"
+            >
 
-          <div class="stat-icon danger">
-            <i class="fa-solid fa-circle-xmark"></i>
-          </div>
+                <i class="fa-solid fa-user"></i>
 
-          <div class="stat-content">
+                <span>
+                    My Profile
+                </span>
 
-            <span>
-              Out of Stock
-            </span>
+            </a>
 
-            <strong id="outOfStockProducts">
-              0
-            </strong>
 
-          </div>
+            <a
+                href="settings.html"
+                class="sidebar-link"
+            >
 
-        </div>
+                <i class="fa-solid fa-gear"></i>
 
-      </div>
+                <span>
+                    Settings
+                </span>
 
+            </a>
 
-      <!-- =====================================================
-           PRODUCT PANEL
-           ===================================================== -->
+        </nav>
 
-      <div class="panel">
 
+        <!-- SIDEBAR USER -->
 
-        <!-- PANEL HEADER -->
+        <div class="sidebar-bottom">
 
-        <div class="panel-header">
 
-          <div>
+            <div class="mini-user">
 
-            <h3>
-              Products
-            </h3>
+                <div
+                    class="avatar"
+                    id="sidebarUserAvatar"
+                    data-user-initials
+                >
+                    SF
+                </div>
 
-            <span id="productCountLabel">
-              0 products
-            </span>
 
-          </div>
+                <div>
 
+                    <b
+                        id="sidebarUserName"
+                        data-user-name
+                    >
+                        StockFlow User
+                    </b>
 
-          <div class="panel-actions">
+                    <small
+                        id="sidebarUserRole"
+                        data-user-role
+                    >
+                        Administrator
+                    </small>
 
-            <!-- SEARCH -->
-
-            <div class="search-box">
-
-              <i class="fa-solid fa-magnifying-glass"></i>
-
-              <input
-                type="search"
-                id="productSearch"
-                placeholder="Search products..."
-                autocomplete="off"
-              >
+                </div>
 
             </div>
 
 
-            <!-- CATEGORY FILTER -->
-
-            <select
-              id="categoryFilter"
-              class="filter-select"
+            <button
+                type="button"
+                id="logoutBtn"
+                class="logout-btn"
             >
 
-              <option value="">
-                All Categories
-              </option>
+                <i class="fa-solid fa-right-from-bracket"></i>
 
-            </select>
+                <span>
+                    Logout
+                </span>
 
-
-            <!-- STATUS FILTER -->
-
-            <select
-              id="statusFilter"
-              class="filter-select"
-            >
-
-              <option value="">
-                All Status
-              </option>
-
-              <option value="ACTIVE">
-                Active
-              </option>
-
-              <option value="INACTIVE">
-                Inactive
-              </option>
-
-            </select>
-
-          </div>
+            </button>
 
         </div>
 
-
-        <!-- ===================================================
-             TABLE
-             =================================================== -->
-
-        <div class="table-wrapper">
-
-          <table
-            class="data-table"
-            id="productsTable"
-          >
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Product
-                </th>
-
-                <th>
-                  SKU
-                </th>
-
-                <th>
-                  Category
-                </th>
-
-                <th>
-                  Price
-                </th>
-
-                <th>
-                  Stock
-                </th>
-
-                <th>
-                  Status
-                </th>
-
-                <th>
-                  Actions
-                </th>
-
-              </tr>
-
-            </thead>
+    </aside>
 
 
-            <tbody id="productsTableBody">
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
 
-              <!-- JS INSERTS PRODUCTS HERE -->
+    <main class="dashboard-main">
 
-              <tr>
 
-                <td
-                  colspan="7"
-                  class="table-loading"
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
+        <header class="dash-header">
+
+
+            <div class="dash-header-left">
+
+
+                <div class="mobile-header-row">
+
+                    <button
+                        type="button"
+                        id="mobileMenuBtn"
+                        class="mobile-menu-btn"
+                        aria-label="Open menu"
+                    >
+
+                        <i class="fa-solid fa-bars"></i>
+
+                    </button>
+
+
+                    <div>
+
+                        <div class="breadcrumb">
+
+                            <span>
+                                StockFlow
+                            </span>
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                            <span>
+                                Inventory
+                            </span>
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                            <strong>
+                                Products
+                            </strong>
+
+                        </div>
+
+
+                        <h1 class="dash-title">
+                            Products
+                        </h1>
+
+
+                        <p class="dash-subtitle">
+                            Manage your phone accessories and product catalog.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="dash-header-right">
+
+
+                <!-- CONNECTION -->
+
+                <div
+                    id="connectionBadge"
+                    class="connection-badge"
                 >
 
-                  <div class="loading-spinner"></div>
+                    <span class="connection-dot"></span>
 
-                  <span>
-                    Loading products...
-                  </span>
+                    <span>
+                        Connected
+                    </span>
 
-                </td>
+                </div>
 
-              </tr>
 
-            </tbody>
+                <!-- NOTIFICATIONS -->
 
-          </table>
+                <div class="notification-wrapper">
 
-        </div>
+                    <button
+                        type="button"
+                        id="notificationBtn"
+                        class="header-icon-btn"
+                        aria-label="Notifications"
+                    >
 
+                        <i class="fa-regular fa-bell"></i>
 
-        <!-- ===================================================
-             EMPTY STATE
-             =================================================== -->
+                        <span class="notification-dot"></span>
 
-        <div
-          id="emptyProducts"
-          class="empty-state hidden"
-        >
+                    </button>
 
-          <div class="empty-icon">
-            <i class="fa-solid fa-box-open"></i>
-          </div>
+                </div>
 
-          <h3>
-            No products found
-          </h3>
 
-          <p>
-            There are no products matching your search or filter.
-          </p>
+                <!-- USER -->
 
-          <button
-            type="button"
-            id="emptyAddProductBtn"
-            class="primary-btn"
-          >
-            <i class="fa-solid fa-plus"></i>
-            Add Product
-          </button>
+                <div class="topbar-user">
 
-        </div>
+                    <div
+                        id="userAvatar"
+                        class="user-avatar"
+                    >
+                        U
+                    </div>
 
 
-        <!-- ===================================================
-             PAGINATION
-             =================================================== -->
+                    <div class="user-info">
 
-        <div class="pagination">
+                        <strong id="userName">
+                            User
+                        </strong>
 
-          <span id="paginationInfo">
-            Showing 0 of 0 products
-          </span>
+                        <small id="userRole">
+                            Employee
+                        </small>
 
+                    </div>
 
-          <div class="pagination-buttons">
-
-            <button
-              type="button"
-              id="previousPageBtn"
-              class="pagination-btn"
-              disabled
-            >
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
-
-            <span
-              id="currentPage"
-              class="current-page"
-            >
-              1
-            </span>
-
-            <button
-              type="button"
-              id="nextPageBtn"
-              class="pagination-btn"
-              disabled
-            >
-              <i class="fa-solid fa-chevron-right"></i>
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- =========================================================
-       ADD / EDIT PRODUCT MODAL
-       ========================================================= -->
-
-  <div
-    id="productModal"
-    class="modal"
-    aria-hidden="true"
-  >
-
-    <div class="modal-backdrop"></div>
-
-
-    <div class="modal-dialog">
-
-      <div class="modal-header">
-
-        <div>
-
-          <span class="modal-eyebrow">
-            PRODUCT MANAGEMENT
-          </span>
-
-          <h2 id="productModalTitle">
-            Add Product
-          </h2>
-
-          <p>
-            Enter the product information below.
-          </p>
-
-        </div>
-
-
-        <button
-          type="button"
-          id="closeProductModalBtn"
-          class="modal-close"
-          aria-label="Close"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-
-      </div>
-
-
-      <form
-        id="productForm"
-        autocomplete="off"
-      >
-
-        <!-- Hidden ID -->
-
-        <input
-          type="hidden"
-          id="productId"
-          name="productId"
-        >
-
-
-        <div class="form-grid">
-
-
-          <!-- PRODUCT NAME -->
-
-          <div class="form-group full-width">
-
-            <label for="productName">
-              Product Name
-              <span>*</span>
-            </label>
-
-            <input
-              type="text"
-              id="productName"
-              name="productName"
-              placeholder="e.g. iPhone 15 Silicone Case"
-              maxlength="150"
-              required
-            >
-
-          </div>
-
-
-          <!-- SKU -->
-
-          <div class="form-group">
-
-            <label for="productSku">
-              SKU
-              <span>*</span>
-            </label>
-
-            <input
-              type="text"
-              id="productSku"
-              name="productSku"
-              placeholder="e.g. CASE-IP15-BLK"
-              maxlength="50"
-              required
-            >
-
-          </div>
-
-
-          <!-- CATEGORY -->
-
-          <div class="form-group">
-
-            <label for="productCategory">
-              Category
-              <span>*</span>
-            </label>
-
-            <select
-              id="productCategory"
-              name="productCategory"
-              required
-            >
-
-              <option value="">
-                Select category
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <!-- BRAND -->
-
-          <div class="form-group">
-
-            <label for="productBrand">
-              Brand
-            </label>
-
-            <input
-              type="text"
-              id="productBrand"
-              name="productBrand"
-              placeholder="e.g. Spigen"
-              maxlength="100"
-            >
-
-          </div>
-
-
-          <!-- UNIT -->
-
-          <div class="form-group">
-
-            <label for="productUnit">
-              Unit
-              <span>*</span>
-            </label>
-
-            <select
-              id="productUnit"
-              name="productUnit"
-              required
-            >
-
-              <option value="PCS">
-                Pieces
-              </option>
-
-              <option value="BOX">
-                Box
-              </option>
-
-              <option value="PACK">
-                Pack
-              </option>
-
-              <option value="SET">
-                Set
-              </option>
-
-              <option value="PAIR">
-                Pair
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <!-- SELLING PRICE -->
-
-          <div class="form-group">
-
-            <label for="productPrice">
-              Selling Price
-              <span>*</span>
-            </label>
-
-            <div class="input-prefix">
-
-              <span>
-                ₱
-              </span>
-
-              <input
-                type="number"
-                id="productPrice"
-                name="productPrice"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                required
-              >
+                </div>
 
             </div>
 
-          </div>
+        </header>
 
 
-          <!-- COST PRICE -->
+        <!-- =================================================
+             CONTENT
+             ================================================= -->
 
-          <div class="form-group">
+        <section class="products-content">
 
-            <label for="productCost">
-              Cost Price
-            </label>
 
-            <div class="input-prefix">
+            <!-- PAGE INTRO -->
 
-              <span>
-                ₱
-              </span>
+            <div class="products-page-intro">
 
-              <input
-                type="number"
-                id="productCost"
-                name="productCost"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              >
+                <div>
+
+                    <span class="section-eyebrow">
+                        PRODUCT MANAGEMENT
+                    </span>
+
+                    <h2>
+                        Product Catalog
+                    </h2>
+
+                    <p>
+                        Add, update, monitor and manage your phone accessory products.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="addProductBtn"
+                    class="primary-btn"
+                >
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    <span>
+                        Add Product
+                    </span>
+
+                </button>
 
             </div>
 
-          </div>
+
+            <!-- =================================================
+                 STAT CARDS
+                 ================================================= -->
+
+            <div class="product-stats-grid">
 
 
-          <!-- INITIAL STOCK -->
+                <!-- TOTAL -->
 
-          <div class="form-group">
+                <article class="product-stat-card">
 
-            <label for="productStock">
-              Initial Stock
-            </label>
+                    <div class="product-stat-icon blue">
 
-            <input
-              type="number"
-              id="productStock"
-              name="productStock"
-              placeholder="0"
-              min="0"
-              step="1"
-            >
+                        <i class="fa-solid fa-boxes-stacked"></i>
 
-          </div>
+                    </div>
 
 
-          <!-- REORDER LEVEL -->
+                    <div class="product-stat-content">
 
-          <div class="form-group">
+                        <span>
+                            Total Products
+                        </span>
 
-            <label for="productReorder">
-              Reorder Level
-            </label>
+                        <strong id="totalProducts">
+                            0
+                        </strong>
 
-            <input
-              type="number"
-              id="productReorder"
-              name="productReorder"
-              placeholder="10"
-              min="0"
-              step="1"
-              value="10"
-            >
+                        <small>
+                            Products in catalog
+                        </small>
 
-          </div>
+                    </div>
+
+                </article>
 
 
-          <!-- STATUS -->
+                <!-- ACTIVE -->
 
-          <div class="form-group">
+                <article class="product-stat-card">
 
-            <label for="productStatus">
-              Status
-            </label>
+                    <div class="product-stat-icon green">
 
-            <select
-              id="productStatus"
-              name="productStatus"
-            >
+                        <i class="fa-solid fa-circle-check"></i>
 
-              <option value="ACTIVE">
-                Active
-              </option>
-
-              <option value="INACTIVE">
-                Inactive
-              </option>
-
-            </select>
-
-          </div>
+                    </div>
 
 
-          <!-- DESCRIPTION -->
+                    <div class="product-stat-content">
 
-          <div class="form-group full-width">
+                        <span>
+                            Active Products
+                        </span>
 
-            <label for="productDescription">
-              Description
-            </label>
+                        <strong id="activeProducts">
+                            0
+                        </strong>
 
-            <textarea
-              id="productDescription"
-              name="productDescription"
-              rows="4"
-              maxlength="500"
-              placeholder="Enter product description..."
-            ></textarea>
+                        <small>
+                            Currently available
+                        </small>
 
-          </div>
+                    </div>
 
-        </div>
+                </article>
 
 
-        <!-- FORM ERROR -->
+                <!-- LOW STOCK -->
 
-        <div
-          id="productFormError"
-          class="form-message error-message hidden"
-        >
-          <i class="fa-solid fa-circle-exclamation"></i>
-          <span></span>
-        </div>
+                <article class="product-stat-card">
 
+                    <div class="product-stat-icon orange">
 
-        <!-- FORM SUCCESS -->
+                        <i class="fa-solid fa-triangle-exclamation"></i>
 
-        <div
-          id="productFormSuccess"
-          class="form-message success-message hidden"
-        >
-          <i class="fa-solid fa-circle-check"></i>
-          <span></span>
-        </div>
+                    </div>
 
 
-        <!-- MODAL FOOTER -->
+                    <div class="product-stat-content">
 
-        <div class="modal-footer">
+                        <span>
+                            Low Stock
+                        </span>
 
-          <button
-            type="button"
-            id="cancelProductBtn"
-            class="secondary-btn"
-          >
-            Cancel
-          </button>
+                        <strong id="lowStockProducts">
+                            0
+                        </strong>
+
+                        <small>
+                            Need replenishment
+                        </small>
+
+                    </div>
+
+                </article>
 
 
-          <button
-            type="submit"
-            id="saveProductBtn"
-            class="primary-btn"
-          >
+                <!-- OUT OF STOCK -->
 
-            <i class="fa-solid fa-floppy-disk"></i>
+                <article class="product-stat-card">
 
-            <span id="saveProductText">
-              Save Product
+                    <div class="product-stat-icon red">
+
+                        <i class="fa-solid fa-circle-xmark"></i>
+
+                    </div>
+
+
+                    <div class="product-stat-content">
+
+                        <span>
+                            Out of Stock
+                        </span>
+
+                        <strong id="outOfStockProducts">
+                            0
+                        </strong>
+
+                        <small>
+                            No available stock
+                        </small>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <!-- =================================================
+                 PRODUCT PANEL
+                 ================================================= -->
+
+            <section class="products-panel">
+
+
+                <!-- PANEL HEADER -->
+
+                <div class="products-panel-header">
+
+
+                    <div class="products-panel-title">
+
+                        <div class="products-panel-icon">
+
+                            <i class="fa-solid fa-box"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <h3>
+                                All Products
+                            </h3>
+
+                            <span id="productCountLabel">
+                                0 products
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- FILTERS -->
+
+                    <div class="product-filters">
+
+
+                        <!-- SEARCH -->
+
+                        <div class="product-search">
+
+                            <i class="fa-solid fa-magnifying-glass"></i>
+
+                            <input
+                                type="search"
+                                id="productSearch"
+                                placeholder="Search products..."
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+
+                        <!-- CATEGORY -->
+
+                        <select
+                            id="categoryFilter"
+                            class="product-filter-select"
+                        >
+
+                            <option value="">
+                                All Categories
+                            </option>
+
+                        </select>
+
+
+                        <!-- STATUS -->
+
+                        <select
+                            id="statusFilter"
+                            class="product-filter-select"
+                        >
+
+                            <option value="">
+                                All Status
+                            </option>
+
+                            <option value="ACTIVE">
+                                Active
+                            </option>
+
+                            <option value="INACTIVE">
+                                Inactive
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     TABLE
+                     ================================================= -->
+
+                <div class="products-table-container">
+
+                    <table
+                        class="products-table"
+                        id="productsTable"
+                    >
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Product
+                                </th>
+
+                                <th>
+                                    SKU
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Price
+                                </th>
+
+                                <th>
+                                    Stock
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th class="actions-column">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="productsTableBody">
+
+                            <tr>
+
+                                <td
+                                    colspan="7"
+                                    class="table-loading"
+                                >
+
+                                    <div class="loading-spinner"></div>
+
+                                    <span>
+                                        Loading products...
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- =================================================
+                     EMPTY STATE
+                     ================================================= -->
+
+                <div
+                    id="emptyProducts"
+                    class="empty-state hidden"
+                >
+
+                    <div class="empty-icon">
+
+                        <i class="fa-solid fa-box-open"></i>
+
+                    </div>
+
+
+                    <h3>
+                        No products found
+                    </h3>
+
+
+                    <p>
+                        There are no products matching your search or filter.
+                    </p>
+
+
+                    <button
+                        type="button"
+                        id="emptyAddProductBtn"
+                        class="primary-btn"
+                    >
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        Add Product
+
+                    </button>
+
+                </div>
+
+
+                <!-- =================================================
+                     PAGINATION
+                     ================================================= -->
+
+                <div class="products-pagination">
+
+
+                    <span id="paginationInfo">
+                        Showing 0 of 0 products
+                    </span>
+
+
+                    <div class="pagination-buttons">
+
+
+                        <button
+                            type="button"
+                            id="previousPageBtn"
+                            class="pagination-btn"
+                            disabled
+                            aria-label="Previous page"
+                        >
+
+                            <i class="fa-solid fa-chevron-left"></i>
+
+                        </button>
+
+
+                        <span
+                            id="currentPage"
+                            class="current-page"
+                        >
+                            1
+                        </span>
+
+
+                        <button
+                            type="button"
+                            id="nextPageBtn"
+                            class="pagination-btn"
+                            disabled
+                            aria-label="Next page"
+                        >
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- =================================================
+             FOOTER
+             ================================================= -->
+
+        <footer class="dashboard-footer">
+
+            <span>
+                © 2026 <strong>StockFlow</strong>
+                Inventory Management System
             </span>
 
-          </button>
+            <span>
+                Products
+            </span>
+
+        </footer>
+
+    </main>
+
+
+    <!-- =====================================================
+         ADD / EDIT PRODUCT MODAL
+         ===================================================== -->
+
+    <div
+        id="productModal"
+        class="modal"
+        aria-hidden="true"
+    >
+
+        <div class="modal-backdrop"></div>
+
+
+        <div class="modal-dialog">
+
+
+            <!-- MODAL HEADER -->
+
+            <div class="modal-header">
+
+                <div>
+
+                    <span class="modal-eyebrow">
+                        PRODUCT MANAGEMENT
+                    </span>
+
+                    <h2 id="productModalTitle">
+                        Add Product
+                    </h2>
+
+                    <p>
+                        Enter the product information below.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeProductModalBtn"
+                    class="modal-close"
+                    aria-label="Close"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form
+                id="productForm"
+                autocomplete="off"
+            >
+
+
+                <input
+                    type="hidden"
+                    id="productId"
+                    name="productId"
+                >
+
+
+                <div class="form-grid">
+
+
+                    <!-- NAME -->
+
+                    <div class="form-group full-width">
+
+                        <label for="productName">
+                            Product Name
+                            <span>*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="productName"
+                            name="productName"
+                            placeholder="e.g. iPhone 15 Silicone Case"
+                            maxlength="150"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- SKU -->
+
+                    <div class="form-group">
+
+                        <label for="productSku">
+                            SKU
+                            <span>*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="productSku"
+                            name="productSku"
+                            placeholder="e.g. CASE-IP15-BLK"
+                            maxlength="50"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- CATEGORY -->
+
+                    <div class="form-group">
+
+                        <label for="productCategory">
+                            Category
+                            <span>*</span>
+                        </label>
+
+                        <select
+                            id="productCategory"
+                            name="productCategory"
+                            required
+                        >
+
+                            <option value="">
+                                Select category
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- BRAND -->
+
+                    <div class="form-group">
+
+                        <label for="productBrand">
+                            Brand
+                        </label>
+
+                        <input
+                            type="text"
+                            id="productBrand"
+                            name="productBrand"
+                            placeholder="e.g. Spigen"
+                            maxlength="100"
+                        >
+
+                    </div>
+
+
+                    <!-- UNIT -->
+
+                    <div class="form-group">
+
+                        <label for="productUnit">
+                            Unit
+                            <span>*</span>
+                        </label>
+
+                        <select
+                            id="productUnit"
+                            name="productUnit"
+                            required
+                        >
+
+                            <option value="PCS">
+                                Pieces
+                            </option>
+
+                            <option value="BOX">
+                                Box
+                            </option>
+
+                            <option value="PACK">
+                                Pack
+                            </option>
+
+                            <option value="SET">
+                                Set
+                            </option>
+
+                            <option value="PAIR">
+                                Pair
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- SELLING PRICE -->
+
+                    <div class="form-group">
+
+                        <label for="productPrice">
+                            Selling Price
+                            <span>*</span>
+                        </label>
+
+                        <div class="input-prefix">
+
+                            <span>₱</span>
+
+                            <input
+                                type="number"
+                                id="productPrice"
+                                name="productPrice"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- COST -->
+
+                    <div class="form-group">
+
+                        <label for="productCost">
+                            Cost Price
+                        </label>
+
+                        <div class="input-prefix">
+
+                            <span>₱</span>
+
+                            <input
+                                type="number"
+                                id="productCost"
+                                name="productCost"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- STOCK -->
+
+                    <div class="form-group">
+
+                        <label for="productStock">
+                            Initial Stock
+                        </label>
+
+                        <input
+                            type="number"
+                            id="productStock"
+                            name="productStock"
+                            placeholder="0"
+                            min="0"
+                            step="1"
+                        >
+
+                    </div>
+
+
+                    <!-- REORDER -->
+
+                    <div class="form-group">
+
+                        <label for="productReorder">
+                            Reorder Level
+                        </label>
+
+                        <input
+                            type="number"
+                            id="productReorder"
+                            name="productReorder"
+                            placeholder="10"
+                            min="0"
+                            step="1"
+                            value="10"
+                        >
+
+                    </div>
+
+
+                    <!-- STATUS -->
+
+                    <div class="form-group">
+
+                        <label for="productStatus">
+                            Status
+                        </label>
+
+                        <select
+                            id="productStatus"
+                            name="productStatus"
+                        >
+
+                            <option value="ACTIVE">
+                                Active
+                            </option>
+
+                            <option value="INACTIVE">
+                                Inactive
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- DESCRIPTION -->
+
+                    <div class="form-group full-width">
+
+                        <label for="productDescription">
+                            Description
+                        </label>
+
+                        <textarea
+                            id="productDescription"
+                            name="productDescription"
+                            rows="4"
+                            maxlength="500"
+                            placeholder="Enter product description..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ERROR -->
+
+                <div
+                    id="productFormError"
+                    class="form-message error-message hidden"
+                >
+
+                    <i class="fa-solid fa-circle-exclamation"></i>
+
+                    <span></span>
+
+                </div>
+
+
+                <!-- SUCCESS -->
+
+                <div
+                    id="productFormSuccess"
+                    class="form-message success-message hidden"
+                >
+
+                    <i class="fa-solid fa-circle-check"></i>
+
+                    <span></span>
+
+                </div>
+
+
+                <!-- FOOTER -->
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        id="cancelProductBtn"
+                        class="secondary-btn"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="saveProductBtn"
+                        class="primary-btn"
+                    >
+
+                        <i class="fa-solid fa-floppy-disk"></i>
+
+                        <span id="saveProductText">
+                            Save Product
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
-
-      </form>
 
     </div>
 
-  </div>
+
+    <!-- =====================================================
+         DELETE MODAL
+         ===================================================== -->
+
+    <div
+        id="deleteModal"
+        class="modal"
+        aria-hidden="true"
+    >
+
+        <div class="modal-backdrop"></div>
 
 
-  <!-- =========================================================
-       DELETE CONFIRMATION MODAL
-       ========================================================= -->
-
-  <div
-    id="deleteModal"
-    class="modal"
-    aria-hidden="true"
-  >
-
-    <div class="modal-backdrop"></div>
+        <div class="confirm-dialog">
 
 
-    <div class="confirm-dialog">
+            <div class="confirm-icon danger">
 
-      <div class="confirm-icon danger">
-        <i class="fa-solid fa-trash"></i>
-      </div>
+                <i class="fa-solid fa-trash"></i>
 
-
-      <h2>
-        Delete Product?
-      </h2>
+            </div>
 
 
-      <p>
-        Are you sure you want to delete
-        <strong id="deleteProductName">
-          this product
-        </strong>?
-      </p>
+            <h2>
+                Delete Product?
+            </h2>
 
 
-      <p class="warning-text">
-        This action cannot be undone.
-      </p>
+            <p>
+
+                Are you sure you want to delete
+
+                <strong id="deleteProductName">
+                    this product
+                </strong>?
+
+            </p>
 
 
-      <div class="confirm-actions">
-
-        <button
-          type="button"
-          id="cancelDeleteBtn"
-          class="secondary-btn"
-        >
-          Cancel
-        </button>
+            <p class="warning-text">
+                This action cannot be undone.
+            </p>
 
 
-        <button
-          type="button"
-          id="confirmDeleteBtn"
-          class="danger-btn"
-        >
-          <i class="fa-solid fa-trash"></i>
-          Delete Product
-        </button>
+            <div class="confirm-actions">
 
-      </div>
+                <button
+                    type="button"
+                    id="cancelDeleteBtn"
+                    class="secondary-btn"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="button"
+                    id="confirmDeleteBtn"
+                    class="danger-btn"
+                >
+
+                    <i class="fa-solid fa-trash"></i>
+
+                    Delete Product
+
+                </button>
+
+            </div>
+
+        </div>
 
     </div>
 
-  </div>
+
+    <!-- =====================================================
+         VIEW PRODUCT MODAL
+         ===================================================== -->
+
+    <div
+        id="viewProductModal"
+        class="modal"
+        aria-hidden="true"
+    >
+
+        <div class="modal-backdrop"></div>
 
 
-  <!-- =========================================================
-       VIEW PRODUCT MODAL
-       ========================================================= -->
-
-  <div
-    id="viewProductModal"
-    class="modal"
-    aria-hidden="true"
-  >
-
-    <div class="modal-backdrop"></div>
+        <div class="modal-dialog view-dialog">
 
 
-    <div class="modal-dialog view-dialog">
+            <div class="modal-header">
 
-      <div class="modal-header">
+                <div>
 
-        <div>
+                    <span class="modal-eyebrow">
+                        PRODUCT DETAILS
+                    </span>
 
-          <span class="modal-eyebrow">
-            PRODUCT DETAILS
-          </span>
+                    <h2 id="viewProductName">
+                        Product
+                    </h2>
 
-          <h2 id="viewProductName">
-            Product
-          </h2>
+                    <p id="viewProductSku">
+                        SKU
+                    </p>
 
-          <p id="viewProductSku">
-            SKU
-          </p>
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeViewProductBtn"
+                    class="modal-close"
+                    aria-label="Close"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="product-details-grid">
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Category
+                    </span>
+
+                    <strong id="viewProductCategory">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Brand
+                    </span>
+
+                    <strong id="viewProductBrand">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Selling Price
+                    </span>
+
+                    <strong id="viewProductPrice">
+                        ₱0.00
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Cost Price
+                    </span>
+
+                    <strong id="viewProductCost">
+                        ₱0.00
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Current Stock
+                    </span>
+
+                    <strong id="viewProductStock">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Reorder Level
+                    </span>
+
+                    <strong id="viewProductReorder">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Unit
+                    </span>
+
+                    <strong id="viewProductUnit">
+                        PCS
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Status
+                    </span>
+
+                    <strong id="viewProductStatus">
+                        ACTIVE
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item full-width">
+
+                    <span>
+                        Description
+                    </span>
+
+                    <p id="viewProductDescription">
+                        No description available.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    id="viewEditProductBtn"
+                    class="primary-btn"
+                >
+
+                    <i class="fa-solid fa-pen"></i>
+
+                    Edit Product
+
+                </button>
+
+            </div>
 
         </div>
-
-
-        <button
-          type="button"
-          id="closeViewProductBtn"
-          class="modal-close"
-          aria-label="Close"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-
-      </div>
-
-
-      <div class="product-details-grid">
-
-
-        <div class="detail-item">
-
-          <span>
-            Category
-          </span>
-
-          <strong id="viewProductCategory">
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Brand
-          </span>
-
-          <strong id="viewProductBrand">
-            —
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Selling Price
-          </span>
-
-          <strong id="viewProductPrice">
-            ₱0.00
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Cost Price
-          </span>
-
-          <strong id="viewProductCost">
-            ₱0.00
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Current Stock
-          </span>
-
-          <strong id="viewProductStock">
-            0
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Reorder Level
-          </span>
-
-          <strong id="viewProductReorder">
-            0
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Unit
-          </span>
-
-          <strong id="viewProductUnit">
-            PCS
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item">
-
-          <span>
-            Status
-          </span>
-
-          <strong id="viewProductStatus">
-            ACTIVE
-          </strong>
-
-        </div>
-
-
-        <div class="detail-item full-width">
-
-          <span>
-            Description
-          </span>
-
-          <p id="viewProductDescription">
-            No description available.
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <div class="modal-footer">
-
-        <button
-          type="button"
-          id="viewEditProductBtn"
-          class="primary-btn"
-        >
-          <i class="fa-solid fa-pen"></i>
-          Edit Product
-        </button>
-
-      </div>
 
     </div>
 
-  </div>
+
+    <!-- =====================================================
+         TOAST
+         ===================================================== -->
+
+    <div
+        id="toastContainer"
+        class="toast-container"
+        aria-live="polite"
+    ></div>
 
 
-  <!-- =========================================================
-       TOAST NOTIFICATION
-       ========================================================= -->
+    <!-- =====================================================
+         GLOBAL LOADING
+         ===================================================== -->
 
-  <div
-    id="toastContainer"
-    class="toast-container"
-    aria-live="polite"
-  ></div>
+    <div
+        id="globalLoading"
+        class="global-loading hidden"
+    >
 
+        <div class="loading-card">
 
-  <!-- =========================================================
-       GLOBAL LOADING
-       ========================================================= -->
+            <div class="loading-spinner"></div>
 
-  <div
-    id="globalLoading"
-    class="global-loading hidden"
-  >
+            <strong>
+                Processing...
+            </strong>
 
-    <div class="loading-card">
+            <span>
+                Please wait.
+            </span>
 
-      <div class="loading-spinner"></div>
-
-      <strong>
-        Processing...
-      </strong>
-
-      <span>
-        Please wait.
-      </span>
+        </div>
 
     </div>
 
-  </div>
 
 </body>
+
 </html>
