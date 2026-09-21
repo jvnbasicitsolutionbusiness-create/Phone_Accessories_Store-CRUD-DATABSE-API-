@@ -1369,3 +1369,168 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
 });
+
+/* =========================================================
+   STOCKFLOW DASHBOARD UI CONTROLS
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    /* -----------------------------------------------------
+       SIDEBAR / HAMBURGER
+       ----------------------------------------------------- */
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const mobileMenuBtn =
+        document.getElementById("mobileMenuBtn");
+
+    const sidebarOverlay =
+        document.getElementById("sidebarOverlay");
+
+
+    if (mobileMenuBtn && sidebar) {
+
+        mobileMenuBtn.addEventListener("click", () => {
+
+            const isMobile =
+                window.innerWidth <= 900;
+
+            if (isMobile) {
+
+                sidebar.classList.toggle("open");
+
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.toggle(
+                        "show",
+                        sidebar.classList.contains("open")
+                    );
+                }
+
+            } else {
+
+                document.body.classList.toggle(
+                    "sidebar-collapsed"
+                );
+
+            }
+
+        });
+
+    }
+
+
+    /* -----------------------------------------------------
+       SIDEBAR OVERLAY
+       ----------------------------------------------------- */
+
+    if (sidebarOverlay && sidebar) {
+
+        sidebarOverlay.addEventListener("click", () => {
+
+            sidebar.classList.remove("open");
+
+            sidebarOverlay.classList.remove("show");
+
+        });
+
+    }
+
+
+    /* -----------------------------------------------------
+       CLOSE SIDEBAR AFTER CLICKING A LINK ON MOBILE
+       ----------------------------------------------------- */
+
+    if (sidebar) {
+
+        const sidebarLinks =
+            sidebar.querySelectorAll(".sidebar-link");
+
+        sidebarLinks.forEach(link => {
+
+            link.addEventListener("click", () => {
+
+                if (window.innerWidth <= 900) {
+
+                    sidebar.classList.remove("open");
+
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.remove("show");
+                    }
+
+                }
+
+            });
+
+        });
+
+    }
+
+
+    /* -----------------------------------------------------
+       NOTIFICATION
+       ----------------------------------------------------- */
+
+    const notificationBtn =
+        document.getElementById("notificationBtn");
+
+    const notificationPanel =
+        document.getElementById("notificationPanel");
+
+
+    if (notificationBtn && notificationPanel) {
+
+        notificationBtn.addEventListener("click", (event) => {
+
+            event.stopPropagation();
+
+            notificationPanel.classList.toggle("show");
+
+        });
+
+
+        /* Close notification when clicking elsewhere */
+
+        document.addEventListener("click", (event) => {
+
+            if (
+                !notificationPanel.contains(event.target) &&
+                !notificationBtn.contains(event.target)
+            ) {
+
+                notificationPanel.classList.remove("show");
+
+            }
+
+        });
+
+    }
+
+
+    /* -----------------------------------------------------
+       ESC KEY
+       ----------------------------------------------------- */
+
+    document.addEventListener("keydown", (event) => {
+
+        if (event.key !== "Escape") {
+            return;
+        }
+
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("show");
+        }
+
+        if (notificationPanel) {
+            notificationPanel.classList.remove("show");
+        }
+
+    });
+
+});
