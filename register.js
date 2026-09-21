@@ -209,7 +209,20 @@ document.addEventListener("DOMContentLoaded", () => {
             "STOCKFLOW_PHONE_OTP_SENT",
 
         OTP:
-            "STOCKFLOW_OTP"
+            "STOCKFLOW_OTP",
+
+        /*
+         * CONSOLIDATED STATE OBJECT.
+         *
+         * verify.js looks for this exact key first and
+         * expects a single JSON object containing all of
+         * the fields below. Without it, verify.js has no
+         * reliable way to know which account it is
+         * verifying, because it never reads the discrete
+         * STOCKFLOW_VERIFICATION_* keys above directly.
+         */
+        STATE:
+            "STOCKFLOW_VERIFICATION_STATE"
     };
 
 
@@ -982,6 +995,41 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
+            /*
+             * CONSOLIDATED STATE OBJECT.
+             *
+             * verify.js reads this single JSON blob to
+             * figure out which account (email/phone/
+             * username/uid) it needs to verify an OTP
+             * for. Keeping this in sync with the discrete
+             * keys above is what actually connects the
+             * registration flow to the verification page.
+             */
+
+            sessionStorage.setItem(
+                STORAGE_KEYS.STATE,
+                JSON.stringify({
+                    identity,
+                    uid,
+                    username:
+                        data.username,
+                    email:
+                        data.email,
+                    gmail:
+                        data.gmail,
+                    phone:
+                        data.phone,
+                    channel:
+                        "email",
+                    otpReady,
+                    emailSent,
+                    phoneSent,
+                    otpExpiresAt,
+                    otpCooldownSeconds
+                })
+            );
+
+
             console.log(
                 "StockFlow verification state saved:",
                 {
@@ -1395,11 +1443,103 @@ document.addEventListener("DOMContentLoaded", () => {
                REDIRECT TO VERIFY
                ================================================= */
 
+            /*
+             * Pass identity details as URL parameters too.
+             *
+             * sessionStorage does not survive every browser
+             * configuration (private/incognito tabs with
+             * storage partitioning, some in-app browsers).
+             * Query params give verify.js a reliable
+             * fallback so the identity of the account being
+             * verified is never lost on redirect.
+             */
+
+            const redirectUid =
+                clean(
+                    response?.uid ||
+                    response?.user?.uid ||
+                    response?.data?.uid ||
+                    ""
+                );
+
+
+            const redirectIdentity =
+                clean(
+                    data.email ||
+                    data.username
+                );
+
+
+            const verifyParams =
+                new URLSearchParams();
+
+
+            if (redirectIdentity) {
+
+                verifyParams.set(
+                    "identity",
+                    redirectIdentity
+                );
+            }
+
+
+            if (redirectUid) {
+
+                verifyParams.set(
+                    "uid",
+                    redirectUid
+                );
+            }
+
+
+            if (data.username) {
+
+                verifyParams.set(
+                    "username",
+                    data.username
+                );
+            }
+
+
+            if (data.email) {
+
+                verifyParams.set(
+                    "email",
+                    data.email
+                );
+            }
+
+
+            if (data.phone) {
+
+                verifyParams.set(
+                    "phone",
+                    data.phone
+                );
+            }
+
+
+            const verifyQuery =
+                verifyParams.toString();
+
+
+            const verifyDestination =
+                verifyQuery
+                    ? verifyRoute +
+                        (
+                            verifyRoute.includes("?")
+                                ? "&"
+                                : "?"
+                        ) +
+                        verifyQuery
+                    : verifyRoute;
+
+
             window.setTimeout(
                 () => {
 
                     window.location.href =
-                        verifyRoute;
+                        verifyDestination;
 
                 },
                 900
