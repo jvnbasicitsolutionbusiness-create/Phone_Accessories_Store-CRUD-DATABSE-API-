@@ -1,307 +1,1436 @@
 /* ============================================================
    STOCKFLOW | SHARED UI CONTROLLER
-   ============================================================
-   Handles:
+   File: main.js
+
+   RESPONSIBILITIES:
    - Current year
-   - Logout buttons
-   - Mobile sidebar/menu
+   - Logged-in user UI
+   - Correct user role display
+   - Sidebar / mobile menu
    - Active navigation
+   - Logout
    - Outside-click menu closing
-   - Escape-key menu closing
-   - Scroll behavior
-   - Page loading state
+   - Escape-key handling
    - Network status
-   - Shared notification/toast messages
-   - Keyboard accessibility
+   - Shared toast notifications
+   - Page loading
+   - Button loading
+   - Table accessibility
+   - Responsive behavior
+
+   IMPORTANT:
+   - Does NOT perform login
+   - Does NOT perform registration
+   - Does NOT generate OTP
+   - Does NOT verify OTP
+   - Does NOT modify authentication logic
+   - Uses StockFlowAuth / StockFlowAPI when available
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+
     "use strict";
 
+
     /* =========================================================
-       ELEMENT HELPERS
+       HELPERS
        ========================================================= */
 
-    const $ = (selector, parent = document) =>
-        parent.querySelector(selector);
+    const $ = (
+        selector,
+        parent = document
+    ) => parent.querySelector(selector);
 
-    const $$ = (selector, parent = document) =>
-        [...parent.querySelectorAll(selector)];
+
+    const $$ = (
+        selector,
+        parent = document
+    ) => [
+        ...parent.querySelectorAll(selector)
+    ];
+
+
+    const safeString = value => {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+            return "";
+        }
+
+        return String(value).trim();
+    };
+
+
+    const escapeHTML = value => {
+
+        return String(value ?? "")
+            .replace(
+                /[&<>"']/g,
+                character => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#039;"
+                }[character])
+            );
+
+    };
 
 
     /* =========================================================
        CURRENT YEAR
        ========================================================= */
 
-    const currentYear = new Date().getFullYear();
+    const currentYear =
+        new Date().getFullYear();
 
-    $$("[data-year]").forEach(element => {
-        element.textContent = currentYear;
-    });
+
+    $$("[data-year]").forEach(
+        element => {
+
+            element.textContent =
+                currentYear;
+
+        }
+    );
 
 
     /* =========================================================
-       MOBILE SIDEBAR / MENU
+       GET CURRENT USER
        ========================================================= */
 
-    const side = $(".sf-side");
-    const menuToggle = $("[data-menu]");
+    function getCurrentUser() {
 
-    const openMenu = () => {
-        document.body.classList.add("sf-menu-open");
+        /*
+         * Preferred:
+         * Central StockFlowAuth session.
+         */
 
-        if (menuToggle) {
-            menuToggle.setAttribute("aria-expanded", "true");
-        }
+        try {
 
-        if (side) {
-            side.setAttribute("aria-hidden", "false");
-        }
-    };
-
-    const closeMenu = () => {
-        document.body.classList.remove("sf-menu-open");
-
-        if (menuToggle) {
-            menuToggle.setAttribute("aria-expanded", "false");
-        }
-
-        if (side) {
-            side.setAttribute("aria-hidden", "true");
-        }
-    };
-
-    const toggleMenu = () => {
-        if (document.body.classList.contains("sf-menu-open")) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-    };
-
-
-    if (menuToggle) {
-        menuToggle.setAttribute("aria-expanded", "false");
-        menuToggle.setAttribute("aria-label", "Toggle navigation menu");
-
-        menuToggle.addEventListener("click", event => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            toggleMenu();
-        });
-    }
-
-
-    /* =========================================================
-       SIDEBAR NAVIGATION
-       ========================================================= */
-
-    const navLinks = $$(".sf-side a");
-
-    if (navLinks.length) {
-
-        const currentPage =
-            window.location.pathname
-                .split("/")
-                .pop()
-                .toLowerCase() || "index.html";
-
-        navLinks.forEach(link => {
-
-            const href =
-                link.getAttribute("href") || "";
-
-            const linkPage =
-                href.split("/")
-                    .pop()
-                    .split("?")[0]
-                    .split("#")[0]
-                    .toLowerCase();
-
-            /*
-             * Do not treat external links as active.
-             */
             if (
-                linkPage &&
-                linkPage === currentPage &&
-                !href.startsWith("http")
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getCurrentUser ===
+                    "function"
             ) {
-                link.classList.add("active");
-                link.setAttribute("aria-current", "page");
+
+                const user =
+                    window.StockFlowAuth.getCurrentUser();
+
+                if (user) {
+                    return user;
+                }
+
             }
 
+        } catch (error) {
 
-            /*
-             * Close mobile sidebar after navigation.
-             */
-            link.addEventListener("click", () => {
+            console.warn(
+                "STOCKFLOW: Unable to read StockFlowAuth user.",
+                error
+            );
+
+        }
+
+
+        /*
+         * Secondary:
+         * StockFlowAPI stored user.
+         */
+
+        try {
+
+            if (
+                window.StockFlowAPI &&
+                typeof window.StockFlowAPI.getStoredUser ===
+                    "function"
+            ) {
+
+                const user =
+                    window.StockFlowAPI.getStoredUser();
+
+                if (user) {
+                    return user;
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to read stored user.",
+                error
+            );
+
+        }
+
+
+        /*
+         * Legacy STOCKFLOW_USER.
+         */
+
+        try {
+
+            const sessionUser =
+                sessionStorage.getItem(
+                    "STOCKFLOW_USER"
+                );
+
+
+            if (sessionUser) {
+
+                const parsed =
+                    JSON.parse(
+                        sessionUser
+                    );
+
+                if (parsed) {
+                    return parsed;
+                }
+
+            }
+
+        } catch (_) {}
+
+
+        try {
+
+            const localUser =
+                localStorage.getItem(
+                    "STOCKFLOW_USER"
+                );
+
+
+            if (localUser) {
+
+                const parsed =
+                    JSON.parse(
+                        localUser
+                    );
+
+                if (parsed) {
+                    return parsed;
+                }
+
+            }
+
+        } catch (_) {}
+
+
+        return null;
+
+    }
+
+
+    /* =========================================================
+       GET USER NAME
+       ========================================================= */
+
+    function getUserName(user) {
+
+        if (!user) {
+            return "";
+        }
+
+
+        return safeString(
+
+            user.name ||
+
+            user.fullName ||
+
+            user.displayName ||
+
+            [
+                user.firstName,
+                user.lastName
+            ]
+                .filter(Boolean)
+                .join(" ") ||
+
+            user.username ||
+
+            user.email ||
+
+            user.gmail ||
+
+            "User"
+
+        );
+
+    }
+
+
+    /* =========================================================
+       GET USER ROLE
+       ========================================================= */
+
+    function getUserRole(user) {
+
+        if (!user) {
+            return "";
+        }
+
+
+        const role =
+            safeString(
+
+                user.role ||
+
+                user.accountRole ||
+
+                user.userRole ||
+
+                user.type ||
+
+                ""
+
+            );
+
+
+        /*
+         * Normalize only the spelling.
+         *
+         * We DO NOT turn an unknown user into Admin.
+         */
+
+        const normalized =
+            role.toLowerCase();
+
+
+        if (
+            normalized === "admin" ||
+            normalized === "administrator"
+        ) {
+
+            return "Administrator";
+
+        }
+
+
+        if (
+            normalized === "employee" ||
+            normalized === "staff"
+        ) {
+
+            return "Employee";
+
+        }
+
+
+        /*
+         * If the backend has not supplied a role,
+         * do not falsely display Administrator.
+         */
+
+        return role || "Employee";
+
+    }
+
+
+    /* =========================================================
+       USER INITIALS
+       ========================================================= */
+
+    function getInitials(name) {
+
+        const value =
+            safeString(name);
+
+
+        if (!value) {
+            return "SF";
+        }
+
+
+        const parts =
+            value
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        if (
+            parts.length === 1
+        ) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        )
+            .toUpperCase();
+
+    }
+
+
+    /* =========================================================
+       UPDATE USER UI
+       ========================================================= */
+
+    function updateUserUI() {
+
+        const user =
+            getCurrentUser();
+
+
+        if (!user) {
+            return null;
+        }
+
+
+        const name =
+            getUserName(user);
+
+
+        const role =
+            getUserRole(user);
+
+
+        const initials =
+            getInitials(name);
+
+
+        /*
+         * -----------------------------------------------------
+         * Generic data attributes
+         * -----------------------------------------------------
+         */
+
+        $$("[data-user-name]").forEach(
+            element => {
+
+                element.textContent =
+                    name;
+
+            }
+        );
+
+
+        $$("[data-user-role]").forEach(
+            element => {
+
+                element.textContent =
+                    role;
+
+            }
+        );
+
+
+        $$("[data-user-initials]").forEach(
+            element => {
+
+                element.textContent =
+                    initials;
+
+            }
+        );
+
+
+        /*
+         * -----------------------------------------------------
+         * Dashboard user area
+         * -----------------------------------------------------
+         */
+
+        $$(".header-user-info strong")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        name;
+
+                }
+            );
+
+
+        $$(".header-user-info span")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        role;
+
+                }
+            );
+
+
+        /*
+         * -----------------------------------------------------
+         * Sidebar mini-user
+         * -----------------------------------------------------
+         */
+
+        $$(".mini-user-info strong")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        name;
+
+                }
+            );
+
+
+        $$(".mini-user-info span")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        role;
+
+                }
+            );
+
+
+        /*
+         * -----------------------------------------------------
+         * Dashboard / module avatars
+         * -----------------------------------------------------
+         */
+
+        $$(".header-user .avatar")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        initials;
+
+                    element.setAttribute(
+                        "aria-label",
+                        `${name} profile`
+                    );
+
+                }
+            );
+
+
+        $$(".mini-user .avatar")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        initials;
+
+                    element.setAttribute(
+                        "aria-label",
+                        `${name} profile`
+                    );
+
+                }
+            );
+
+
+        /*
+         * -----------------------------------------------------
+         * Generic avatar
+         * -----------------------------------------------------
+         */
+
+        $$("[data-user-avatar]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        initials;
+
+                }
+            );
+
+
+        return {
+            user,
+            name,
+            role,
+            initials
+        };
+
+    }
+
+
+    /*
+     * Run once immediately.
+     */
+
+    updateUserUI();
+
+
+    /*
+     * Run again shortly after other authentication
+     * controllers have initialized.
+     */
+
+    window.setTimeout(
+        updateUserUI,
+        100
+    );
+
+
+    window.setTimeout(
+        updateUserUI,
+        500
+    );
+
+
+    /* =========================================================
+       SIDEBAR ELEMENTS
+       ========================================================= */
+
+    const sfSidebar =
+        $(".sf-side");
+
+
+    const dashboardSidebar =
+        $(".sidebar");
+
+
+    const sidebar =
+        sfSidebar ||
+        dashboardSidebar;
+
+
+    const menuToggle =
+        $("[data-menu]") ||
+        $(".mobile-menu");
+
+
+    const sidebarOverlay =
+        $("#sidebarOverlay") ||
+        $(".sidebar-overlay");
+
+
+    /* =========================================================
+       SIDEBAR OPEN STATE
+       ========================================================= */
+
+    function isDashboardSidebar() {
+
+        return Boolean(
+            dashboardSidebar &&
+            !sfSidebar
+        );
+
+    }
+
+
+    function openMenu() {
+
+        /*
+         * Module pages.
+         */
+
+        if (sfSidebar) {
+
+            document.body.classList.add(
+                "sf-menu-open"
+            );
+
+            sfSidebar.classList.add(
+                "open"
+            );
+
+            sfSidebar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+
+        /*
+         * Dashboard pages.
+         */
+
+        if (dashboardSidebar) {
+
+            document.body.classList.add(
+                "sidebar-open"
+            );
+
+            dashboardSidebar.classList.add(
+                "open"
+            );
+
+            dashboardSidebar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+
+        /*
+         * Overlay.
+         */
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.add(
+                "show"
+            );
+
+            sidebarOverlay.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+
+        if (menuToggle) {
+
+            menuToggle.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+    }
+
+
+    function closeMenu() {
+
+        /*
+         * Module pages.
+         */
+
+        document.body.classList.remove(
+            "sf-menu-open"
+        );
+
+
+        if (sfSidebar) {
+
+            sfSidebar.classList.remove(
+                "open"
+            );
+
+            if (window.innerWidth <= 900) {
+
+                sfSidebar.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+            } else {
+
+                sfSidebar.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Dashboard pages.
+         */
+
+        document.body.classList.remove(
+            "sidebar-open"
+        );
+
+
+        if (dashboardSidebar) {
+
+            dashboardSidebar.classList.remove(
+                "open"
+            );
+
+            if (window.innerWidth <= 900) {
+
+                dashboardSidebar.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+            } else {
+
+                dashboardSidebar.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Overlay.
+         */
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.remove(
+                "show"
+            );
+
+            sidebarOverlay.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+        }
+
+
+        if (menuToggle) {
+
+            menuToggle.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    function toggleMenu() {
+
+        const currentlyOpen =
+            document.body.classList.contains(
+                "sf-menu-open"
+            ) ||
+            document.body.classList.contains(
+                "sidebar-open"
+            );
+
+
+        if (currentlyOpen) {
+
+            closeMenu();
+
+        } else {
+
+            openMenu();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       INITIAL SIDEBAR STATE
+       ========================================================= */
+
+    if (menuToggle) {
+
+        menuToggle.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+        menuToggle.setAttribute(
+            "aria-label",
+            "Toggle navigation menu"
+        );
+
+    }
+
+
+    if (sidebar) {
+
+        if (window.innerWidth <= 900) {
+
+            sidebar.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+        } else {
+
+            sidebar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       MENU BUTTON
+       ========================================================= */
+
+    if (menuToggle) {
+
+        menuToggle.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                toggleMenu();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       SIDEBAR OVERLAY
+       ========================================================= */
+
+    if (sidebarOverlay) {
+
+        sidebarOverlay.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                closeMenu();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       ACTIVE NAVIGATION
+       ========================================================= */
+
+    function setupActiveNavigation() {
+
+        const navLinks = [
+
+            ...$$(".sf-side a"),
+
+            ...$$(".sidebar-nav a")
+
+        ];
+
+
+        if (!navLinks.length) {
+            return;
+        }
+
+
+        const currentPath =
+            window.location.pathname;
+
+
+        let currentPage =
+            currentPath
+                .split("/")
+                .pop()
+                .toLowerCase();
+
+
+        if (!currentPage) {
+            currentPage = "index.html";
+        }
+
+
+        navLinks.forEach(
+            link => {
+
+                const href =
+                    link.getAttribute(
+                        "href"
+                    ) || "";
+
+
+                /*
+                 * Ignore:
+                 * - #
+                 * - javascript:
+                 * - external URLs
+                 */
 
                 if (
-                    window.innerWidth <= 900 ||
-                    document.body.classList.contains("sf-menu-open")
+                    !href ||
+                    href === "#" ||
+                    href.startsWith(
+                        "javascript:"
+                    ) ||
+                    href.startsWith(
+                        "http://"
+                    ) ||
+                    href.startsWith(
+                        "https://"
+                    )
                 ) {
-                    closeMenu();
-                }
-            });
 
-        });
+                    return;
+
+                }
+
+
+                const linkPage =
+                    href
+                        .split("/")
+                        .pop()
+                        .split("?")[0]
+                        .split("#")[0]
+                        .toLowerCase();
+
+
+                if (
+                    linkPage &&
+                    linkPage ===
+                        currentPage
+                ) {
+
+                    link.classList.add(
+                        "active"
+                    );
+
+                    link.setAttribute(
+                        "aria-current",
+                        "page"
+                    );
+
+                }
+
+            }
+        );
+
+
+        /*
+         * Close mobile menu after navigation.
+         */
+
+        navLinks.forEach(
+            link => {
+
+                link.addEventListener(
+                    "click",
+                    () => {
+
+                        if (
+                            window.innerWidth <= 900
+                        ) {
+
+                            closeMenu();
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
     }
+
+
+    setupActiveNavigation();
 
 
     /* =========================================================
        OUTSIDE CLICK
        ========================================================= */
 
-    document.addEventListener("click", event => {
+    document.addEventListener(
+        "click",
+        event => {
 
-        if (!document.body.classList.contains("sf-menu-open")) {
-            return;
+            const mobileOpen =
+                document.body.classList.contains(
+                    "sf-menu-open"
+                ) ||
+                document.body.classList.contains(
+                    "sidebar-open"
+                );
+
+
+            if (!mobileOpen) {
+                return;
+            }
+
+
+            const clickedSidebar =
+                sidebar &&
+                sidebar.contains(
+                    event.target
+                );
+
+
+            const clickedToggle =
+                menuToggle &&
+                menuToggle.contains(
+                    event.target
+                );
+
+
+            const clickedOverlay =
+                sidebarOverlay &&
+                sidebarOverlay.contains(
+                    event.target
+                );
+
+
+            if (
+                !clickedSidebar &&
+                !clickedToggle &&
+                !clickedOverlay
+            ) {
+
+                closeMenu();
+
+            }
+
         }
-
-        const clickedInsideSidebar =
-            side && side.contains(event.target);
-
-        const clickedMenuButton =
-            menuToggle && menuToggle.contains(event.target);
-
-        if (!clickedInsideSidebar && !clickedMenuButton) {
-            closeMenu();
-        }
-    });
+    );
 
 
     /* =========================================================
        ESCAPE KEY
        ========================================================= */
 
-    document.addEventListener("keydown", event => {
+    document.addEventListener(
+        "keydown",
+        event => {
 
-        if (event.key === "Escape") {
+            if (
+                event.key !==
+                "Escape"
+            ) {
+                return;
+            }
+
+
             closeMenu();
+
+
+            /*
+             * Close dashboard notification panel.
+             */
+
+            $$(".notification-panel.show")
+                .forEach(
+                    panel => {
+
+                        panel.classList.remove(
+                            "show"
+                        );
+
+                    }
+                );
+
 
             /*
              * Close generic notification panels.
              */
-            $$(".sf-notification-panel.show").forEach(panel => {
-                panel.classList.remove("show");
-            });
-        }
 
-    });
+            $$(".sf-notification-panel.show")
+                .forEach(
+                    panel => {
+
+                        panel.classList.remove(
+                            "show"
+                        );
+
+                    }
+                );
+
+        }
+    );
 
 
     /* =========================================================
        LOGOUT
        ========================================================= */
 
-    $$("[data-logout]").forEach(button => {
-
-        button.addEventListener("click", async event => {
-
-            event.preventDefault();
+    $$("[data-logout]").forEach(
+        button => {
 
             /*
-             * Prevent multiple logout clicks.
+             * Avoid attaching duplicate handlers.
              */
-            if (button.dataset.loggingOut === "true") {
+
+            if (
+                button.dataset.logoutBound ===
+                "true"
+            ) {
                 return;
             }
 
-            button.dataset.loggingOut = "true";
-            button.disabled = true;
 
-            const originalHTML = button.innerHTML;
+            button.dataset.logoutBound =
+                "true";
 
-            button.innerHTML = `
-                <span class="sf-btn-spinner" aria-hidden="true"></span>
-                <span>Signing out...</span>
-            `;
 
-            try {
+            button.addEventListener(
+                "click",
+                async event => {
 
-                if (
-                    window.StockFlowAuth &&
-                    typeof StockFlowAuth.logout === "function"
-                ) {
-                    await StockFlowAuth.logout();
-                } else {
-                    console.warn(
-                        "StockFlowAuth.logout() is not available."
-                    );
+                    event.preventDefault();
+
+
+                    if (
+                        button.dataset.loggingOut ===
+                        "true"
+                    ) {
+                        return;
+                    }
+
+
+                    button.dataset.loggingOut =
+                        "true";
+
+
+                    button.disabled =
+                        true;
+
+
+                    const originalHTML =
+                        button.innerHTML;
+
+
+                    button.innerHTML = `
+                        <span
+                            class="sf-btn-spinner"
+                            aria-hidden="true"
+                        ></span>
+
+                        <span>
+                            Signing out...
+                        </span>
+                    `;
+
+
+                    try {
+
+                        /*
+                         * Preferred central auth controller.
+                         */
+
+                        if (
+                            window.StockFlowAuth &&
+                            typeof window.StockFlowAuth.logout ===
+                                "function"
+                        ) {
+
+                            await window.StockFlowAuth.logout();
+
+                        }
+
+                        /*
+                         * Fallback to API.
+                         */
+
+                        else if (
+                            window.StockFlowAPI &&
+                            typeof window.StockFlowAPI.logout ===
+                                "function"
+                        ) {
+
+                            await window.StockFlowAPI.logout();
+
+                        }
+
+
+                        /*
+                         * Clear known local session data.
+                         *
+                         * This is intentionally only cleanup.
+                         * It does not perform authentication.
+                         */
+
+                        try {
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_SESSION"
+                            );
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+
+                        } catch (_) {}
+
+
+                        try {
+
+                            localStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+
+                        } catch (_) {}
+
+
+                        /*
+                         * Go back to login.
+                         */
+
+                        const config =
+                            window.STOCKFLOW_CONFIG ||
+                            window.CONFIG ||
+                            {};
+
+
+                        const routes =
+                            config.ROUTES ||
+                            {};
+
+
+                        const loginPage =
+                            routes.login ||
+                            routes.LOGIN ||
+                            "index.html";
+
+
+                        window.location.replace(
+                            loginPage
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "STOCKFLOW logout failed:",
+                            error
+                        );
+
+
+                        button.disabled =
+                            false;
+
+
+                        button.dataset.loggingOut =
+                            "false";
+
+
+                        button.innerHTML =
+                            originalHTML;
+
+
+                        showToast(
+                            "Unable to sign out. Please try again.",
+                            "error"
+                        );
+
+                    }
+
                 }
+            );
 
-            } catch (error) {
-
-                console.error(
-                    "Logout failed:",
-                    error
-                );
-
-                button.disabled = false;
-                button.dataset.loggingOut = "false";
-                button.innerHTML = originalHTML;
-
-                showToast(
-                    "Unable to sign out. Please try again.",
-                    "error"
-                );
-            }
-
-        });
-
-    });
+        }
+    );
 
 
     /* =========================================================
        NETWORK STATUS
        ========================================================= */
 
-    const updateNetworkStatus = () => {
+    function updateNetworkStatus() {
 
-        const online = navigator.onLine;
+        const online =
+            navigator.onLine;
+
 
         document.body.classList.toggle(
             "sf-offline",
             !online
         );
 
+
         document.body.classList.toggle(
             "sf-online",
             online
         );
 
-        /*
-         * Update elements using data-network-status.
-         */
-        $$("[data-network-status]").forEach(element => {
 
-            element.textContent =
+        $$("[data-network-status]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        online
+                            ? "Online"
+                            : "Offline";
+
+
+                    element.classList.toggle(
+                        "online",
+                        online
+                    );
+
+
+                    element.classList.toggle(
+                        "offline",
+                        !online
+                    );
+
+                }
+            );
+
+
+        /*
+         * Dashboard connection card.
+         *
+         * Only update the connection state.
+         * Do NOT overwrite the user's role.
+         */
+
+        const connectionStatus =
+            $("#connectionStatus");
+
+
+        if (connectionStatus) {
+
+            connectionStatus.textContent =
                 online
-                    ? "Online"
+                    ? "Connected"
                     : "Offline";
 
-            element.classList.toggle(
+
+            connectionStatus.classList.toggle(
                 "online",
                 online
             );
 
-            element.classList.toggle(
+
+            connectionStatus.classList.toggle(
                 "offline",
                 !online
             );
-        });
 
-    };
+        }
+
+
+        const footerStatus =
+            $("#footerSystemStatus");
+
+
+        if (footerStatus) {
+
+            footerStatus.textContent =
+                online
+                    ? "Online"
+                    : "Offline";
+
+        }
+
+    }
 
 
     updateNetworkStatus();
+
 
     window.addEventListener(
         "online",
         () => {
 
             updateNetworkStatus();
+
 
             showToast(
                 "Connection restored.",
@@ -318,6 +1447,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             updateNetworkStatus();
 
+
             showToast(
                 "You are currently offline.",
                 "warning"
@@ -328,7 +1458,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       SHARED TOAST / NOTIFICATION SYSTEM
+       TOAST CONTAINER
        ========================================================= */
 
     function createToastContainer() {
@@ -338,34 +1468,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 "sfToastContainer"
             );
 
+
         if (container) {
             return container;
         }
 
+
         container =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         container.id =
             "sfToastContainer";
 
+
         container.className =
             "sf-toast-container";
+
 
         container.setAttribute(
             "aria-live",
             "polite"
         );
 
+
         container.setAttribute(
             "aria-atomic",
             "true"
         );
 
-        document.body.appendChild(container);
+
+        document.body.appendChild(
+            container
+        );
+
 
         return container;
+
     }
 
+
+    /* =========================================================
+       SHOW TOAST
+       ========================================================= */
 
     function showToast(
         message,
@@ -377,27 +1524,45 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+
         const container =
             createToastContainer();
 
+
         const toast =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         toast.className =
             `sf-toast sf-toast-${type}`;
 
+
         const icons = {
+
             success: "✓",
+
             error: "!",
+
             warning: "⚠",
+
             info: "i"
+
         };
 
+
         const icon =
-            icons[type] || icons.info;
+            icons[type] ||
+            icons.info;
+
 
         toast.innerHTML = `
-            <div class="sf-toast-icon">
+
+            <div
+                class="sf-toast-icon"
+                aria-hidden="true"
+            >
                 ${icon}
             </div>
 
@@ -412,37 +1577,74 @@ document.addEventListener("DOMContentLoaded", () => {
             >
                 ×
             </button>
+
         `;
 
-        container.appendChild(toast);
 
-        requestAnimationFrame(() => {
-            toast.classList.add("show");
-        });
+        container.appendChild(
+            toast
+        );
+
+
+        requestAnimationFrame(
+            () => {
+
+                toast.classList.add(
+                    "show"
+                );
+
+            }
+        );
+
+
+        let closed =
+            false;
 
 
         const closeToast = () => {
 
-            toast.classList.remove("show");
-
-            setTimeout(() => {
-                toast.remove();
-            }, 250);
-        };
+            if (closed) {
+                return;
+            }
 
 
-        $(".sf-toast-close", toast)
-            ?.addEventListener(
-                "click",
-                closeToast
+            closed = true;
+
+
+            toast.classList.remove(
+                "show"
             );
 
 
-        if (duration > 0) {
+            setTimeout(
+                () => {
+
+                    toast.remove();
+
+                },
+                250
+            );
+
+        };
+
+
+        const closeButton =
+            $(".sf-toast-close", toast);
+
+
+        closeButton?.addEventListener(
+            "click",
+            closeToast
+        );
+
+
+        if (
+            Number(duration) > 0
+        ) {
 
             setTimeout(
                 closeToast,
-                duration
+                Number(duration)
             );
 
         }
@@ -451,34 +1653,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       SAFE HTML ESCAPING
-       ========================================================= */
-
-    function escapeHTML(value) {
-
-        return String(value ?? "")
-            .replace(
-                /[&<>"']/g,
-                character => ({
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                    "'": "&#039;"
-                }[character])
-            );
-
-    }
-
-
-    /* =========================================================
-       PAGE LOADING HELPER
+       PAGE LOADING
        ========================================================= */
 
     const pageLoader =
-        document.querySelector(
-            "[data-page-loader]"
-        );
+        $("[data-page-loader]");
+
 
     if (pageLoader) {
 
@@ -490,9 +1670,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     "loaded"
                 );
 
-                setTimeout(() => {
-                    pageLoader.remove();
-                }, 300);
+
+                setTimeout(
+                    () => {
+
+                        pageLoader.remove();
+
+                    },
+                    300
+                );
 
             }
         );
@@ -501,7 +1687,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       BUTTON LOADING HELPER
+       BUTTON LOADING
        ========================================================= */
 
     document.addEventListener(
@@ -513,23 +1699,32 @@ document.addEventListener("DOMContentLoaded", () => {
                     "[data-loading-button]"
                 );
 
+
             if (!button) {
                 return;
             }
 
+
             if (
-                button.dataset.loading === "true"
+                button.dataset.loading ===
+                "true"
             ) {
+
                 event.preventDefault();
+
                 return;
+
             }
+
 
             button.dataset.loading =
                 "true";
 
+
             button.classList.add(
                 "is-loading"
             );
+
 
             button.setAttribute(
                 "aria-busy",
@@ -544,83 +1739,175 @@ document.addEventListener("DOMContentLoaded", () => {
        SMOOTH SCROLL
        ========================================================= */
 
-    $$('a[href^="#"]').forEach(link => {
+    $$('a[href^="#"]').forEach(
+        link => {
 
-        link.addEventListener(
-            "click",
-            event => {
+            link.addEventListener(
+                "click",
+                event => {
 
-                const targetID =
-                    link.getAttribute("href");
+                    const targetID =
+                        link.getAttribute(
+                            "href"
+                        );
 
-                if (
-                    !targetID ||
-                    targetID === "#"
-                ) {
-                    return;
+
+                    if (
+                        !targetID ||
+                        targetID === "#"
+                    ) {
+                        return;
+                    }
+
+
+                    /*
+                     * Do not interfere with
+                     * authentication hash routing.
+                     */
+
+                    if (
+                        targetID === "#login" ||
+                        targetID === "#register"
+                    ) {
+                        return;
+                    }
+
+
+                    let target;
+
+
+                    try {
+
+                        target =
+                            document.querySelector(
+                                targetID
+                            );
+
+                    } catch (_) {
+
+                        return;
+
+                    }
+
+
+                    if (!target) {
+                        return;
+                    }
+
+
+                    event.preventDefault();
+
+
+                    target.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+
                 }
+            );
 
-                const target =
-                    document.querySelector(
-                        targetID
-                    );
-
-                if (!target) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                target.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-
-            }
-        );
-
-    });
+        }
+    );
 
 
     /* =========================================================
-       TABLE RESPONSIVENESS
+       TABLE ACCESSIBILITY
        ========================================================= */
 
-    $$(".sf-table-wrap").forEach(wrapper => {
+    $$(".sf-table-wrap").forEach(
+        wrapper => {
 
-        const table =
-            $("table", wrapper);
+            const table =
+                $("table", wrapper);
 
-        if (!table) {
+
+            if (!table) {
+                return;
+            }
+
+
+            wrapper.setAttribute(
+                "tabindex",
+                "0"
+            );
+
+
+            wrapper.setAttribute(
+                "role",
+                "region"
+            );
+
+
+            if (
+                !wrapper.getAttribute(
+                    "aria-label"
+                )
+            ) {
+
+                wrapper.setAttribute(
+                    "aria-label",
+                    "Scrollable data table"
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
+       RESPONSIVE SIDEBAR
+       ========================================================= */
+
+    function handleResponsiveSidebar() {
+
+        if (!sidebar) {
             return;
         }
 
-        /*
-         * Allow horizontal scrolling on smaller screens.
-         */
-        wrapper.setAttribute(
-            "tabindex",
-            "0"
-        );
 
-        wrapper.setAttribute(
-            "role",
-            "region"
-        );
+        if (
+            window.innerWidth > 900
+        ) {
 
-        wrapper.setAttribute(
-            "aria-label",
-            "Scrollable data table"
-        );
+            closeMenu();
 
-    });
+
+            sidebar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+        else if (
+            !document.body.classList.contains(
+                "sf-menu-open"
+            ) &&
+            !document.body.classList.contains(
+                "sidebar-open"
+            )
+        ) {
+
+            sidebar.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+        }
+
+    }
+
+
+    handleResponsiveSidebar();
 
 
     /* =========================================================
-       DISABLE TRANSITIONS DURING RESIZE
+       RESIZE HANDLER
        ========================================================= */
 
     let resizeTimer;
+
 
     window.addEventListener(
         "resize",
@@ -630,74 +1917,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 "sf-resizing"
             );
 
-            clearTimeout(resizeTimer);
+
+            clearTimeout(
+                resizeTimer
+            );
+
 
             resizeTimer =
-                setTimeout(() => {
+                setTimeout(
+                    () => {
 
-                    document.body.classList.remove(
-                        "sf-resizing"
-                    );
+                        document.body.classList.remove(
+                            "sf-resizing"
+                        );
 
-                }, 150);
+
+                        handleResponsiveSidebar();
+
+                    },
+                    150
+                );
 
         }
     );
 
 
     /* =========================================================
-       INITIALIZE SIDEBAR STATE
-       ========================================================= */
-
-    if (side) {
-
-        if (window.innerWidth > 900) {
-            side.setAttribute(
-                "aria-hidden",
-                "false"
-            );
-        } else {
-            side.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-        }
-
-    }
-
-
-    /* =========================================================
-       RESPONSIVE SIDEBAR STATE
+       USER UI REFRESH EVENT
        ========================================================= */
 
     window.addEventListener(
-        "resize",
+        "stockflow:user-updated",
         () => {
 
-            if (window.innerWidth > 900) {
-                closeMenu();
-
-                if (side) {
-                    side.setAttribute(
-                        "aria-hidden",
-                        "false"
-                    );
-                }
-
-            } else if (
-                !document.body.classList.contains(
-                    "sf-menu-open"
-                )
-            ) {
-
-                if (side) {
-                    side.setAttribute(
-                        "aria-hidden",
-                        "true"
-                    );
-                }
-
-            }
+            updateUserUI();
 
         }
     );
@@ -710,12 +1963,22 @@ document.addEventListener("DOMContentLoaded", () => {
     window.StockFlowUI = {
 
         openMenu,
+
         closeMenu,
+
         toggleMenu,
 
         showToast,
 
         updateNetworkStatus,
+
+        updateUserUI,
+
+        getCurrentUser,
+
+        getUserName,
+
+        getUserRole,
 
         escapeHTML
 
@@ -723,11 +1986,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =========================================================
-       READY STATE
+       READY
        ========================================================= */
 
     document.body.classList.add(
         "sf-ui-ready"
+    );
+
+
+    console.log(
+        "%cSTOCKFLOW UI READY",
+        "font-weight:bold;"
     );
 
 });
