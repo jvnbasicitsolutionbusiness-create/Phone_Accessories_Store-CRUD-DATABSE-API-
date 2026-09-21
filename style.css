@@ -1,6 +1,6 @@
 /* ============================================================
    STOCKFLOW — GLOBAL STYLES
-   Version: 2.0
+   Version: 2.1
    Purpose:
    - Global reset
    - Typography
@@ -14,6 +14,7 @@
 
    IMPORTANT:
    Authentication-specific layout belongs in auth.css.
+   Dashboard-specific layout belongs in dashboard.css.
    ============================================================ */
 
 
@@ -52,7 +53,13 @@
     --sf-border-light: #e5eef9;
 
     --sf-success: #166534;
+    --sf-success-bg: #f0fdf4;
+
     --sf-danger: #b42318;
+    --sf-danger-bg: #fef2f2;
+
+    --sf-warning: #b45309;
+    --sf-warning-bg: #fffbeb;
 
     /* RADIUS */
 
@@ -203,9 +210,35 @@ button {
 }
 
 
-button:disabled {
+button:disabled,
+button.disabled {
 
     cursor: not-allowed;
+
+}
+
+
+input,
+textarea,
+select {
+
+    color: inherit;
+
+}
+
+
+textarea {
+
+    min-height: 110px;
+
+    resize: vertical;
+
+}
+
+
+select {
+
+    cursor: pointer;
 
 }
 
@@ -226,6 +259,19 @@ h6 {
     color: var(--sf-text);
 
     font-weight: 700;
+
+}
+
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+
+    margin-bottom: 0;
 
 }
 
@@ -445,11 +491,24 @@ ol {
 
     line-height: 1;
 
+    text-align: center;
+
+    white-space: nowrap;
+
     transition:
         transform 0.18s ease,
         box-shadow 0.18s ease,
         background 0.18s ease,
-        border-color 0.18s ease;
+        border-color 0.18s ease,
+        color 0.18s ease,
+        opacity 0.18s ease;
+
+}
+
+
+.btn:hover {
+
+    transform: translateY(-1px);
 
 }
 
@@ -481,6 +540,8 @@ ol {
 
 .btn-primary:hover {
 
+    color: var(--sf-white);
+
     background:
         linear-gradient(
             135deg,
@@ -495,6 +556,48 @@ ol {
 }
 
 
+.btn-secondary {
+
+    color: var(--sf-text-2);
+
+    background: var(--sf-white);
+
+    border-color: var(--sf-border);
+
+}
+
+
+.btn-secondary:hover {
+
+    color: var(--sf-blue-dark);
+
+    border-color: var(--sf-blue-soft);
+
+    background: var(--sf-blue-light);
+
+}
+
+
+.btn-danger {
+
+    color: var(--sf-white);
+
+    background: var(--sf-danger);
+
+    box-shadow:
+        0 8px 20px
+        rgba(180, 35, 24, 0.16);
+
+}
+
+
+.btn-danger:hover {
+
+    background: #991b1b;
+
+}
+
+
 .btn-full {
 
     width: 100%;
@@ -502,11 +605,16 @@ ol {
 }
 
 
-.btn:disabled {
+.btn:disabled,
+.btn.disabled {
 
     opacity: 0.55;
 
     box-shadow: none;
+
+    transform: none;
+
+    pointer-events: none;
 
 }
 
@@ -552,6 +660,24 @@ ol {
         border-color 0.18s ease,
         box-shadow 0.18s ease,
         background 0.18s ease;
+
+}
+
+
+textarea.form-control {
+
+    min-height: 110px;
+
+    padding: 12px 14px;
+
+    line-height: 1.5;
+
+}
+
+
+select.form-control {
+
+    appearance: auto;
 
 }
 
@@ -648,12 +774,34 @@ ol {
 
     font-weight: 700;
 
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+
 }
 
 
 .password-toggle:hover {
 
     background: var(--sf-blue-soft);
+
+    border-color: #bfdbfe;
+
+}
+
+
+.password-toggle:focus-visible {
+
+    outline:
+        2px solid
+        rgba(37, 99, 235, 0.40);
+
+    outline-offset: 2px;
 
 }
 
@@ -779,7 +927,10 @@ ol {
         var(--sf-success);
 
     background:
-        #f0fdf4;
+        var(--sf-success-bg);
+
+    border-color:
+        #bbf7d0;
 
 }
 
@@ -791,7 +942,10 @@ ol {
         var(--sf-danger);
 
     background:
-        #fef2f2;
+        var(--sf-danger-bg);
+
+    border-color:
+        #fecaca;
 
 }
 
@@ -835,6 +989,123 @@ ol {
 
     border-collapse: collapse;
 
+    color: var(--sf-text);
+
+    background: var(--sf-white);
+
+}
+
+
+.sf-table-wrapper th,
+.sf-table-wrapper td {
+
+    padding:
+        13px 16px;
+
+    border-bottom:
+        1px solid
+        var(--sf-border-light);
+
+    text-align: left;
+
+    vertical-align: middle;
+
+}
+
+
+.sf-table-wrapper th {
+
+    color:
+        var(--sf-text-2);
+
+    background:
+        #f8fafc;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        0.04em;
+
+    text-transform:
+        uppercase;
+
+    white-space:
+        nowrap;
+
+}
+
+
+.sf-table-wrapper td {
+
+    color:
+        var(--sf-text-2);
+
+    font-size:
+        13px;
+
+    font-weight:
+        500;
+
+}
+
+
+.sf-table-wrapper tbody tr {
+
+    transition:
+        background 0.18s ease;
+
+}
+
+
+.sf-table-wrapper tbody tr:hover {
+
+    background:
+        #f8fbff;
+
+}
+
+
+.sf-table-wrapper tbody tr:last-child td {
+
+    border-bottom:
+        none;
+
+}
+
+
+/* ============================================================
+   TEXT UTILITIES
+   ============================================================ */
+
+.text-primary {
+
+    color: var(--sf-blue);
+
+}
+
+
+.text-muted {
+
+    color: var(--sf-muted);
+
+}
+
+
+.text-success {
+
+    color: var(--sf-success);
+
+}
+
+
+.text-danger {
+
+    color: var(--sf-danger);
+
 }
 
 
@@ -865,6 +1136,7 @@ ol {
 
     }
 
+
     .sf-container {
 
         width:
@@ -872,11 +1144,13 @@ ol {
 
     }
 
+
     .brand {
 
         gap: 9px;
 
     }
+
 
     .brand-mark {
 
@@ -891,15 +1165,26 @@ ol {
 
     }
 
+
     .btn {
 
         min-height: 46px;
 
     }
 
+
     .form-control {
 
         min-height: 48px;
+
+    }
+
+
+    .sf-table-wrapper th,
+    .sf-table-wrapper td {
+
+        padding:
+            11px 12px;
 
     }
 
@@ -915,6 +1200,21 @@ ol {
 
     }
 
+
+    .btn {
+
+        width: 100%;
+
+    }
+
+
+    .brand-text strong,
+    .brand-copy strong {
+
+        font-size: 14px;
+
+    }
+
 }
 
 
@@ -924,6 +1224,24 @@ ol {
 
         width:
             calc(100% - 18px);
+
+    }
+
+
+    .brand-mark {
+
+        width: 36px;
+        height: 36px;
+
+        flex-basis: 36px;
+
+    }
+
+
+    .brand-text strong,
+    .brand-copy strong {
+
+        font-size: 13px;
 
     }
 
@@ -941,6 +1259,7 @@ ol {
         scroll-behavior: auto;
 
     }
+
 
     *,
     *::before,
