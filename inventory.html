@@ -1,22 +1,770 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>StockFlow | Inventory</title><link rel="stylesheet" href="modules.css"><link rel="stylesheet" href="styles.css"></head>
-<body><div class="sf-layout"><aside class="sf-side"><div class="sf-brand">STOCKFLOW</div><nav class="sf-nav">
-<a href="dashboard.html">Dashboard</a>
-<a href="inventory-dashboard.html">Inventory Dashboard</a>
-<a href="products.html">Products</a>
-<a href="inventory.html">Inventory</a>
-<a href="categories.html">Categories</a>
-<a href="suppliers.html">Suppliers</a>
-<a href="stock-in.html">Stock In</a>
-<a href="stock-out.html">Stock Out</a>
-<a href="transactions.html">Transactions</a>
-<a href="activity.html">Activity Log</a>
-<a href="profile.html">Profile</a>
-<a href="settings.html">Settings</a>
-</nav></aside>
-<main class="sf-main"><header class="sf-top"><div><div class="sf-title">Inventory</div><div class="sf-muted">Live stock position for every phone accessory.</div></div><button class="sf-btn secondary" data-menu type="button">☰</button></header>
-<section class="stat-strip"><div class="mini-stat"><small>PRODUCTS</small><strong id="pc">—</strong></div><div class="mini-stat"><small>TOTAL UNITS</small><strong id="ts">—</strong></div><div class="mini-stat"><small>LOW STOCK</small><strong id="ls">—</strong></div><div class="mini-stat"><small>OUT OF STOCK</small><strong id="os">—</strong></div></section>
-<div id="alert" class="sf-alert"></div><section class="sf-card"><div class="sf-card-head"><div><h3>Current Stock</h3><p class="sf-muted">Monitor quantities against each product's reorder level.</p></div><div class="sf-row"><a href="stock-in.html" class="sf-btn">Stock In</a><a href="stock-out.html" class="sf-btn secondary">Stock Out</a></div></div>
-<div class="sf-table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Supplier</th><th>Stock</th><th>Reorder</th><th>State</th></tr></thead><tbody id="rows"><tr><td colspan="7" class="sf-empty">Loading inventory...</td></tr></tbody></table></div></section>
-</main></div><script src="config.js"></script><script src="api.js"></script><script src="auth.js"></script><script src="main.js"></script><script src="inventory.js"></script></body></html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>StockFlow | Inventory</title>
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- Google Font -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Existing global styles -->
+    <link rel="stylesheet" href="./modules.css">
+    <link rel="stylesheet" href="./styles.css">
+
+    <!-- Inventory page styles -->
+    <link rel="stylesheet" href="./inventory.css">
+</head>
+
+<body class="inventory-page">
+
+    <!-- =====================================================
+         MOBILE SIDEBAR OVERLAY
+         ===================================================== -->
+
+    <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+    ></div>
+
+
+    <!-- =====================================================
+         LAYOUT
+         ===================================================== -->
+
+    <div class="sf-layout">
+
+
+        <!-- =================================================
+             SIDEBAR
+             ================================================= -->
+
+        <aside
+            id="sidebar"
+            class="sf-side"
+        >
+
+            <!-- BRAND -->
+
+            <div class="sf-brand">
+
+                <div class="brand-logo">
+                    SF
+                </div>
+
+                <div class="brand-text">
+
+                    <strong>
+                        STOCKFLOW
+                    </strong>
+
+                    <span>
+                        INVENTORY SYSTEM
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- NAVIGATION -->
+
+            <nav class="sf-nav">
+
+                <!-- OVERVIEW -->
+
+                <div class="nav-section-title">
+                    OVERVIEW
+                </div>
+
+                <a
+                    href="./dashboard.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+
+
+                <!-- INVENTORY -->
+
+                <div class="nav-section-title">
+                    INVENTORY
+                </div>
+
+                <a
+                    href="./products.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-box"></i>
+                    <span>Products</span>
+                </a>
+
+                <a
+                    href="./inventory.html"
+                    class="sf-nav-link active"
+                >
+                    <i class="fa-solid fa-warehouse"></i>
+                    <span>Inventory</span>
+                </a>
+
+                <a
+                    href="./stock-in.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-arrow-down"></i>
+                    <span>Stock In</span>
+                </a>
+
+                <a
+                    href="./stock-out.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span>Stock Out</span>
+                </a>
+
+
+                <!-- MANAGEMENT -->
+
+                <div class="nav-section-title">
+                    MANAGEMENT
+                </div>
+
+                <a
+                    href="./transactions.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-right-left"></i>
+                    <span>Transactions</span>
+                </a>
+
+                <a
+                    href="./suppliers.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-truck"></i>
+                    <span>Suppliers</span>
+                </a>
+
+                <a
+                    href="./categories.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Categories</span>
+                </a>
+
+                <a
+                    href="./activity.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Activity Log</span>
+                </a>
+
+
+                <!-- SYSTEM -->
+
+                <div class="nav-section-title">
+                    SYSTEM
+                </div>
+
+                <a
+                    href="./profile.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-user"></i>
+                    <span>Profile</span>
+                </a>
+
+                <a
+                    href="./settings.html"
+                    class="sf-nav-link"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+
+            </nav>
+
+
+            <!-- SIDEBAR FOOTER -->
+
+            <div class="sf-sidebar-footer">
+
+                <div class="sf-user-card">
+
+                    <div
+                        class="sf-user-avatar"
+                        id="userAvatar"
+                    >
+                        SF
+                    </div>
+
+                    <div class="sf-user-details">
+
+                        <strong id="userName">
+                            StockFlow User
+                        </strong>
+
+                        <small id="userRole">
+                            Administrator
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="logoutBtn"
+                    class="sf-logout-btn"
+                >
+
+                    <i class="fa-solid fa-right-from-bracket"></i>
+
+                    <span>
+                        Logout
+                    </span>
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =================================================
+             MAIN CONTENT
+             ================================================= -->
+
+        <main class="sf-main">
+
+
+            <!-- =================================================
+                 TOPBAR
+                 ================================================= -->
+
+            <header class="sf-top">
+
+                <div class="sf-top-left">
+
+                    <button
+                        type="button"
+                        id="mobileMenuBtn"
+                        class="sf-menu-btn"
+                        data-menu
+                        aria-label="Open navigation menu"
+                    >
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+
+                    <div class="sf-heading">
+
+                        <div class="sf-breadcrumb">
+
+                            <span>
+                                STOCKFLOW
+                            </span>
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                            <strong>
+                                Inventory
+                            </strong>
+
+                        </div>
+
+                        <h1>
+                            Inventory
+                        </h1>
+
+                        <p>
+                            Live stock position for every phone accessory.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOPBAR RIGHT -->
+
+                <div class="sf-top-right">
+
+                    <!-- CONNECTION -->
+
+                    <div
+                        id="connectionBadge"
+                        class="sf-connection"
+                    >
+
+                        <span class="connection-dot"></span>
+
+                        <span id="connectionMessage">
+                            System Connected
+                        </span>
+
+                    </div>
+
+
+                    <!-- NOTIFICATION -->
+
+                    <div class="notification-wrapper">
+
+                        <button
+                            type="button"
+                            id="notificationBtn"
+                            class="sf-icon-btn"
+                            aria-label="Notifications"
+                        >
+
+                            <i class="fa-regular fa-bell"></i>
+
+                            <span class="notification-dot"></span>
+
+                        </button>
+
+                        <div
+                            id="notificationPanel"
+                            class="notification-panel"
+                        >
+
+                            <div class="notification-header">
+
+                                <strong>
+                                    Notifications
+                                </strong>
+
+                                <span>
+                                    Inventory
+                                </span>
+
+                            </div>
+
+                            <div class="notification-empty">
+
+                                <i class="fa-regular fa-bell-slash"></i>
+
+                                <strong>
+                                    No new notifications
+                                </strong>
+
+                                <span>
+                                    You're all caught up.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- USER -->
+
+                    <div class="sf-top-user">
+
+                        <div
+                            class="sf-top-avatar"
+                            id="topUserAvatar"
+                        >
+                            SF
+                        </div>
+
+                        <div class="sf-top-user-info">
+
+                            <strong id="topUserName">
+                                StockFlow User
+                            </strong>
+
+                            <small id="topUserRole">
+                                Administrator
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- =================================================
+                 PAGE CONTENT
+                 ================================================= -->
+
+            <section class="sf-content">
+
+
+                <!-- PAGE INTRO -->
+
+                <div class="page-intro">
+
+                    <div>
+
+                        <span class="page-eyebrow">
+                            INVENTORY MANAGEMENT
+                        </span>
+
+                        <h2>
+                            Current Inventory
+                        </h2>
+
+                        <p>
+                            Monitor available stock, reorder levels,
+                            and product availability.
+                        </p>
+
+                    </div>
+
+
+                    <div class="page-actions">
+
+                        <a
+                            href="./stock-in.html"
+                            class="sf-btn primary"
+                        >
+                            <i class="fa-solid fa-arrow-down"></i>
+                            Stock In
+                        </a>
+
+                        <a
+                            href="./stock-out.html"
+                            class="sf-btn secondary"
+                        >
+                            <i class="fa-solid fa-arrow-up"></i>
+                            Stock Out
+                        </a>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     STATISTICS
+                     ================================================= -->
+
+                <section class="stat-strip">
+
+
+                    <!-- PRODUCTS -->
+
+                    <div class="mini-stat">
+
+                        <div class="mini-stat-icon blue">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+
+                        <div class="mini-stat-content">
+
+                            <small>
+                                PRODUCTS
+                            </small>
+
+                            <strong id="pc">
+                                —
+                            </strong>
+
+                            <span>
+                                Registered products
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TOTAL UNITS -->
+
+                    <div class="mini-stat">
+
+                        <div class="mini-stat-icon purple">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+
+                        <div class="mini-stat-content">
+
+                            <small>
+                                TOTAL UNITS
+                            </small>
+
+                            <strong id="ts">
+                                —
+                            </strong>
+
+                            <span>
+                                Units currently available
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- LOW STOCK -->
+
+                    <div class="mini-stat">
+
+                        <div class="mini-stat-icon orange">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+
+                        <div class="mini-stat-content">
+
+                            <small>
+                                LOW STOCK
+                            </small>
+
+                            <strong id="ls">
+                                —
+                            </strong>
+
+                            <span>
+                                Products needing attention
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- OUT OF STOCK -->
+
+                    <div class="mini-stat">
+
+                        <div class="mini-stat-icon red">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+
+                        <div class="mini-stat-content">
+
+                            <small>
+                                OUT OF STOCK
+                            </small>
+
+                            <strong id="os">
+                                —
+                            </strong>
+
+                            <span>
+                                Products unavailable
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ALERT -->
+
+                <div
+                    id="alert"
+                    class="sf-alert"
+                ></div>
+
+
+                <!-- =================================================
+                     CURRENT STOCK PANEL
+                     ================================================= -->
+
+                <section class="sf-card">
+
+                    <div class="sf-card-head">
+
+                        <div class="card-heading">
+
+                            <div class="card-heading-icon">
+                                <i class="fa-solid fa-warehouse"></i>
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    Current Stock
+                                </h3>
+
+                                <p>
+                                    Monitor quantities against each
+                                    product's reorder level.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="table-summary">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                            <span>
+                                Live inventory
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TABLE -->
+
+                    <div class="sf-table-wrap">
+
+                        <table class="inventory-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        SKU
+                                    </th>
+
+                                    <th>
+                                        Product
+                                    </th>
+
+                                    <th>
+                                        Category
+                                    </th>
+
+                                    <th>
+                                        Supplier
+                                    </th>
+
+                                    <th>
+                                        Stock
+                                    </th>
+
+                                    <th>
+                                        Reorder
+                                    </th>
+
+                                    <th>
+                                        State
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="rows">
+
+                                <tr>
+
+                                    <td
+                                        colspan="7"
+                                        class="sf-empty"
+                                    >
+
+                                        <div class="table-loading">
+
+                                            <div class="loading-spinner"></div>
+
+                                            <strong>
+                                                Loading inventory...
+                                            </strong>
+
+                                            <span>
+                                                Please wait while StockFlow
+                                                retrieves your inventory.
+                                            </span>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- TABLE FOOTER -->
+
+                    <div class="table-footer">
+
+                        <span id="inventoryCount">
+                            Inventory records
+                        </span>
+
+                        <span>
+                            StockFlow Inventory System
+                        </span>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- =================================================
+                 FOOTER
+                 ================================================= -->
+
+            <footer class="sf-footer">
+
+                <span>
+                    © 2026 <strong>STOCKFLOW</strong>
+                    Inventory Management System
+                </span>
+
+                <span>
+                    Inventory Module
+                </span>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================================
+         SCRIPTS
+         ===================================================== -->
+
+    <script src="./config.js"></script>
+    <script src="./api.js"></script>
+    <script src="./auth.js"></script>
+    <script src="./main.js"></script>
+    <script src="./inventory.js"></script>
+
+</body>
+</html>
