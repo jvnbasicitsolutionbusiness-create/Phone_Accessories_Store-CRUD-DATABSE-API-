@@ -1,853 +1,1641 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="STOCKFLOW Inventory Management Dashboard"
+    >
 
     <title>STOCKFLOW | Dashboard</title>
 
-    <!-- Shared System Styles -->
+
+    <!-- =========================================================
+         GLOBAL STYLES
+         ========================================================= -->
+
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="style.css">
-
-    <!-- Dashboard Styles -->
     <link rel="stylesheet" href="dashboard.css">
 
-    <!-- Icons -->
+
+    <!-- =========================================================
+         ICONS
+         ========================================================= -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- Fonts -->
+
+    <!-- =========================================================
+         FONT
+         ========================================================= -->
+
     <link
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
+
 </head>
+
 
 <body class="dashboard-page">
 
-    <!-- =========================
-         MOBILE SIDEBAR OVERLAY
-    ========================== -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- =========================
-         SIDEBAR
-    ========================== -->
-    <aside class="sidebar" id="sidebar">
+<!-- =============================================================
+     MOBILE OVERLAY
+     ============================================================= -->
 
-        <div class="sidebar-brand">
-            <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">
-                STOCKFLOW
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay"
+    aria-hidden="true">
+</div>
+
+
+
+<!-- =============================================================
+     SIDEBAR
+     ============================================================= -->
+
+<aside
+    class="sidebar"
+    id="sidebar"
+    aria-label="Main navigation">
+
+
+    <!-- BRAND
+         ========================================================= -->
+
+    <div class="sidebar-brand">
+
+        <a
+            href="dashboard.html"
+            class="brand-link"
+            aria-label="STOCKFLOW Dashboard">
+
+            <div class="brand-logo">
+                <span>S</span>
             </div>
 
-            <div style="font-size:9px;color:#93a6bf;margin-top:3px;">
-                PHONE ACCESSORIES INVENTORY
+            <div class="brand-text">
+                <strong>STOCKFLOW</strong>
+                <small>Inventory System</small>
             </div>
+
+        </a>
+
+    </div>
+
+
+
+    <!-- NAVIGATION
+         ========================================================= -->
+
+    <nav
+        class="sidebar-nav"
+        aria-label="Dashboard navigation">
+
+
+        <!-- OVERVIEW -->
+
+        <div class="nav-section">
+
+            <span class="nav-section-title">
+                OVERVIEW
+            </span>
+
+            <a
+                href="dashboard.html"
+                class="sidebar-link active"
+                data-page="dashboard">
+
+                <i class="fa-solid fa-chart-pie"></i>
+
+                <span>Dashboard</span>
+
+            </a>
+
         </div>
 
-        <nav class="sidebar-nav">
 
-            <a href="dashboard.html" class="active">
-                <span><i class="fa-solid fa-chart-pie"></i></span>
-                Dashboard
+
+        <!-- INVENTORY -->
+
+        <div class="nav-section">
+
+            <span class="nav-section-title">
+                INVENTORY
+            </span>
+
+
+            <a
+                href="products.html"
+                class="sidebar-link"
+                data-page="products">
+
+                <i class="fa-solid fa-box"></i>
+
+                <span>Products</span>
+
             </a>
 
-            <a href="products.html">
-                <span><i class="fa-solid fa-box"></i></span>
-                Products
+
+            <a
+                href="inventory.html"
+                class="sidebar-link"
+                data-page="inventory">
+
+                <i class="fa-solid fa-warehouse"></i>
+
+                <span>Inventory</span>
+
             </a>
 
-            <a href="inventory.html">
-                <span><i class="fa-solid fa-warehouse"></i></span>
-                Inventory
+
+            <a
+                href="stock-in.html"
+                class="sidebar-link"
+                data-page="stock-in">
+
+                <i class="fa-solid fa-arrow-down"></i>
+
+                <span>Stock In</span>
+
             </a>
 
-            <a href="stock-in.html">
-                <span><i class="fa-solid fa-arrow-down"></i></span>
-                Stock-In
+
+            <a
+                href="stock-out.html"
+                class="sidebar-link"
+                data-page="stock-out">
+
+                <i class="fa-solid fa-arrow-up"></i>
+
+                <span>Stock Out</span>
+
             </a>
 
-            <a href="stock-out.html">
-                <span><i class="fa-solid fa-arrow-up"></i></span>
-                Stock-Out
+        </div>
+
+
+
+        <!-- MANAGEMENT -->
+
+        <div class="nav-section">
+
+            <span class="nav-section-title">
+                MANAGEMENT
+            </span>
+
+
+            <a
+                href="transactions.html"
+                class="sidebar-link"
+                data-page="transactions">
+
+                <i class="fa-solid fa-right-left"></i>
+
+                <span>Transactions</span>
+
             </a>
 
-            <a href="transactions.html">
-                <span><i class="fa-solid fa-receipt"></i></span>
-                Transactions
+
+            <a
+                href="suppliers.html"
+                class="sidebar-link"
+                data-page="suppliers">
+
+                <i class="fa-solid fa-truck"></i>
+
+                <span>Suppliers</span>
+
             </a>
 
-            <a href="suppliers.html">
-                <span><i class="fa-solid fa-truck-field"></i></span>
-                Suppliers
+
+            <a
+                href="categories.html"
+                class="sidebar-link"
+                data-page="categories">
+
+                <i class="fa-solid fa-layer-group"></i>
+
+                <span>Categories</span>
+
             </a>
 
-            <a href="categories.html">
-                <span><i class="fa-solid fa-layer-group"></i></span>
-                Categories
+
+            <a
+                href="activity.html"
+                class="sidebar-link"
+                data-page="activity">
+
+                <i class="fa-solid fa-clock-rotate-left"></i>
+
+                <span>Activity Log</span>
+
             </a>
 
-            <a href="activity.html">
-                <span><i class="fa-solid fa-clock-rotate-left"></i></span>
-                Activity
+        </div>
+
+
+
+        <!-- SYSTEM -->
+
+        <div class="nav-section">
+
+            <span class="nav-section-title">
+                SYSTEM
+            </span>
+
+
+            <a
+                href="profile.html"
+                class="sidebar-link"
+                data-page="profile">
+
+                <i class="fa-solid fa-user"></i>
+
+                <span>Profile</span>
+
             </a>
 
-            <a href="profile.html">
-                <span><i class="fa-solid fa-user"></i></span>
-                Profile
+
+            <a
+                href="settings.html"
+                class="sidebar-link"
+                data-page="settings">
+
+                <i class="fa-solid fa-gear"></i>
+
+                <span>Settings</span>
+
             </a>
 
-            <a href="settings.html">
-                <span><i class="fa-solid fa-gear"></i></span>
-                Settings
-            </a>
+        </div>
 
-        </nav>
+    </nav>
 
-        <div class="sidebar-bottom">
 
-            <div class="mini-user">
 
-                <div class="avatar" data-user-initials>
-                    SF
-                </div>
+    <!-- SIDEBAR BOTTOM
+         ========================================================= -->
 
-                <div>
-                    <b data-user-name>StockFlow User</b>
-                    <small data-user-role>Administrator</small>
-                </div>
+    <div class="sidebar-bottom">
+
+
+        <!-- USER -->
+
+        <div class="mini-user">
+
+            <div
+                class="avatar"
+                data-user-initials>
+                SF
+            </div>
+
+
+            <div class="mini-user-info">
+
+                <b data-user-name>
+                    StockFlow User
+                </b>
+
+                <small data-user-role>
+                    Administrator
+                </small>
 
             </div>
+
+        </div>
+
+
+
+        <!-- LOGOUT -->
+
+        <button
+            type="button"
+            class="logout-btn"
+            id="logoutBtn">
+
+            <i class="fa-solid fa-right-from-bracket"></i>
+
+            <span>Logout</span>
+
+        </button>
+
+    </div>
+
+</aside>
+
+
+
+<!-- =============================================================
+     MAIN CONTENT
+     ============================================================= -->
+
+<main class="dashboard-main">
+
+
+    <!-- =========================================================
+         TOP HEADER
+         ========================================================= -->
+
+    <header class="dash-header">
+
+
+        <!-- LEFT -->
+
+        <div class="header-left">
+
+
+            <!-- MOBILE MENU -->
 
             <button
                 type="button"
-                class="logout-btn"
-                id="logoutBtn"
-            >
-                <i class="fa-solid fa-right-from-bracket"></i>
-                Logout
+                class="mobile-menu"
+                id="mobileMenuBtn"
+                aria-label="Open navigation"
+                aria-controls="sidebar"
+                aria-expanded="false">
+
+                <i class="fa-solid fa-bars"></i>
+
             </button>
+
+
+            <div class="breadcrumb">
+
+                <span>STOCKFLOW</span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+                <span>Overview</span>
+
+            </div>
+
+
+            <h1>
+                Inventory Dashboard
+            </h1>
+
+
+            <p class="header-subtitle">
+                Monitor your inventory, stock levels, and recent activity.
+            </p>
 
         </div>
 
-    </aside>
 
 
-    <!-- =========================
-         MAIN CONTENT
-    ========================== -->
-    <main class="dashboard-main">
+        <!-- RIGHT -->
 
-        <!-- =========================
-             HEADER
-        ========================== -->
-        <header class="dash-header">
-
-            <div>
-
-                <button
-                    type="button"
-                    class="mobile-menu"
-                    id="mobileMenuBtn"
-                    aria-label="Open navigation"
-                >
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-
-                <p
-                    style="
-                        font-size:10px;
-                        color:#64748b;
-                        margin:0 0 3px;
-                    "
-                >
-                    STOCKFLOW / OVERVIEW
-                </p>
-
-                <h1>
-                    Inventory Dashboard
-                </h1>
-
-            </div>
-
-            <div class="header-actions">
-
-                <div class="header-user">
-
-                    <div class="avatar" data-user-initials>
-                        SF
-                    </div>
-
-                    <div>
-                        <b data-user-name>
-                            StockFlow User
-                        </b>
-
-                        <small data-user-role>
-                            Administrator
-                        </small>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </header>
+        <div class="header-actions">
 
 
-        <!-- =========================
-             CONNECTION STATUS
-        ========================== -->
-        <section
-            class="connection-card"
-            id="connectionCard"
-        >
+            <!-- NOTIFICATION -->
 
-            <div>
+            <button
+                type="button"
+                class="header-icon-btn"
+                id="notificationBtn"
+                aria-label="Notifications">
 
-                <span class="connection-badge" id="connectionBadge">
-                    CHECKING CONNECTION
+                <i class="fa-regular fa-bell"></i>
+
+                <span
+                    class="notification-dot"
+                    id="notificationDot">
                 </span>
 
-                <h3>
-                    Inventory Data Connection
-                </h3>
-
-                <p id="connectionMessage">
-                    Checking the connection between STOCKFLOW and the inventory backend.
-                </p>
-
-            </div>
-
-            <div class="connection-lock" id="connectionIcon">
-                <i class="fa-solid fa-database"></i>
-            </div>
-
-        </section>
+            </button>
 
 
-        <!-- =========================
-             WELCOME BANNER
-        ========================== -->
-        <section class="welcome-banner">
 
-            <div>
+            <!-- USER -->
 
-                <div class="eyebrow">
-                    <span></span>
-                    STOCKFLOW INVENTORY MANAGEMENT
+            <a
+                href="profile.html"
+                class="header-user"
+                aria-label="Open profile">
+
+                <div
+                    class="avatar"
+                    data-user-initials>
+                    SF
                 </div>
 
-                <h2>
-                    Welcome back,
-                    <span data-user-name>StockFlow User</span>.
-                </h2>
 
-                <p>
-                    Monitor products, stock levels, suppliers and inventory activity
-                    from one centralized dashboard.
-                </p>
+                <div class="header-user-info">
 
-            </div>
+                    <b data-user-name>
+                        StockFlow User
+                    </b>
 
-            <div class="banner-icon">
-                <i class="fa-solid fa-boxes-stacked"></i>
-            </div>
+                    <small data-user-role>
+                        Administrator
+                    </small>
 
-        </section>
+                </div>
 
 
-        <!-- =========================
-             DASHBOARD STATISTICS
-        ========================== -->
-        <section class="stats-grid">
+                <i class="fa-solid fa-chevron-down"></i>
 
-            <!-- Products -->
-            <article class="stat-card">
+            </a>
 
-                <div class="stat-icon blue">
+        </div>
+
+    </header>
+
+
+
+    <!-- =========================================================
+         CONNECTION STATUS
+         ========================================================= -->
+
+    <section
+        class="connection-card"
+        id="connectionCard"
+        aria-live="polite">
+
+
+        <div class="connection-icon">
+
+            <i
+                class="fa-solid fa-circle-check"
+                id="connectionIcon">
+            </i>
+
+        </div>
+
+
+        <div class="connection-content">
+
+            <strong id="connectionTitle">
+                System Connected
+            </strong>
+
+            <span id="connectionMessage">
+                StockFlow services are ready.
+            </span>
+
+        </div>
+
+
+        <span
+            class="connection-status"
+            id="connectionStatus">
+            Online
+        </span>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         WELCOME BANNER
+         ========================================================= -->
+
+    <section class="welcome-banner">
+
+
+        <div class="welcome-content">
+
+            <span class="welcome-label">
+                STOCKFLOW INVENTORY MANAGEMENT
+            </span>
+
+
+            <h2>
+                Welcome back,
+                <span data-user-first-name>
+                    User
+                </span>.
+            </h2>
+
+
+            <p>
+                Here's what's happening with your inventory today.
+            </p>
+
+        </div>
+
+
+        <div class="welcome-icon">
+
+            <i class="fa-solid fa-boxes-stacked"></i>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         STATISTICS
+         ========================================================= -->
+
+    <section
+        class="stats-grid"
+        aria-label="Inventory statistics">
+
+
+        <!-- PRODUCTS -->
+
+        <article class="stat-card">
+
+            <div class="stat-card-top">
+
+                <div class="stat-icon products">
+
                     <i class="fa-solid fa-box"></i>
+
                 </div>
 
-                <small>
-                    TOTAL PRODUCTS
-                </small>
+
+                <span class="stat-label">
+                    PRODUCTS
+                </span>
+
+            </div>
+
+
+            <div class="stat-value">
 
                 <strong
                     id="productsCount"
-                    data-stat="products"
-                >
+                    data-stat="products">
                     —
                 </strong>
-
-                <span class="trend neutral">
-                    Registered inventory items
-                </span>
-
-            </article>
-
-
-            <!-- Total Stock -->
-            <article class="stat-card">
-
-                <div class="stat-icon green">
-                    <i class="fa-solid fa-cubes-stacked"></i>
-                </div>
-
-                <small>
-                    TOTAL STOCK
-                </small>
-
-                <strong
-                    id="totalStockCount"
-                    data-stat="totalStock"
-                >
-                    —
-                </strong>
-
-                <span class="trend neutral">
-                    Current units in inventory
-                </span>
-
-            </article>
-
-
-            <!-- Low Stock -->
-            <article class="stat-card">
-
-                <div class="stat-icon orange">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-
-                <small>
-                    LOW STOCK
-                </small>
-
-                <strong
-                    id="lowStockCount"
-                    data-stat="lowStock"
-                >
-                    —
-                </strong>
-
-                <span class="trend neutral">
-                    Products at reorder level
-                </span>
-
-            </article>
-
-
-            <!-- Out of Stock -->
-            <article class="stat-card">
-
-                <div class="stat-icon red">
-                    <i class="fa-solid fa-box-open"></i>
-                </div>
-
-                <small>
-                    OUT OF STOCK
-                </small>
-
-                <strong
-                    id="outOfStockCount"
-                    data-stat="outOfStock"
-                >
-                    —
-                </strong>
-
-                <span class="trend neutral">
-                    Products requiring replenishment
-                </span>
-
-            </article>
-
-        </section>
-
-
-        <!-- =========================
-             MAIN DASHBOARD GRID
-        ========================== -->
-        <section class="dashboard-grid">
-
-            <!-- =========================
-                 INVENTORY OVERVIEW
-            ========================== -->
-            <div>
-
-                <section class="panel">
-
-                    <div class="panel-head">
-
-                        <div>
-                            <h3>
-                                Inventory Overview
-                            </h3>
-
-                            <p>
-                                Current STOCKFLOW inventory status
-                            </p>
-                        </div>
-
-                        <a
-                            href="inventory.html"
-                            style="
-                                font-size:10px;
-                                color:#1769e0;
-                                text-decoration:none;
-                                font-weight:700;
-                            "
-                        >
-                            View Inventory
-                        </a>
-
-                    </div>
-
-                    <div class="empty-state" id="inventoryOverview">
-
-                        <div>
-                            <i class="fa-solid fa-warehouse"></i>
-                        </div>
-
-                        <strong>
-                            Inventory summary
-                        </strong>
-
-                        <p>
-                            Inventory information will be displayed here
-                            when connected to the STOCKFLOW backend.
-                        </p>
-
-                    </div>
-
-                </section>
-
-
-                <!-- =========================
-                     RECENT TRANSACTIONS
-                ========================== -->
-                <section class="panel">
-
-                    <div class="panel-head">
-
-                        <div>
-                            <h3>
-                                Recent Transactions
-                            </h3>
-
-                            <p>
-                                Latest stock movement records
-                            </p>
-                        </div>
-
-                        <a
-                            href="transactions.html"
-                            style="
-                                font-size:10px;
-                                color:#1769e0;
-                                text-decoration:none;
-                                font-weight:700;
-                            "
-                        >
-                            View All
-                        </a>
-
-                    </div>
-
-                    <div
-                        id="recentTransactions"
-                        class="empty-state small"
-                    >
-
-                        <div>
-                            <i class="fa-solid fa-receipt"></i>
-                        </div>
-
-                        <strong>
-                            No transaction data loaded
-                        </strong>
-
-                        <p>
-                            Recent stock-in and stock-out activity
-                            will appear here.
-                        </p>
-
-                    </div>
-
-                </section>
 
             </div>
 
 
-            <!-- =========================
-                 RIGHT COLUMN
-            ========================== -->
-            <div>
+            <div class="stat-footer">
 
-                <!-- Quick Actions -->
-                <section class="panel">
+                <span>
+                    Total registered products
+                </span>
 
-                    <div class="panel-head">
-
-                        <div>
-                            <h3>
-                                Quick Actions
-                            </h3>
-
-                            <p>
-                                Common inventory operations
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div
-                        style="
-                            display:grid;
-                            grid-template-columns:1fr 1fr;
-                            gap:10px;
-                        "
-                    >
-
-                        <a
-                            href="products.html"
-                            style="
-                                text-decoration:none;
-                                padding:15px;
-                                border:1px solid #e5eaf1;
-                                border-radius:11px;
-                                color:#10233d;
-                            "
-                        >
-                            <i
-                                class="fa-solid fa-box"
-                                style="color:#1769e0;"
-                            ></i>
-
-                            <div
-                                style="
-                                    font-size:11px;
-                                    font-weight:700;
-                                    margin-top:8px;
-                                "
-                            >
-                                Products
-                            </div>
-
-                            <div
-                                style="
-                                    font-size:9px;
-                                    color:#64748b;
-                                    margin-top:3px;
-                                "
-                            >
-                                Manage products
-                            </div>
-                        </a>
-
-
-                        <a
-                            href="stock-in.html"
-                            style="
-                                text-decoration:none;
-                                padding:15px;
-                                border:1px solid #e5eaf1;
-                                border-radius:11px;
-                                color:#10233d;
-                            "
-                        >
-                            <i
-                                class="fa-solid fa-arrow-down"
-                                style="color:#15966c;"
-                            ></i>
-
-                            <div
-                                style="
-                                    font-size:11px;
-                                    font-weight:700;
-                                    margin-top:8px;
-                                "
-                            >
-                                Stock-In
-                            </div>
-
-                            <div
-                                style="
-                                    font-size:9px;
-                                    color:#64748b;
-                                    margin-top:3px;
-                                "
-                            >
-                                Receive inventory
-                            </div>
-                        </a>
-
-
-                        <a
-                            href="stock-out.html"
-                            style="
-                                text-decoration:none;
-                                padding:15px;
-                                border:1px solid #e5eaf1;
-                                border-radius:11px;
-                                color:#10233d;
-                            "
-                        >
-                            <i
-                                class="fa-solid fa-arrow-up"
-                                style="color:#d84b4b;"
-                            ></i>
-
-                            <div
-                                style="
-                                    font-size:11px;
-                                    font-weight:700;
-                                    margin-top:8px;
-                                "
-                            >
-                                Stock-Out
-                            </div>
-
-                            <div
-                                style="
-                                    font-size:9px;
-                                    color:#64748b;
-                                    margin-top:3px;
-                                "
-                            >
-                                Release inventory
-                            </div>
-                        </a>
-
-
-                        <a
-                            href="suppliers.html"
-                            style="
-                                text-decoration:none;
-                                padding:15px;
-                                border:1px solid #e5eaf1;
-                                border-radius:11px;
-                                color:#10233d;
-                            "
-                        >
-                            <i
-                                class="fa-solid fa-truck-field"
-                                style="color:#c37b05;"
-                            ></i>
-
-                            <div
-                                style="
-                                    font-size:11px;
-                                    font-weight:700;
-                                    margin-top:8px;
-                                "
-                            >
-                                Suppliers
-                            </div>
-
-                            <div
-                                style="
-                                    font-size:9px;
-                                    color:#64748b;
-                                    margin-top:3px;
-                                "
-                            >
-                                Manage suppliers
-                            </div>
-                        </a>
-
-                    </div>
-
-                </section>
-
-
-                <!-- =========================
-                     INVENTORY ALERTS
-                ========================== -->
-                <section class="panel">
-
-                    <div class="panel-head">
-
-                        <div>
-                            <h3>
-                                Inventory Alerts
-                            </h3>
-
-                            <p>
-                                Items requiring attention
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div
-                        id="inventoryAlerts"
-                        class="empty-state small"
-                    >
-
-                        <div>
-                            <i class="fa-solid fa-shield-check"></i>
-                        </div>
-
-                        <strong>
-                            Checking inventory
-                        </strong>
-
-                        <p>
-                            STOCKFLOW will display low-stock and
-                            out-of-stock conditions here.
-                        </p>
-
-                    </div>
-
-                </section>
-
-
-                <!-- =========================
-                     SYSTEM PROFILE
-                ========================== -->
-                <section class="panel profile-panel">
-
-                    <div class="panel-head">
-
-                        <div>
-                            <h3>
-                                Current Account
-                            </h3>
-
-                            <p>
-                                Active STOCKFLOW session
-                            </p>
-                        </div>
-
-                        <a
-                            href="profile.html"
-                            style="
-                                font-size:10px;
-                                color:#1769e0;
-                                text-decoration:none;
-                                font-weight:700;
-                            "
-                        >
-                            Profile
-                        </a>
-
-                    </div>
-
-                    <div class="profile-grid">
-
-                        <div>
-                            <span>
-                                NAME
-                            </span>
-
-                            <strong data-user-name>
-                                —
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>
-                                ROLE
-                            </span>
-
-                            <strong data-user-role>
-                                —
-                            </strong>
-                        </div>
-
-                        <div>
-                            <span>
-                                SYSTEM
-                            </span>
-
-                            <strong>
-                                STOCKFLOW
-                            </strong>
-                        </div>
-
-                    </div>
-
-                </section>
-
-            </div>
-
-        </section>
-
-
-        <!-- =========================
-             RECENT ACTIVITY
-        ========================== -->
-        <section class="panel">
-
-            <div class="panel-head">
-
-                <div>
-                    <h3>
-                        Recent Activity
-                    </h3>
-
-                    <p>
-                        Latest recorded STOCKFLOW system activities
-                    </p>
-                </div>
-
-                <a
-                    href="activity.html"
-                    style="
-                        font-size:10px;
-                        color:#1769e0;
-                        text-decoration:none;
-                        font-weight:700;
-                    "
-                >
-                    View Activity
+                <a href="products.html">
+                    View
+                    <i class="fa-solid fa-arrow-right"></i>
                 </a>
 
             </div>
 
-            <div
-                id="recentActivity"
-                class="empty-state"
-            >
+        </article>
 
-                <div>
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+
+        <!-- TOTAL STOCK -->
+
+        <article class="stat-card">
+
+            <div class="stat-card-top">
+
+                <div class="stat-icon stock">
+
+                    <i class="fa-solid fa-cubes"></i>
+
                 </div>
 
-                <strong>
-                    No activity loaded
+
+                <span class="stat-label">
+                    TOTAL STOCK
+                </span>
+
+            </div>
+
+
+            <div class="stat-value">
+
+                <strong
+                    id="totalStockCount"
+                    data-stat="totalStock">
+                    —
                 </strong>
 
+            </div>
+
+
+            <div class="stat-footer">
+
+                <span>
+                    Units currently available
+                </span>
+
+                <a href="inventory.html">
+                    View
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- LOW STOCK -->
+
+        <article class="stat-card">
+
+            <div class="stat-card-top">
+
+                <div class="stat-icon warning">
+
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                </div>
+
+
+                <span class="stat-label">
+                    LOW STOCK
+                </span>
+
+            </div>
+
+
+            <div class="stat-value">
+
+                <strong
+                    id="lowStockCount"
+                    data-stat="lowStock">
+                    —
+                </strong>
+
+            </div>
+
+
+            <div class="stat-footer">
+
+                <span>
+                    Products needing attention
+                </span>
+
+                <a href="inventory.html">
+                    Review
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- OUT OF STOCK -->
+
+        <article class="stat-card">
+
+            <div class="stat-card-top">
+
+                <div class="stat-icon danger">
+
+                    <i class="fa-solid fa-circle-xmark"></i>
+
+                </div>
+
+
+                <span class="stat-label">
+                    OUT OF STOCK
+                </span>
+
+            </div>
+
+
+            <div class="stat-value">
+
+                <strong
+                    id="outOfStockCount"
+                    data-stat="outOfStock">
+                    —
+                </strong>
+
+            </div>
+
+
+            <div class="stat-footer">
+
+                <span>
+                    Products unavailable
+                </span>
+
+                <a href="stock-in.html">
+                    Restock
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         DASHBOARD GRID
+         ========================================================= -->
+
+    <section class="dashboard-grid">
+
+
+        <!-- =====================================================
+             INVENTORY OVERVIEW
+             ===================================================== -->
+
+        <article class="panel inventory-overview-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="panel-kicker">
+                        INVENTORY
+                    </span>
+
+                    <h2>
+                        Inventory Overview
+                    </h2>
+
+                    <p>
+                        Current inventory status at a glance.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="inventory.html"
+                    class="panel-link">
+
+                    View Inventory
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+            <div
+                class="inventory-overview"
+                id="inventoryOverview">
+
+
+                <!-- DASHBOARD JS WILL POPULATE THIS -->
+
+                <div class="dashboard-loading">
+
+                    <div class="loading-spinner"></div>
+
+                    <span>
+                        Loading inventory data...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- =====================================================
+             RECENT TRANSACTIONS
+             ===================================================== -->
+
+        <article class="panel transactions-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="panel-kicker">
+                        ACTIVITY
+                    </span>
+
+                    <h2>
+                        Recent Transactions
+                    </h2>
+
+                    <p>
+                        Latest stock movements.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="transactions.html"
+                    class="panel-link">
+
+                    View All
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+            <div
+                class="recent-transactions"
+                id="recentTransactions">
+
+
+                <!-- DASHBOARD JS WILL POPULATE THIS -->
+
+                <div class="dashboard-loading">
+
+                    <div class="loading-spinner"></div>
+
+                    <span>
+                        Loading transactions...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- =====================================================
+             QUICK ACTIONS
+             ===================================================== -->
+
+        <article class="panel quick-actions-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="panel-kicker">
+                        SHORTCUTS
+                    </span>
+
+                    <h2>
+                        Quick Actions
+                    </h2>
+
+                    <p>
+                        Frequently used inventory actions.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="quick-actions">
+
+
+                <a
+                    href="products.html"
+                    class="quick-action">
+
+                    <div class="quick-action-icon">
+
+                        <i class="fa-solid fa-plus"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Add Product
+                        </strong>
+
+                        <span>
+                            Create a new product
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+
+
+                <a
+                    href="stock-in.html"
+                    class="quick-action">
+
+                    <div class="quick-action-icon">
+
+                        <i class="fa-solid fa-arrow-down"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Stock In
+                        </strong>
+
+                        <span>
+                            Record incoming stock
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+
+
+                <a
+                    href="stock-out.html"
+                    class="quick-action">
+
+                    <div class="quick-action-icon">
+
+                        <i class="fa-solid fa-arrow-up"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Stock Out
+                        </strong>
+
+                        <span>
+                            Record outgoing stock
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+
+
+                <a
+                    href="suppliers.html"
+                    class="quick-action">
+
+                    <div class="quick-action-icon">
+
+                        <i class="fa-solid fa-truck"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Manage Suppliers
+                        </strong>
+
+                        <span>
+                            View supplier records
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- =====================================================
+             INVENTORY ALERTS
+             ===================================================== -->
+
+        <article class="panel alerts-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="panel-kicker">
+                        ATTENTION
+                    </span>
+
+                    <h2>
+                        Inventory Alerts
+                    </h2>
+
+                    <p>
+                        Products that may require action.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="inventory.html"
+                    class="panel-link">
+
+                    Review
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+
+            <div
+                class="inventory-alerts"
+                id="inventoryAlerts">
+
+
+                <div class="dashboard-loading">
+
+                    <div class="loading-spinner"></div>
+
+                    <span>
+                        Checking inventory alerts...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         RECENT ACTIVITY
+         ========================================================= -->
+
+    <section class="panel recent-activity-panel">
+
+
+        <div class="panel-header">
+
+            <div>
+
+                <span class="panel-kicker">
+                    SYSTEM
+                </span>
+
+                <h2>
+                    Recent Activity
+                </h2>
+
                 <p>
-                    Product, category, supplier, stock-in and stock-out
-                    activities will appear here.
+                    Latest actions performed in StockFlow.
                 </p>
 
             </div>
 
-        </section>
 
+            <a
+                href="activity.html"
+                class="panel-link">
 
-        <div class="prototype-label">
-            STOCKFLOW • Phone Accessories Inventory Management System
+                Activity Log
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </a>
+
         </div>
 
-    </main>
+
+        <div
+            class="recent-activity"
+            id="recentActivity">
 
 
-    <!-- =========================
-         SYSTEM SCRIPTS
-    ========================== -->
+            <!-- DASHBOARD JS WILL POPULATE THIS -->
 
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="auth.js"></script>
+            <div class="empty-state">
 
-    <!-- Dashboard Logic -->
-    <script src="dashboard.js"></script>
+                <div class="empty-state-icon">
+
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+                </div>
+
+                <h3>
+                    Loading activity...
+                </h3>
+
+                <p>
+                    Recent system activity will appear here.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================================================
+         FOOTER
+         ========================================================= -->
+
+    <footer class="dashboard-footer">
+
+
+        <div>
+
+            <strong>
+                STOCKFLOW
+            </strong>
+
+            <span>
+                Inventory Management System
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <span>
+                System Status:
+            </span>
+
+            <span
+                class="footer-status"
+                id="footerSystemStatus">
+
+                <i class="fa-solid fa-circle"></i>
+
+                Online
+
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <span>
+                © 2026 STOCKFLOW
+            </span>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- =========================================================
+         PROTOTYPE / DEVELOPMENT LABEL
+         ========================================================= -->
+
+    <div class="prototype-label">
+
+        <i class="fa-solid fa-code"></i>
+
+        STOCKFLOW Inventory System
+
+    </div>
+
+
+</main>
+
+
+
+<!-- =============================================================
+     NOTIFICATION PANEL
+     ============================================================= -->
+
+<div
+    class="notification-panel"
+    id="notificationPanel"
+    aria-hidden="true">
+
+
+    <div class="notification-panel-header">
+
+        <div>
+
+            <strong>
+                Notifications
+            </strong>
+
+            <small>
+                Recent system alerts
+            </small>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="closeNotificationBtn"
+            aria-label="Close notifications">
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+    </div>
+
+
+    <div
+        class="notification-list"
+        id="notificationList">
+
+
+        <div class="notification-empty">
+
+            <i class="fa-regular fa-bell-slash"></i>
+
+            <p>
+                No new notifications.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =============================================================
+     SCRIPTS
+     ============================================================= -->
+
+<script src="config.js"></script>
+
+<script src="api.js"></script>
+
+<script src="auth.js"></script>
+
+<script src="dashboard.js"></script>
+
+
+
+<!-- =============================================================
+     SMALL DASHBOARD UI CONTROLLER
+     ============================================================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    /*
+     * ---------------------------------------------------------
+     * MOBILE SIDEBAR
+     * ---------------------------------------------------------
+     */
+
+    const menuButton =
+        document.getElementById("mobileMenuBtn");
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const overlay =
+        document.getElementById("sidebarOverlay");
+
+
+    function closeSidebar() {
+
+        document.body.classList.remove(
+            "sidebar-open"
+        );
+
+        if (menuButton) {
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    function toggleSidebar() {
+
+        const isOpen =
+            document.body.classList.toggle(
+                "sidebar-open"
+            );
+
+        if (menuButton) {
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                String(isOpen)
+            );
+
+        }
+
+    }
+
+
+    menuButton?.addEventListener(
+        "click",
+        toggleSidebar
+    );
+
+
+    overlay?.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+
+
+    /*
+     * ---------------------------------------------------------
+     * SIDEBAR NAVIGATION
+     * ---------------------------------------------------------
+     */
+
+    document
+        .querySelectorAll(".sidebar-link")
+        .forEach(link => {
+
+            link.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .querySelectorAll(".sidebar-link")
+                        .forEach(item => {
+
+                            item.classList.remove(
+                                "active"
+                            );
+
+                        });
+
+
+                    link.classList.add(
+                        "active"
+                    );
+
+
+                    closeSidebar();
+
+                }
+            );
+
+        });
+
+
+
+    /*
+     * ---------------------------------------------------------
+     * NOTIFICATION PANEL
+     * ---------------------------------------------------------
+     */
+
+    const notificationButton =
+        document.getElementById(
+            "notificationBtn"
+        );
+
+    const notificationPanel =
+        document.getElementById(
+            "notificationPanel"
+        );
+
+    const closeNotificationButton =
+        document.getElementById(
+            "closeNotificationBtn"
+        );
+
+
+    function openNotifications() {
+
+        notificationPanel?.classList.add(
+            "show"
+        );
+
+        notificationPanel?.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+    }
+
+
+    function closeNotifications() {
+
+        notificationPanel?.classList.remove(
+            "show"
+        );
+
+        notificationPanel?.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+    }
+
+
+    notificationButton?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            if (
+                notificationPanel?.classList.contains(
+                    "show"
+                )
+            ) {
+
+                closeNotifications();
+
+            } else {
+
+                openNotifications();
+
+            }
+
+        }
+    );
+
+
+    closeNotificationButton?.addEventListener(
+        "click",
+        closeNotifications
+    );
+
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            if (
+                notificationPanel &&
+                !notificationPanel.contains(event.target) &&
+                notificationButton &&
+                !notificationButton.contains(event.target)
+            ) {
+
+                closeNotifications();
+
+            }
+
+        }
+    );
+
+
+
+    /*
+     * ---------------------------------------------------------
+     * ESCAPE KEY
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Escape") {
+
+                closeSidebar();
+
+                closeNotifications();
+
+            }
+
+        }
+    );
+
+
+
+    /*
+     * ---------------------------------------------------------
+     * ACTIVE PAGE
+     * ---------------------------------------------------------
+     */
+
+    const currentPage =
+        window.location.pathname
+            .split("/")
+            .pop()
+            .toLowerCase();
+
+
+    document
+        .querySelectorAll(".sidebar-link")
+        .forEach(link => {
+
+            const href =
+                link
+                    .getAttribute("href")
+                    ?.toLowerCase();
+
+
+            if (
+                href === currentPage
+            ) {
+
+                document
+                    .querySelectorAll(".sidebar-link")
+                    .forEach(item => {
+
+                        item.classList.remove(
+                            "active"
+                        );
+
+                    });
+
+
+                link.classList.add(
+                    "active"
+                );
+
+            }
+
+        });
+
+
+
+    /*
+     * ---------------------------------------------------------
+     * ONLINE / OFFLINE STATUS
+     * ---------------------------------------------------------
+     */
+
+    function updateConnectionUI() {
+
+        const status =
+            document.getElementById(
+                "footerSystemStatus"
+            );
+
+        if (!status) {
+            return;
+        }
+
+
+        if (navigator.onLine) {
+
+            status.innerHTML =
+                '<i class="fa-solid fa-circle"></i> Online';
+
+            status.classList.remove(
+                "offline"
+            );
+
+        } else {
+
+            status.innerHTML =
+                '<i class="fa-solid fa-circle"></i> Offline';
+
+            status.classList.add(
+                "offline"
+            );
+
+        }
+
+    }
+
+
+    window.addEventListener(
+        "online",
+        updateConnectionUI
+    );
+
+
+    window.addEventListener(
+        "offline",
+        updateConnectionUI
+    );
+
+
+    updateConnectionUI();
+
+});
+
+</script>
+
 
 </body>
 </html>
