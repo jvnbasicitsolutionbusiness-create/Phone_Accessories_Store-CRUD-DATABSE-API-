@@ -1,6 +1,6 @@
 /* ============================================================
    STOCKFLOW | DASHBOARD.CSS
-   Professional SaaS Dashboard
+   Clean Professional Inventory SaaS Dashboard
    ============================================================ */
 
 
@@ -15,6 +15,7 @@
 
     --sf-blue: #2563eb;
     --sf-blue-dark: #1d4ed8;
+    --sf-blue-light: #3b82f6;
     --sf-blue-soft: #eff6ff;
 
     --sf-bg: #f5f7fb;
@@ -22,7 +23,7 @@
 
     --sf-text: #172033;
     --sf-text-dark: #0f172a;
-    --sf-muted: #6b7280;
+    --sf-muted: #64748b;
     --sf-muted-2: #94a3b8;
 
     --sf-border: #e5e9f0;
@@ -40,18 +41,18 @@
     --sf-info: #0284c7;
     --sf-info-soft: #f0f9ff;
 
-    --sf-radius-sm: 8px;
+    --sf-radius-sm: 9px;
     --sf-radius: 14px;
     --sf-radius-lg: 18px;
+
+    --sf-sidebar-width: 270px;
 
     --sf-shadow:
         0 1px 2px rgba(15, 23, 42, 0.03),
         0 8px 24px rgba(15, 23, 42, 0.05);
 
     --sf-shadow-hover:
-        0 10px 30px rgba(15, 23, 42, 0.09);
-
-    --sf-sidebar-width: 270px;
+        0 12px 30px rgba(15, 23, 42, 0.09);
 
     color: var(--sf-text);
     background: var(--sf-bg);
@@ -59,8 +60,13 @@
 
 
 /* ============================================================
-   PAGE BASE
+   BASE
    ============================================================ */
+
+.dashboard-page,
+.dashboard-page * {
+    box-sizing: border-box;
+}
 
 .dashboard-page {
     min-height: 100vh;
@@ -72,17 +78,17 @@
     text-decoration: none;
 }
 
+.dashboard-page button {
+    font-family: inherit;
+}
+
 .dashboard-page button,
 .dashboard-page a {
     -webkit-tap-highlight-color: transparent;
 }
 
-.dashboard-page button {
-    font-family: inherit;
-}
-
 .dashboard-page ::selection {
-    background: rgba(37, 99, 235, 0.16);
+    background: rgba(37, 99, 235, 0.15);
 }
 
 
@@ -131,16 +137,17 @@
 
     z-index: 1000;
 
+    color: #ffffff;
+
     background:
         linear-gradient(
             180deg,
             var(--sf-navy) 0%,
-            #0a142b 100%
+            #091329 100%
         );
 
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-
-    color: #ffffff;
+    border-right:
+        1px solid rgba(255, 255, 255, 0.06);
 
     box-shadow:
         8px 0 30px rgba(15, 23, 42, 0.08);
@@ -163,6 +170,8 @@
 
     padding: 0 22px;
 
+    flex-shrink: 0;
+
     border-bottom:
         1px solid rgba(255, 255, 255, 0.07);
 }
@@ -172,6 +181,7 @@
 
     display: flex;
     align-items: center;
+
     gap: 12px;
 }
 
@@ -199,9 +209,12 @@
 }
 
 .brand-logo span {
-    font-size: 19px;
-    font-weight: 800;
     color: #ffffff;
+
+    font-size: 18px;
+    font-weight: 800;
+
+    line-height: 1;
 }
 
 .brand-text {
@@ -209,6 +222,7 @@
 
     display: flex;
     flex-direction: column;
+
     gap: 2px;
 }
 
@@ -217,6 +231,7 @@
 
     font-size: 15px;
     font-weight: 800;
+
     letter-spacing: 0.08em;
 }
 
@@ -225,7 +240,6 @@
 
     font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.02em;
 }
 
 
@@ -236,8 +250,8 @@
 .sidebar-nav {
     flex: 1;
 
-    overflow-y: auto;
     overflow-x: hidden;
+    overflow-y: auto;
 
     padding: 18px 12px 14px;
 }
@@ -270,6 +284,7 @@
 
     font-size: 10px;
     font-weight: 800;
+
     letter-spacing: 0.13em;
 }
 
@@ -280,6 +295,7 @@
 
     display: flex;
     align-items: center;
+
     gap: 12px;
 
     margin-bottom: 3px;
@@ -300,6 +316,8 @@
 
 .sidebar-link i {
     width: 19px;
+
+    flex: 0 0 19px;
 
     text-align: center;
 
@@ -325,6 +343,7 @@
 
 .sidebar-link:hover i {
     color: #8eb5ff;
+
     transform: translateX(1px);
 }
 
@@ -334,8 +353,8 @@
     background:
         linear-gradient(
             90deg,
-            rgba(37, 99, 235, 0.28),
-            rgba(37, 99, 235, 0.12)
+            rgba(37, 99, 235, 0.30),
+            rgba(37, 99, 235, 0.11)
         );
 
     box-shadow:
@@ -347,13 +366,14 @@
 
     position: absolute;
 
-    left: 0;
     top: 9px;
     bottom: 9px;
+    left: 0;
 
     width: 3px;
 
-    border-radius: 0 4px 4px 0;
+    border-radius:
+        0 4px 4px 0;
 
     background: #4f8cff;
 }
@@ -364,10 +384,12 @@
 
 
 /* ============================================================
-   SIDEBAR BOTTOM
+   SIDEBAR USER AREA
    ============================================================ */
 
 .sidebar-bottom {
+    flex-shrink: 0;
+
     padding: 14px;
 
     border-top:
@@ -377,42 +399,16 @@
 .mini-user {
     display: flex;
     align-items: center;
+
     gap: 10px;
 
-    padding: 10px;
-
     margin-bottom: 9px;
+    padding: 10px;
 
     border-radius: 11px;
 
     background:
         rgba(255, 255, 255, 0.045);
-}
-
-.mini-user-info {
-    min-width: 0;
-
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.mini-user-info b {
-    overflow: hidden;
-
-    color: #ffffff;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.mini-user-info small {
-    color: #8295b7;
-
-    font-size: 10px;
 }
 
 .avatar {
@@ -440,7 +436,34 @@
     font-weight: 800;
 
     box-shadow:
-        0 5px 14px rgba(37, 99, 235, 0.2);
+        0 5px 14px rgba(37, 99, 235, 0.20);
+}
+
+.mini-user-info {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+.mini-user-info b {
+    overflow: hidden;
+
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mini-user-info small {
+    color: #8295b7;
+
+    font-size: 10px;
 }
 
 .logout-btn {
@@ -449,6 +472,7 @@
 
     display: flex;
     align-items: center;
+
     gap: 11px;
 
     padding: 0 12px;
@@ -472,20 +496,20 @@
 
 .logout-btn i {
     width: 19px;
+
     text-align: center;
 }
 
 .logout-btn:hover {
     color: #ffffff;
-    background: rgba(220, 38, 38, 0.13);
+
+    background:
+        rgba(220, 38, 38, 0.13);
 }
 
-.logout-btn.loading {
-    opacity: 0.6;
-    cursor: wait;
-}
-
+.logout-btn.loading,
 .logout-btn:disabled {
+    opacity: 0.6;
     cursor: wait;
 }
 
@@ -529,17 +553,13 @@ body.sidebar-collapsed .logout-btn span {
 }
 
 body.sidebar-collapsed .sidebar-brand {
-    padding: 0;
     justify-content: center;
+    padding: 0;
 }
 
 body.sidebar-collapsed .sidebar-link {
     justify-content: center;
     padding: 0;
-}
-
-body.sidebar-collapsed .sidebar-link.active::before {
-    left: 0;
 }
 
 body.sidebar-collapsed .mini-user {
@@ -554,7 +574,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   TOP HEADER
+   HEADER
    ============================================================ */
 
 .dash-header {
@@ -570,10 +590,10 @@ body.sidebar-collapsed .logout-btn {
         20px 0
         18px;
 
+    margin-bottom: 20px;
+
     border-bottom:
         1px solid var(--sf-border);
-
-    margin-bottom: 20px;
 }
 
 .header-left {
@@ -586,9 +606,13 @@ body.sidebar-collapsed .logout-btn {
     width: 40px;
     height: 40px;
 
+    align-items: center;
+    justify-content: center;
+
     margin-right: 10px;
 
-    border: 1px solid var(--sf-border);
+    border:
+        1px solid var(--sf-border);
 
     border-radius: 10px;
 
@@ -599,20 +623,21 @@ body.sidebar-collapsed .logout-btn {
     cursor: pointer;
 
     transition:
-        background 0.2s ease,
         border-color 0.2s ease,
-        color 0.2s ease;
+        color 0.2s ease,
+        background 0.2s ease;
 }
 
 .mobile-menu:hover {
-    border-color: #cbd5e1;
     color: var(--sf-blue);
+    border-color: #cbd5e1;
     background: #f8fafc;
 }
 
 .breadcrumb {
     display: flex;
     align-items: center;
+
     gap: 8px;
 
     margin-bottom: 6px;
@@ -621,12 +646,14 @@ body.sidebar-collapsed .logout-btn {
 
     font-size: 10px;
     font-weight: 700;
+
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
 .breadcrumb i {
     color: #c1c8d4;
+
     font-size: 8px;
 }
 
@@ -654,6 +681,7 @@ body.sidebar-collapsed .logout-btn {
 .header-actions {
     display: flex;
     align-items: center;
+
     gap: 11px;
 }
 
@@ -667,7 +695,9 @@ body.sidebar-collapsed .logout-btn {
     align-items: center;
     justify-content: center;
 
-    border: 1px solid var(--sf-border);
+    border:
+        1px solid var(--sf-border);
+
     border-radius: 11px;
 
     background: #ffffff;
@@ -682,34 +712,39 @@ body.sidebar-collapsed .logout-btn {
         0 1px 2px rgba(15, 23, 42, 0.02);
 
     transition:
+        transform 0.2s ease,
         border-color 0.2s ease,
-        background 0.2s ease,
         color 0.2s ease,
-        transform 0.2s ease;
+        background 0.2s ease;
 }
 
 .header-icon-btn:hover {
     color: var(--sf-blue);
+
     border-color: #c9d8f7;
+
     background: #f8fbff;
+
     transform: translateY(-1px);
 }
 
 .notification-dot {
     position: absolute;
 
-    top: 9px;
-    right: 9px;
+    top: 8px;
+    right: 8px;
 
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
 
-    border: 2px solid #ffffff;
+    display: none;
+
+    border:
+        2px solid #ffffff;
+
     border-radius: 50%;
 
     background: var(--sf-danger);
-
-    display: none;
 }
 
 .notification-dot.show {
@@ -719,6 +754,7 @@ body.sidebar-collapsed .logout-btn {
 .header-user {
     display: flex;
     align-items: center;
+
     gap: 9px;
 
     padding: 4px 5px 4px 4px;
@@ -736,6 +772,7 @@ body.sidebar-collapsed .logout-btn {
 .header-user .avatar {
     width: 38px;
     height: 38px;
+
     flex-basis: 38px;
 }
 
@@ -744,6 +781,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     flex-direction: column;
+
     gap: 2px;
 }
 
@@ -764,12 +802,13 @@ body.sidebar-collapsed .logout-btn {
     margin-left: 3px;
 
     color: #94a3b8;
+
     font-size: 9px;
 }
 
 
 /* ============================================================
-   CONNECTION CARD
+   SYSTEM CONNECTION
    ============================================================ */
 
 .connection-card {
@@ -777,13 +816,15 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     align-items: center;
+
     gap: 13px;
 
+    margin-bottom: 16px;
     padding: 10px 15px;
 
-    margin-bottom: 16px;
+    border:
+        1px solid #d9eee0;
 
-    border: 1px solid #d9eee0;
     border-radius: 13px;
 
     background:
@@ -795,26 +836,24 @@ body.sidebar-collapsed .logout-btn {
 
     box-shadow:
         0 2px 8px rgba(22, 163, 74, 0.025);
-
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease;
 }
 
 .connection-icon {
     width: 36px;
     height: 36px;
 
+    flex: 0 0 36px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 36px;
-
     border-radius: 10px;
 
-    background: var(--sf-success-soft);
     color: var(--sf-success);
+
+    background:
+        var(--sf-success-soft);
 
     font-size: 15px;
 }
@@ -826,6 +865,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     flex-direction: column;
+
     gap: 2px;
 }
 
@@ -848,16 +888,20 @@ body.sidebar-collapsed .logout-btn {
 }
 
 .connection-status {
+    flex-shrink: 0;
+
     padding: 5px 9px;
 
     border-radius: 999px;
 
     color: var(--sf-success);
 
-    background: var(--sf-success-soft);
+    background:
+        var(--sf-success-soft);
 
     font-size: 9px;
     font-weight: 800;
+
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -879,11 +923,12 @@ body.sidebar-collapsed .logout-btn {
 
     gap: 20px;
 
+    margin-bottom: 20px;
     padding: 28px 30px;
 
-    margin-bottom: 20px;
-
     border-radius: var(--sf-radius-lg);
+
+    color: #ffffff;
 
     background:
         linear-gradient(
@@ -892,8 +937,6 @@ body.sidebar-collapsed .logout-btn {
             #142a55 58%,
             #1b4b93 100%
         );
-
-    color: #ffffff;
 
     box-shadow:
         0 14px 35px rgba(15, 40, 82, 0.14);
@@ -907,12 +950,13 @@ body.sidebar-collapsed .logout-btn {
     width: 300px;
     height: 300px;
 
-    right: 40px;
     top: -180px;
+    right: 40px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
 
     border-radius: 50%;
-
-    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .welcome-banner::after {
@@ -946,15 +990,19 @@ body.sidebar-collapsed .logout-btn {
 
     font-size: 9px;
     font-weight: 800;
+
     letter-spacing: 0.14em;
 }
 
 .welcome-content h2 {
     margin: 0;
 
+    color: #ffffff;
+
     font-size: 23px;
     line-height: 1.25;
     font-weight: 800;
+
     letter-spacing: -0.025em;
 }
 
@@ -977,20 +1025,21 @@ body.sidebar-collapsed .logout-btn {
     width: 80px;
     height: 80px;
 
+    flex: 0 0 80px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 80px;
-
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border:
+        1px solid rgba(255, 255, 255, 0.09);
 
     border-radius: 22px;
 
+    color: #8eb8ff;
+
     background:
         rgba(255, 255, 255, 0.08);
-
-    color: #8eb8ff;
 
     font-size: 32px;
 
@@ -999,7 +1048,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   STATISTICS GRID
+   STATISTICS
    ============================================================ */
 
 .stats-grid {
@@ -1071,8 +1120,10 @@ body.sidebar-collapsed .logout-btn {
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--sf-shadow-hover);
+
     border-color: #dbe2eb;
+
+    box-shadow: var(--sf-shadow-hover);
 }
 
 .stat-card-top {
@@ -1121,6 +1172,7 @@ body.sidebar-collapsed .logout-btn {
 
     font-size: 9px;
     font-weight: 800;
+
     letter-spacing: 0.1em;
 }
 
@@ -1135,6 +1187,7 @@ body.sidebar-collapsed .logout-btn {
     line-height: 1;
 
     font-weight: 800;
+
     letter-spacing: -0.035em;
 }
 
@@ -1162,6 +1215,7 @@ body.sidebar-collapsed .logout-btn {
 .stat-footer a {
     display: inline-flex;
     align-items: center;
+
     gap: 5px;
 
     color: var(--sf-blue);
@@ -1185,7 +1239,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   DASHBOARD GRID
+   DASHBOARD CONTENT GRID
    ============================================================ */
 
 .dashboard-grid {
@@ -1193,7 +1247,7 @@ body.sidebar-collapsed .logout-btn {
 
     grid-template-columns:
         minmax(0, 1.35fr)
-        minmax(340px, 0.85fr);
+        minmax(320px, 0.85fr);
 
     gap: 18px;
 
@@ -1202,11 +1256,13 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   PANELS
+   GENERAL PANELS
    ============================================================ */
 
 .panel {
     min-width: 0;
+
+    overflow: hidden;
 
     border:
         1px solid var(--sf-border);
@@ -1246,6 +1302,7 @@ body.sidebar-collapsed .logout-btn {
 
     font-size: 9px;
     font-weight: 800;
+
     letter-spacing: 0.11em;
 }
 
@@ -1269,10 +1326,11 @@ body.sidebar-collapsed .logout-btn {
 }
 
 .panel-link {
-    flex: 0 0 auto;
+    flex-shrink: 0;
 
     display: inline-flex;
     align-items: center;
+
     gap: 7px;
 
     padding-top: 3px;
@@ -1321,6 +1379,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     align-items: center;
+
     gap: 12px;
 
     padding: 15px;
@@ -1340,7 +1399,9 @@ body.sidebar-collapsed .logout-btn {
 
 .overview-item:hover {
     background: #ffffff;
+
     border-color: #dce4ef;
+
     transform: translateY(-1px);
 }
 
@@ -1348,15 +1409,16 @@ body.sidebar-collapsed .logout-btn {
     width: 39px;
     height: 39px;
 
+    flex: 0 0 39px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 39px;
-
     border-radius: 10px;
 
     color: var(--sf-blue);
+
     background: var(--sf-blue-soft);
 
     font-size: 14px;
@@ -1377,6 +1439,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     flex-direction: column;
+
     gap: 3px;
 }
 
@@ -1397,11 +1460,15 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   RECENT TRANSACTIONS
+   RECENT TRANSACTIONS / ACTIVITY
    ============================================================ */
 
 .recent-transactions {
     padding: 8px 21px 15px;
+}
+
+.recent-activity {
+    padding: 8px 21px 17px;
 }
 
 .activity-row {
@@ -1409,6 +1476,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     align-items: center;
+
     gap: 11px;
 
     padding: 9px 0;
@@ -1425,15 +1493,16 @@ body.sidebar-collapsed .logout-btn {
     width: 36px;
     height: 36px;
 
+    flex: 0 0 36px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 36px;
-
     border-radius: 10px;
 
     color: var(--sf-blue);
+
     background: var(--sf-blue-soft);
 
     font-size: 12px;
@@ -1456,6 +1525,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     flex-direction: column;
+
     gap: 3px;
 }
 
@@ -1478,13 +1548,14 @@ body.sidebar-collapsed .logout-btn {
 }
 
 .activity-meta {
-    flex: 0 0 auto;
-
     min-width: 72px;
+
+    flex-shrink: 0;
 
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+
     gap: 3px;
 }
 
@@ -1499,6 +1570,7 @@ body.sidebar-collapsed .logout-btn {
     color: var(--sf-muted-2);
 
     font-size: 8px;
+
     text-align: right;
 }
 
@@ -1523,6 +1595,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     align-items: center;
+
     gap: 11px;
 
     padding: 11px 12px;
@@ -1535,14 +1608,15 @@ body.sidebar-collapsed .logout-btn {
     background: #fafbfd;
 
     transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
         transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
         box-shadow 0.2s ease;
 }
 
 .quick-action:hover {
     background: #ffffff;
+
     border-color: #cfdcf0;
 
     transform: translateY(-1px);
@@ -1555,15 +1629,16 @@ body.sidebar-collapsed .logout-btn {
     width: 35px;
     height: 35px;
 
+    flex: 0 0 35px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 35px;
-
     border-radius: 9px;
 
     color: var(--sf-blue);
+
     background: var(--sf-blue-soft);
 
     font-size: 12px;
@@ -1586,10 +1661,12 @@ body.sidebar-collapsed .logout-btn {
 
 .quick-action > div:nth-child(2) {
     min-width: 0;
+
     flex: 1;
 
     display: flex;
     flex-direction: column;
+
     gap: 3px;
 }
 
@@ -1618,12 +1695,13 @@ body.sidebar-collapsed .logout-btn {
     font-size: 8px;
 
     transition:
-        transform 0.2s ease,
-        color 0.2s ease;
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .quick-action:hover > i {
     color: var(--sf-blue);
+
     transform: translateX(2px);
 }
 
@@ -1648,22 +1726,24 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   EMPTY / LOADING STATES
+   LOADING
    ============================================================ */
 
 .dashboard-loading {
     min-height: 120px;
 
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    flex-direction: column;
 
     gap: 9px;
 
     color: var(--sf-muted);
 
     font-size: 10px;
+
     text-align: center;
 }
 
@@ -1688,13 +1768,19 @@ body.sidebar-collapsed .logout-btn {
     }
 }
 
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
 .empty-state {
     min-height: 120px;
 
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    flex-direction: column;
 
     gap: 5px;
 
@@ -1718,8 +1804,9 @@ body.sidebar-collapsed .logout-btn {
 
     border-radius: 11px;
 
-    background: #f4f6fa;
     color: #9aa6b8;
+
+    background: #f4f6fa;
 
     font-size: 14px;
 }
@@ -1746,23 +1833,6 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   RECENT ACTIVITY
-   ============================================================ */
-
-.recent-activity-panel {
-    margin-bottom: 18px;
-}
-
-.recent-activity {
-    padding: 8px 21px 17px;
-}
-
-.recent-activity .activity-row {
-    min-height: 62px;
-}
-
-
-/* ============================================================
    NOTIFICATION PANEL
    ============================================================ */
 
@@ -1775,7 +1845,8 @@ body.sidebar-collapsed .logout-btn {
     z-index: 1200;
 
     width: 365px;
-    max-width: calc(100vw - 32px);
+    max-width:
+        calc(100vw - 32px);
 
     overflow: hidden;
 
@@ -1791,6 +1862,7 @@ body.sidebar-collapsed .logout-btn {
 
     opacity: 0;
     visibility: hidden;
+
     transform:
         translateY(-8px)
         scale(0.98);
@@ -1806,6 +1878,7 @@ body.sidebar-collapsed .logout-btn {
 .notification-panel.show {
     opacity: 1;
     visibility: visible;
+
     transform:
         translateY(0)
         scale(1);
@@ -1820,17 +1893,18 @@ body.sidebar-collapsed .logout-btn {
     align-items: center;
     justify-content: space-between;
 
+    gap: 12px;
+
     padding: 14px 17px;
 
     border-bottom:
         1px solid var(--sf-border-light);
-
-    background: #ffffff;
 }
 
 .notification-panel-header > div {
     display: flex;
     flex-direction: column;
+
     gap: 3px;
 }
 
@@ -1847,9 +1921,13 @@ body.sidebar-collapsed .logout-btn {
     font-size: 9px;
 }
 
-.notification-panel-header button {
+.notification-panel-header button,
+#closeNotificationBtn,
+#notificationCloseBtn {
     width: 31px;
     height: 31px;
+
+    flex: 0 0 31px;
 
     display: flex;
     align-items: center;
@@ -1858,20 +1936,23 @@ body.sidebar-collapsed .logout-btn {
     border: 0;
     border-radius: 8px;
 
-    background: #f5f7fa;
-
     color: #64748b;
+
+    background: #f5f7fa;
 
     cursor: pointer;
 
     transition:
-        background 0.2s ease,
-        color 0.2s ease;
+        color 0.2s ease,
+        background 0.2s ease;
 }
 
-.notification-panel-header button:hover {
-    background: var(--sf-danger-soft);
+.notification-panel-header button:hover,
+#closeNotificationBtn:hover,
+#notificationCloseBtn:hover {
     color: var(--sf-danger);
+
+    background: var(--sf-danger-soft);
 }
 
 .notification-list {
@@ -1888,12 +1969,14 @@ body.sidebar-collapsed .logout-btn {
 
 .notification-list::-webkit-scrollbar-thumb {
     background: #d7dee9;
+
     border-radius: 20px;
 }
 
 .notification-item {
     display: flex;
     align-items: flex-start;
+
     gap: 11px;
 
     padding: 12px 10px;
@@ -1912,15 +1995,16 @@ body.sidebar-collapsed .logout-btn {
     width: 35px;
     height: 35px;
 
+    flex: 0 0 35px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 35px;
-
     border-radius: 9px;
 
     color: var(--sf-blue);
+
     background: var(--sf-blue-soft);
 
     font-size: 12px;
@@ -1946,6 +2030,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: flex;
     flex-direction: column;
+
     gap: 4px;
 }
 
@@ -1967,17 +2052,18 @@ body.sidebar-collapsed .logout-btn {
     min-height: 170px;
 
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    flex-direction: column;
 
     gap: 7px;
 
     padding: 20px;
 
-    text-align: center;
-
     color: var(--sf-muted);
+
+    text-align: center;
 }
 
 .notification-empty i {
@@ -1992,9 +2078,9 @@ body.sidebar-collapsed .logout-btn {
 
     border-radius: 12px;
 
-    background: #f4f6fa;
-
     color: #9aa6b8;
+
+    background: #f4f6fa;
 
     font-size: 15px;
 }
@@ -2032,8 +2118,7 @@ body.sidebar-collapsed .logout-btn {
 
     gap: 20px;
 
-    padding:
-        16px 2px;
+    padding: 16px 2px;
 
     border-top:
         1px solid var(--sf-border);
@@ -2046,6 +2131,7 @@ body.sidebar-collapsed .logout-btn {
 .dashboard-footer > div {
     display: flex;
     align-items: center;
+
     gap: 7px;
 }
 
@@ -2058,12 +2144,14 @@ body.sidebar-collapsed .logout-btn {
 
     font-size: 10px;
     font-weight: 800;
+
     letter-spacing: 0.07em;
 }
 
 .footer-status {
     display: inline-flex;
     align-items: center;
+
     gap: 5px;
 
     color: var(--sf-success);
@@ -2094,6 +2182,7 @@ body.sidebar-collapsed .logout-btn {
 
     display: inline-flex;
     align-items: center;
+
     gap: 6px;
 
     padding: 6px 9px;
@@ -2103,10 +2192,10 @@ body.sidebar-collapsed .logout-btn {
 
     border-radius: 7px;
 
+    color: #8a96a8;
+
     background:
         rgba(255, 255, 255, 0.88);
-
-    color: #8a96a8;
 
     box-shadow:
         0 3px 12px rgba(15, 23, 42, 0.04);
@@ -2127,13 +2216,15 @@ body.sidebar-collapsed .logout-btn {
 
 .dashboard-page a:focus-visible,
 .dashboard-page button:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.2);
+    outline:
+        3px solid rgba(37, 99, 235, 0.20);
+
     outline-offset: 2px;
 }
 
 
 /* ============================================================
-   RESPONSIVE — LARGE LAPTOP
+   LARGE LAPTOP
    ============================================================ */
 
 @media (max-width: 1250px) {
@@ -2152,7 +2243,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   RESPONSIVE — TABLET / SMALL LAPTOP
+   TABLET / SMALL LAPTOP
    ============================================================ */
 
 @media (max-width: 1050px) {
@@ -2161,18 +2252,11 @@ body.sidebar-collapsed .logout-btn {
         grid-template-columns: 1fr;
     }
 
-    .inventory-overview-panel,
-    .transactions-panel,
-    .quick-actions-panel,
-    .alerts-panel {
-        grid-column: auto;
-    }
-
 }
 
 
 /* ============================================================
-   RESPONSIVE — MOBILE NAVIGATION
+   MOBILE NAVIGATION
    ============================================================ */
 
 @media (max-width: 900px) {
@@ -2184,7 +2268,7 @@ body.sidebar-collapsed .logout-btn {
             translateX(-100%);
 
         box-shadow:
-            15px 0 40px rgba(15, 23, 42, 0.2);
+            15px 0 40px rgba(15, 23, 42, 0.20);
     }
 
     .sidebar.open,
@@ -2232,8 +2316,6 @@ body.sidebar-collapsed .logout-btn {
 
     .mobile-menu {
         display: inline-flex;
-        align-items: center;
-        justify-content: center;
     }
 
     .sidebar-overlay {
@@ -2263,7 +2345,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   RESPONSIVE — TABLET
+   TABLET
    ============================================================ */
 
 @media (max-width: 720px) {
@@ -2333,6 +2415,7 @@ body.sidebar-collapsed .logout-btn {
     .welcome-icon {
         width: 64px;
         height: 64px;
+
         flex-basis: 64px;
 
         border-radius: 18px;
@@ -2349,6 +2432,7 @@ body.sidebar-collapsed .logout-btn {
 
     .stat-card {
         min-height: 150px;
+
         padding: 16px;
     }
 
@@ -2370,6 +2454,7 @@ body.sidebar-collapsed .logout-btn {
 
     .dashboard-footer {
         grid-template-columns: 1fr;
+
         gap: 8px;
     }
 
@@ -2385,7 +2470,7 @@ body.sidebar-collapsed .logout-btn {
 
 
 /* ============================================================
-   RESPONSIVE — SMALL MOBILE
+   SMALL MOBILE
    ============================================================ */
 
 @media (max-width: 520px) {
@@ -2401,6 +2486,7 @@ body.sidebar-collapsed .logout-btn {
 
     .header-actions {
         width: 100%;
+
         justify-content: flex-end;
     }
 
@@ -2429,7 +2515,8 @@ body.sidebar-collapsed .logout-btn {
     }
 
     .connection-content {
-        flex-basis: calc(100% - 55px);
+        flex-basis:
+            calc(100% - 55px);
     }
 
     .connection-status {
@@ -2495,6 +2582,7 @@ body.sidebar-collapsed .logout-btn {
     .dashboard-page *::before,
     .dashboard-page *::after {
         animation-duration: 0.01ms !important;
+
         animation-iteration-count: 1 !important;
 
         scroll-behavior: auto !important;
