@@ -205,44 +205,5 @@
     <script src="./auth.js"></script>
     <script src="./main.js"></script>
 
-
-    <!-- Profile Authentication -->
-    <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-
-            try {
-
-                if (
-                    typeof StockFlowAuth === "undefined" ||
-                    typeof StockFlowAuth.requireAuth !== "function"
-                ) {
-                    console.error(
-                        "StockFlowAuth is not available."
-                    );
-                    return;
-                }
-
-                const user =
-                    await StockFlowAuth.requireAuth();
-
-                if (
-                    user &&
-                    typeof StockFlowAuth.bindUserUI === "function"
-                ) {
-                    StockFlowAuth.bindUserUI(user);
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Unable to load profile:",
-                    error
-                );
-
-            }
-
-        });
-    </script>
-
 </body>
 </html>
