@@ -17,18 +17,14 @@
 
     <title>Activity Log | STOCKFLOW</title>
 
-    <!-- Main Styles -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="modules.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./modules.css">
+    <link rel="stylesheet" href="./activity.css">
 
 </head>
 
 
-<body>
-
-    <!-- =========================================================
-         STOCKFLOW LAYOUT
-         ========================================================= -->
+<body class="activity-page">
 
     <div class="sf-layout">
 
@@ -86,6 +82,7 @@
                 <a
                     href="activity.html"
                     class="active"
+                    aria-current="page"
                 >
                     Activity Log
                 </a>
@@ -128,10 +125,11 @@
 
                 <button
                     type="button"
-                    class="sf-btn secondary"
+                    class="sf-btn secondary activity-menu-btn"
                     id="menuButton"
                     data-menu
                     aria-label="Open navigation menu"
+                    aria-expanded="false"
                 >
                     ☰
                 </button>
@@ -145,7 +143,7 @@
 
             <section class="sf-card activity-toolbar">
 
-                <div>
+                <div class="activity-toolbar-info">
 
                     <strong>
                         System Activity
@@ -173,7 +171,7 @@
                  ACTIVITY TABLE
                  ================================================= -->
 
-            <section class="sf-card">
+            <section class="sf-card activity-table-card">
 
                 <div class="sf-table-header">
 
@@ -200,29 +198,12 @@
 
                             <tr>
 
-                                <th>
-                                    Date
-                                </th>
-
-                                <th>
-                                    Action
-                                </th>
-
-                                <th>
-                                    Module
-                                </th>
-
-                                <th>
-                                    Reference
-                                </th>
-
-                                <th>
-                                    User
-                                </th>
-
-                                <th>
-                                    Details
-                                </th>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Module</th>
+                                <th>Reference</th>
+                                <th>User</th>
+                                <th>Details</th>
 
                             </tr>
 
@@ -238,7 +219,6 @@
                                     class="sf-empty"
                                 >
                                     Loading activity...
-
                                 </td>
 
                             </tr>
@@ -260,11 +240,11 @@
          JAVASCRIPT
          ========================================================= -->
 
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="auth.js"></script>
-    <script src="main.js"></script>
-    <script src="activity.js"></script>
+    <script src="./config.js"></script>
+    <script src="./api.js"></script>
+    <script src="./auth.js"></script>
+    <script src="./main.js"></script>
+    <script src="./activity.js"></script>
 
 </body>
 
