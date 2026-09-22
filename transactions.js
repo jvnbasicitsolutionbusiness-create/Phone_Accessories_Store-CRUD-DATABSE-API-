@@ -1,169 +1,145 @@
 /* =========================================================
    STOCKFLOW — TRANSACTIONS
-   transactions.js
-   ========================================================= */
+   Full transaction history controller
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+(() => {
 
     "use strict";
 
 
     /* =====================================================
-       ELEMENTS
-       ===================================================== */
-
-    const rows =
-        document.getElementById("rows");
-
-    const alertBox =
-        document.getElementById("alert");
-
-    const transactionCount =
-        document.getElementById(
-            "transactionCount"
-        );
-
-    const allButton =
-        document.getElementById("all");
-
-    const stockInButton =
-        document.getElementById("ins");
-
-    const stockOutButton =
-        document.getElementById("outs");
-
-    const menuButton =
-        document.querySelector("[data-menu]");
-
-    const sidebar =
-        document.querySelector(".sf-side");
-
-
-    /* =====================================================
        STATE
-       ===================================================== */
+    ===================================================== */
 
-    let transactions = [];
+    let allTransactions = [];
 
     let currentFilter = "ALL";
 
 
+
     /* =====================================================
-       API
-       ===================================================== */
+       DOM HELPERS
+    ===================================================== */
 
-    function getAPI() {
+    const $ = (id) => document.getElementById(id);
 
-        if (
-            window.StockFlowAPI &&
-            typeof window.StockFlowAPI.listTransactions ===
-                "function"
-        ) {
-            return window.StockFlowAPI;
-        }
 
-        if (
-            window.API &&
-            typeof window.API.listTransactions ===
-                "function"
-        ) {
-            return window.API;
-        }
+    const rows = $("rows");
 
-        return null;
+    const alertBox = $("alert");
+
+    const transactionCount = $("transactionCount");
+
+    const totalCount = $("totalCount");
+
+    const stockInCount = $("stockInCount");
+
+    const stockOutCount = $("stockOutCount");
+
+    const totalQuantity = $("totalQuantity");
+
+    const tableStatus = $("tableStatus");
+
+    const statusDot = $("statusDot");
+
+    const sidebar = $("sidebar");
+
+    const mobileMenuBtn = $("mobileMenuBtn");
+
+    const refreshBtn = $("refreshBtn");
+
+    const clearFilterBtn = $("clearFilterBtn");
+
+    const transactionModal = $("transactionModal");
+
+    const transactionDetails = $("transactionDetails");
+
+    const transactionModalTitle = $("transactionModalTitle");
+
+    const closeModalBtn = $("closeModalBtn");
+
+    const modalDoneBtn = $("modalDoneBtn");
+
+    const logoutBtn = $("logoutBtn");
+
+
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
     }
 
 
+
     /* =====================================================
-       HELPERS
-       ===================================================== */
+       NUMBER
+    ===================================================== */
 
-    function clean(value) {
+    function number(value) {
 
-        return String(
-            value ?? ""
-        ).trim();
+        const n = Number(value);
+
+        return Number.isFinite(n)
+            ? n
+            : 0;
+
     }
 
 
-    function escapeHTML(value) {
 
-        return clean(value)
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
+    /* =====================================================
+       CURRENCY
+    ===================================================== */
+
+    function currency(value) {
+
+        return "₱" +
+            number(value).toLocaleString(
+                "en-PH",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
             );
+
     }
 
-
-    function getValue(
-        object,
-        keys
-    ) {
-
-        for (
-            const key of keys
-        ) {
-
-            if (
-                object &&
-                object[key] !== undefined &&
-                object[key] !== null &&
-                object[key] !== ""
-            ) {
-                return object[key];
-            }
-
-        }
-
-        return "";
-    }
 
 
     /* =====================================================
        DATE FORMAT
-       ===================================================== */
+    ===================================================== */
 
-    function formatDate(
-        value
-    ) {
+    function formatDate(value) {
 
         if (!value) {
             return "—";
         }
 
-        const date =
-            new Date(value);
 
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
+        const date = new Date(value);
 
-            return escapeHTML(
-                value
-            );
+
+        if (Number.isNaN(date.getTime())) {
+
+            return escapeHtml(value);
+
         }
 
+
         return date.toLocaleString(
-            undefined,
+            "en-PH",
             {
                 year: "numeric",
                 month: "short",
@@ -172,812 +148,1502 @@ document.addEventListener("DOMContentLoaded", () => {
                 minute: "2-digit"
             }
         );
+
     }
 
-
-    /* =====================================================
-       NUMBER FORMAT
-       ===================================================== */
-
-    function formatNumber(
-        value
-    ) {
-
-        const number =
-            Number(value);
-
-        if (
-            Number.isNaN(number)
-        ) {
-            return "—";
-        }
-
-        return number.toLocaleString(
-            undefined,
-            {
-                maximumFractionDigits: 2
-            }
-        );
-    }
-
-
-    /* =====================================================
-       MONEY FORMAT
-       ===================================================== */
-
-    function formatMoney(
-        value
-    ) {
-
-        const number =
-            Number(value);
-
-        if (
-            Number.isNaN(number)
-        ) {
-            return "—";
-        }
-
-        return "₱" +
-            number.toLocaleString(
-                undefined,
-                {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }
-            );
-    }
-
-
-    /* =====================================================
-       TRANSACTION TYPE
-       ===================================================== */
-
-    function normalizeType(
-        transaction
-    ) {
-
-        const raw =
-            clean(
-                getValue(
-                    transaction,
-                    [
-                        "type",
-                        "transaction_type",
-                        "transactionType",
-                        "movement_type",
-                        "movementType"
-                    ]
-                )
-            ).toUpperCase();
-
-        if (
-            raw === "IN" ||
-            raw === "STOCK IN" ||
-            raw === "STOCK_IN" ||
-            raw === "STOCK-IN"
-        ) {
-            return "IN";
-        }
-
-        if (
-            raw === "OUT" ||
-            raw === "STOCK OUT" ||
-            raw === "STOCK_OUT" ||
-            raw === "STOCK-OUT"
-        ) {
-            return "OUT";
-        }
-
-        return raw || "UNKNOWN";
-    }
-
-
-    /* =====================================================
-       GET TRANSACTION ID
-       ===================================================== */
-
-    function getTransactionId(
-        transaction
-    ) {
-
-        return getValue(
-            transaction,
-            [
-                "id",
-                "transaction_id",
-                "transactionId",
-                "ID"
-            ]
-        );
-    }
-
-
-    /* =====================================================
-       LOADING
-       ===================================================== */
-
-    function showLoading() {
-
-        if (!rows) {
-            return;
-        }
-
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="7"
-                    class="sf-empty transaction-loading"
-                >
-                    <span
-                        class="transaction-loading-state"
-                    >
-                        <span
-                            class="transaction-spinner"
-                        ></span>
-
-                        Loading transactions...
-                    </span>
-                </td>
-            </tr>
-        `;
-
-        if (transactionCount) {
-            transactionCount.textContent = "—";
-        }
-    }
-
-
-    /* =====================================================
-       EMPTY
-       ===================================================== */
-
-    function showEmpty(
-        filter
-    ) {
-
-        if (!rows) {
-            return;
-        }
-
-        let message =
-            "No transactions found.";
-
-        if (filter === "IN") {
-            message =
-                "No stock-in transactions found.";
-        }
-
-        if (filter === "OUT") {
-            message =
-                "No stock-out transactions found.";
-        }
-
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="7"
-                    class="sf-empty"
-                >
-                    ${escapeHTML(message)}
-                </td>
-            </tr>
-        `;
-
-        if (transactionCount) {
-            transactionCount.textContent = "0";
-        }
-    }
-
-
-    /* =====================================================
-       ERROR
-       ===================================================== */
-
-    function showTableError(
-        message
-    ) {
-
-        if (!rows) {
-            return;
-        }
-
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="7"
-                    class="sf-empty"
-                    style="color:#b42336;"
-                >
-                    ${escapeHTML(message)}
-                </td>
-            </tr>
-        `;
-
-        if (transactionCount) {
-            transactionCount.textContent = "—";
-        }
-    }
 
 
     /* =====================================================
        ALERT
-       ===================================================== */
+    ===================================================== */
 
-    function showAlert(
-        message,
-        type = "info"
-    ) {
+    function showAlert(message, type = "error") {
 
         if (!alertBox) {
             return;
         }
 
-        alertBox.textContent =
-            message || "";
+
+        alertBox.textContent = message || "";
 
         alertBox.className =
-            "sf-alert";
+            "sf-alert show " +
+            (type === "success"
+                ? "success"
+                : "error");
 
-        if (!message) {
-            return;
-        }
 
-        alertBox.classList.add(
-            "show",
-            type
-        );
-
-        clearTimeout(
+        window.clearTimeout(
             showAlert.timer
         );
 
+
         showAlert.timer =
-            setTimeout(() => {
+            window.setTimeout(() => {
 
-                alertBox.classList.remove(
-                    "show"
-                );
+                alertBox.className =
+                    "sf-alert";
 
-            }, 4000);
+            }, 5000);
+
     }
 
 
-    /* =====================================================
-       NORMALIZE API RESPONSE
-       ===================================================== */
 
-    function normalizeTransactionList(
-        response
+    /* =====================================================
+       STATUS
+    ===================================================== */
+
+    function setStatus(
+        message,
+        state = "normal"
     ) {
 
-        if (
-            Array.isArray(response)
-        ) {
-            return response;
+        if (tableStatus) {
+
+            tableStatus.textContent =
+                message;
+
         }
 
-        if (
-            Array.isArray(response?.transactions)
-        ) {
-            return response.transactions;
+
+        if (statusDot) {
+
+            statusDot.className =
+                "status-dot";
+
+            if (state === "online") {
+
+                statusDot.classList.add(
+                    "online"
+                );
+
+            }
+
+            if (state === "error") {
+
+                statusDot.classList.add(
+                    "error"
+                );
+
+            }
+
         }
 
-        if (
-            Array.isArray(response?.data)
-        ) {
-            return response.data;
-        }
-
-        if (
-            Array.isArray(response?.items)
-        ) {
-            return response.items;
-        }
-
-        if (
-            Array.isArray(response?.records)
-        ) {
-            return response.records;
-        }
-
-        if (
-            Array.isArray(response?.result)
-        ) {
-            return response.result;
-        }
-
-        return [];
     }
 
 
+
     /* =====================================================
-       FILTER TRANSACTIONS
-       ===================================================== */
+       BACKEND REQUEST
+    ===================================================== */
+
+    async function requestTransactions(type) {
+
+        if (
+            !window.StockFlowAPI ||
+            typeof StockFlowAPI.request !== "function"
+        ) {
+
+            throw new Error(
+                "StockFlow API is not available."
+            );
+
+        }
+
+
+        const response =
+            await StockFlowAPI.request({
+
+                action: "listTransactions",
+
+                type: type
+
+            });
+
+
+        if (!response) {
+
+            throw new Error(
+                "No response received from the backend."
+            );
+
+        }
+
+
+        if (!response.success) {
+
+            throw new Error(
+                response.message ||
+                "Unable to load transactions."
+            );
+
+        }
+
+
+        return Array.isArray(
+            response.records
+        )
+            ? response.records
+            : [];
+
+    }
+
+
+
+    /* =====================================================
+       NORMALIZE TRANSACTION
+    ===================================================== */
+
+    function normalizeTransaction(
+        transaction,
+        forcedType = ""
+    ) {
+
+        const rawType =
+            String(
+                transaction.TYPE ||
+                forcedType ||
+                ""
+            ).toUpperCase();
+
+
+        let type = rawType;
+
+
+        if (
+            rawType === "IN" ||
+            rawType === "STOCK_IN"
+        ) {
+
+            type = "STOCK_IN";
+
+        }
+
+
+        if (
+            rawType === "OUT" ||
+            rawType === "STOCK_OUT"
+        ) {
+
+            type = "STOCK_OUT";
+
+        }
+
+
+        return {
+
+            ID:
+                transaction.ID ||
+                transaction.id ||
+                "",
+
+            TYPE:
+                type,
+
+            PRODUCT_ID:
+                transaction.PRODUCT_ID ||
+                "",
+
+            SKU:
+                transaction.SKU ||
+                "",
+
+            PRODUCT_NAME:
+                transaction.PRODUCT_NAME ||
+                transaction.PRODUCT ||
+                "",
+
+            QUANTITY:
+                number(
+                    transaction.QUANTITY
+                ),
+
+            UNIT_COST:
+                number(
+                    transaction.UNIT_COST
+                ),
+
+            TOTAL:
+                number(
+                    transaction.TOTAL
+                ),
+
+            REFERENCE:
+                transaction.REFERENCE ||
+                "",
+
+            SUPPLIER:
+                transaction.SUPPLIER ||
+                "",
+
+            NOTE:
+                transaction.NOTE ||
+                "",
+
+            USER:
+                transaction.USER ||
+                transaction.CREATED_BY ||
+                transaction.username ||
+                "",
+
+            DATE:
+                transaction.DATE ||
+                transaction.CREATED_AT ||
+                ""
+
+        };
+
+    }
+
+
+
+    /* =====================================================
+       LOAD ALL
+    ===================================================== */
+
+    async function loadAllTransactions() {
+
+        setStatus(
+            "Loading transaction records..."
+        );
+
+
+        rows.innerHTML = `
+            <tr>
+                <td
+                    colspan="9"
+                    class="table-loading"
+                >
+                    <span class="loading-spinner"></span>
+                    Loading transaction records...
+                </td>
+            </tr>
+        `;
+
+
+        /*
+         * IMPORTANT:
+         *
+         * The Apps Script backend does not support
+         * an empty transaction type.
+         *
+         * It requires:
+         * IN
+         * or
+         * OUT
+         *
+         * Therefore "All Transactions" loads both
+         * datasets and combines them.
+         */
+
+        const [
+            incoming,
+            outgoing
+        ] = await Promise.all([
+
+            requestTransactions("IN"),
+
+            requestTransactions("OUT")
+
+        ]);
+
+
+        allTransactions = [
+
+            ...incoming.map(
+                item =>
+                    normalizeTransaction(
+                        item,
+                        "IN"
+                    )
+            ),
+
+            ...outgoing.map(
+                item =>
+                    normalizeTransaction(
+                        item,
+                        "OUT"
+                    )
+            )
+
+        ];
+
+
+        /*
+         * Newest transactions first.
+         */
+
+        allTransactions.sort(
+            (a, b) => {
+
+                const dateA =
+                    new Date(a.DATE).getTime();
+
+                const dateB =
+                    new Date(b.DATE).getTime();
+
+                return (
+                    (Number.isFinite(dateB)
+                        ? dateB
+                        : 0)
+                    -
+                    (Number.isFinite(dateA)
+                        ? dateA
+                        : 0)
+                );
+
+            }
+        );
+
+
+        updateSummary();
+
+        renderTransactions();
+
+        setStatus(
+            "Transaction records synchronized.",
+            "online"
+        );
+
+    }
+
+
+
+    /* =====================================================
+       FILTER
+    ===================================================== */
 
     function getFilteredTransactions() {
 
-        if (
-            currentFilter === "ALL"
-        ) {
-            return transactions;
+        if (currentFilter === "IN") {
+
+            return allTransactions.filter(
+                transaction =>
+                    transaction.TYPE === "STOCK_IN"
+            );
+
         }
 
-        return transactions.filter(
-            (transaction) => {
 
-                return (
-                    normalizeType(
-                        transaction
-                    ) ===
-                    currentFilter
-                );
-            }
-        );
+        if (currentFilter === "OUT") {
+
+            return allTransactions.filter(
+                transaction =>
+                    transaction.TYPE === "STOCK_OUT"
+            );
+
+        }
+
+
+        return allTransactions;
+
     }
+
+
+
+    /* =====================================================
+       SUMMARY
+    ===================================================== */
+
+    function updateSummary() {
+
+        const incoming =
+            allTransactions.filter(
+                transaction =>
+                    transaction.TYPE === "STOCK_IN"
+            );
+
+
+        const outgoing =
+            allTransactions.filter(
+                transaction =>
+                    transaction.TYPE === "STOCK_OUT"
+            );
+
+
+        const quantity =
+            allTransactions.reduce(
+                (sum, transaction) =>
+                    sum +
+                    number(
+                        transaction.QUANTITY
+                    ),
+                0
+            );
+
+
+        if (totalCount) {
+
+            totalCount.textContent =
+                allTransactions.length
+                    .toLocaleString();
+
+        }
+
+
+        if (stockInCount) {
+
+            stockInCount.textContent =
+                incoming.length
+                    .toLocaleString();
+
+        }
+
+
+        if (stockOutCount) {
+
+            stockOutCount.textContent =
+                outgoing.length
+                    .toLocaleString();
+
+        }
+
+
+        if (totalQuantity) {
+
+            totalQuantity.textContent =
+                quantity.toLocaleString();
+
+        }
+
+    }
+
 
 
     /* =====================================================
        RENDER
-       ===================================================== */
+    ===================================================== */
 
     function renderTransactions() {
 
-        const filtered =
+        const data =
             getFilteredTransactions();
 
-        if (!filtered.length) {
-
-            showEmpty(
-                currentFilter
-            );
-
-            return;
-        }
 
         if (transactionCount) {
 
             transactionCount.textContent =
-                filtered.length.toLocaleString();
+                `${data.length.toLocaleString()} ${
+                    data.length === 1
+                        ? "record"
+                        : "records"
+                }`;
+
+        }
+
+
+        if (!data.length) {
+
+            rows.innerHTML = `
+                <tr>
+                    <td
+                        colspan="9"
+                        class="table-empty"
+                    >
+                        No transactions found
+                        for this filter.
+                    </td>
+                </tr>
+            `;
+
+            return;
+
         }
 
 
         rows.innerHTML =
-            filtered.map(
-                (
-                    transaction
-                ) => {
-
-                    const type =
-                        normalizeType(
-                            transaction
-                        );
-
-                    const typeClass =
-                        type === "IN"
-                            ? "in"
-                            : type === "OUT"
-                                ? "out"
-                                : "";
-
-                    const date =
-                        getValue(
-                            transaction,
-                            [
-                                "date",
-                                "transaction_date",
-                                "transactionDate",
-                                "created_at",
-                                "createdAt",
-                                "timestamp"
-                            ]
-                        );
-
-                    const reference =
-                        getValue(
-                            transaction,
-                            [
-                                "reference",
-                                "reference_no",
-                                "referenceNo",
-                                "ref",
-                                "transaction_reference"
-                            ]
-                        );
-
-                    const product =
-                        getValue(
-                            transaction,
-                            [
-                                "product",
-                                "product_name",
-                                "productName",
-                                "name"
-                            ]
-                        );
-
-                    const sku =
-                        getValue(
-                            transaction,
-                            [
-                                "sku",
-                                "product_sku",
-                                "productSku"
-                            ]
-                        );
-
-                    const quantity =
-                        getValue(
-                            transaction,
-                            [
-                                "quantity",
-                                "qty",
-                                "stock_quantity"
-                            ]
-                        );
-
-                    const total =
-                        getValue(
-                            transaction,
-                            [
-                                "total",
-                                "total_amount",
-                                "totalAmount",
-                                "amount"
-                            ]
-                        );
-
-                    const user =
-                        getValue(
-                            transaction,
-                            [
-                                "user",
-                                "username",
-                                "user_name",
-                                "userName",
-                                "created_by",
-                                "createdBy"
-                            ]
-                        );
-
-
-                    return `
-                        <tr>
-
-                            <td>
-                                <span
-                                    class="transaction-date"
-                                >
-                                    ${formatDate(date)}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-type ${typeClass}"
-                                >
-                                    ${
-                                        type === "IN"
-                                            ? "STOCK IN"
-                                            : type === "OUT"
-                                                ? "STOCK OUT"
-                                                : escapeHTML(type)
-                                    }
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-reference"
-                                >
-                                    ${escapeHTML(
-                                        reference ||
-                                        (
-                                            getTransactionId(
-                                                transaction
-                                            ) || "—"
-                                        )
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-product"
-                                >
-                                    ${escapeHTML(
-                                        product ||
-                                        "—"
-                                    )}
-                                </span>
-
-                                ${
-                                    sku
-                                        ? `
-                                            <span
-                                                class="transaction-product-sub"
-                                            >
-                                                SKU:
-                                                ${escapeHTML(sku)}
-                                            </span>
-                                          `
-                                        : ""
-                                }
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-qty"
-                                >
-                                    ${formatNumber(quantity)}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-total"
-                                >
-                                    ${formatMoney(total)}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="transaction-user"
-                                >
-                                    ${escapeHTML(
-                                        user ||
-                                        "—"
-                                    )}
-                                </span>
-                            </td>
-
-                        </tr>
-                    `;
-
-                }
+            data.map(
+                (transaction, index) =>
+                    renderRow(
+                        transaction,
+                        index
+                    )
             ).join("");
+
     }
 
 
+
     /* =====================================================
-       LOAD TRANSACTIONS
-       ===================================================== */
+       ROW
+    ===================================================== */
 
-    async function loadTransactions() {
+    function renderRow(
+        transaction,
+        index
+    ) {
 
-        const API =
-            getAPI();
+        const incoming =
+            transaction.TYPE === "STOCK_IN";
 
-        if (!API) {
 
-            showTableError(
-                "StockFlow API is not available."
+        const typeLabel =
+            incoming
+                ? "STOCK IN"
+                : "STOCK OUT";
+
+
+        return `
+            <tr>
+
+                <td>
+                    ${formatDate(
+                        transaction.DATE
+                    )}
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="transaction-type ${
+                            incoming
+                                ? "in"
+                                : "out"
+                        }"
+                    >
+                        ${typeLabel}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="transaction-reference"
+                    >
+                        ${escapeHtml(
+                            transaction.REFERENCE ||
+                            "—"
+                        )}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.PRODUCT_NAME ||
+                            "Unknown Product"
+                        )}
+                    </strong>
+
+                    ${
+                        transaction.SKU
+                            ? `
+                                <div
+                                    style="
+                                        margin-top:4px;
+                                        color:#8a9ab1;
+                                        font-size:11px;
+                                    "
+                                >
+                                    SKU:
+                                    ${escapeHtml(
+                                        transaction.SKU
+                                    )}
+                                </div>
+                            `
+                            : ""
+                    }
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="transaction-quantity"
+                    >
+                        ${
+                            transaction.QUANTITY
+                                .toLocaleString()
+                        }
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    ${currency(
+                        transaction.UNIT_COST
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="transaction-total"
+                    >
+                        ${currency(
+                            transaction.TOTAL
+                        )}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <span
+                        class="transaction-user"
+                    >
+                        ${escapeHtml(
+                            transaction.USER ||
+                            "System"
+                        )}
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <button
+                        type="button"
+                        class="transaction-view"
+                        data-view-index="${index}"
+                    >
+                        View
+                    </button>
+
+                </td>
+
+            </tr>
+        `;
+
+    }
+
+
+
+    /* =====================================================
+       FILTER BUTTONS
+    ===================================================== */
+
+    function setupFilters() {
+
+        const filterButtons =
+            document.querySelectorAll(
+                ".transaction-filter"
             );
 
+
+        filterButtons.forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        currentFilter =
+                            button.dataset.filter ||
+                            "ALL";
+
+
+                        filterButtons.forEach(
+                            item => {
+
+                                const active =
+                                    item === button;
+
+                                item.classList.toggle(
+                                    "active",
+                                    active
+                                );
+
+                                item.setAttribute(
+                                    "aria-pressed",
+                                    active
+                                        ? "true"
+                                        : "false"
+                                );
+
+                            }
+                        );
+
+
+                        renderTransactions();
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+
+    /* =====================================================
+       RESET FILTER
+    ===================================================== */
+
+    function resetFilter() {
+
+        currentFilter = "ALL";
+
+
+        document
+            .querySelectorAll(
+                ".transaction-filter"
+            )
+            .forEach(button => {
+
+                const active =
+                    button.dataset.filter ===
+                    "ALL";
+
+                button.classList.toggle(
+                    "active",
+                    active
+                );
+
+                button.setAttribute(
+                    "aria-pressed",
+                    active
+                        ? "true"
+                        : "false"
+                );
+
+            });
+
+
+        renderTransactions();
+
+    }
+
+
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
+
+    function openModal(transaction) {
+
+        if (!transactionModal) {
             return;
         }
 
-        showLoading();
 
-        try {
+        const incoming =
+            transaction.TYPE === "STOCK_IN";
 
-            const response =
-                await API.listTransactions();
 
-            console.log(
-                "StockFlow transactions response:",
-                response
-            );
+        const typeLabel =
+            incoming
+                ? "STOCK IN"
+                : "STOCK OUT";
 
-            if (
-                response &&
-                response.success === false
-            ) {
 
-                throw new Error(
-                    response.message ||
-                    "Unable to load transactions."
-                );
-            }
+        transactionModalTitle.textContent =
+            transaction.REFERENCE ||
+            "Transaction Details";
 
-            transactions =
-                normalizeTransactionList(
-                    response
-                );
 
-            renderTransactions();
+        transactionDetails.innerHTML = `
 
-        } catch (error) {
+            <div class="detail-grid">
 
-            console.error(
-                "Transaction loading error:",
-                error
-            );
 
-            showTableError(
-                error?.message ||
-                "Unable to load transactions."
-            );
+                <div class="detail-item">
 
-            showAlert(
-                error?.message ||
-                "Unable to load transactions.",
-                "error"
-            );
-        }
+                    <span>
+                        Transaction Type
+                    </span>
+
+                    <strong>
+                        ${typeLabel}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Reference
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.REFERENCE ||
+                            "—"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Date
+                    </span>
+
+                    <strong>
+                        ${formatDate(
+                            transaction.DATE
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        User
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.USER ||
+                            "System"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item full">
+
+                    <span>
+                        Product
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.PRODUCT_NAME ||
+                            "Unknown Product"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        SKU
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.SKU ||
+                            "—"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Product ID
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.PRODUCT_ID ||
+                            "—"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Quantity
+                    </span>
+
+                    <strong>
+                        ${
+                            transaction.QUANTITY
+                                .toLocaleString()
+                        }
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Unit Cost
+                    </span>
+
+                    <strong>
+                        ${currency(
+                            transaction.UNIT_COST
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ${currency(
+                            transaction.TOTAL
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>
+                        Supplier
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.SUPPLIER ||
+                            "—"
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item full">
+
+                    <span>
+                        Note
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            transaction.NOTE ||
+                            "No additional note."
+                        )}
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        `;
+
+
+        transactionModal.classList.add(
+            "open"
+        );
+
+
+        transactionModal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
     }
 
 
+
     /* =====================================================
-       FILTER BUTTON STATE
-       ===================================================== */
+       CLOSE MODAL
+    ===================================================== */
 
-    function setFilter(
-        filter
-    ) {
+    function closeModal() {
 
-        currentFilter =
-            filter;
+        if (!transactionModal) {
+            return;
+        }
 
-        const buttons = [
-            allButton,
-            stockInButton,
-            stockOutButton
-        ];
 
-        buttons.forEach(
-            (button) => {
+        transactionModal.classList.remove(
+            "open"
+        );
+
+
+        transactionModal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+
+    /* =====================================================
+       TABLE ACTION
+    ===================================================== */
+
+    function setupTableActions() {
+
+        rows.addEventListener(
+            "click",
+            event => {
+
+                const button =
+                    event.target.closest(
+                        "[data-view-index]"
+                    );
+
 
                 if (!button) {
                     return;
                 }
 
-                const isActive =
-                    (
-                        button.id === "all" &&
-                        filter === "ALL"
-                    ) ||
-                    (
-                        button.id === "ins" &&
-                        filter === "IN"
-                    ) ||
-                    (
-                        button.id === "outs" &&
-                        filter === "OUT"
+
+                const index =
+                    Number(
+                        button.dataset.viewIndex
                     );
 
-                button.classList.toggle(
-                    "active",
-                    isActive
-                );
 
-                button.classList.toggle(
-                    "secondary",
-                    !isActive
-                );
+                const data =
+                    getFilteredTransactions();
 
-                button.setAttribute(
-                    "aria-pressed",
-                    String(isActive)
-                );
+
+                const transaction =
+                    data[index];
+
+
+                if (transaction) {
+
+                    openModal(
+                        transaction
+                    );
+
+                }
+
             }
         );
 
-        renderTransactions();
     }
 
 
+
     /* =====================================================
-       MOBILE MENU
-       ===================================================== */
+       REFRESH
+    ===================================================== */
 
-    function setupMenu() {
+    async function refresh() {
 
-        if (
-            !menuButton ||
-            !sidebar
-        ) {
-            return;
+        if (refreshBtn) {
+
+            refreshBtn.disabled = true;
+
+            refreshBtn.style.opacity =
+                "0.6";
+
         }
 
-        menuButton.addEventListener(
+
+        try {
+
+            await loadAllTransactions();
+
+            showAlert(
+                "Transaction records refreshed successfully.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW Transactions:",
+                error
+            );
+
+
+            rows.innerHTML = `
+                <tr>
+                    <td
+                        colspan="9"
+                        class="table-empty"
+                    >
+                        Unable to load transaction records.
+                    </td>
+                </tr>
+            `;
+
+
+            setStatus(
+                error.message ||
+                "Unable to synchronize records.",
+                "error"
+            );
+
+
+            showAlert(
+                error.message ||
+                "Unable to load transactions.",
+                "error"
+            );
+
+        } finally {
+
+            if (refreshBtn) {
+
+                refreshBtn.disabled = false;
+
+                refreshBtn.style.opacity =
+                    "";
+
+            }
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+    ===================================================== */
+
+    function setupMobileNavigation() {
+
+        if (
+            !mobileMenuBtn ||
+            !sidebar
+        ) {
+
+            return;
+
+        }
+
+
+        mobileMenuBtn.addEventListener(
             "click",
             () => {
 
-                sidebar.classList.toggle(
-                    "open"
+                const open =
+                    sidebar.classList.toggle(
+                        "open"
+                    );
+
+
+                mobileMenuBtn.setAttribute(
+                    "aria-expanded",
+                    open
+                        ? "true"
+                        : "false"
                 );
+
             }
         );
 
 
         document.addEventListener(
             "click",
-            (event) => {
+            event => {
 
                 if (
-                    window.innerWidth > 800
+                    window.innerWidth > 760
                 ) {
+
                     return;
+
                 }
 
+
                 if (
-                    !sidebar.classList.contains(
+                    !sidebar.contains(
+                        event.target
+                    ) &&
+                    !mobileMenuBtn.contains(
+                        event.target
+                    )
+                ) {
+
+                    sidebar.classList.remove(
                         "open"
-                    )
-                ) {
-                    return;
+                    );
+
+
+                    mobileMenuBtn.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
                 }
 
-                if (
-                    sidebar.contains(
-                        event.target
-                    ) ||
-                    menuButton.contains(
-                        event.target
-                    )
-                ) {
-                    return;
-                }
-
-                sidebar.classList.remove(
-                    "open"
-                );
             }
         );
+
     }
+
 
 
     /* =====================================================
-       FILTER EVENTS
-       ===================================================== */
+       LOGOUT
+    ===================================================== */
 
-    if (allButton) {
+    function setupLogout() {
 
-        allButton.addEventListener(
+        if (!logoutBtn) {
+            return;
+        }
+
+
+        logoutBtn.addEventListener(
             "click",
-            () => {
-                setFilter("ALL");
+            async () => {
+
+                try {
+
+                    if (
+                        window.StockFlowAuth &&
+                        typeof StockFlowAuth.logout ===
+                            "function"
+                    ) {
+
+                        await StockFlowAuth.logout();
+
+                        return;
+
+                    }
+
+
+                    sessionStorage.clear();
+
+                    window.location.href =
+                        "login.html";
+
+                } catch (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+                    sessionStorage.clear();
+
+                    window.location.href =
+                        "login.html";
+
+                }
+
             }
         );
+
     }
 
-    if (stockInButton) {
 
-        stockInButton.addEventListener(
-            "click",
-            () => {
-                setFilter("IN");
+
+    /* =====================================================
+       USER DISPLAY
+    ===================================================== */
+
+    async function initializeUser() {
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof StockFlowAuth.requireAuth ===
+                    "function"
+            ) {
+
+                const user =
+                    await StockFlowAuth.requireAuth();
+
+
+                if (!user) {
+                    return;
+                }
+
+
+                document
+                    .querySelectorAll(
+                        "[data-user-name]"
+                    )
+                    .forEach(
+                        element => {
+
+                            element.textContent =
+                                user.name ||
+                                user.fullName ||
+                                user.username ||
+                                user.email ||
+                                "StockFlow User";
+
+                        }
+                    );
+
+
+                document
+                    .querySelectorAll(
+                        "[data-user-role]"
+                    )
+                    .forEach(
+                        element => {
+
+                            element.textContent =
+                                user.role ||
+                                "Employee";
+
+                        }
+                    );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Authentication error:",
+                error
+            );
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       KEYBOARD
+    ===================================================== */
+
+    function setupKeyboard() {
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape"
+                ) {
+
+                    closeModal();
+
+                    if (sidebar) {
+
+                        sidebar.classList.remove(
+                            "open"
+                        );
+
+                    }
+
+                }
+
             }
         );
+
     }
 
-    if (stockOutButton) {
-
-        stockOutButton.addEventListener(
-            "click",
-            () => {
-                setFilter("OUT");
-            }
-        );
-    }
 
 
     /* =====================================================
        INITIALIZE
-       ===================================================== */
+    ===================================================== */
 
-    setupMenu();
+    async function initialize() {
 
-    setFilter("ALL");
+        setupFilters();
 
-    loadTransactions();
+        setupTableActions();
 
-});
+        setupMobileNavigation();
+
+        setupLogout();
+
+        setupKeyboard();
+
+
+        if (clearFilterBtn) {
+
+            clearFilterBtn.addEventListener(
+                "click",
+                resetFilter
+            );
+
+        }
+
+
+        if (refreshBtn) {
+
+            refreshBtn.addEventListener(
+                "click",
+                refresh
+            );
+
+        }
+
+
+        if (closeModalBtn) {
+
+            closeModalBtn.addEventListener(
+                "click",
+                closeModal
+            );
+
+        }
+
+
+        if (modalDoneBtn) {
+
+            modalDoneBtn.addEventListener(
+                "click",
+                closeModal
+            );
+
+        }
+
+
+        if (transactionModal) {
+
+            const backdrop =
+                transactionModal.querySelector(
+                    ".transaction-modal-backdrop"
+                );
+
+
+            if (backdrop) {
+
+                backdrop.addEventListener(
+                    "click",
+                    closeModal
+                );
+
+            }
+
+        }
+
+
+        await initializeUser();
+
+        await refresh();
+
+    }
+
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialize
+    );
+
+})();
