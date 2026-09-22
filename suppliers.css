@@ -3,10 +3,6 @@
    suppliers.css
    ========================================================= */
 
-/* =========================================================
-   PAGE
-   ========================================================= */
-
 body {
     margin: 0;
     font-family: Inter, Arial, sans-serif;
@@ -28,6 +24,7 @@ body {
 .sf-side {
     position: fixed;
     inset: 0 auto 0 0;
+
     width: 250px;
     height: 100vh;
 
@@ -35,7 +32,7 @@ body {
     flex-direction: column;
 
     background: #071a33;
-    color: #ffffff;
+    color: #fff;
 
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 
@@ -51,27 +48,22 @@ body {
 
     padding: 0 24px;
 
+    color: #fff;
+
     font-size: 17px;
     font-weight: 800;
     letter-spacing: 0.5px;
 
-    color: #ffffff;
-
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
-
-
-/* =========================================================
-   NAVIGATION
-   ========================================================= */
 
 .sf-nav {
     display: flex;
     flex-direction: column;
 
-    padding: 16px 12px;
-
     gap: 3px;
+
+    padding: 16px 12px;
 }
 
 .sf-nav a {
@@ -92,18 +84,17 @@ body {
 
     transition:
         background 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
+        color 0.18s ease;
 }
 
 .sf-nav a:hover {
     background: rgba(255, 255, 255, 0.07);
-    color: #ffffff;
+    color: #fff;
 }
 
 .sf-nav a.active {
     background: #2563eb;
-    color: #ffffff;
+    color: #fff;
     font-weight: 600;
 }
 
@@ -135,19 +126,19 @@ body {
 
     gap: 20px;
 
-    border-bottom: 1px solid #e4ebf3;
-
     margin-bottom: 24px;
+
+    border-bottom: 1px solid #e4ebf3;
 }
 
 .sf-title {
-    font-size: 25px;
-    font-weight: 750;
-    line-height: 1.2;
+    margin-bottom: 4px;
 
     color: #0b1f3a;
 
-    margin-bottom: 4px;
+    font-size: 25px;
+    font-weight: 750;
+    line-height: 1.2;
 }
 
 .sf-muted {
@@ -158,77 +149,17 @@ body {
 
 
 /* =========================================================
-   BUTTONS
-   ========================================================= */
-
-.sf-btn {
-    min-height: 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 17px;
-
-    border: 1px solid transparent;
-    border-radius: 9px;
-
-    background: #2563eb;
-    color: #ffffff;
-
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        box-shadow 0.18s ease,
-        transform 0.18s ease;
-}
-
-.sf-btn:hover {
-    background: #1d4ed8;
-}
-
-.sf-btn:active {
-    transform: translateY(1px);
-}
-
-.sf-btn:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-}
-
-.sf-btn.secondary {
-    background: #ffffff;
-    color: #31506f;
-    border-color: #d4e0ed;
-}
-
-.sf-btn.secondary:hover {
-    background: #f5f8fc;
-    border-color: #b9cce0;
-    color: #173b61;
-}
-
-
-/* =========================================================
    ALERT
    ========================================================= */
 
 .sf-alert {
     display: none;
 
-    width: 100%;
-
     margin-bottom: 18px;
     padding: 12px 15px;
 
-    border: 1px solid transparent;
     border-radius: 9px;
+    border: 1px solid transparent;
 
     font-size: 13px;
     font-weight: 500;
@@ -258,6 +189,65 @@ body {
 
 
 /* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.sf-btn {
+    min-height: 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 17px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    background: #2563eb;
+    color: #fff;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.sf-btn:hover {
+    background: #1d4ed8;
+}
+
+.sf-btn:active {
+    transform: translateY(1px);
+}
+
+.sf-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.sf-btn.secondary {
+    background: #fff;
+    color: #31506f;
+    border-color: #d4e0ed;
+}
+
+.sf-btn.secondary:hover {
+    background: #f5f8fc;
+    border-color: #b9cce0;
+    color: #173b61;
+}
+
+
+/* =========================================================
    CARDS
    ========================================================= */
 
@@ -266,7 +256,7 @@ body {
 
     margin-bottom: 22px;
 
-    background: #ffffff;
+    background: #fff;
 
     border: 1px solid #e1e9f2;
     border-radius: 14px;
@@ -277,14 +267,18 @@ body {
     overflow: hidden;
 }
 
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
 .sf-card-head {
     min-height: 76px;
 
     display: flex;
     align-items: center;
-    justify-content: space-between;
 
-    padding: 18px 22px;
+    padding: 17px 22px;
 
     border-bottom: 1px solid #e8eef5;
 }
@@ -296,6 +290,7 @@ body {
 
     font-size: 17px;
     font-weight: 700;
+    line-height: 1.3;
 }
 
 .sf-card-head p {
@@ -309,9 +304,11 @@ body {
 
 .sf-form {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    gap: 15px;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 16px;
 
     padding: 22px;
 }
@@ -319,14 +316,15 @@ body {
 .sf-form input,
 .sf-form select {
     width: 100%;
-    min-height: 45px;
+    min-width: 0;
+    height: 46px;
 
     padding: 0 13px;
 
-    border: 1px solid #cfdae7;
-    border-radius: 8px;
+    border: 1px solid #cbd9e8;
+    border-radius: 9px;
 
-    background: #ffffff;
+    background: #fff;
     color: #173b61;
 
     font-family: inherit;
@@ -341,12 +339,12 @@ body {
 }
 
 .sf-form input::placeholder {
-    color: #8aa0b6;
+    color: #91a4b8;
 }
 
 .sf-form input:hover,
 .sf-form select:hover {
-    border-color: #b6c8da;
+    border-color: #aebfd1;
 }
 
 .sf-form input:focus,
@@ -367,10 +365,10 @@ body {
 
 
 /* =========================================================
-   FORM BUTTON ROW
+   FORM ACTIONS
    ========================================================= */
 
-.sf-row {
+.sf-form .sf-row {
     display: flex;
     align-items: center;
 
@@ -379,9 +377,13 @@ body {
     padding-top: 3px;
 }
 
+.sf-form .sf-row .sf-btn {
+    min-width: 125px;
+}
+
 
 /* =========================================================
-   TABLE WRAPPER
+   TABLE
    ========================================================= */
 
 .sf-table-wrap {
@@ -396,8 +398,6 @@ body {
     min-width: 760px;
 
     border-collapse: collapse;
-
-    table-layout: auto;
 }
 
 .sf-table-wrap thead {
@@ -407,7 +407,7 @@ body {
 .sf-table-wrap th {
     height: 44px;
 
-    padding: 0 17px;
+    padding: 0 16px;
 
     color: #58718c;
 
@@ -416,7 +416,7 @@ body {
 
     text-align: left;
     text-transform: uppercase;
-    letter-spacing: 0.45px;
+    letter-spacing: 0.4px;
 
     white-space: nowrap;
 
@@ -424,11 +424,11 @@ body {
 }
 
 .sf-table-wrap td {
-    padding: 13px 17px;
+    padding: 13px 16px;
 
     color: #274766;
 
-    font-size: 13px;
+    font-size: 12.5px;
 
     vertical-align: middle;
 
@@ -449,21 +449,6 @@ body {
 
 
 /* =========================================================
-   EMPTY / LOADING
-   ========================================================= */
-
-.sf-empty {
-    padding: 45px 20px !important;
-
-    color: #7890a8 !important;
-
-    text-align: center;
-
-    font-size: 13px !important;
-}
-
-
-/* =========================================================
    SUPPLIER NAME
    ========================================================= */
 
@@ -472,30 +457,47 @@ body {
     font-weight: 650;
 }
 
-.supplier-contact {
-    color: #4f6d89;
-}
 
-.supplier-email {
-    color: #3d6386;
+/* =========================================================
+   CONTACT
+   ========================================================= */
+
+.supplier-contact {
+    color: #31506f;
+    font-weight: 500;
 }
 
 
 /* =========================================================
-   STATUS BADGES
+   PHONE / EMAIL
+   ========================================================= */
+
+.supplier-phone,
+.supplier-email {
+    color: #52708f;
+}
+
+.supplier-email {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   STATUS
    ========================================================= */
 
 .supplier-status {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
 
-    min-height: 26px;
+    min-height: 25px;
 
     padding: 0 9px;
 
     border-radius: 999px;
 
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
 
     letter-spacing: 0.25px;
@@ -503,26 +505,26 @@ body {
 
 .supplier-status.active {
     background: #ecfdf3;
+    border: 1px solid #c9efd8;
     color: #167143;
 }
 
 .supplier-status.inactive {
     background: #f1f5f9;
+    border: 1px solid #dbe3eb;
     color: #64748b;
 }
 
 
 /* =========================================================
-   ACTION BUTTONS
+   TABLE ACTIONS
    ========================================================= */
 
 .supplier-actions {
     display: flex;
     align-items: center;
 
-    gap: 6px;
-
-    white-space: nowrap;
+    gap: 7px;
 }
 
 .supplier-action {
@@ -530,10 +532,10 @@ body {
 
     padding: 0 10px;
 
-    border: 1px solid #d5e1ed;
+    border: 1px solid #d4e0ed;
     border-radius: 7px;
 
-    background: #ffffff;
+    background: #fff;
     color: #31506f;
 
     font-family: inherit;
@@ -549,13 +551,9 @@ body {
 }
 
 .supplier-action:hover {
-    background: #f2f7fd;
-    border-color: #b9cce0;
-}
-
-.supplier-action.edit:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
     color: #1d4ed8;
-    border-color: #93b4e8;
 }
 
 .supplier-action.delete {
@@ -565,37 +563,22 @@ body {
 .supplier-action.delete:hover {
     background: #fff1f2;
     border-color: #fecdd3;
+    color: #b42336;
 }
 
 
 /* =========================================================
-   LOADING STATE
+   EMPTY STATE
    ========================================================= */
 
-.sf-loading {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.sf-empty {
+    padding: 48px 20px !important;
 
-    gap: 8px;
-}
+    color: #7890a8 !important;
 
-.sf-spinner {
-    width: 15px;
-    height: 15px;
+    text-align: center;
 
-    border: 2px solid #dbe7f3;
-    border-top-color: #2563eb;
-
-    border-radius: 50%;
-
-    animation: sfSpin 0.7s linear infinite;
-}
-
-@keyframes sfSpin {
-    to {
-        transform: rotate(360deg);
-    }
+    font-size: 13px !important;
 }
 
 
@@ -620,6 +603,7 @@ body {
 
     .sf-main {
         width: calc(100% - 220px);
+
         margin-left: 220px;
 
         padding-left: 24px;
@@ -629,6 +613,7 @@ body {
     .sf-nav a {
         font-size: 12px;
     }
+
 }
 
 
@@ -656,17 +641,25 @@ body {
         display: inline-flex;
     }
 
+}
+
+
+@media (max-width: 650px) {
+
     .sf-form {
         grid-template-columns: 1fr;
+
+        padding: 18px;
     }
 
     .sf-form .full {
         grid-column: auto;
     }
 
-    .sf-row {
-        flex-wrap: wrap;
+    .sf-form .sf-row {
+        flex-direction: row;
     }
+
 }
 
 
@@ -697,12 +690,12 @@ body {
         padding: 16px;
     }
 
-    .sf-row {
+    .sf-form .sf-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .sf-row .sf-btn {
+    .sf-form .sf-row .sf-btn {
         width: 100%;
     }
 
@@ -711,6 +704,7 @@ body {
         padding-left: 12px;
         padding-right: 12px;
     }
+
 }
 
 
@@ -723,9 +717,9 @@ body {
     *,
     *::before,
     *::after {
-        scroll-behavior: auto !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+
 }
