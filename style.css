@@ -1,24 +1,29 @@
 /* ============================================================
    STOCKFLOW — GLOBAL STYLES
-   Version: 3.0
-   Purpose:
+   Version: 4.0
+   ============================================================
+   PURPOSE
+   ------------------------------------------------------------
+   Global styles shared by the entire StockFlow system.
+
+   INCLUDED:
    - Global reset
    - Typography
-   - Colors
-   - Brand utilities
+   - Brand variables
    - Buttons
    - Form controls
    - Messages
    - Tables
-   - Text utilities
-   - Responsive utilities
+   - Utilities
    - Accessibility
+   - Responsive utilities
 
    PAGE-SPECIFIC CSS:
-   - auth.css       → Login / Register / OTP / Reset
-   - dashboard.css  → Dashboard
-   - module.css     → Shared module shell
-   - inventory.css  → Inventory page
+   ------------------------------------------------------------
+   auth.css       → Login / Register / OTP / Reset
+   dashboard.css  → Dashboard
+   module.css     → Shared module shell
+   inventory.css  → Inventory
    ============================================================ */
 
 
@@ -38,7 +43,7 @@
 :root {
 
     /* --------------------------------------------------------
-       BRAND COLORS
+       BRAND
        -------------------------------------------------------- */
 
     --sf-navy: #071a33;
@@ -72,7 +77,7 @@
 
 
     /* --------------------------------------------------------
-       STATUS COLORS
+       STATUS
        -------------------------------------------------------- */
 
     --sf-success: #166534;
@@ -185,6 +190,7 @@ body {
     background: var(--sf-white);
 
     -webkit-font-smoothing: antialiased;
+
     -moz-osx-font-smoothing: grayscale;
 
     text-rendering: optimizeLegibility;
@@ -359,6 +365,7 @@ ul,
 ol {
 
     margin: 0;
+
     padding: 0;
 
     list-style: none;
@@ -449,7 +456,7 @@ hr {
 
 
 /* ============================================================
-   BRAND
+   GLOBAL BRAND
    ============================================================ */
 
 .brand {
@@ -468,6 +475,7 @@ hr {
 .brand-mark {
 
     width: 42px;
+
     height: 42px;
 
     flex: 0 0 42px;
@@ -623,16 +631,16 @@ hr {
 
     outline:
         2px solid
-        rgba(37, 99, 235, 0.5);
+        rgba(37, 99, 235, 0.50);
 
     outline-offset: 3px;
 
 }
 
 
-/* ------------------------------------------------------------
-   PRIMARY
-   ------------------------------------------------------------ */
+/* ============================================================
+   PRIMARY BUTTON
+   ============================================================ */
 
 .btn-primary {
 
@@ -676,9 +684,9 @@ hr {
 }
 
 
-/* ------------------------------------------------------------
-   SECONDARY
-   ------------------------------------------------------------ */
+/* ============================================================
+   SECONDARY BUTTON
+   ============================================================ */
 
 .btn-secondary {
 
@@ -702,9 +710,9 @@ hr {
 }
 
 
-/* ------------------------------------------------------------
-   DANGER
-   ------------------------------------------------------------ */
+/* ============================================================
+   DANGER BUTTON
+   ============================================================ */
 
 .btn-danger {
 
@@ -732,9 +740,9 @@ hr {
 }
 
 
-/* ------------------------------------------------------------
-   FULL WIDTH
-   ------------------------------------------------------------ */
+/* ============================================================
+   FULL WIDTH BUTTON
+   ============================================================ */
 
 .btn-full {
 
@@ -743,9 +751,9 @@ hr {
 }
 
 
-/* ------------------------------------------------------------
-   DISABLED
-   ------------------------------------------------------------ */
+/* ============================================================
+   DISABLED BUTTON
+   ============================================================ */
 
 .btn:disabled,
 .btn.disabled {
@@ -854,9 +862,9 @@ hr {
 }
 
 
-/* ------------------------------------------------------------
+/* ============================================================
    TEXTAREA
-   ------------------------------------------------------------ */
+   ============================================================ */
 
 textarea.form-control {
 
@@ -869,9 +877,9 @@ textarea.form-control {
 }
 
 
-/* ------------------------------------------------------------
+/* ============================================================
    SELECT
-   ------------------------------------------------------------ */
+   ============================================================ */
 
 select.form-control {
 
@@ -880,9 +888,9 @@ select.form-control {
 }
 
 
-/* ------------------------------------------------------------
-   INVALID
-   ------------------------------------------------------------ */
+/* ============================================================
+   INVALID FIELD
+   ============================================================ */
 
 .form-control.invalid {
 
@@ -923,6 +931,7 @@ select.form-control {
     position: absolute;
 
     top: 50%;
+
     right: 9px;
 
     transform: translateY(-50%);
@@ -1008,11 +1017,14 @@ select.form-control {
 
     cursor: pointer;
 
-    color: var(--sf-text-2);
+    color:
+        var(--sf-text-2);
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    line-height: 1.5;
+    line-height:
+        1.5;
 
 }
 
@@ -1020,6 +1032,7 @@ select.form-control {
 .check input {
 
     width: 16px;
+
     height: 16px;
 
     flex: 0 0 16px;
@@ -1104,16 +1117,18 @@ select.form-control {
 .auth-message.success,
 .form-message.success,
 .auth-message.error,
-.form-message.error {
+.form-message.error,
+.auth-message.warning,
+.form-message.warning {
 
     display: block;
 
 }
 
 
-/* ------------------------------------------------------------
-   SUCCESS
-   ------------------------------------------------------------ */
+/* ============================================================
+   SUCCESS MESSAGE
+   ============================================================ */
 
 .auth-message.success,
 .form-message.success {
@@ -1130,9 +1145,9 @@ select.form-control {
 }
 
 
-/* ------------------------------------------------------------
-   ERROR
-   ------------------------------------------------------------ */
+/* ============================================================
+   ERROR MESSAGE
+   ============================================================ */
 
 .auth-message.error,
 .form-message.error {
@@ -1149,9 +1164,9 @@ select.form-control {
 }
 
 
-/* ------------------------------------------------------------
-   WARNING
-   ------------------------------------------------------------ */
+/* ============================================================
+   WARNING MESSAGE
+   ============================================================ */
 
 .auth-message.warning,
 .form-message.warning {
@@ -1202,7 +1217,7 @@ select.form-control {
 
 
 /* ============================================================
-   TABLE
+   GLOBAL TABLE
    ============================================================ */
 
 .sf-table-wrapper table {
@@ -1399,6 +1414,7 @@ select.form-control {
     .brand-mark {
 
         width: 38px;
+
         height: 38px;
 
         flex-basis: 38px;
@@ -1553,82 +1569,6 @@ select.form-control {
 
         scroll-behavior:
             auto !important;
-
-    }
-
-}
-
-
-/* ============================================================
-   STOCKFLOW — DASHBOARD BRAND OVERRIDE
-   ============================================================
-   Dashboard only:
-   - Changes visual "S" logo to "SF"
-   - Does not affect Login/Register pages
-   - Does not affect other modules
-   ============================================================ */
-
-.dashboard-page .brand-mark {
-
-    position: relative;
-
-    font-size: 0;
-
-    letter-spacing: 0;
-
-}
-
-
-/* Hide the original S text visually */
-
-.dashboard-page .brand-mark::before {
-
-    content: none !important;
-
-}
-
-
-/* Display SF */
-
-.dashboard-page .brand-mark::after {
-
-    content: "SF";
-
-    display: block;
-
-    color: var(--sf-white);
-
-    font-size: 13px;
-
-    font-weight: 800;
-
-    line-height: 1;
-
-    letter-spacing: 0.04em;
-
-}
-
-
-/* Slightly larger SF on desktop */
-
-@media (min-width: 768px) {
-
-    .dashboard-page .brand-mark::after {
-
-        font-size: 14px;
-
-    }
-
-}
-
-
-/* Smaller SF on mobile */
-
-@media (max-width: 767px) {
-
-    .dashboard-page .brand-mark::after {
-
-        font-size: 12px;
 
     }
 
