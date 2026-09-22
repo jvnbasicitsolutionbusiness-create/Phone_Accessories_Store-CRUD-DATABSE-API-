@@ -1,1835 +1,1886 @@
 /* =========================================================
-   STOCKFLOW — MODULES.CSS
-   Shared STOCKFLOW Dashboard + Module Design System
-   ========================================================= */
+   STOCKFLOW — CATEGORIES MODULE
+   Category management UI + CRUD integration
+========================================================= */
+
+(() => {
+    "use strict";
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    const state = {
+        categories: [],
+        filteredCategories: [],
+        products: [],
+
+        editingId: null,
+
+        currentPage: 1,
+        pageSize: 8,
+
+        search: "",
+        status: "ALL",
+
+        loading: false,
+        saving: false,
+        deleting: false
+    };
 
 
-/* =========================================================
-   ROOT VARIABLES
-   ========================================================= */
+    /* =====================================================
+       HELPERS
+    ===================================================== */
 
-:root {
+    const $ = (id) => document.getElementById(id);
 
-    --sf-blue: #2563eb;
-    --sf-blue-dark: #1d4ed8;
-    --sf-blue-light: #3b82f6;
-    --sf-blue-soft: #eff6ff;
-
-    --sf-navy: #0d1b30;
-    --sf-navy-2: #12233d;
-    --sf-sidebar: #0b192c;
-    --sf-sidebar-hover: #162d4b;
-
-    --sf-bg: #f3f6fb;
-    --sf-surface: #ffffff;
-    --sf-surface-soft: #f8fafc;
-
-    --sf-text: #14213d;
-    --sf-text-dark: #0f172a;
-    --sf-muted: #64748b;
-    --sf-light: #94a3b8;
-
-    --sf-border: #e2e8f0;
-    --sf-border-light: #edf1f6;
-
-    --sf-success: #16a34a;
-    --sf-success-soft: #ecfdf3;
-
-    --sf-warning: #d97706;
-    --sf-warning-soft: #fff7ed;
-
-    --sf-danger: #dc2626;
-    --sf-danger-soft: #fef2f2;
-
-    --sf-radius-sm: 8px;
-    --sf-radius: 12px;
-    --sf-radius-lg: 16px;
-
-    --sf-sidebar-width: 250px;
-
-    --sf-shadow-sm:
-        0 2px 8px rgba(15, 23, 42, 0.04);
-
-    --sf-shadow:
-        0 8px 25px rgba(15, 23, 42, 0.06);
-
-    --sf-shadow-lg:
-        0 20px 55px rgba(15, 23, 42, 0.10);
-
-    --sf-transition:
-        0.18s ease;
-}
+    const escapeHTML = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
 
 
-/* =========================================================
-   RESET
-   ========================================================= */
-
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
-
-html {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
-    scroll-behavior: smooth;
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-
-    background: var(--sf-bg);
-    color: var(--sf-text);
-
-    font-family:
-        "Manrope",
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Arial,
-        sans-serif;
-
-    font-size: 14px;
-    line-height: 1.5;
-
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-}
-
-button,
-input,
-select,
-textarea {
-    font: inherit;
-}
-
-button {
-    border: 0;
-}
-
-a {
-    color: inherit;
-}
+    const normalizeStatus = (value) => {
+        return String(value || "ACTIVE")
+            .trim()
+            .toUpperCase();
+    };
 
 
-/* =========================================================
-   =========================================================
-   DASHBOARD DESIGN SYSTEM
-   =========================================================
-   ========================================================= */
+    const getCategoryId = (category) => {
+        return category?.ID ??
+            category?.id ??
+            category?.categoryId ??
+            "";
+    };
 
 
-/* =========================================================
-   DASHBOARD PAGE
-   ========================================================= */
-
-.dashboard-page {
-    min-height: 100vh;
-    background: var(--sf-bg);
-}
-
-.dashboard-page.sidebar-open {
-    overflow: hidden;
-}
+    const getCategoryName = (category) => {
+        return category?.NAME ??
+            category?.name ??
+            category?.categoryName ??
+            "";
+    };
 
 
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
+    const getCategoryDescription = (category) => {
+        return category?.DESCRIPTION ??
+            category?.description ??
+            "";
+    };
 
-.dashboard-page .sidebar {
 
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    const getCategoryStatus = (category) => {
+        return normalizeStatus(
+            category?.STATUS ??
+            category?.status ??
+            "ACTIVE"
+        );
+    };
 
-    width: var(--sf-sidebar-width);
 
-    display: flex;
-    flex-direction: column;
+    const formatDate = (value) => {
 
-    background:
-        linear-gradient(
-            180deg,
-            #0d1b30 0%,
-            #0b192c 100%
+        if (!value) {
+            return "—";
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return escapeHTML(String(value));
+        }
+
+        return date.toLocaleDateString(
+            "en-PH",
+            {
+                month: "short",
+                day: "2-digit",
+                year: "numeric"
+            }
+        );
+    };
+
+
+    const showConnectionMessage = (message, type = "error") => {
+
+        const element = $("connectionMessage");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = message || "";
+
+        element.className =
+            `connection-message ${type}`;
+
+        element.hidden = !message;
+    };
+
+
+    const hideConnectionMessage = () => {
+
+        const element = $("connectionMessage");
+
+        if (!element) {
+            return;
+        }
+
+        element.hidden = true;
+        element.textContent = "";
+        element.className = "connection-message";
+    };
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    const showToast = (message, type = "success") => {
+
+        const container = $("toastContainer");
+
+        if (!container) {
+            return;
+        }
+
+        const toast = document.createElement("div");
+
+        toast.className =
+            `toast ${type}`;
+
+        const icon =
+            type === "success"
+                ? "fa-circle-check"
+                : "fa-circle-exclamation";
+
+        toast.innerHTML = `
+            <i class="fa-solid ${icon}"></i>
+            <span>${escapeHTML(message)}</span>
+        `;
+
+        container.appendChild(toast);
+
+        window.setTimeout(() => {
+
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(8px)";
+
+            window.setTimeout(() => {
+                toast.remove();
+            }, 180);
+
+        }, 3000);
+    };
+
+
+    /* =====================================================
+       FORM MESSAGE
+    ===================================================== */
+
+    const showFormMessage = (message, type = "error") => {
+
+        const element = $("categoryFormMessage");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = message || "";
+
+        element.className =
+            `form-message ${type}`;
+
+        element.hidden = !message;
+    };
+
+
+    const clearFormMessage = () => {
+
+        const element = $("categoryFormMessage");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = "";
+        element.hidden = true;
+        element.className = "form-message";
+    };
+
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
+
+    const openCategoryModal = (category = null) => {
+
+        const modal = $("categoryModal");
+        const form = $("categoryForm");
+
+        if (!modal || !form) {
+            return;
+        }
+
+        state.editingId =
+            category
+                ? String(getCategoryId(category))
+                : null;
+
+        $("categoryModalTitle").textContent =
+            category
+                ? "Edit Category"
+                : "Add Category";
+
+        $("categoryId").value =
+            category
+                ? getCategoryId(category)
+                : "";
+
+        $("categoryName").value =
+            category
+                ? getCategoryName(category)
+                : "";
+
+        $("categoryDescription").value =
+            category
+                ? getCategoryDescription(category)
+                : "";
+
+        $("categoryStatus").value =
+            category
+                ? getCategoryStatus(category)
+                : "ACTIVE";
+
+        clearFormMessage();
+
+        modal.hidden = false;
+
+        document.body.style.overflow = "hidden";
+
+        window.setTimeout(() => {
+            $("categoryName")?.focus();
+        }, 50);
+    };
+
+
+    const closeCategoryModal = () => {
+
+        const modal = $("categoryModal");
+
+        if (!modal) {
+            return;
+        }
+
+        modal.hidden = true;
+
+        document.body.style.overflow = "";
+
+        state.editingId = null;
+
+        $("categoryForm")?.reset();
+
+        $("categoryStatus").value = "ACTIVE";
+
+        clearFormMessage();
+
+        resetSaveButton();
+    };
+
+
+    /* =====================================================
+       DELETE MODAL
+    ===================================================== */
+
+    let categoryPendingDelete = null;
+
+
+    const openDeleteModal = (category) => {
+
+        const modal = $("deleteCategoryModal");
+
+        if (!modal) {
+            return;
+        }
+
+        categoryPendingDelete = category;
+
+        $("deleteCategoryName").textContent =
+            getCategoryName(category);
+
+        $("deleteCategoryMessage").hidden = true;
+
+        modal.hidden = false;
+
+        document.body.style.overflow = "hidden";
+    };
+
+
+    const closeDeleteModal = () => {
+
+        const modal = $("deleteCategoryModal");
+
+        if (!modal) {
+            return;
+        }
+
+        modal.hidden = true;
+
+        document.body.style.overflow = "";
+
+        categoryPendingDelete = null;
+
+        const message = $("deleteCategoryMessage");
+
+        if (message) {
+            message.hidden = true;
+            message.textContent = "";
+            message.className = "form-message";
+        }
+
+        resetDeleteButton();
+    };
+
+
+    /* =====================================================
+       BUTTON STATES
+    ===================================================== */
+
+    const setSaveButtonLoading = (loading) => {
+
+        const button = $("saveCategoryBtn");
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = loading;
+
+        $("saveCategorySpinner").hidden = !loading;
+        $("saveCategoryIcon").hidden = loading;
+
+        $("saveCategoryText").textContent =
+            loading
+                ? "Saving..."
+                : state.editingId
+                    ? "Update Category"
+                    : "Save Category";
+    };
+
+
+    const resetSaveButton = () => {
+        setSaveButtonLoading(false);
+    };
+
+
+    const setDeleteButtonLoading = (loading) => {
+
+        const button =
+            $("confirmDeleteCategoryBtn");
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = loading;
+
+        $("deleteCategorySpinner").hidden = !loading;
+    };
+
+
+    const resetDeleteButton = () => {
+        setDeleteButtonLoading(false);
+    };
+
+
+    /* =====================================================
+       API RESULT NORMALIZATION
+    ===================================================== */
+
+    const extractCategories = (response) => {
+
+        if (!response) {
+            return [];
+        }
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        if (Array.isArray(response.categories)) {
+            return response.categories;
+        }
+
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+
+        if (Array.isArray(response.rows)) {
+            return response.rows;
+        }
+
+        return [];
+    };
+
+
+    const extractProducts = (response) => {
+
+        if (!response) {
+            return [];
+        }
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        if (Array.isArray(response.products)) {
+            return response.products;
+        }
+
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+
+        if (Array.isArray(response.rows)) {
+            return response.rows;
+        }
+
+        return [];
+    };
+
+
+    /* =====================================================
+       LOAD CATEGORIES
+    ===================================================== */
+
+    const loadCategories = async () => {
+
+        if (
+            typeof window.StockFlowAPI === "undefined" ||
+            typeof window.StockFlowAPI.listCategories !== "function"
+        ) {
+            throw new Error(
+                "Category API is not available."
+            );
+        }
+
+        state.loading = true;
+
+        showLoadingState();
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.listCategories();
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to load categories."
+                );
+            }
+
+            state.categories =
+                extractCategories(response);
+
+            await loadProductsForCounts();
+
+            state.currentPage = 1;
+
+            applyFilters();
+
+            hideConnectionMessage();
+
+            updateConnectionBadge(true);
+
+        } catch (error) {
+
+            console.error(
+                "StockFlow categories load error:",
+                error
+            );
+
+            state.categories = [];
+            state.filteredCategories = [];
+
+            showErrorState(
+                error.message ||
+                "Unable to load categories."
+            );
+
+            updateConnectionBadge(false);
+
+            throw error;
+
+        } finally {
+
+            state.loading = false;
+        }
+    };
+
+
+    /* =====================================================
+       LOAD PRODUCTS FOR CATEGORY COUNTS
+    ===================================================== */
+
+    const loadProductsForCounts = async () => {
+
+        state.products = [];
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.listProducts !== "function"
+        ) {
+            return;
+        }
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.listProducts();
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                return;
+            }
+
+            state.products =
+                extractProducts(response);
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to retrieve products for category counts:",
+                error
+            );
+
+            state.products = [];
+        }
+    };
+
+
+    /* =====================================================
+       PRODUCT COUNT
+    ===================================================== */
+
+    const getProductCount = (category) => {
+
+        const categoryId =
+            String(getCategoryId(category));
+
+        const categoryName =
+            String(getCategoryName(category))
+                .trim()
+                .toLowerCase();
+
+        const directCount =
+            category?.PRODUCT_COUNT ??
+            category?.PRODUCTS_COUNT ??
+            category?.productCount ??
+            category?.product_count;
+
+        if (
+            directCount !== undefined &&
+            directCount !== null &&
+            directCount !== ""
+        ) {
+            const numeric =
+                Number(directCount);
+
+            return Number.isNaN(numeric)
+                ? 0
+                : numeric;
+        }
+
+        if (!state.products.length) {
+            return 0;
+        }
+
+        return state.products.filter(product => {
+
+            const productCategoryId =
+                String(
+                    product?.CATEGORY_ID ??
+                    product?.categoryId ??
+                    ""
+                );
+
+            const productCategory =
+                String(
+                    product?.CATEGORY ??
+                    product?.category ??
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+            if (
+                categoryId &&
+                productCategoryId &&
+                productCategoryId === categoryId
+            ) {
+                return true;
+            }
+
+            return (
+                categoryName &&
+                productCategory === categoryName
+            );
+
+        }).length;
+    };
+
+
+    /* =====================================================
+       FILTERING
+    ===================================================== */
+
+    const applyFilters = () => {
+
+        const search =
+            state.search
+                .trim()
+                .toLowerCase();
+
+        state.filteredCategories =
+            state.categories.filter(category => {
+
+                const name =
+                    getCategoryName(category)
+                        .toLowerCase();
+
+                const description =
+                    getCategoryDescription(category)
+                        .toLowerCase();
+
+                const status =
+                    getCategoryStatus(category);
+
+                const matchesSearch =
+                    !search ||
+                    name.includes(search) ||
+                    description.includes(search);
+
+                const matchesStatus =
+                    state.status === "ALL" ||
+                    status === state.status;
+
+                return (
+                    matchesSearch &&
+                    matchesStatus
+                );
+            });
+
+        const totalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    state.filteredCategories.length /
+                    state.pageSize
+                )
+            );
+
+        if (state.currentPage > totalPages) {
+            state.currentPage = totalPages;
+        }
+
+        renderCategories();
+        renderPagination();
+        updateStatistics();
+    };
+
+
+    /* =====================================================
+       RENDER TABLE
+    ===================================================== */
+
+    const renderCategories = () => {
+
+        const body =
+            $("categoriesTableBody");
+
+        if (!body) {
+            return;
+        }
+
+        const start =
+            (state.currentPage - 1) *
+            state.pageSize;
+
+        const end =
+            start + state.pageSize;
+
+        const visible =
+            state.filteredCategories.slice(
+                start,
+                end
+            );
+
+        hideTableStates();
+
+        if (!visible.length) {
+
+            body.innerHTML = "";
+
+            $("categoriesEmpty").hidden = false;
+
+            updateResultsInfo(0);
+
+            return;
+        }
+
+        body.innerHTML =
+            visible
+                .map(renderCategoryRow)
+                .join("");
+
+        updateResultsInfo(visible.length);
+
+        bindRowActions();
+    };
+
+
+    const renderCategoryRow = (category) => {
+
+        const id =
+            getCategoryId(category);
+
+        const name =
+            getCategoryName(category) ||
+            "Unnamed Category";
+
+        const description =
+            getCategoryDescription(category) ||
+            "No description provided";
+
+        const status =
+            getCategoryStatus(category);
+
+        const productCount =
+            getProductCount(category);
+
+        const statusClass =
+            status === "ACTIVE"
+                ? "status-active"
+                : "status-inactive";
+
+        return `
+            <tr>
+                <td>
+                    <div class="category-name">
+
+                        <div class="category-icon">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+
+                        <div class="category-name-text">
+                            <strong>
+                                ${escapeHTML(name)}
+                            </strong>
+
+                            <small>
+                                ID: ${escapeHTML(id || "—")}
+                            </small>
+                        </div>
+
+                    </div>
+                </td>
+
+                <td>
+                    ${escapeHTML(description)}
+                </td>
+
+                <td>
+                    <span class="product-count">
+                        ${productCount}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="status-badge ${statusClass}">
+                        ${escapeHTML(status)}
+                    </span>
+                </td>
+
+                <td>
+                    ${formatDate(
+                        category?.CREATED_AT ??
+                        category?.createdAt ??
+                        category?.created
+                    )}
+                </td>
+
+                <td class="action-column">
+
+                    <div class="row-actions">
+
+                        <button
+                            type="button"
+                            class="row-action edit"
+                            data-action="edit"
+                            data-id="${escapeHTML(id)}"
+                            title="Edit category"
+                            aria-label="Edit ${escapeHTML(name)}"
+                        >
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="row-action delete"
+                            data-action="delete"
+                            data-id="${escapeHTML(id)}"
+                            title="Delete category"
+                            aria-label="Delete ${escapeHTML(name)}"
+                        >
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+
+                    </div>
+
+                </td>
+            </tr>
+        `;
+    };
+
+
+    /* =====================================================
+       ROW ACTIONS
+    ===================================================== */
+
+    const bindRowActions = () => {
+
+        document
+            .querySelectorAll(
+                '[data-action="edit"]'
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const category =
+                            state.categories.find(
+                                item =>
+                                    String(
+                                        getCategoryId(item)
+                                    ) ===
+                                    String(
+                                        button.dataset.id
+                                    )
+                            );
+
+                        if (category) {
+                            openCategoryModal(category);
+                        }
+                    }
+                );
+            });
+
+
+        document
+            .querySelectorAll(
+                '[data-action="delete"]'
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const category =
+                            state.categories.find(
+                                item =>
+                                    String(
+                                        getCategoryId(item)
+                                    ) ===
+                                    String(
+                                        button.dataset.id
+                                    )
+                            );
+
+                        if (category) {
+                            openDeleteModal(category);
+                        }
+                    }
+                );
+            });
+    };
+
+
+    /* =====================================================
+       STATISTICS
+    ===================================================== */
+
+    const updateStatistics = () => {
+
+        const total =
+            state.categories.length;
+
+        const active =
+            state.categories.filter(
+                category =>
+                    getCategoryStatus(category) ===
+                    "ACTIVE"
+            ).length;
+
+        const categorizedProducts =
+            state.categories.reduce(
+                (sum, category) =>
+                    sum + getProductCount(category),
+                0
+            );
+
+        const empty =
+            state.categories.filter(
+                category =>
+                    getProductCount(category) === 0
+            ).length;
+
+        $("totalCategories").textContent =
+            total;
+
+        $("activeCategories").textContent =
+            active;
+
+        $("categorizedProducts").textContent =
+            categorizedProducts;
+
+        $("emptyCategories").textContent =
+            empty;
+    };
+
+
+    /* =====================================================
+       PAGINATION
+    ===================================================== */
+
+    const renderPagination = () => {
+
+        const container =
+            $("categoryPagination");
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = "";
+
+        const total =
+            state.filteredCategories.length;
+
+        const totalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    total /
+                    state.pageSize
+                )
+            );
+
+        if (total <= state.pageSize) {
+            return;
+        }
+
+        const previous =
+            document.createElement("button");
+
+        previous.type = "button";
+        previous.innerHTML =
+            '<i class="fa-solid fa-chevron-left"></i>';
+
+        previous.disabled =
+            state.currentPage === 1;
+
+        previous.addEventListener(
+            "click",
+            () => {
+
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                    applyFilters();
+                }
+            }
         );
 
-    color: #ffffff;
-
-    z-index: 1100;
-
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    border-right:
-        1px solid rgba(255,255,255,0.05);
-
-    scrollbar-width: thin;
-    scrollbar-color:
-        rgba(255,255,255,0.16)
-        transparent;
-
-    transition:
-        transform var(--sf-transition);
-}
-
-.dashboard-page .sidebar::-webkit-scrollbar {
-    width: 5px;
-}
-
-.dashboard-page .sidebar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.dashboard-page .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
-    border-radius: 20px;
-}
+        container.appendChild(previous);
 
 
-/* =========================================================
-   BRAND
-   ========================================================= */
+        for (
+            let page = 1;
+            page <= totalPages;
+            page++
+        ) {
 
-.dashboard-page .sidebar-brand {
+            const button =
+                document.createElement("button");
 
-    min-height: 82px;
+            button.type = "button";
 
-    display: flex;
-    align-items: center;
+            button.textContent = page;
 
-    gap: 12px;
+            button.className =
+                page === state.currentPage
+                    ? "active"
+                    : "";
 
-    padding: 20px 18px;
+            button.addEventListener(
+                "click",
+                () => {
 
-    border-bottom:
-        1px solid rgba(255,255,255,0.06);
-}
+                    state.currentPage = page;
 
-.dashboard-page .brand-logo {
+                    applyFilters();
+                }
+            );
 
-    width: 42px;
-    height: 42px;
+            container.appendChild(button);
+        }
 
-    flex: 0 0 42px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+        const next =
+            document.createElement("button");
 
-    border-radius: 12px;
+        next.type = "button";
 
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #3b82f6
+        next.innerHTML =
+            '<i class="fa-solid fa-chevron-right"></i>';
+
+        next.disabled =
+            state.currentPage === totalPages;
+
+        next.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    state.currentPage <
+                    totalPages
+                ) {
+                    state.currentPage++;
+                    applyFilters();
+                }
+            }
         );
 
-    color: #ffffff;
-
-    font-size: 13px;
-    font-weight: 800;
-
-    box-shadow:
-        0 8px 18px rgba(37,99,235,0.25);
-}
-
-.dashboard-page .brand-logo::before,
-.dashboard-page .brand-logo::after {
-    content: none !important;
-}
-
-.dashboard-page .brand-logo span {
-    display: block;
-}
-
-.dashboard-page .brand-text {
-
-    min-width: 0;
-
-    display: flex;
-    flex-direction: column;
-
-    line-height: 1.15;
-}
-
-.dashboard-page .brand-text strong {
-
-    color: #ffffff;
-
-    font-size: 16px;
-    font-weight: 800;
-
-    letter-spacing: -0.2px;
-}
-
-.dashboard-page .brand-text span {
-
-    margin-top: 4px;
-
-    color:
-        rgba(255,255,255,0.54);
-
-    font-size: 10px;
-    font-weight: 500;
-}
+        container.appendChild(next);
+    };
 
 
-/* =========================================================
-   DASHBOARD NAVIGATION
-   ========================================================= */
+    const updateResultsInfo = (visibleCount) => {
 
-.dashboard-page .sidebar-nav {
+        const element =
+            $("categoryResultsInfo");
 
-    flex: 1;
+        if (!element) {
+            return;
+        }
 
-    padding:
-        20px 12px 18px;
-}
+        const total =
+            state.filteredCategories.length;
 
-.dashboard-page .sidebar-section-title {
+        if (!total) {
+            element.textContent =
+                "Showing 0 categories";
 
-    margin:
-        14px 10px 7px;
+            return;
+        }
 
-    color:
-        rgba(255,255,255,0.38);
+        const start =
+            ((state.currentPage - 1) *
+            state.pageSize) + 1;
 
-    font-size: 9px;
-    font-weight: 800;
+        const end =
+            Math.min(
+                start + visibleCount - 1,
+                total
+            );
 
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-}
+        element.textContent =
+            `Showing ${start}–${end} of ${total} categories`;
+    };
 
-.dashboard-page .sidebar-section-title:first-child {
-    margin-top: 0;
-}
 
-.dashboard-page .sidebar-link {
+    /* =====================================================
+       TABLE STATES
+    ===================================================== */
 
-    position: relative;
+    const hideTableStates = () => {
 
-    min-height: 42px;
+        $("categoriesLoading").hidden = true;
+        $("categoriesEmpty").hidden = true;
+        $("categoriesError").hidden = true;
 
-    display: flex;
-    align-items: center;
+        $("categoriesTable").style.display =
+            "table";
+    };
 
-    gap: 11px;
 
-    margin: 2px 0;
+    const showLoadingState = () => {
 
-    padding: 0 12px;
+        $("categoriesLoading").hidden = false;
+        $("categoriesEmpty").hidden = true;
+        $("categoriesError").hidden = true;
 
-    border-radius: 9px;
+        $("categoriesTable").style.display =
+            "none";
 
-    color:
-        rgba(226,232,240,0.72);
+        $("categoryResultsInfo").textContent =
+            "Loading categories...";
 
-    text-decoration: none;
+        $("categoryPagination").innerHTML = "";
+    };
 
-    font-size: 12px;
-    font-weight: 600;
 
-    transition:
-        background-color var(--sf-transition),
-        color var(--sf-transition),
-        transform var(--sf-transition);
-}
+    const showErrorState = (message) => {
 
-.dashboard-page .sidebar-link i {
+        $("categoriesLoading").hidden = true;
+        $("categoriesEmpty").hidden = true;
+        $("categoriesError").hidden = false;
 
-    width: 19px;
+        $("categoriesTable").style.display =
+            "none";
 
-    flex: 0 0 19px;
+        $("categoriesErrorMessage").textContent =
+            message ||
+            "Please check your connection and try again.";
 
-    text-align: center;
+        $("categoryResultsInfo").textContent =
+            "Unable to load categories.";
 
-    color:
-        rgba(203,213,225,0.62);
+        $("categoryPagination").innerHTML = "";
+    };
 
-    font-size: 13px;
-}
 
-.dashboard-page .sidebar-link span {
-    white-space: nowrap;
-}
+    /* =====================================================
+       CONNECTION BADGE
+    ===================================================== */
 
-.dashboard-page .sidebar-link:hover {
+    const updateConnectionBadge = (online) => {
 
-    background:
-        rgba(255,255,255,0.065);
+        const badge =
+            $("connectionBadge");
 
-    color: #ffffff;
+        if (!badge) {
+            return;
+        }
 
-    transform:
-        translateX(1px);
-}
+        const dot =
+            badge.querySelector(
+                ".connection-dot"
+            );
 
-.dashboard-page .sidebar-link.active {
+        const text =
+            badge.querySelector(
+                "span:last-child"
+            );
 
-    background:
-        linear-gradient(
-            90deg,
-            rgba(37,99,235,0.24),
-            rgba(37,99,235,0.12)
+        if (online) {
+
+            badge.classList.remove(
+                "offline"
+            );
+
+            if (text) {
+                text.textContent =
+                    "ONLINE";
+            }
+
+            if (dot) {
+                dot.style.background =
+                    "#22c55e";
+            }
+
+        } else {
+
+            badge.classList.add(
+                "offline"
+            );
+
+            if (text) {
+                text.textContent =
+                    "OFFLINE";
+            }
+
+            if (dot) {
+                dot.style.background =
+                    "#ef4444";
+            }
+        }
+    };
+
+
+    /* =====================================================
+       SAVE CATEGORY
+    ===================================================== */
+
+    const saveCategory = async (event) => {
+
+        event.preventDefault();
+
+        if (state.saving) {
+            return;
+        }
+
+        const name =
+            $("categoryName").value.trim();
+
+        const description =
+            $("categoryDescription").value.trim();
+
+        const status =
+            $("categoryStatus").value;
+
+        if (!name) {
+
+            showFormMessage(
+                "Category name is required."
+            );
+
+            $("categoryName").focus();
+
+            return;
+        }
+
+        if (name.length > 100) {
+
+            showFormMessage(
+                "Category name cannot exceed 100 characters."
+            );
+
+            return;
+        }
+
+        state.saving = true;
+
+        setSaveButtonLoading(true);
+
+        clearFormMessage();
+
+        try {
+
+            if (
+                !window.StockFlowAPI ||
+                typeof window.StockFlowAPI.saveCategory !== "function"
+            ) {
+                throw new Error(
+                    "Category save API is not available."
+                );
+            }
+
+            const payload = {
+                id:
+                    $("categoryId").value ||
+                    state.editingId ||
+                    "",
+
+                name,
+                description,
+                status
+            };
+
+            const response =
+                await window.StockFlowAPI.saveCategory(
+                    payload
+                );
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to save category."
+                );
+            }
+
+            closeCategoryModal();
+
+            showToast(
+                response?.message ||
+                (
+                    state.editingId
+                        ? "Category updated successfully."
+                        : "Category created successfully."
+                ),
+                "success"
+            );
+
+            await loadCategories();
+
+        } catch (error) {
+
+            console.error(
+                "Category save error:",
+                error
+            );
+
+            showFormMessage(
+                error.message ||
+                "Unable to save category."
+            );
+
+        } finally {
+
+            state.saving = false;
+
+            setSaveButtonLoading(false);
+        }
+    };
+
+
+    /* =====================================================
+       DELETE CATEGORY
+    ===================================================== */
+
+    const deleteCategory = async () => {
+
+        if (
+            state.deleting ||
+            !categoryPendingDelete
+        ) {
+            return;
+        }
+
+        const id =
+            getCategoryId(
+                categoryPendingDelete
+            );
+
+        if (!id) {
+
+            showToast(
+                "Category ID is missing.",
+                "error"
+            );
+
+            return;
+        }
+
+        state.deleting = true;
+
+        setDeleteButtonLoading(true);
+
+        try {
+
+            if (
+                !window.StockFlowAPI ||
+                typeof window.StockFlowAPI.deleteCategory !== "function"
+            ) {
+                throw new Error(
+                    "Category delete API is not available."
+                );
+            }
+
+            const response =
+                await window.StockFlowAPI.deleteCategory(
+                    id
+                );
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to delete category."
+                );
+            }
+
+            const name =
+                getCategoryName(
+                    categoryPendingDelete
+                );
+
+            closeDeleteModal();
+
+            showToast(
+                response?.message ||
+                `${name} was deleted successfully.`,
+                "success"
+            );
+
+            await loadCategories();
+
+        } catch (error) {
+
+            console.error(
+                "Category delete error:",
+                error
+            );
+
+            const message =
+                $("deleteCategoryMessage");
+
+            if (message) {
+
+                message.textContent =
+                    error.message ||
+                    "Unable to delete category.";
+
+                message.className =
+                    "form-message error";
+
+                message.hidden = false;
+            }
+
+        } finally {
+
+            state.deleting = false;
+
+            setDeleteButtonLoading(false);
+        }
+    };
+
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+
+    const setupSidebar = () => {
+
+        const sidebar =
+            $("sidebar");
+
+        const overlay =
+            $("sidebarOverlay");
+
+        const menu =
+            $("mobileMenuBtn");
+
+        if (!sidebar || !overlay || !menu) {
+            return;
+        }
+
+        const closeSidebar = () => {
+
+            sidebar.classList.remove("open");
+            overlay.classList.remove("show");
+
+            document.body.style.overflow = "";
+        };
+
+
+        menu.addEventListener(
+            "click",
+            () => {
+
+                sidebar.classList.toggle(
+                    "open"
+                );
+
+                overlay.classList.toggle(
+                    "show"
+                );
+
+                document.body.style.overflow =
+                    sidebar.classList.contains("open")
+                        ? "hidden"
+                        : "";
+            }
         );
 
-    color: #ffffff;
-}
 
-.dashboard-page .sidebar-link.active::before {
-
-    content: "";
-
-    position: absolute;
-
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-
-    width: 3px;
-
-    border-radius:
-        0 4px 4px 0;
-
-    background:
-        #3b82f6;
-}
-
-.dashboard-page .sidebar-link.active i {
-    color: #60a5fa;
-}
-
-
-/* =========================================================
-   DASHBOARD MAIN
-   ========================================================= */
-
-.dashboard-page .dashboard-main {
-
-    min-height: 100vh;
-
-    margin-left:
-        var(--sf-sidebar-width);
-
-    background:
-        var(--sf-bg);
-
-    transition:
-        margin-left var(--sf-transition);
-}
-
-
-/* =========================================================
-   DASHBOARD HEADER
-   ========================================================= */
-
-.dashboard-page .dash-header {
-
-    position: sticky;
-
-    top: 0;
-
-    z-index: 800;
-
-    min-height: 78px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 24px;
-
-    padding:
-        14px 30px;
-
-    background:
-        rgba(255,255,255,0.96);
-
-    border-bottom:
-        1px solid var(--sf-border);
-
-    backdrop-filter:
-        blur(12px);
-}
-
-.dashboard-page .dash-title {
-
-    margin:
-        4px 0 0;
-
-    color:
-        var(--sf-text-dark);
-
-    font-size: 25px;
-    font-weight: 800;
-
-    letter-spacing: -0.7px;
-    line-height: 1.2;
-}
-
-.dashboard-page .dash-subtitle {
-
-    margin:
-        4px 0 0;
-
-    color:
-        var(--sf-muted);
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   =========================================================
-   TRANSACTION / MODULE LAYOUT
-   =========================================================
-   ========================================================= */
-
-
-/*
-   These rules specifically support:
-   transactions.html
-   products.html
-   inventory.html
-   categories.html
-   suppliers.html
-   stock-in.html
-   stock-out.html
-   activity.html
-   profile.html
-   settings.html
-
-   They use the .sf-* structure.
-*/
-
-
-/* =========================================================
-   MODULE PAGE WRAPPER
-   ========================================================= */
-
-.sf-layout {
-
-    min-height: 100vh;
-
-    display: flex;
-
-    background:
-        var(--sf-bg);
-
-    color:
-        var(--sf-text);
-}
-
-
-/* =========================================================
-   MODULE SIDEBAR
-   ========================================================= */
-
-.sf-layout .sf-side {
-
-    position: fixed;
-
-    top: 0;
-    left: 0;
-    bottom: 0;
-
-    width:
-        var(--sf-sidebar-width);
-
-    display: flex;
-    flex-direction: column;
-
-    background:
-        linear-gradient(
-            180deg,
-            #0d1b30 0%,
-            #0b192c 100%
+        overlay.addEventListener(
+            "click",
+            closeSidebar
         );
 
-    color:
-        #ffffff;
 
-    z-index: 1100;
+        sidebar
+            .querySelectorAll("a")
+            .forEach(link => {
 
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    border-right:
-        1px solid rgba(255,255,255,0.05);
-
-    scrollbar-width: thin;
-    scrollbar-color:
-        rgba(255,255,255,0.16)
-        transparent;
-}
-
-.sf-layout .sf-side::-webkit-scrollbar {
-    width: 5px;
-}
-
-.sf-layout .sf-side::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.sf-layout .sf-side::-webkit-scrollbar-thumb {
-    background:
-        rgba(255,255,255,0.15);
-
-    border-radius:
-        20px;
-}
+                link.addEventListener(
+                    "click",
+                    closeSidebar
+                );
+            });
+    };
 
 
-/* =========================================================
-   MODULE BRAND
-   ========================================================= */
+    /* =====================================================
+       USER DISPLAY
+    ===================================================== */
 
-.sf-layout .sf-brand {
+    const setupUserDisplay = () => {
 
-    min-height:
-        82px;
+        let user = null;
 
-    display: flex;
-    align-items: center;
+        try {
 
-    padding:
-        0 30px;
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getUser === "function"
+            ) {
+                user =
+                    window.StockFlowAuth.getUser();
+            }
 
-    border-bottom:
-        1px solid rgba(255,255,255,0.06);
+        } catch (error) {
 
-    color:
-        #ffffff;
+            console.warn(
+                "Unable to read current user:",
+                error
+            );
+        }
 
-    font-size:
-        17px;
+        if (!user) {
+            return;
+        }
 
-    font-weight:
-        800;
+        const name =
+            user.name ||
+            user.fullName ||
+            user.NAME ||
+            user.email ||
+            user.EMAIL ||
+            "StockFlow User";
 
-    letter-spacing:
-        0.03em;
-}
+        const role =
+            user.role ||
+            user.ROLE ||
+            user.position ||
+            "Employee";
 
-.sf-layout .sf-brand::before {
+        const initials =
+            name
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(
+                    part =>
+                        part.charAt(0)
+                            .toUpperCase()
+                )
+                .join("") ||
+            "U";
 
-    content:
-        "SF";
+        $("sidebarUserName").textContent =
+            name;
 
-    width:
-        38px;
+        $("sidebarUserRole").textContent =
+            role;
 
-    height:
-        38px;
+        $("sidebarUserAvatar").textContent =
+            initials;
 
-    margin-right:
-        12px;
+        $("topbarUserName").textContent =
+            name;
 
-    display:
-        inline-flex;
+        $("topbarUserRole").textContent =
+            role;
 
-    align-items:
-        center;
+        $("topbarUserAvatar").textContent =
+            initials;
+    };
 
-    justify-content:
-        center;
 
-    border-radius:
-        11px;
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
 
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #3b82f6
+    const setupLogout = () => {
+
+        const button =
+            $("logoutBtn");
+
+        if (!button) {
+            return;
+        }
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    window.StockFlowAuth &&
+                    typeof window.StockFlowAuth.logout === "function"
+                ) {
+
+                    window.StockFlowAuth.logout();
+
+                    return;
+                }
+
+                sessionStorage.clear();
+
+                window.location.href =
+                    "auth.html";
+            }
         );
-
-    color:
-        #ffffff;
-
-    font-size:
-        11px;
-
-    font-weight:
-        800;
-
-    box-shadow:
-        0 8px 18px rgba(37,99,235,0.22);
-}
+    };
 
 
-/* =========================================================
-   MODULE NAVIGATION
-   ========================================================= */
+    /* =====================================================
+       EVENT LISTENERS
+    ===================================================== */
 
-.sf-layout .sf-nav {
+    const setupEvents = () => {
 
-    flex:
-        1;
-
-    padding:
-        18px 12px 24px;
-}
-
-.sf-layout .sf-nav::before {
-
-    content:
-        "OVERVIEW";
-
-    display:
-        block;
-
-    margin:
-        3px 10px 8px;
-
-    color:
-        rgba(255,255,255,0.36);
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        0.14em;
-}
+        $("addCategoryBtn")
+            ?.addEventListener(
+                "click",
+                () => openCategoryModal()
+            );
 
 
-/*
-   Every navigation link receives the SAME
-   visual treatment.
-*/
-
-.sf-layout .sf-nav a {
-
-    position:
-        relative;
-
-    min-height:
-        42px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        11px;
-
-    margin:
-        3px 0;
-
-    padding:
-        0 12px;
-
-    border-radius:
-        9px;
-
-    color:
-        rgba(226,232,240,0.72);
-
-    text-decoration:
-        none;
-
-    font-size:
-        12px;
-
-    font-weight:
-        600;
-
-    transition:
-        background-color var(--sf-transition),
-        color var(--sf-transition),
-        transform var(--sf-transition);
-}
+        $("emptyAddCategoryBtn")
+            ?.addEventListener(
+                "click",
+                () => openCategoryModal()
+            );
 
 
-/*
-   Simple icon-like prefix.
-   This prevents the navigation from looking
-   like plain browser hyperlinks.
-*/
+        $("closeCategoryModal")
+            ?.addEventListener(
+                "click",
+                closeCategoryModal
+            );
 
-.sf-layout .sf-nav a::first-letter {
-    color:
-        #94a3b8;
-}
 
-.sf-layout .sf-nav a:hover {
+        $("cancelCategoryBtn")
+            ?.addEventListener(
+                "click",
+                closeCategoryModal
+            );
 
-    background:
-        rgba(255,255,255,0.065);
 
-    color:
-        #ffffff;
+        $("cancelDeleteCategoryBtn")
+            ?.addEventListener(
+                "click",
+                closeDeleteModal
+            );
 
-    transform:
-        translateX(1px);
-}
 
-.sf-layout .sf-nav a.active {
+        $("confirmDeleteCategoryBtn")
+            ?.addEventListener(
+                "click",
+                deleteCategory
+            );
 
-    background:
-        linear-gradient(
-            90deg,
-            rgba(37,99,235,0.28),
-            rgba(37,99,235,0.12)
+
+        $("categoryForm")
+            ?.addEventListener(
+                "submit",
+                saveCategory
+            );
+
+
+        $("refreshCategoriesBtn")
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    const button =
+                        $("refreshCategoriesBtn");
+
+                    button.disabled = true;
+
+                    try {
+
+                        await loadCategories();
+
+                        showToast(
+                            "Categories refreshed.",
+                            "success"
+                        );
+
+                    } catch (error) {
+
+                        showToast(
+                            error.message ||
+                            "Unable to refresh categories.",
+                            "error"
+                        );
+
+                    } finally {
+
+                        button.disabled = false;
+                    }
+                }
+            );
+
+
+        $("retryCategoriesBtn")
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    try {
+                        await loadCategories();
+                    } catch (_) {
+                        // Error state is already displayed.
+                    }
+                }
+            );
+
+
+        $("categorySearch")
+            ?.addEventListener(
+                "input",
+                event => {
+
+                    state.search =
+                        event.target.value;
+
+                    state.currentPage = 1;
+
+                    applyFilters();
+                }
+            );
+
+
+        $("categoryStatusFilter")
+            ?.addEventListener(
+                "change",
+                event => {
+
+                    state.status =
+                        event.target.value;
+
+                    state.currentPage = 1;
+
+                    applyFilters();
+                }
+            );
+
+
+        $("categoryModal")
+            ?.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        $("categoryModal")
+                    ) {
+                        closeCategoryModal();
+                    }
+                }
+            );
+
+
+        $("deleteCategoryModal")
+            ?.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        $("deleteCategoryModal")
+                    ) {
+                        closeDeleteModal();
+                    }
+                }
+            );
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (event.key !== "Escape") {
+                    return;
+                }
+
+                if (
+                    !$("categoryModal").hidden
+                ) {
+                    closeCategoryModal();
+                }
+
+                if (
+                    !$("deleteCategoryModal").hidden
+                ) {
+                    closeDeleteModal();
+                }
+            }
         );
+    };
 
-    color:
-        #ffffff;
 
-    font-weight:
-        700;
-}
+    /* =====================================================
+       AUTHENTICATION
+    ===================================================== */
 
-.sf-layout .sf-nav a.active::before {
+    const initializeAuthentication = async () => {
 
-    content:
-        "";
+        if (
+            !window.StockFlowAuth ||
+            typeof window.StockFlowAuth.requireAuth !== "function"
+        ) {
+            return true;
+        }
 
-    position:
-        absolute;
+        const user =
+            await window.StockFlowAuth.requireAuth();
 
-    left:
-        0;
+        return Boolean(user);
+    };
 
-    top:
-        8px;
 
-    bottom:
-        8px;
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
 
-    width:
-        3px;
+    const initialize = async () => {
 
-    border-radius:
-        0 4px 4px 0;
+        setupSidebar();
 
-    background:
-        #3b82f6;
-}
+        setupEvents();
 
+        setupLogout();
 
-/* =========================================================
-   MODULE MAIN
-   ========================================================= */
+        setupUserDisplay();
 
-.sf-layout .sf-main {
+        updateConnectionBadge(false);
 
-    width:
-        calc(100% - var(--sf-sidebar-width));
+        try {
 
-    min-height:
-        100vh;
+            const authenticated =
+                await initializeAuthentication();
 
-    margin-left:
-        var(--sf-sidebar-width);
+            if (!authenticated) {
+                return;
+            }
 
-    padding:
-        0 30px 40px;
+            await loadCategories();
 
-    background:
-        var(--sf-bg);
-}
+        } catch (error) {
 
+            console.error(
+                "StockFlow Categories initialization error:",
+                error
+            );
 
-/* =========================================================
-   MODULE TOP HEADER
-   ========================================================= */
+            showErrorState(
+                error.message ||
+                "Unable to initialize Categories."
+            );
+        }
+    };
 
-.sf-layout .sf-top {
 
-    min-height:
-        108px;
+    /* =====================================================
+       START
+    ===================================================== */
 
-    display:
-        flex;
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialize
+    );
 
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        24px;
-
-    padding:
-        24px 0 20px;
-
-    border-bottom:
-        1px solid var(--sf-border);
-}
-
-
-/* =========================================================
-   PAGE TITLE
-   ========================================================= */
-
-.sf-layout .sf-title {
-
-    color:
-        var(--sf-text-dark);
-
-    font-size:
-        28px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        -0.8px;
-
-    line-height:
-        1.15;
-}
-
-.sf-layout .sf-muted {
-
-    margin-top:
-        6px;
-
-    color:
-        var(--sf-muted);
-
-    font-size:
-        12px;
-
-    line-height:
-        1.5;
-}
-
-
-/* =========================================================
-   MOBILE MENU
-   ========================================================= */
-
-.sf-layout .transaction-menu-btn {
-
-    display:
-        none;
-
-    width:
-        38px;
-
-    height:
-        38px;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border:
-        1px solid var(--sf-border);
-
-    border-radius:
-        9px;
-
-    background:
-        #ffffff;
-
-    color:
-        var(--sf-text);
-
-    cursor:
-        pointer;
-}
-
-
-/* =========================================================
-   ALERT
-   ========================================================= */
-
-.sf-layout .sf-alert {
-
-    display:
-        none;
-
-    margin:
-        20px 0;
-
-    padding:
-        13px 16px;
-
-    border:
-        1px solid #fecaca;
-
-    border-radius:
-        10px;
-
-    background:
-        var(--sf-danger-soft);
-
-    color:
-        #b91c1c;
-
-    font-size:
-        12px;
-
-    font-weight:
-        600;
-}
-
-.sf-layout .sf-alert:not(:empty) {
-    display:
-        block;
-}
-
-
-/* =========================================================
-   MODULE CARDS
-   ========================================================= */
-
-.sf-layout .sf-card {
-
-    margin-top:
-        22px;
-
-    background:
-        var(--sf-surface);
-
-    border:
-        1px solid var(--sf-border);
-
-    border-radius:
-        var(--sf-radius-lg);
-
-    box-shadow:
-        var(--sf-shadow-sm);
-
-    overflow:
-        hidden;
-}
-
-
-/* =========================================================
-   TRANSACTION FILTER CARD
-   ========================================================= */
-
-.transaction-filter-card {
-
-    padding:
-        0;
-}
-
-
-/* =========================================================
-   FILTER HEADER
-   ========================================================= */
-
-.transaction-filter-header {
-
-    padding:
-        24px 28px 20px;
-
-    border-bottom:
-        1px solid var(--sf-border-light);
-}
-
-.transaction-filter-header h2 {
-
-    margin:
-        0;
-
-    color:
-        var(--sf-text-dark);
-
-    font-size:
-        18px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        -0.3px;
-}
-
-.transaction-filter-header p {
-
-    margin:
-        6px 0 0;
-}
-
-
-/* =========================================================
-   FILTER BUTTON AREA
-   ========================================================= */
-
-.transaction-filters {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        9px;
-
-    padding:
-        18px 28px;
-}
-
-
-/* =========================================================
-   SHARED MODULE BUTTON
-   ========================================================= */
-
-.sf-layout .sf-btn {
-
-    min-height:
-        40px;
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    gap:
-        7px;
-
-    padding:
-        0 16px;
-
-    border:
-        1px solid transparent;
-
-    border-radius:
-        9px;
-
-    background:
-        transparent;
-
-    cursor:
-        pointer;
-
-    font-size:
-        11px;
-
-    font-weight:
-        700;
-
-    transition:
-        background-color var(--sf-transition),
-        border-color var(--sf-transition),
-        color var(--sf-transition),
-        transform var(--sf-transition);
-}
-
-
-/* =========================================================
-   PRIMARY MODULE BUTTON
-   ========================================================= */
-
-.sf-layout .sf-btn:not(.secondary) {
-
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #1d4ed8
-        );
-
-    border-color:
-        #2563eb;
-
-    color:
-        #ffffff;
-
-    box-shadow:
-        0 5px 14px rgba(37,99,235,0.18);
-}
-
-.sf-layout .sf-btn:not(.secondary):hover {
-
-    transform:
-        translateY(-1px);
-
-    box-shadow:
-        0 8px 18px rgba(37,99,235,0.23);
-}
-
-
-/* =========================================================
-   SECONDARY BUTTON
-   ========================================================= */
-
-.sf-layout .sf-btn.secondary {
-
-    background:
-        #ffffff;
-
-    border-color:
-        var(--sf-border);
-
-    color:
-        var(--sf-text);
-}
-
-.sf-layout .sf-btn.secondary:hover {
-
-    background:
-        var(--sf-blue-soft);
-
-    border-color:
-        #bfdbfe;
-
-    color:
-        var(--sf-blue);
-}
-
-
-/* =========================================================
-   TRANSACTION FILTER ACTIVE
-   ========================================================= */
-
-.sf-layout .transaction-filter.active {
-
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #1d4ed8
-        );
-
-    border-color:
-        #2563eb;
-
-    color:
-        #ffffff;
-
-    box-shadow:
-        0 5px 14px rgba(37,99,235,0.18);
-}
-
-.sf-layout .transaction-filter.active:hover {
-
-    color:
-        #ffffff;
-
-    background:
-        linear-gradient(
-            135deg,
-            #1d4ed8,
-            #1e40af
-        );
-}
-
-
-/* =========================================================
-   TRANSACTION TABLE CARD
-   ========================================================= */
-
-.transaction-table-card {
-
-    margin-top:
-        22px;
-}
-
-
-/* =========================================================
-   TABLE HEADER
-   ========================================================= */
-
-.transaction-table-header {
-
-    min-height:
-        92px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        20px;
-
-    padding:
-        20px 28px;
-
-    border-bottom:
-        1px solid var(--sf-border-light);
-}
-
-.transaction-table-header h2 {
-
-    margin:
-        0;
-
-    color:
-        var(--sf-text-dark);
-
-    font-size:
-        18px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        -0.3px;
-}
-
-.transaction-table-header p {
-
-    margin:
-        5px 0 0;
-}
-
-
-/* =========================================================
-   TRANSACTION COUNT
-   ========================================================= */
-
-.transaction-count {
-
-    min-width:
-        42px;
-
-    min-height:
-        32px;
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    padding:
-        0 10px;
-
-    border:
-        1px solid #dbeafe;
-
-    border-radius:
-        999px;
-
-    background:
-        var(--sf-blue-soft);
-
-    color:
-        var(--sf-blue);
-
-    font-size:
-        10px;
-
-    font-weight:
-        800;
-}
-
-
-/* =========================================================
-   TABLE WRAPPER
-   ========================================================= */
-
-.sf-layout .sf-table-wrap {
-
-    width:
-        100%;
-
-    overflow-x:
-        auto;
-
-    scrollbar-width:
-        thin;
-
-    scrollbar-color:
-        #cbd5e1
-        transparent;
-}
-
-.sf-layout .sf-table-wrap::-webkit-scrollbar {
-    height:
-        6px;
-}
-
-.sf-layout .sf-table-wrap::-webkit-scrollbar-track {
-    background:
-        transparent;
-}
-
-.sf-layout .sf-table-wrap::-webkit-scrollbar-thumb {
-
-    background:
-        #cbd5e1;
-
-    border-radius:
-        20px;
-}
-
-
-/* =========================================================
-   TRANSACTION TABLE
-   ========================================================= */
-
-.sf-layout .transaction-table {
-
-    width:
-        100%;
-
-    min-width:
-        900px;
-
-    border-collapse:
-        collapse;
-
-    table-layout:
-        auto;
-}
-
-
-/* =========================================================
-   TABLE HEAD
-   ========================================================= */
-
-.sf-layout .transaction-table thead {
-
-    background:
-        #f8fafc;
-}
-
-.sf-layout .transaction-table th {
-
-    height:
-        48px;
-
-    padding:
-        0 20px;
-
-    border-bottom:
-        1px solid var(--sf-border);
-
-    color:
-        #64748b;
-
-    text-align:
-        left;
-
-    font-size:
-        10px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        0.07em;
-
-    text-transform:
-        uppercase;
-
-    white-space:
-        nowrap;
-}
-
-
-/* =========================================================
-   TABLE BODY
-   ========================================================= */
-
-.sf-layout .transaction-table td {
-
-    min-height:
-        58px;
-
-    padding:
-        14px 20px;
-
-    border-bottom:
-        1px solid var(--sf-border-light);
-
-    color:
-        var(--sf-text);
-
-    font-size:
-        11px;
-
-    vertical-align:
-        middle;
-
-    white-space:
-        nowrap;
-}
-
-.sf-layout .transaction-table tbody tr {
-
-    transition:
-        background-color var(--sf-transition);
-}
-
-.sf-layout .transaction-table tbody tr:hover {
-
-    background:
-        #f8fafc;
-}
-
-.sf-layout .transaction-table tbody tr:last-child td {
-    border-bottom:
-        0;
-}
-
-
-/* =========================================================
-   EMPTY / LOADING STATE
-   ========================================================= */
-
-.sf-layout .sf-empty {
-
-    padding:
-        58px 20px !important;
-
-    color:
-        var(--sf-muted);
-
-    text-align:
-        center;
-
-    font-size:
-        12px;
-
-    font-weight:
-        600;
-}
-
-
-/* =========================================================
-   TRANSACTION TYPE BADGES
-   ========================================================= */
-
-.sf-layout .transaction-type {
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    min-height:
-        25px;
-
-    padding:
-        0 9px;
-
-    border-radius:
-        999px;
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        0.04em;
-}
-
-.sf-layout .transaction-type.stock-in {
-
-    background:
-        var(--sf-success-soft);
-
-    color:
-        #15803d;
-}
-
-.sf-layout .transaction-type.stock-out {
-
-    background:
-        var(--sf-danger-soft);
-
-    color:
-        #b91c1c;
-}
-
-
-/* =========================================================
-   TABLE EMPHASIS
-   ========================================================= */
-
-.sf-layout .transaction-table .reference {
-
-    color:
-        var(--sf-blue);
-
-    font-weight:
-        700;
-}
-
-.sf-layout .transaction-table .product-name {
-
-    color:
-        var(--sf-text-dark);
-
-    font-weight:
-        700;
-}
-
-.sf-layout .transaction-table .quantity {
-
-    color:
-        var(--sf-text-dark);
-
-    font-weight:
-        800;
-}
-
-.sf-layout .transaction-table .total {
-
-    color:
-        var(--sf-text-dark);
-
-    font-weight:
-        800;
-}
-
-
-/* =========================================================
-   FOCUS STATES
-   ========================================================= */
-
-.sf-layout button:focus-visible,
-.sf-layout a:focus-visible {
-
-    outline:
-        2px solid rgba(37,99,235,0.35);
-
-    outline-offset:
-        2px;
-}
-
-
-/* =========================================================
-   =========================================================
-   RESPONSIVE
-   =========================================================
-   ========================================================= */
-
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 1100px) {
-
-    :root {
-        --sf-sidebar-width: 225px;
-    }
-
-    .sf-layout .sf-main {
-
-        width:
-            calc(100% - var(--sf-sidebar-width));
-
-        padding:
-            0 22px 32px;
-    }
-
-    .sf-layout .sf-brand {
-        padding:
-            0 22px;
-    }
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 900px) {
-
-    .sf-layout .sf-side {
-
-        transform:
-            translateX(-100%);
-
-        transition:
-            transform var(--sf-transition);
-
-        box-shadow:
-            15px 0 40px rgba(0,0,0,0.18);
-    }
-
-    .sf-layout .sf-side.open {
-        transform:
-            translateX(0);
-    }
-
-    .sf-layout .sf-main {
-
-        width:
-            100%;
-
-        margin-left:
-            0;
-
-        padding:
-            0 20px 30px;
-    }
-
-    .sf-layout .transaction-menu-btn {
-        display:
-            inline-flex;
-    }
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 650px) {
-
-    .sf-layout .sf-main {
-
-        padding:
-            0 15px 24px;
-    }
-
-    .sf-layout .sf-top {
-
-        min-height:
-            88px;
-
-        padding:
-            16px 0;
-    }
-
-    .sf-layout .sf-title {
-
-        font-size:
-            23px;
-    }
-
-    .sf-layout .sf-muted {
-
-        font-size:
-            11px;
-    }
-
-    .transaction-filter-header {
-
-        padding:
-            20px;
-    }
-
-    .transaction-filters {
-
-        flex-direction:
-            column;
-
-        align-items:
-            stretch;
-
-        padding:
-            15px 20px 20px;
-    }
-
-    .transaction-filters .sf-btn {
-
-        width:
-            100%;
-    }
-
-    .transaction-table-header {
-
-        padding:
-            18px 20px;
-    }
-
-    .transaction-table-header h2 {
-
-        font-size:
-            16px;
-    }
-
-    .transaction-count {
-
-        flex-shrink:
-            0;
-    }
-}
-
-
-/* =========================================================
-   VERY SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 420px) {
-
-    .sf-layout .sf-title {
-        font-size:
-            21px;
-    }
-
-    .transaction-table-header {
-
-        align-items:
-            flex-start;
-    }
-
-    .transaction-table-header {
-
-        gap:
-            10px;
-    }
-
-    .transaction-table-header p {
-        font-size:
-            10px;
-    }
-}
-
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-
-        animation-duration:
-            0.01ms !important;
-
-        animation-iteration-count:
-            1 !important;
-
-        transition-duration:
-            0.01ms !important;
-
-        scroll-behavior:
-            auto !important;
-    }
-}
+})();
