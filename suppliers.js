@@ -1,176 +1,423 @@
 /* =========================================================
-   STOCKFLOW — SUPPLIERS
-   suppliers.js
-   ========================================================= */
+   STOCKFLOW — SUPPLIERS MODULE
+   Supplier Management + CRUD
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
-
+(() => {
     "use strict";
 
 
     /* =====================================================
-       ELEMENTS
-       ===================================================== */
+       STATE
+    ===================================================== */
 
-    const form =
-        document.getElementById("supplierForm");
+    const state = {
+        suppliers: [],
 
-    const idInput =
-        document.getElementById("id");
+        editingId: null,
 
-    const nameInput =
-        document.getElementById("name");
-
-    const contactInput =
-        document.getElementById("contactPerson");
-
-    const phoneInput =
-        document.getElementById("phone");
-
-    const emailInput =
-        document.getElementById("email");
-
-    const addressInput =
-        document.getElementById("address");
-
-    const statusInput =
-        document.getElementById("status");
-
-    const saveButton =
-        document.getElementById("saveButton");
-
-    const clearButton =
-        document.getElementById("clearButton");
-
-    const rows =
-        document.getElementById("rows");
-
-    const alertBox =
-        document.getElementById("alert");
-
-    const menuButton =
-        document.querySelector("[data-menu]");
-
-    const sidebar =
-        document.querySelector(".sf-side");
+        loading: false,
+        saving: false,
+        deleting: false
+    };
 
 
-    /* =====================================================
-       API
-       ===================================================== */
-
-    function getAPI() {
-
-        if (
-            window.StockFlowAPI
-        ) {
-            return window.StockFlowAPI;
-        }
-
-        if (
-            window.API
-        ) {
-            return window.API;
-        }
-
-        return null;
-    }
+    let pendingDelete = null;
 
 
     /* =====================================================
        HELPERS
-       ===================================================== */
+    ===================================================== */
 
-    function clean(value) {
-
-        return String(
-            value ?? ""
-        ).trim();
-    }
+    const $ = (id) => document.getElementById(id);
 
 
-    function escapeHTML(value) {
+    const escapeHTML = (value) => {
 
-        return clean(value)
+        return String(value ?? "")
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-    }
+    };
 
 
-    function getValue(
-        object,
-        keys
-    ) {
+    const getSupplierId = (supplier) => {
 
-        for (
-            const key of keys
-        ) {
+        return (
+            supplier?.ID ??
+            supplier?.id ??
+            supplier?.supplierId ??
+            supplier?.supplier_id ??
+            ""
+        );
+    };
 
-            if (
-                object &&
-                object[key] !== undefined &&
-                object[key] !== null
-            ) {
 
-                return object[key];
-            }
+    const getSupplierName = (supplier) => {
+
+        return (
+            supplier?.NAME ??
+            supplier?.name ??
+            supplier?.supplierName ??
+            ""
+        );
+    };
+
+
+    const getContactPerson = (supplier) => {
+
+        return (
+            supplier?.CONTACT_PERSON ??
+            supplier?.contactPerson ??
+            supplier?.contact_person ??
+            ""
+        );
+    };
+
+
+    const getPhone = (supplier) => {
+
+        return (
+            supplier?.PHONE ??
+            supplier?.phone ??
+            ""
+        );
+    };
+
+
+    const getEmail = (supplier) => {
+
+        return (
+            supplier?.EMAIL ??
+            supplier?.email ??
+            ""
+        );
+    };
+
+
+    const getAddress = (supplier) => {
+
+        return (
+            supplier?.ADDRESS ??
+            supplier?.address ??
+            ""
+        );
+    };
+
+
+    const getStatus = (supplier) => {
+
+        return String(
+            supplier?.STATUS ??
+            supplier?.status ??
+            "ACTIVE"
+        )
+            .trim()
+            .toUpperCase();
+    };
+
+
+    /* =====================================================
+       API RESPONSE NORMALIZATION
+    ===================================================== */
+
+    const extractSuppliers = (response) => {
+
+        if (!response) {
+            return [];
         }
 
-        return "";
-    }
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        if (Array.isArray(response.suppliers)) {
+            return response.suppliers;
+        }
+
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+
+        if (Array.isArray(response.rows)) {
+            return response.rows;
+        }
+
+        return [];
+    };
 
 
     /* =====================================================
        ALERT
-       ===================================================== */
+    ===================================================== */
 
-    function showAlert(
+    const showAlert = (
         message,
-        type = "info"
-    ) {
+        type = "success"
+    ) => {
 
-        if (!alertBox) {
+        const alert = $("alert");
+
+        if (!alert) {
             return;
         }
 
-        alertBox.textContent =
+        alert.textContent =
             message || "";
 
-        alertBox.className =
-            "sf-alert";
+        alert.className =
+            `sf-alert ${type} show`;
 
-        if (!message) {
+        window.clearTimeout(
+            showAlert.timeout
+        );
+
+        showAlert.timeout =
+            window.setTimeout(
+                () => {
+                    hideAlert();
+                },
+                4500
+            );
+    };
+
+
+    const hideAlert = () => {
+
+        const alert = $("alert");
+
+        if (!alert) {
             return;
         }
 
-        alertBox.classList.add(
-            "show",
-            type
-        );
+        alert.textContent = "";
 
-        clearTimeout(
-            showAlert.timer
-        );
-
-        showAlert.timer =
-            setTimeout(() => {
-
-                alertBox.classList.remove(
-                    "show"
-                );
-
-            }, 4000);
-    }
+        alert.className =
+            "sf-alert";
+    };
 
 
     /* =====================================================
-       LOADING
-       ===================================================== */
+       SIDEBAR
+    ===================================================== */
 
-    function showLoading() {
+    const setupSidebar = () => {
+
+        const button =
+            document.querySelector(
+                "[data-menu]"
+            );
+
+        const sidebar =
+            document.querySelector(
+                ".sf-side"
+            );
+
+        if (!button || !sidebar) {
+            return;
+        }
+
+
+        const overlay =
+            document.createElement("div");
+
+        overlay.className =
+            "sf-mobile-overlay";
+
+        document.body.appendChild(
+            overlay
+        );
+
+
+        const openMenu = () => {
+
+            sidebar.classList.add(
+                "open"
+            );
+
+            overlay.classList.add(
+                "show"
+            );
+
+            document.body.style.overflow =
+                "hidden";
+        };
+
+
+        const closeMenu = () => {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+            overlay.classList.remove(
+                "show"
+            );
+
+            document.body.style.overflow =
+                "";
+        };
+
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    sidebar.classList.contains(
+                        "open"
+                    )
+                ) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+            }
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeMenu
+        );
+
+
+        sidebar
+            .querySelectorAll("a")
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+            });
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape"
+                ) {
+                    closeMenu();
+                }
+            }
+        );
+    };
+
+
+    /* =====================================================
+       AUTHENTICATION
+    ===================================================== */
+
+    const initializeAuthentication =
+        async () => {
+
+            if (
+                !window.StockFlowAuth ||
+                typeof
+                window.StockFlowAuth.requireAuth !==
+                    "function"
+            ) {
+                return true;
+            }
+
+            const user =
+                await window.StockFlowAuth
+                    .requireAuth();
+
+            return Boolean(user);
+        };
+
+
+    /* =====================================================
+       LOAD SUPPLIERS
+    ===================================================== */
+
+    const loadSuppliers =
+        async () => {
+
+            if (
+                !window.StockFlowAPI ||
+                typeof
+                window.StockFlowAPI.listSuppliers !==
+                    "function"
+            ) {
+
+                throw new Error(
+                    "Supplier API is not available."
+                );
+            }
+
+
+            state.loading = true;
+
+
+            renderLoading();
+
+
+            try {
+
+                const response =
+                    await window.StockFlowAPI
+                        .listSuppliers();
+
+
+                if (
+                    response &&
+                    response.success === false
+                ) {
+
+                    throw new Error(
+                        response.message ||
+                        "Unable to load suppliers."
+                    );
+                }
+
+
+                state.suppliers =
+                    extractSuppliers(
+                        response
+                    );
+
+
+                renderSuppliers();
+
+
+            } catch (error) {
+
+                console.error(
+                    "StockFlow suppliers load error:",
+                    error
+                );
+
+
+                renderError(
+                    error.message ||
+                    "Unable to load suppliers."
+                );
+
+
+                throw error;
+
+
+            } finally {
+
+                state.loading = false;
+            }
+        };
+
+
+    /* =====================================================
+       LOADING STATE
+    ===================================================== */
+
+    const renderLoading = () => {
+
+        const rows = $("rows");
 
         if (!rows) {
             return;
@@ -186,14 +433,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
             </tr>
         `;
-    }
+    };
 
 
     /* =====================================================
-       EMPTY
-       ===================================================== */
+       ERROR STATE
+    ===================================================== */
 
-    function showEmpty() {
+    const renderError = (
+        message
+    ) => {
+
+        const rows = $("rows");
 
         if (!rows) {
             return;
@@ -205,922 +456,814 @@ document.addEventListener("DOMContentLoaded", () => {
                     colspan="6"
                     class="sf-empty"
                 >
-                    No suppliers found.
+                    <strong>
+                        Unable to load suppliers.
+                    </strong>
+                    <br>
+                    <span>
+                        ${escapeHTML(
+                            message ||
+                            "Please try again."
+                        )}
+                    </span>
                 </td>
             </tr>
         `;
-    }
+    };
 
 
     /* =====================================================
-       CLEAR FORM
-       ===================================================== */
+       RENDER SUPPLIERS
+    ===================================================== */
 
-    function clearForm() {
+    const renderSuppliers = () => {
 
-        if (form) {
-            form.reset();
-        }
+        const rows = $("rows");
 
-        if (idInput) {
-            idInput.value = "";
-        }
-
-        if (statusInput) {
-            statusInput.value = "ACTIVE";
-        }
-
-        if (saveButton) {
-            saveButton.textContent =
-                "Save Supplier";
-        }
-
-        if (nameInput) {
-            nameInput.focus();
-        }
-    }
-
-
-    /* =====================================================
-       EXTRACT SUPPLIER LIST
-       ===================================================== */
-
-    function normalizeSuppliers(
-        response
-    ) {
-
-        if (
-            Array.isArray(response)
-        ) {
-            return response;
-        }
-
-        if (
-            Array.isArray(
-                response?.suppliers
-            )
-        ) {
-            return response.suppliers;
-        }
-
-        if (
-            Array.isArray(
-                response?.data
-            )
-        ) {
-            return response.data;
-        }
-
-        if (
-            Array.isArray(
-                response?.items
-            )
-        ) {
-            return response.items;
-        }
-
-        if (
-            Array.isArray(
-                response?.records
-            )
-        ) {
-            return response.records;
-        }
-
-        return [];
-    }
-
-
-    /* =====================================================
-       LOAD SUPPLIERS
-       ===================================================== */
-
-    async function loadSuppliers() {
-
-        const API =
-            getAPI();
-
-        if (
-            !API ||
-            typeof API.listSuppliers !==
-                "function"
-        ) {
-
-            showAlert(
-                "Supplier API is not available.",
-                "error"
-            );
-
+        if (!rows) {
             return;
         }
 
-        showLoading();
 
-        try {
-
-            const response =
-                await API.listSuppliers();
-
-            console.log(
-                "StockFlow suppliers response:",
-                response
-            );
-
-            if (
-                response &&
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response.message ||
-                    "Unable to load suppliers."
-                );
-            }
-
-            const suppliers =
-                normalizeSuppliers(
-                    response
-                );
-
-            renderSuppliers(
-                suppliers
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Supplier loading error:",
-                error
-            );
+        if (!state.suppliers.length) {
 
             rows.innerHTML = `
                 <tr>
                     <td
                         colspan="6"
                         class="sf-empty"
-                        style="color:#b42336;"
                     >
-                        ${escapeHTML(
-                            error?.message ||
-                            "Unable to load suppliers."
-                        )}
+                        No suppliers found.
                     </td>
                 </tr>
             `;
 
-            showAlert(
-                error?.message ||
-                "Unable to load suppliers.",
-                "error"
-            );
-        }
-    }
-
-
-    /* =====================================================
-       RENDER SUPPLIERS
-       ===================================================== */
-
-    function renderSuppliers(
-        suppliers
-    ) {
-
-        if (!suppliers.length) {
-
-            showEmpty();
-
             return;
         }
 
+
         rows.innerHTML =
-            suppliers.map(
-                supplier => {
-
-                    const id =
-                        getValue(
-                            supplier,
-                            [
-                                "id",
-                                "supplier_id",
-                                "supplierId"
-                            ]
-                        );
-
-                    const name =
-                        getValue(
-                            supplier,
-                            [
-                                "name",
-                                "supplier_name",
-                                "supplierName"
-                            ]
-                        );
-
-                    const contact =
-                        getValue(
-                            supplier,
-                            [
-                                "contactPerson",
-                                "contact_person",
-                                "contact",
-                                "contactName"
-                            ]
-                        );
-
-                    const phone =
-                        getValue(
-                            supplier,
-                            [
-                                "phone",
-                                "phoneNumber",
-                                "phone_number"
-                            ]
-                        );
-
-                    const email =
-                        getValue(
-                            supplier,
-                            [
-                                "email",
-                                "emailAddress"
-                            ]
-                        );
-
-                    const status =
-                        clean(
-                            getValue(
-                                supplier,
-                                [
-                                    "status",
-                                    "supplier_status"
-                                ]
-                            )
-                        ).toUpperCase() ||
-                        "ACTIVE";
+            state.suppliers
+                .map(
+                    renderSupplierRow
+                )
+                .join("");
 
 
-                    const statusClass =
-                        status === "ACTIVE"
-                            ? "active"
-                            : "inactive";
-
-
-                    return `
-                        <tr>
-
-                            <td>
-                                <span
-                                    class="supplier-name"
-                                >
-                                    ${escapeHTML(
-                                        name || "—"
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="supplier-contact"
-                                >
-                                    ${escapeHTML(
-                                        contact || "—"
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="supplier-phone"
-                                >
-                                    ${escapeHTML(
-                                        phone || "—"
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="supplier-email"
-                                >
-                                    ${escapeHTML(
-                                        email || "—"
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-                                <span
-                                    class="supplier-status ${statusClass}"
-                                >
-                                    ${escapeHTML(
-                                        status
-                                    )}
-                                </span>
-                            </td>
-
-
-                            <td>
-
-                                <div
-                                    class="supplier-actions"
-                                >
-
-                                    <button
-                                        type="button"
-                                        class="supplier-action"
-                                        data-action="edit"
-                                        data-id="${escapeHTML(id)}"
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        class="supplier-action delete"
-                                        data-action="delete"
-                                        data-id="${escapeHTML(id)}"
-                                    >
-                                        Delete
-                                    </button>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-                    `;
-
-                }
-            ).join("");
-    }
+        bindRowActions();
+    };
 
 
     /* =====================================================
-       FIND SUPPLIER
-       ===================================================== */
+       SUPPLIER ROW
+    ===================================================== */
 
-    async function findSupplier(
-        id
-    ) {
+    const renderSupplierRow =
+        (supplier) => {
 
-        const API =
-            getAPI();
+            const id =
+                getSupplierId(
+                    supplier
+                );
 
-        if (
-            !API ||
-            typeof API.listSuppliers !==
-                "function"
-        ) {
-            return null;
-        }
+            const name =
+                getSupplierName(
+                    supplier
+                ) ||
+                "Unnamed Supplier";
 
-        const response =
-            await API.listSuppliers();
+            const contact =
+                getContactPerson(
+                    supplier
+                ) ||
+                "—";
 
-        const suppliers =
-            normalizeSuppliers(
-                response
-            );
+            const phone =
+                getPhone(
+                    supplier
+                ) ||
+                "—";
 
-        return suppliers.find(
-            supplier => {
+            const email =
+                getEmail(
+                    supplier
+                ) ||
+                "—";
 
-                const supplierId =
-                    getValue(
-                        supplier,
-                        [
-                            "id",
-                            "supplier_id",
-                            "supplierId"
-                        ]
-                    );
+            const status =
+                getStatus(
+                    supplier
+                );
 
-                return String(
-                    supplierId
-                ) === String(id);
 
-            }
-        ) || null;
-    }
+            const statusClass =
+                status === "ACTIVE"
+                    ? "active"
+                    : "inactive";
+
+
+            return `
+                <tr>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(name)}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${escapeHTML(contact)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(phone)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(email)}
+                    </td>
+
+                    <td>
+                        <span
+                            class="sf-status ${statusClass}"
+                        >
+                            ${escapeHTML(status)}
+                        </span>
+                    </td>
+
+                    <td>
+
+                        <div
+                            class="sf-actions"
+                        >
+
+                            <button
+                                type="button"
+                                class="sf-action"
+                                data-action="edit"
+                                data-id="${escapeHTML(id)}"
+                                title="Edit supplier"
+                                aria-label="Edit ${escapeHTML(name)}"
+                            >
+                                ✎
+                            </button>
+
+                            <button
+                                type="button"
+                                class="sf-action delete"
+                                data-action="delete"
+                                data-id="${escapeHTML(id)}"
+                                title="Delete supplier"
+                                aria-label="Delete ${escapeHTML(name)}"
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+            `;
+        };
+
+
+    /* =====================================================
+       ROW ACTIONS
+    ===================================================== */
+
+    const bindRowActions = () => {
+
+        document
+            .querySelectorAll(
+                '[data-action="edit"]'
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const supplier =
+                            state.suppliers.find(
+                                item =>
+                                    String(
+                                        getSupplierId(
+                                            item
+                                        )
+                                    ) ===
+                                    String(
+                                        button.dataset.id
+                                    )
+                            );
+
+
+                        if (supplier) {
+
+                            editSupplier(
+                                supplier
+                            );
+                        }
+                    }
+                );
+            });
+
+
+        document
+            .querySelectorAll(
+                '[data-action="delete"]'
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const supplier =
+                            state.suppliers.find(
+                                item =>
+                                    String(
+                                        getSupplierId(
+                                            item
+                                        )
+                                    ) ===
+                                    String(
+                                        button.dataset.id
+                                    )
+                            );
+
+
+                        if (supplier) {
+
+                            deleteSupplier(
+                                supplier
+                            );
+                        }
+                    }
+                );
+            });
+    };
 
 
     /* =====================================================
        EDIT SUPPLIER
-       ===================================================== */
+    ===================================================== */
 
-    async function editSupplier(
-        id
-    ) {
+    const editSupplier =
+        (supplier) => {
 
-        try {
-
-            const supplier =
-                await findSupplier(
-                    id
+            state.editingId =
+                String(
+                    getSupplierId(
+                        supplier
+                    )
                 );
 
-            if (!supplier) {
+
+            $("id").value =
+                getSupplierId(
+                    supplier
+                );
+
+            $("name").value =
+                getSupplierName(
+                    supplier
+                );
+
+            $("contactPerson").value =
+                getContactPerson(
+                    supplier
+                );
+
+            $("phone").value =
+                getPhone(
+                    supplier
+                );
+
+            $("email").value =
+                getEmail(
+                    supplier
+                );
+
+            $("address").value =
+                getAddress(
+                    supplier
+                );
+
+            $("status").value =
+                getStatus(
+                    supplier
+                );
+
+
+            $("saveButton").textContent =
+                "Update Supplier";
+
+
+            document
+                .querySelector(
+                    ".sf-card form"
+                )
+                ?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+
+            $("name")?.focus();
+        };
+
+
+    /* =====================================================
+       CLEAR FORM
+    ===================================================== */
+
+    const clearForm = () => {
+
+        const form =
+            $("supplierForm");
+
+        if (!form) {
+            return;
+        }
+
+
+        form.reset();
+
+
+        $("id").value = "";
+
+        $("status").value =
+            "ACTIVE";
+
+
+        state.editingId =
+            null;
+
+
+        $("saveButton").textContent =
+            "Save Supplier";
+
+
+        hideAlert();
+    };
+
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
+
+    const validateSupplier =
+        () => {
+
+            const name =
+                $("name")
+                    .value
+                    .trim();
+
+            const phone =
+                $("phone")
+                    .value
+                    .trim();
+
+            const email =
+                $("email")
+                    .value
+                    .trim();
+
+
+            if (!name) {
 
                 showAlert(
-                    "Supplier not found.",
+                    "Supplier name is required.",
+                    "error"
+                );
+
+                $("name").focus();
+
+                return false;
+            }
+
+
+            if (name.length > 100) {
+
+                showAlert(
+                    "Supplier name cannot exceed 100 characters.",
+                    "error"
+                );
+
+                $("name").focus();
+
+                return false;
+            }
+
+
+            if (
+                phone &&
+                !/^[0-9+\-\s()]{7,20}$/.test(
+                    phone
+                )
+            ) {
+
+                showAlert(
+                    "Please enter a valid phone number.",
+                    "error"
+                );
+
+                $("phone").focus();
+
+                return false;
+            }
+
+
+            if (
+                email &&
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    .test(email)
+            ) {
+
+                showAlert(
+                    "Please enter a valid email address.",
+                    "error"
+                );
+
+                $("email").focus();
+
+                return false;
+            }
+
+
+            return true;
+        };
+
+
+    /* =====================================================
+       SAVE SUPPLIER
+    ===================================================== */
+
+    const saveSupplier =
+        async (event) => {
+
+            event.preventDefault();
+
+
+            if (state.saving) {
+                return;
+            }
+
+
+            if (!validateSupplier()) {
+                return;
+            }
+
+
+            if (
+                !window.StockFlowAPI ||
+                typeof
+                window.StockFlowAPI.saveSupplier !==
+                    "function"
+            ) {
+
+                showAlert(
+                    "Supplier save API is not available.",
                     "error"
                 );
 
                 return;
             }
 
-            idInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "id",
-                        "supplier_id",
-                        "supplierId"
-                    ]
+
+            const payload = {
+
+                id:
+                    $("id").value ||
+                    state.editingId ||
+                    "",
+
+                name:
+                    $("name")
+                        .value
+                        .trim(),
+
+                contactPerson:
+                    $("contactPerson")
+                        .value
+                        .trim(),
+
+                phone:
+                    $("phone")
+                        .value
+                        .trim(),
+
+                email:
+                    $("email")
+                        .value
+                        .trim(),
+
+                address:
+                    $("address")
+                        .value
+                        .trim(),
+
+                status:
+                    $("status")
+                        .value
+            };
+
+
+            state.saving = true;
+
+
+            const button =
+                $("saveButton");
+
+
+            const originalText =
+                state.editingId
+                    ? "Update Supplier"
+                    : "Save Supplier";
+
+
+            button.disabled = true;
+
+            button.innerHTML = `
+                <span class="sf-loading">
+                    <span class="sf-spinner"></span>
+                    Saving...
+                </span>
+            `;
+
+
+            hideAlert();
+
+
+            try {
+
+                /*
+                 * IMPORTANT:
+                 * This is the actual module/API connection.
+                 *
+                 * api.js must expose:
+                 * StockFlowAPI.saveSupplier(payload)
+                 */
+
+                const response =
+                    await window.StockFlowAPI
+                        .saveSupplier(
+                            payload
+                        );
+
+
+                if (
+                    response &&
+                    response.success === false
+                ) {
+
+                    throw new Error(
+                        response.message ||
+                        "Unable to save supplier."
+                    );
+                }
+
+
+                const wasEditing =
+                    Boolean(
+                        state.editingId
+                    );
+
+
+                clearForm();
+
+
+                showAlert(
+                    response?.message ||
+                    (
+                        wasEditing
+                            ? "Supplier updated successfully."
+                            : "Supplier saved successfully."
+                    ),
+                    "success"
                 );
 
-            nameInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "name",
-                        "supplier_name",
-                        "supplierName"
-                    ]
+
+                await loadSuppliers();
+
+
+            } catch (error) {
+
+                console.error(
+                    "StockFlow supplier save error:",
+                    error
                 );
 
-            contactInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "contactPerson",
-                        "contact_person",
-                        "contact"
-                    ]
+
+                showAlert(
+                    error.message ||
+                    "Unable to save supplier.",
+                    "error"
                 );
 
-            phoneInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "phone",
-                        "phoneNumber",
-                        "phone_number"
-                    ]
-                );
 
-            emailInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "email",
-                        "emailAddress"
-                    ]
-                );
+            } finally {
 
-            addressInput.value =
-                getValue(
-                    supplier,
-                    [
-                        "address",
-                        "supplier_address"
-                    ]
-                );
-
-            statusInput.value =
-                clean(
-                    getValue(
-                        supplier,
-                        [
-                            "status",
-                            "supplier_status"
-                        ]
-                    )
-                ).toUpperCase() ||
-                "ACTIVE";
-
-            saveButton.textContent =
-                "Update Supplier";
-
-            nameInput.focus();
-
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Edit supplier error:",
-                error
-            );
-
-            showAlert(
-                error?.message ||
-                "Unable to load supplier.",
-                "error"
-            );
-        }
-    }
+                state.saving = false;
 
 
-    /* =====================================================
-       SAVE SUPPLIER
-       ===================================================== */
-
-    async function saveSupplier(
-        event
-    ) {
-
-        event.preventDefault();
-
-        const API =
-            getAPI();
-
-        if (
-            !API ||
-            typeof API.saveSupplier !==
-                "function"
-        ) {
-
-            showAlert(
-                "Supplier save API is not available.",
-                "error"
-            );
-
-            return;
-        }
-
-
-        const name =
-            clean(
-                nameInput.value
-            );
-
-        if (!name) {
-
-            showAlert(
-                "Supplier name is required.",
-                "error"
-            );
-
-            nameInput.focus();
-
-            return;
-        }
-
-
-        const payload = {
-
-            id:
-                clean(
-                    idInput.value
-                ),
-
-            name:
-                name,
-
-            contactPerson:
-                clean(
-                    contactInput.value
-                ),
-
-            phone:
-                clean(
-                    phoneInput.value
-                ),
-
-            email:
-                clean(
-                    emailInput.value
-                ),
-
-            address:
-                clean(
-                    addressInput.value
-                ),
-
-            status:
-                clean(
-                    statusInput.value
-                ).toUpperCase()
-
-        };
-
-
-        const isEdit =
-            Boolean(
-                payload.id
-            );
-
-
-        if (saveButton) {
-
-            saveButton.disabled =
-                true;
-
-            saveButton.textContent =
-                isEdit
-                    ? "Updating..."
-                    : "Saving...";
-        }
-
-
-        try {
-
-            const response =
-                await API.saveSupplier(
-                    payload
-                );
-
-            console.log(
-                "Save supplier response:",
-                response
-            );
-
-            if (
-                response &&
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response.message ||
-                    "Unable to save supplier."
-                );
-            }
-
-            showAlert(
-                isEdit
-                    ? "Supplier updated successfully."
-                    : "Supplier saved successfully.",
-                "success"
-            );
-
-            clearForm();
-
-            await loadSuppliers();
-
-        } catch (error) {
-
-            console.error(
-                "Save supplier error:",
-                error
-            );
-
-            showAlert(
-                error?.message ||
-                "Unable to save supplier.",
-                "error"
-            );
-
-        } finally {
-
-            if (saveButton) {
-
-                saveButton.disabled =
+                button.disabled =
                     false;
 
-                saveButton.textContent =
-                    "Save Supplier";
+
+                button.textContent =
+                    state.editingId
+                        ? "Update Supplier"
+                        : originalText;
             }
-        }
-    }
+        };
 
 
     /* =====================================================
        DELETE SUPPLIER
-       ===================================================== */
+    ===================================================== */
 
-    async function deleteSupplier(
-        id
-    ) {
+    const deleteSupplier =
+        async (supplier) => {
 
-        const API =
-            getAPI();
-
-        if (
-            !API ||
-            typeof API.deleteSupplier !==
-                "function"
-        ) {
-
-            showAlert(
-                "Supplier delete API is not available.",
-                "error"
-            );
-
-            return;
-        }
-
-
-        const confirmed =
-            window.confirm(
-                "Are you sure you want to delete this supplier?"
-            );
-
-        if (!confirmed) {
-            return;
-        }
-
-
-        try {
-
-            const response =
-                await API.deleteSupplier(
-                    id
-                );
-
-            console.log(
-                "Delete supplier response:",
-                response
-            );
-
-            if (
-                response &&
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response.message ||
-                    "Unable to delete supplier."
-                );
+            if (state.deleting) {
+                return;
             }
 
-            showAlert(
-                "Supplier deleted successfully.",
-                "success"
-            );
 
-            await loadSuppliers();
-
-        } catch (error) {
-
-            console.error(
-                "Delete supplier error:",
-                error
-            );
-
-            showAlert(
-                error?.message ||
-                "Unable to delete supplier.",
-                "error"
-            );
-        }
-    }
+            const id =
+                getSupplierId(
+                    supplier
+                );
 
 
-    /* =====================================================
-       TABLE ACTIONS
-       ===================================================== */
-
-    if (rows) {
-
-        rows.addEventListener(
-            "click",
-            async event => {
-
-                const button =
-                    event.target.closest(
-                        "[data-action]"
-                    );
-
-                if (!button) {
-                    return;
-                }
-
-                const action =
-                    button.dataset.action;
-
-                const id =
-                    button.dataset.id;
-
-                if (!id) {
-                    return;
-                }
-
-                if (
-                    action === "edit"
-                ) {
-
-                    await editSupplier(
-                        id
-                    );
-
-                    return;
-                }
-
-                if (
-                    action === "delete"
-                ) {
-
-                    await deleteSupplier(
-                        id
-                    );
-                }
-
-            }
-        );
-    }
+            const name =
+                getSupplierName(
+                    supplier
+                ) ||
+                "this supplier";
 
 
-    /* =====================================================
-       FORM EVENTS
-       ===================================================== */
-
-    if (form) {
-
-        form.addEventListener(
-            "submit",
-            saveSupplier
-        );
-    }
-
-
-    if (clearButton) {
-
-        clearButton.addEventListener(
-            "click",
-            () => {
-
-                clearForm();
+            if (!id) {
 
                 showAlert(
-                    "",
-                    "info"
+                    "Supplier ID is missing.",
+                    "error"
                 );
+
+                return;
             }
-        );
-    }
+
+
+            const confirmed =
+                window.confirm(
+                    `Delete ${name}?\n\nThis action cannot be undone.`
+                );
+
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            if (
+                !window.StockFlowAPI ||
+                typeof
+                window.StockFlowAPI.deleteSupplier !==
+                    "function"
+            ) {
+
+                showAlert(
+                    "Supplier delete API is not available.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            state.deleting = true;
+
+
+            try {
+
+                const response =
+                    await window.StockFlowAPI
+                        .deleteSupplier(
+                            id
+                        );
+
+
+                if (
+                    response &&
+                    response.success === false
+                ) {
+
+                    throw new Error(
+                        response.message ||
+                        "Unable to delete supplier."
+                    );
+                }
+
+
+                showAlert(
+                    response?.message ||
+                    `${name} deleted successfully.`,
+                    "success"
+                );
+
+
+                await loadSuppliers();
+
+
+            } catch (error) {
+
+                console.error(
+                    "StockFlow supplier delete error:",
+                    error
+                );
+
+
+                showAlert(
+                    error.message ||
+                    "Unable to delete supplier.",
+                    "error"
+                );
+
+
+            } finally {
+
+                state.deleting = false;
+            }
+        };
 
 
     /* =====================================================
-       MOBILE MENU
-       ===================================================== */
+       EVENTS
+    ===================================================== */
 
-    if (
-        menuButton &&
-        sidebar
-    ) {
+    const setupEvents = () => {
 
-        menuButton.addEventListener(
-            "click",
-            () => {
-
-                sidebar.classList.toggle(
-                    "open"
-                );
-            }
-        );
+        $("supplierForm")
+            ?.addEventListener(
+                "submit",
+                saveSupplier
+            );
 
 
-        document.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    window.innerWidth > 800
-                ) {
-                    return;
-                }
-
-                if (
-                    !sidebar.classList.contains(
-                        "open"
-                    )
-                ) {
-                    return;
-                }
-
-                if (
-                    sidebar.contains(
-                        event.target
-                    ) ||
-                    menuButton.contains(
-                        event.target
-                    )
-                ) {
-                    return;
-                }
-
-                sidebar.classList.remove(
-                    "open"
-                );
-            }
-        );
-    }
+        $("clearButton")
+            ?.addEventListener(
+                "click",
+                clearForm
+            );
+    };
 
 
     /* =====================================================
        INITIALIZE
-       ===================================================== */
+    ===================================================== */
 
-    clearForm();
+    const initialize =
+        async () => {
 
-    loadSuppliers();
+            setupSidebar();
 
-});
+            setupEvents();
+
+
+            try {
+
+                const authenticated =
+                    await initializeAuthentication();
+
+
+                if (!authenticated) {
+                    return;
+                }
+
+
+                await loadSuppliers();
+
+
+            } catch (error) {
+
+                console.error(
+                    "StockFlow Suppliers initialization error:",
+                    error
+                );
+            }
+        };
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialize
+    );
+
+})();
