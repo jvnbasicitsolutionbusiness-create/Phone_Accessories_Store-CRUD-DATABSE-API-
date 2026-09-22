@@ -1,127 +1,404 @@
 /* =========================================================
    STOCKFLOW — PROFILE MODULE
+   Current authenticated user information
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
+(() => {
+
     "use strict";
-
-    const menuButton =
-        document.querySelector("[data-menu]");
-
-    const sidebar =
-        document.querySelector(".sf-side");
-
-    let overlay =
-        document.querySelector(".profile-overlay");
 
 
     /* =====================================================
-       MOBILE OVERLAY
+       HELPERS
     ===================================================== */
 
-    if (!overlay) {
-
-        overlay =
-            document.createElement("div");
-
-        overlay.className =
-            "profile-overlay";
-
-        document.body.appendChild(overlay);
-    }
+    const $ = (selector) =>
+        document.querySelector(selector);
 
 
-    function openMenu() {
+    const getValue = (user, ...keys) => {
 
-        sidebar?.classList.add("open");
-        overlay?.classList.add("active");
+        for (const key of keys) {
 
-        menuButton?.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-    }
+            const value = user?.[key];
 
-
-    function closeMenu() {
-
-        sidebar?.classList.remove("open");
-        overlay?.classList.remove("active");
-
-        menuButton?.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-    }
-
-
-    menuButton?.addEventListener(
-        "click",
-        () => {
-
-            const isOpen =
-                sidebar?.classList.contains("open");
-
-            if (isOpen) {
-                closeMenu();
-            } else {
-                openMenu();
-            }
-        }
-    );
-
-
-    overlay?.addEventListener(
-        "click",
-        closeMenu
-    );
-
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if (event.key === "Escape") {
-                closeMenu();
+            if (
+                value !== undefined &&
+                value !== null &&
+                String(value).trim() !== ""
+            ) {
+                return String(value).trim();
             }
 
         }
-    );
+
+        return "—";
+    };
+
+
+    /* =====================================================
+       USER DISPLAY
+    ===================================================== */
+
+    const populateProfile = (user) => {
+
+        if (!user) {
+            return;
+        }
+
+
+        const name = getValue(
+            user,
+            "name",
+            "fullName",
+            "full_name",
+            "NAME",
+            "FULL_NAME",
+            "username",
+            "USERNAME"
+        );
+
+
+        const role = getValue(
+            user,
+            "role",
+            "ROLE",
+            "position",
+            "POSITION",
+            "designation",
+            "DESIGNATION"
+        );
+
+
+        const email = getValue(
+            user,
+            "email",
+            "EMAIL"
+        );
+
+
+        const phone = getValue(
+            user,
+            "phone",
+            "PHONE",
+            "phoneNumber",
+            "PHONE_NUMBER",
+            "mobile",
+            "MOBILE"
+        );
+
+
+        const nameElement =
+            $("[data-user-name]");
+
+        const roleElement =
+            $("[data-user-role]");
+
+        const emailElement =
+            $("[data-user-email]");
+
+        const phoneElement =
+            $("[data-user-phone]");
+
+
+        if (nameElement) {
+            nameElement.textContent = name;
+        }
+
+        if (roleElement) {
+            roleElement.textContent = role;
+        }
+
+        if (emailElement) {
+            emailElement.textContent = email;
+        }
+
+        if (phoneElement) {
+            phoneElement.textContent = phone;
+        }
+    };
 
 
     /* =====================================================
        AUTHENTICATION
     ===================================================== */
 
-    try {
+    const initializeAuthentication = async () => {
 
         if (
-            typeof StockFlowAuth === "undefined"
+            !window.StockFlowAuth ||
+            typeof window.StockFlowAuth.requireAuth !== "function"
         ) {
-
-            console.error(
+            console.warn(
                 "StockFlowAuth is not available."
             );
 
-            return;
+            return null;
         }
 
 
-        if (
-            typeof StockFlowAuth.requireAuth !==
-            "function"
-        ) {
+        try {
+
+            const user =
+                await window.StockFlowAuth.requireAuth();
+
+            if (!user) {
+                return null;
+            }
+
+            return user;
+
+        } catch (error) {
 
             console.error(
-                "StockFlowAuth.requireAuth is not available."
+                "Profile authentication error:",
+                error
             );
 
+            return null;
+        }
+    };
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+    ===================================================== */
+
+    const setupMobileMenu = () => {
+
+        const menuButton =
+            document.querySelector("[data-menu]");
+
+        const sidebar =
+            document.querySelector(".sf-side");
+
+
+        if (!menuButton || !sidebar) {
             return;
         }
+
+
+        let overlay =
+            document.querySelector(".profile-sidebar-overlay");
+
+
+        if (!overlay) {
+
+            overlay =
+                document.createElement("div");
+
+            overlay.className =
+                "profile-sidebar-overlay";
+
+            document.body.appendChild(overlay);
+        }
+
+
+        const closeMenu = () => {
+
+            sidebar.classList.remove("open");
+            overlay.classList.remove("show");
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+            document.body.style.overflow = "";
+        };
+
+
+        menuButton.addEventListener(
+            "click",
+            () => {
+
+                const isOpen =
+                    sidebar.classList.toggle("open");
+
+                overlay.classList.toggle(
+                    "show",
+                    isOpen
+                );
+
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    String(isOpen)
+                );
+
+                document.body.style.overflow =
+                    isOpen
+                        ? "hidden"
+                        : "";
+            }
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeMenu
+        );
+
+
+        sidebar
+            .querySelectorAll("a")
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+            });
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (event.key === "Escape") {
+                    closeMenu();
+                }
+            }
+        );
+    };
+
+
+    /* =====================================================
+       PROFILE SIDEBAR MOBILE STYLES
+    ===================================================== */
+
+    const injectMobileStyles = () => {
+
+        if (
+            document.getElementById(
+                "profileMobileStyles"
+            )
+        ) {
+            return;
+        }
+
+
+        const style =
+            document.createElement("style");
+
+        style.id =
+            "profileMobileStyles";
+
+
+        style.textContent = `
+
+            @media (max-width: 850px) {
+
+                .sf-side {
+                    position: fixed !important;
+                    top: 0;
+                    left: 0;
+
+                    width: 280px !important;
+                    height: 100vh !important;
+
+                    z-index: 2000;
+
+                    transform: translateX(-100%);
+                    transition:
+                        transform 0.22s ease;
+
+                    overflow-y: auto;
+                }
+
+                .sf-side.open {
+                    transform: translateX(0);
+                }
+
+                .sf-side .sf-nav {
+                    display: flex;
+                }
+
+                .profile-sidebar-overlay {
+                    position: fixed;
+
+                    inset: 0;
+
+                    z-index: 1900;
+
+                    background:
+                        rgba(4, 13, 27, 0.55);
+
+                    opacity: 0;
+                    visibility: hidden;
+
+                    transition:
+                        opacity 0.22s ease,
+                        visibility 0.22s ease;
+                }
+
+                .profile-sidebar-overlay.show {
+                    opacity: 1;
+                    visibility: visible;
+                }
+
+            }
+
+        `;
+
+
+        document.head.appendChild(style);
+    };
+
+
+    /* =====================================================
+       LOGOUT FALLBACK
+    ===================================================== */
+
+    const setupLogout = () => {
+
+        const logoutButton =
+            document.getElementById("logoutBtn");
+
+
+        if (!logoutButton) {
+            return;
+        }
+
+
+        logoutButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    window.StockFlowAuth &&
+                    typeof window.StockFlowAuth.logout === "function"
+                ) {
+
+                    window.StockFlowAuth.logout();
+
+                    return;
+                }
+
+
+                sessionStorage.clear();
+
+                window.location.href =
+                    "auth.html";
+            }
+        );
+    };
+
+
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+
+    const initialize = async () => {
+
+        injectMobileStyles();
+
+        setupMobileMenu();
+
+        setupLogout();
 
 
         const user =
-            await StockFlowAuth.requireAuth();
+            await initializeAuthentication();
 
 
         if (!user) {
@@ -129,106 +406,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        /* =================================================
-           USE EXISTING AUTH UI BINDER
-        ================================================= */
-
-        if (
-            typeof StockFlowAuth.bindUserUI ===
-            "function"
-        ) {
-
-            StockFlowAuth.bindUserUI(user);
-
-        }
+        populateProfile(user);
+    };
 
 
-        /* =================================================
-           PROFILE FIELDS
-        ================================================= */
+    /* =====================================================
+       START
+    ===================================================== */
 
-        const nameElement =
-            document.querySelector(
-                "[data-user-name]"
-            );
+    if (
+        document.readyState ===
+        "loading"
+    ) {
 
-        const roleElement =
-            document.querySelector(
-                "[data-user-role]"
-            );
-
-        const emailElement =
-            document.querySelector(
-                "[data-user-email]"
-            );
-
-        const phoneElement =
-            document.querySelector(
-                "[data-user-phone]"
-            );
-
-
-        const name =
-            user.fullName ||
-            user.full_name ||
-            user.name ||
-            user.username ||
-            "—";
-
-
-        const role =
-            user.role ||
-            user.accountStatus ||
-            user.account_status ||
-            "Employee";
-
-
-        const email =
-            user.email ||
-            user.gmail ||
-            user.GMAIL ||
-            "—";
-
-
-        const phone =
-            user.phone ||
-            user.phoneNumber ||
-            user.phone_number ||
-            user["PHONE NO."] ||
-            "—";
-
-
-        if (nameElement) {
-            nameElement.textContent =
-                name;
-        }
-
-
-        if (roleElement) {
-            roleElement.textContent =
-                role;
-        }
-
-
-        if (emailElement) {
-            emailElement.textContent =
-                email;
-        }
-
-
-        if (phoneElement) {
-            phoneElement.textContent =
-                phone;
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            "Unable to load profile:",
-            error
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
         );
+
+    } else {
+
+        initialize();
 
     }
 
-});
+})();
