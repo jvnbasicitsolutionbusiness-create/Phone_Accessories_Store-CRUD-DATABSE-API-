@@ -1,1056 +1,1600 @@
 /* ============================================================
-   STOCKFLOW | PRODUCTS MODULE
-   ============================================================
-   Products Management
-   ------------------------------------------------------------
-   FEATURES
-   - Authentication protection
-   - Employee session support
-   - Load products
-   - Load categories
-   - Search products
-   - Filter by category
-   - Filter by status
-   - Add product
-   - Edit product
-   - Delete product
-   - View product details
-   - Product statistics
-   - Pagination
-   - Loading states
-   - Error handling
-   - Toast notifications
-   - Stable modal opening
-   - No white flash / quick-light effect
+   STOCKFLOW | PRODUCTS.JS
+   Products Module Controller
    ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
-
+document.addEventListener("DOMContentLoaded", () => {
     "use strict";
 
+    /* =========================================================
+       ELEMENTS
+       ========================================================= */
 
-    /* ==========================================================
-       CONFIGURATION
-       ========================================================== */
+    const page = document.querySelector(".products-page");
 
-    const PAGE_SIZE = 10;
+    if (!page) {
+        return;
+    }
+
+    const sidebar =
+        document.querySelector(".sidebar");
+
+    const sidebarOverlay =
+        document.querySelector(".sidebar-overlay");
+
+    const mobileMenuBtn =
+        document.querySelector(".mobile-menu-btn");
+
+    const logoutBtn =
+        document.querySelector(".logout-btn");
+
+    const addProductBtn =
+        document.getElementById("addProductBtn");
+
+    const emptyAddProductBtn =
+        document.getElementById("emptyAddProductBtn");
+
+    const productModal =
+        document.getElementById("productModal");
+
+    const deleteModal =
+        document.getElementById("deleteModal");
+
+    const viewModal =
+        document.getElementById("viewModal");
+
+    const productForm =
+        document.getElementById("productForm");
+
+    const productSearch =
+        document.getElementById("productSearch");
+
+    const categoryFilter =
+        document.getElementById("categoryFilter");
+
+    const statusFilter =
+        document.getElementById("statusFilter");
+
+    const productsTableBody =
+        document.getElementById("productsTableBody");
+
+    const tableLoading =
+        document.getElementById("tableLoading");
+
+    const emptyState =
+        document.getElementById("emptyState");
+
+    const globalLoading =
+        document.getElementById("globalLoading");
+
+    const notificationBtn =
+        document.getElementById("notificationBtn");
+
+    const notificationPanel =
+        document.getElementById("notificationPanel");
+
+    const notificationCloseBtn =
+        document.getElementById("notificationCloseBtn");
+
+    const notificationList =
+        document.getElementById("notificationList");
+
+    const notificationDot =
+        document.getElementById("notificationDot");
+
+    const toastContainer =
+        document.querySelector(".toast-container");
+
+    /* =========================================================
+       STATE
+       ========================================================= */
+
+    let products = [];
+
+    let filteredProducts = [];
+
+    let categories = [];
 
     let currentPage = 1;
-    let allProducts = [];
-    let filteredProducts = [];
-    let categories = [];
-    let selectedProduct = null;
+
+    let rowsPerPage = 10;
+
     let editingProductId = null;
-    let productToDelete = null;
 
-    /*
-     * Prevents rapid repeated clicks on Add Product.
-     */
-    let openingProductModal = false;
+    let deletingProductId = null;
 
+    let notificationItems = [];
 
-    /* ==========================================================
-       DOM HELPERS
-       ========================================================== */
-
-    const $ = (selector) =>
-        document.querySelector(selector);
-
-    const $$ = (selector) =>
-        document.querySelectorAll(selector);
-
-    const byId = (id) =>
-        document.getElementById(id);
+    let isLoading = false;
 
 
-    /* ==========================================================
-       SAFE VALUE
-       ========================================================== */
+    /* =========================================================
+       HELPERS
+       ========================================================= */
 
-    function valueOf(...values) {
-
-        for (const value of values) {
-
-            if (
-                value !== undefined &&
-                value !== null &&
-                String(value).trim() !== ""
-            ) {
-                return value;
-            }
-
-        }
-
-        return "";
-
+    function $(id) {
+        return document.getElementById(id);
     }
 
-
-    /* ==========================================================
-       ESCAPE HTML
-       ========================================================== */
-
-    function esc(value) {
-
-        return String(value ?? "")
-            .replace(
-                /[&<>"']/g,
-                (character) => {
-
-                    const map = {
-                        "&": "&amp;",
-                        "<": "&lt;",
-                        ">": "&gt;",
-                        '"': "&quot;",
-                        "'": "&#039;"
-                    };
-
-                    return map[character];
-
-                }
-            );
-
-    }
-
-
-    /* ==========================================================
-       NUMBER
-       ========================================================== */
-
-    function number(value) {
-
-        const parsed =
-            Number(
-                String(value ?? "")
-                    .replace(/,/g, "")
-            );
-
-        return Number.isFinite(parsed)
-            ? parsed
-            : 0;
-
-    }
-
-
-    /* ==========================================================
-       CURRENCY
-       ========================================================== */
-
-    function currency(value) {
-
-        return "₱" +
-            number(value).toLocaleString(
-                "en-PH",
-                {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }
-            );
-
-    }
-
-
-    /* ==========================================================
-       NORMALIZE PRODUCT
-       ========================================================== */
-
-    function normalizeProduct(product) {
-
-        product = product || {};
-
-        return {
-
-            id: valueOf(
-                product.id,
-                product.productId,
-                product.ID,
-                product.PRODUCT_ID,
-                product.uid
-            ),
-
-            name: valueOf(
-                product.name,
-                product.productName,
-                product.PRODUCT_NAME,
-                product.NAME
-            ),
-
-            sku: valueOf(
-                product.sku,
-                product.SKU,
-                product.productSku,
-                product.PRODUCT_SKU
-            ),
-
-            category: valueOf(
-                product.category,
-                product.categoryName,
-                product.CATEGORY,
-                product.CATEGORY_NAME
-            ),
-
-            brand: valueOf(
-                product.brand,
-                product.BRAND
-            ),
-
-            unit: valueOf(
-                product.unit,
-                product.UNIT,
-                "PCS"
-            ),
-
-            price: number(
-                valueOf(
-                    product.price,
-                    product.sellingPrice,
-                    product.SELLING_PRICE,
-                    product.PRICE
-                )
-            ),
-
-            cost: number(
-                valueOf(
-                    product.cost,
-                    product.costPrice,
-                    product.COST_PRICE,
-                    product.COST
-                )
-            ),
-
-            stock: number(
-                valueOf(
-                    product.stock,
-                    product.currentStock,
-                    product.stockQty,
-                    product.STOCK,
-                    product.CURRENT_STOCK,
-                    product.QUANTITY
-                )
-            ),
-
-            reorderLevel: number(
-                valueOf(
-                    product.reorderLevel,
-                    product.REORDER_LEVEL,
-                    product.reorder,
-                    product.REORDER
-                )
-            ),
-
-            status:
-                String(
-                    valueOf(
-                        product.status,
-                        product.STATUS,
-                        "ACTIVE"
-                    )
-                )
-                    .trim()
-                    .toUpperCase(),
-
-            description: valueOf(
-                product.description,
-                product.DESCRIPTION
-            ),
-
-            createdAt: valueOf(
-                product.createdAt,
-                product.CREATED_AT,
-                product.dateCreated
-            ),
-
-            updatedAt: valueOf(
-                product.updatedAt,
-                product.UPDATED_AT,
-                product.dateUpdated
-            )
-
-        };
-
-    }
-
-
-    /* ==========================================================
-       AUTHENTICATION
-       ========================================================== */
-
-    let currentUser = null;
-
-    try {
-
+    function safeText(value) {
         if (
-            typeof StockFlowAuth ===
-            "undefined"
+            value === null ||
+            value === undefined
         ) {
-
-            throw new Error(
-                "Authentication module is not loaded."
-            );
-
+            return "";
         }
 
+        return String(value);
+    }
 
-        currentUser =
-            await StockFlowAuth.requireAuth();
+    function escapeHTML(value) {
+        return safeText(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function numberValue(value) {
+        const number =
+            Number.parseFloat(value);
+
+        return Number.isFinite(number)
+            ? number
+            : 0;
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat(
+            "en-PH",
+            {
+                style: "currency",
+                currency: "PHP",
+                minimumFractionDigits: 2
+            }
+        ).format(numberValue(value));
+    }
+
+    function formatNumber(value) {
+        return new Intl.NumberFormat(
+            "en-PH"
+        ).format(numberValue(value));
+    }
+
+    function normalize(value) {
+        return safeText(value)
+            .trim()
+            .toLowerCase();
+    }
 
 
-        if (!currentUser) {
+    /* =========================================================
+       LOADING
+       ========================================================= */
+
+    function showGlobalLoading(message = "Loading products...") {
+
+        if (!globalLoading) {
             return;
         }
 
-
-        if (
-            typeof StockFlowAuth.bindUserUI ===
-            "function"
-        ) {
-
-            StockFlowAuth.bindUserUI(
-                currentUser
+        const text =
+            globalLoading.querySelector(
+                "span"
             );
 
+        if (text) {
+            text.textContent = message;
         }
 
-
-        console.log(
-            "StockFlow authenticated user:",
-            {
-                username:
-                    currentUser.username ||
-                    currentUser.email ||
-                    currentUser.name ||
-                    "User",
-
-                role:
-                    currentUser.role ||
-                    currentUser.accountStatus ||
-                    "Employee"
-            }
+        globalLoading.classList.remove(
+            "hidden"
         );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Authentication error:",
-            error
-        );
-
-        showToast(
-            error.message ||
-            "Authentication failed.",
-            "error"
-        );
-
-        return;
-
     }
 
 
-    /* ==========================================================
-       TOPBAR
-       ========================================================== */
+    function hideGlobalLoading() {
 
-    byId("logoutBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    typeof StockFlowAuth !==
-                    "undefined" &&
-                    typeof StockFlowAuth.logout ===
-                    "function"
-                ) {
-
-                    StockFlowAuth.logout();
-
-                }
-
-            }
-        );
-
-
-    byId("mobileMenuBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                document.body.classList.toggle(
-                    "sidebar-open"
-                );
-
-            }
-        );
-
-
-    byId("sidebarOverlay")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                document.body.classList.remove(
-                    "sidebar-open"
-                );
-
-            }
-        );
-
-
-    /* ==========================================================
-       INITIALIZE
-       ========================================================== */
-
-    await initialize();
-
-
-    /* ==========================================================
-       INITIALIZE FUNCTION
-       ========================================================== */
-
-    async function initialize() {
-
-        setConnection(
-            "CONNECTING"
-        );
-
-
-        try {
-
-            await Promise.all([
-                loadCategories(),
-                loadProducts()
-            ]);
-
-
-            updateStatistics();
-
-            applyFilters();
-
-            setConnection(
-                "CONNECTED"
-            );
-
+        if (!globalLoading) {
+            return;
         }
 
-        catch (error) {
-
-            console.error(
-                "Products initialization error:",
-                error
-            );
-
-
-            setConnection(
-                "OFFLINE"
-            );
-
-
-            showToast(
-                error.message ||
-                "Unable to connect to the inventory server.",
-                "error"
-            );
-
-        }
-
+        globalLoading.classList.add(
+            "hidden"
+        );
     }
 
 
-    /* ==========================================================
+    function showTableLoading() {
+
+        if (tableLoading) {
+            tableLoading.style.display =
+                "flex";
+        }
+
+        if (emptyState) {
+            emptyState.classList.add(
+                "hidden"
+            );
+        }
+
+        if (productsTableBody) {
+            productsTableBody.innerHTML = "";
+        }
+    }
+
+
+    function hideTableLoading() {
+
+        if (tableLoading) {
+            tableLoading.style.display =
+                "none";
+        }
+    }
+
+
+    /* =========================================================
        CONNECTION STATUS
-       ========================================================== */
+       ========================================================= */
 
-    function setConnection(status) {
+    function setConnection(
+        connected,
+        message
+    ) {
 
         const badge =
-            byId("connectionBadge") ||
-            byId("connectionStatus");
+            document.querySelector(
+                ".connection-badge"
+            );
 
+        const dot =
+            document.querySelector(
+                ".connection-dot"
+            );
 
         if (!badge) {
             return;
         }
 
-
-        const normalized =
-            String(status || "")
-                .trim()
-                .toUpperCase();
-
-
-        let text =
-            badge.querySelector(
-                ".connection-text"
-            );
-
-
-        if (!text) {
-
-            text =
-                badge.querySelector(
-                    "span:last-child"
-                );
-
-        }
-
-
-        if (text) {
-
-            if (
-                normalized ===
-                "CONNECTED"
-            ) {
-
-                text.textContent =
-                    "SYSTEM CONNECTED";
-
-            }
-
-            else if (
-                normalized ===
-                "OFFLINE"
-            ) {
-
-                text.textContent =
-                    "SYSTEM OFFLINE";
-
-            }
-
-            else {
-
-                text.textContent =
-                    "SYSTEM CONNECTING";
-
-            }
-
-        }
-
-
-        badge.classList.remove(
-            "connected",
+        badge.classList.toggle(
             "offline",
-            "connecting"
+            !connected
         );
 
-
-        if (
-            normalized ===
-            "CONNECTED"
-        ) {
-
-            badge.classList.add(
-                "connected"
-            );
-
+        if (dot) {
+            dot.style.background =
+                connected
+                    ? "#16a34a"
+                    : "#dc2626";
         }
 
-        else if (
-            normalized ===
-            "OFFLINE"
-        ) {
-
-            badge.classList.add(
-                "offline"
-            );
-
-        }
-
-        else {
-
-            badge.classList.add(
-                "connecting"
-            );
-
-        }
-
+        badge.innerHTML = `
+            <span class="connection-dot"></span>
+            ${escapeHTML(
+                message ||
+                (
+                    connected
+                        ? "SYSTEM CONNECTED"
+                        : "SYSTEM OFFLINE"
+                )
+            )}
+        `;
     }
 
 
-    /* ==========================================================
-       API CALL HELPER
-       ========================================================== */
+    function setConnected() {
 
-    async function apiCall(
-        methodName,
-        ...args
+        setConnection(
+            true,
+            "SYSTEM CONNECTED"
+        );
+    }
+
+
+    function setOffline() {
+
+        setConnection(
+            false,
+            "SYSTEM OFFLINE"
+        );
+    }
+
+
+    /* =========================================================
+       TOAST
+       ========================================================= */
+
+    function showToast(
+        message,
+        type = "info",
+        title = null
+    ) {
+
+        if (!toastContainer) {
+            alert(message);
+            return;
+        }
+
+        const titles = {
+            success: "Success",
+            error: "Something went wrong",
+            warning: "Attention",
+            info: "StockFlow"
+        };
+
+        const icons = {
+            success: "fa-solid fa-check",
+            error: "fa-solid fa-circle-exclamation",
+            warning: "fa-solid fa-triangle-exclamation",
+            info: "fa-solid fa-circle-info"
+        };
+
+        const toast =
+            document.createElement(
+                "div"
+            );
+
+        toast.className =
+            `toast ${type}`;
+
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="${icons[type] || icons.info}"></i>
+            </div>
+
+            <div class="toast-content">
+                <strong>
+                    ${escapeHTML(
+                        title ||
+                        titles[type] ||
+                        titles.info
+                    )}
+                </strong>
+
+                <span>
+                    ${escapeHTML(message)}
+                </span>
+            </div>
+        `;
+
+        toastContainer.appendChild(
+            toast
+        );
+
+        setTimeout(() => {
+
+            toast.style.opacity = "0";
+            toast.style.transform =
+                "translateY(7px)";
+
+            setTimeout(() => {
+                toast.remove();
+            }, 180);
+
+        }, 3500);
+    }
+
+
+    /* =========================================================
+       MODALS
+       ========================================================= */
+
+    function openModal(modal) {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add("show");
+        modal.classList.add("active");
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        document.body.style.overflow =
+            "hidden";
+    }
+
+
+    function closeModal(modal) {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove("show");
+        modal.classList.remove("active");
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        const anyModalOpen =
+            document.querySelector(
+                ".products-page .modal.show, .products-page .modal.active"
+            );
+
+        if (!anyModalOpen) {
+            document.body.style.overflow =
+                "";
+        }
+    }
+
+
+    function closeProductModal() {
+
+        closeModal(productModal);
+
+        editingProductId = null;
+
+        if (productForm) {
+            productForm.reset();
+        }
+
+        clearFormMessage();
+    }
+
+
+    function closeDeleteModal() {
+
+        closeModal(deleteModal);
+
+        deletingProductId = null;
+    }
+
+
+    function closeViewModal() {
+
+        closeModal(viewModal);
+    }
+
+
+    /* =========================================================
+       FORM MESSAGE
+       ========================================================= */
+
+    function clearFormMessage() {
+
+        const message =
+            document.getElementById(
+                "formMessage"
+            );
+
+        if (!message) {
+            return;
+        }
+
+        message.textContent = "";
+
+        message.classList.add(
+            "hidden"
+        );
+
+        message.classList.remove(
+            "error-message",
+            "success-message"
+        );
+    }
+
+
+    function showFormMessage(
+        message,
+        type = "error"
+    ) {
+
+        const element =
+            document.getElementById(
+                "formMessage"
+            );
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            message;
+
+        element.classList.remove(
+            "hidden",
+            "error-message",
+            "success-message"
+        );
+
+        element.classList.add(
+            type === "success"
+                ? "success-message"
+                : "error-message"
+        );
+    }
+
+
+    /* =========================================================
+       ADD PRODUCT
+       ========================================================= */
+
+    function openAddProductModal() {
+
+        if (!productModal) {
+            showToast(
+                "Product modal was not found in the page.",
+                "error"
+            );
+
+            return;
+        }
+
+        editingProductId = null;
+
+        if (productForm) {
+            productForm.reset();
+        }
+
+        clearFormMessage();
+
+        const title =
+            productModal.querySelector(
+                ".modal-header h2"
+            );
+
+        const eyebrow =
+            productModal.querySelector(
+                ".modal-eyebrow"
+            );
+
+        const submitBtn =
+            productModal.querySelector(
+                'button[type="submit"]'
+            );
+
+        if (title) {
+            title.textContent =
+                "Add Product";
+        }
+
+        if (eyebrow) {
+            eyebrow.textContent =
+                "Product Management";
+        }
+
+        if (submitBtn) {
+            submitBtn.innerHTML = `
+                <i class="fa-solid fa-plus"></i>
+                Add Product
+            `;
+        }
+
+        openModal(productModal);
+
+        setTimeout(() => {
+
+            const firstInput =
+                productForm?.querySelector(
+                    "input:not([type='hidden'])"
+                );
+
+            if (firstInput) {
+                firstInput.focus();
+            }
+
+        }, 80);
+    }
+
+
+    /* =========================================================
+       EDIT PRODUCT
+       ========================================================= */
+
+    function openEditProductModal(
+        product
+    ) {
+
+        if (!productModal || !product) {
+            return;
+        }
+
+        editingProductId =
+            getProductId(product);
+
+        clearFormMessage();
+
+        const title =
+            productModal.querySelector(
+                ".modal-header h2"
+            );
+
+        const eyebrow =
+            productModal.querySelector(
+                ".modal-eyebrow"
+            );
+
+        const submitBtn =
+            productModal.querySelector(
+                'button[type="submit"]'
+            );
+
+        if (title) {
+            title.textContent =
+                "Edit Product";
+        }
+
+        if (eyebrow) {
+            eyebrow.textContent =
+                "Update Product";
+        }
+
+        if (submitBtn) {
+            submitBtn.innerHTML = `
+                <i class="fa-solid fa-floppy-disk"></i>
+                Save Changes
+            `;
+        }
+
+        fillProductForm(product);
+
+        openModal(productModal);
+    }
+
+
+    function fillProductForm(
+        product
+    ) {
+
+        const map = {
+
+            productName: [
+                "productName",
+                "name"
+            ],
+
+            productCategory: [
+                "productCategory",
+                "category",
+                "categoryName"
+            ],
+
+            productPrice: [
+                "productPrice",
+                "price"
+            ],
+
+            productStock: [
+                "productStock",
+                "stock",
+                "quantity"
+            ],
+
+            productSku: [
+                "productSku",
+                "sku",
+                "productCode"
+            ],
+
+            productDescription: [
+                "productDescription",
+                "description"
+            ]
+        };
+
+
+        Object.entries(map)
+            .forEach(
+                ([elementId, keys]) => {
+
+                    const element =
+                        document.getElementById(
+                            elementId
+                        );
+
+                    if (!element) {
+                        return;
+                    }
+
+                    let value = "";
+
+                    for (
+                        const key of keys
+                    ) {
+
+                        if (
+                            product[key] !==
+                            undefined &&
+                            product[key] !==
+                            null
+                        ) {
+
+                            value =
+                                product[key];
+
+                            break;
+                        }
+                    }
+
+                    element.value =
+                        value;
+                }
+            );
+
+
+        /*
+         * Fallback:
+         * If your HTML uses names instead
+         * of the expected IDs.
+         */
+
+        if (productForm) {
+
+            const fields =
+                productForm.querySelectorAll(
+                    "input, select, textarea"
+                );
+
+            fields.forEach(
+                field => {
+
+                    if (
+                        field.value &&
+                        field.value !== ""
+                    ) {
+                        return;
+                    }
+
+                    const name =
+                        normalize(
+                            field.name
+                        );
+
+                    if (
+                        name ===
+                        "name" ||
+                        name ===
+                        "productname"
+                    ) {
+                        field.value =
+                            product.name ||
+                            product.product_name ||
+                            "";
+                    }
+
+                    if (
+                        name ===
+                        "category"
+                    ) {
+                        field.value =
+                            product.category ||
+                            product.category_name ||
+                            "";
+                    }
+
+                    if (
+                        name ===
+                        "price"
+                    ) {
+                        field.value =
+                            product.price ||
+                            "";
+                    }
+
+                    if (
+                        name ===
+                        "stock" ||
+                        name ===
+                        "quantity"
+                    ) {
+                        field.value =
+                            product.stock ??
+                            product.quantity ??
+                            "";
+                    }
+
+                    if (
+                        name ===
+                        "sku"
+                    ) {
+                        field.value =
+                            product.sku ||
+                            "";
+                    }
+                }
+            );
+        }
+    }
+
+
+    /* =========================================================
+       DELETE
+       ========================================================= */
+
+    function openDeleteProductModal(
+        product
+    ) {
+
+        if (!deleteModal || !product) {
+            return;
+        }
+
+        deletingProductId =
+            getProductId(product);
+
+        const name =
+            getProductName(product);
+
+        const target =
+            deleteModal.querySelector(
+                "[data-delete-product-name]"
+            );
+
+        if (target) {
+            target.textContent =
+                name;
+        }
+
+        const text =
+            deleteModal.querySelector(
+                ".confirm-dialog p"
+            );
+
+        if (
+            text &&
+            !target
+        ) {
+            text.innerHTML = `
+                Are you sure you want to delete
+                <strong>${escapeHTML(name)}</strong>?
+            `;
+        }
+
+        openModal(deleteModal);
+    }
+
+
+    /* =========================================================
+       VIEW
+       ========================================================= */
+
+    function openViewProductModal(
+        product
+    ) {
+
+        if (!viewModal || !product) {
+            return;
+        }
+
+        setDetail(
+            "viewProductName",
+            getProductName(product)
+        );
+
+        setDetail(
+            "viewProductCategory",
+            getProductCategory(product)
+        );
+
+        setDetail(
+            "viewProductPrice",
+            formatCurrency(
+                product.price
+            )
+        );
+
+        setDetail(
+            "viewProductStock",
+            formatNumber(
+                getProductStock(product)
+            )
+        );
+
+        setDetail(
+            "viewProductSku",
+            product.sku ||
+            product.product_code ||
+            "—"
+        );
+
+        setDetail(
+            "viewProductDescription",
+            product.description ||
+            "No description available."
+        );
+
+        openModal(viewModal);
+    }
+
+
+    function setDetail(
+        id,
+        value
+    ) {
+
+        const element =
+            document.getElementById(id);
+
+        if (element) {
+            element.textContent =
+                safeText(value);
+        }
+    }
+
+
+    /* =========================================================
+       PRODUCT FIELD HELPERS
+       ========================================================= */
+
+    function getProductId(
+        product
+    ) {
+
+        return (
+            product.product_id ??
+            product.id ??
+            product.productId ??
+            product.PRODUCT_ID ??
+            product.ID
+        );
+    }
+
+
+    function getProductName(
+        product
+    ) {
+
+        return (
+            product.product_name ??
+            product.name ??
+            product.productName ??
+            product.PRODUCT_NAME ??
+            "Unnamed Product"
+        );
+    }
+
+
+    function getProductCategory(
+        product
+    ) {
+
+        return (
+            product.category ??
+            product.category_name ??
+            product.categoryName ??
+            product.CATEGORY ??
+            "Uncategorized"
+        );
+    }
+
+
+    function getProductStock(
+        product
+    ) {
+
+        return numberValue(
+            product.stock ??
+            product.quantity ??
+            product.stock_quantity ??
+            product.STOCK
+        );
+    }
+
+
+    function getProductPrice(
+        product
+    ) {
+
+        return numberValue(
+            product.price ??
+            product.unit_price ??
+            product.product_price ??
+            product.PRICE
+        );
+    }
+
+
+    function getProductStatus(
+        product
+    ) {
+
+        const explicit =
+            normalize(
+                product.status ??
+                product.availability ??
+                ""
+            );
+
+        if (
+            explicit ===
+                "out" ||
+            explicit ===
+                "out of stock"
+        ) {
+            return "out";
+        }
+
+        if (
+            explicit ===
+                "low" ||
+            explicit ===
+                "low stock"
+        ) {
+            return "low";
+        }
+
+        const stock =
+            getProductStock(product);
+
+        if (stock <= 0) {
+            return "out";
+        }
+
+        if (stock <= 5) {
+            return "low";
+        }
+
+        return "available";
+    }
+
+
+    function getStatusLabel(
+        status
+    ) {
+
+        if (status === "out") {
+            return "Out of Stock";
+        }
+
+        if (status === "low") {
+            return "Low Stock";
+        }
+
+        return "Available";
+    }
+
+
+    /* =========================================================
+       API ADAPTER
+       ========================================================= */
+
+    async function apiRequest(
+        action,
+        data = {}
+    ) {
+
+        /*
+         * First use the existing StockFlow API
+         * if your api.js exposes one.
+         */
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.request ===
+                "function"
+        ) {
+
+            return await window.StockFlowAPI.request({
+                action,
+                ...data
+            });
+        }
+
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.post ===
+                "function"
+        ) {
+
+            return await window.StockFlowAPI.post(
+                action,
+                data
+            );
+        }
+
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.call ===
+                "function"
+        ) {
+
+            return await window.StockFlowAPI.call(
+                action,
+                data
+            );
+        }
+
+
+        /*
+         * Other common API wrappers.
+         */
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI.apiRequest ===
+                "function"
+        ) {
+
+            return await window.StockFlowAPI.apiRequest({
+                action,
+                ...data
+            });
+        }
+
+
+        if (
+            typeof window.apiRequest ===
+                "function"
+        ) {
+
+            return await window.apiRequest({
+                action,
+                ...data
+            });
+        }
+
+
+        /*
+         * Existing CRUD helpers.
+         */
+
+        const api =
+            window.StockFlowAPI ||
+            window.StockFlow ||
+            window.API;
+
+
+        if (api) {
+
+            if (
+                action ===
+                "listProducts"
+            ) {
+
+                if (
+                    typeof api.listProducts ===
+                        "function"
+                ) {
+                    return await api.listProducts();
+                }
+
+                if (
+                    api.products &&
+                    typeof api.products.list ===
+                        "function"
+                ) {
+                    return await api.products.list();
+                }
+            }
+
+
+            if (
+                action ===
+                "saveProduct"
+            ) {
+
+                if (
+                    editingProductId !== null &&
+                    typeof api.updateProduct ===
+                        "function"
+                ) {
+
+                    return await api.updateProduct(
+                        editingProductId,
+                        data
+                    );
+                }
+
+                if (
+                    typeof api.createProduct ===
+                        "function"
+                ) {
+                    return await api.createProduct(
+                        data
+                    );
+                }
+
+                if (
+                    api.products &&
+                    editingProductId !== null &&
+                    typeof api.products.update ===
+                        "function"
+                ) {
+
+                    return await api.products.update(
+                        editingProductId,
+                        data
+                    );
+                }
+
+                if (
+                    api.products &&
+                    typeof api.products.create ===
+                        "function"
+                ) {
+
+                    return await api.products.create(
+                        data
+                    );
+                }
+            }
+
+
+            if (
+                action ===
+                "deleteProduct"
+            ) {
+
+                if (
+                    typeof api.deleteProduct ===
+                        "function"
+                ) {
+
+                    return await api.deleteProduct(
+                        data.productId
+                    );
+                }
+
+                if (
+                    api.products &&
+                    typeof api.products.delete ===
+                        "function"
+                ) {
+
+                    return await api.products.delete(
+                        data.productId
+                    );
+                }
+            }
+        }
+
+
+        throw new Error(
+            "StockFlow API is not available."
+        );
+    }
+
+
+    /* =========================================================
+       RESPONSE NORMALIZER
+       ========================================================= */
+
+    function normalizeResponse(
+        response
     ) {
 
         if (
-            typeof StockFlowAPI ===
-            "undefined"
+            response ===
+            null ||
+            response ===
+            undefined
         ) {
 
-            throw new Error(
-                "StockFlow API is not loaded."
-            );
-
+            return {
+                success: false,
+                data: null,
+                message:
+                    "No response from server."
+            };
         }
 
 
         if (
-            typeof StockFlowAPI[
-                methodName
-            ] !== "function"
+            typeof response ===
+            "string"
         ) {
 
-            throw new Error(
-                `API method "${methodName}" is not available.`
-            );
+            try {
+                return normalizeResponse(
+                    JSON.parse(response)
+                );
+            } catch {
 
+                return {
+                    success: true,
+                    data: response,
+                    message: ""
+                };
+            }
         }
 
 
-        const response =
-            await StockFlowAPI[
-                methodName
-            ](
-                ...args
-            );
+        /*
+         * Apps Script / API response
+         */
+
+        const success =
+            response.success ??
+            response.ok ??
+            response.status ===
+                "success";
 
 
-        if (
-            response &&
-            response.success === false
-        ) {
+        const data =
+            response.data ??
+            response.products ??
+            response.result ??
+            response.rows ??
+            response;
 
-            throw new Error(
+
+        return {
+            success:
+                success !== false,
+
+            data,
+
+            message:
                 response.message ||
-                "API request failed."
-            );
-
-        }
-
-
-        return response || {};
-
+                response.error ||
+                ""
+        };
     }
 
 
-    /* ==========================================================
+    /* =========================================================
        LOAD PRODUCTS
-       ========================================================== */
+       ========================================================= */
 
-    async function loadProducts() {
+    async function loadProducts(
+        showLoader = true
+    ) {
 
-        showTableLoading();
+        if (isLoading) {
+            return;
+        }
 
+        isLoading = true;
+
+        if (showLoader) {
+            showTableLoading();
+        }
 
         try {
 
-            let response;
-
-
-            if (
-                typeof StockFlowAPI.products ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.products();
-
-            }
-
-            else if (
-                typeof StockFlowAPI.getProducts ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.getProducts();
-
-            }
-
-            else if (
-                typeof StockFlowAPI.listProducts ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.listProducts();
-
-            }
-
-            else {
-
-                throw new Error(
-                    "Products API endpoint is not available in API.js."
+            const response =
+                await apiRequest(
+                    "listProducts"
                 );
 
+            const normalized =
+                normalizeResponse(
+                    response
+                );
+
+            if (
+                normalized.success === false
+            ) {
+
+                throw new Error(
+                    normalized.message ||
+                    "Unable to load products."
+                );
             }
 
+            products =
+                extractArray(
+                    normalized.data
+                );
 
-            const rawProducts =
-                response.products ||
-                response.data ||
-                response.items ||
-                [];
+            filteredProducts =
+                [...products];
 
+            setConnected();
 
-            allProducts =
-                Array.isArray(rawProducts)
-                    ? rawProducts.map(
-                        normalizeProduct
-                    )
-                    : [];
-
-
-            filteredProducts = [
-                ...allProducts
-            ];
-
+            populateCategories();
 
             updateStatistics();
 
             applyFilters();
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "Load products error:",
+                "Products load error:",
                 error
             );
 
+            setOffline();
 
-            allProducts = [];
+            products = [];
             filteredProducts = [];
 
-
-            renderProducts([]);
-
             updateStatistics();
+            renderProducts();
 
-
-            throw error;
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       LOAD CATEGORIES
-       ========================================================== */
-
-    async function loadCategories() {
-
-        try {
-
-            let response;
-
-
-            if (
-                typeof StockFlowAPI.categories ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.categories();
-
-            }
-
-            else if (
-                typeof StockFlowAPI.getCategories ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.getCategories();
-
-            }
-
-            else if (
-                typeof StockFlowAPI.listCategories ===
-                "function"
-            ) {
-
-                response =
-                    await StockFlowAPI.listCategories();
-
-            }
-
-            else {
-
-                categories = [];
-
-                populateCategorySelects();
-
-                return;
-
-            }
-
-
-            const raw =
-                response.categories ||
-                response.data ||
-                response.items ||
-                [];
-
-
-            categories =
-                Array.isArray(raw)
-                    ? raw
-                    : [];
-
-
-            populateCategorySelects();
-
-        }
-
-        catch (error) {
-
-            console.warn(
-                "Category loading failed:",
-                error
+            showToast(
+                error.message ||
+                "Unable to load products.",
+                "error"
             );
 
+        } finally {
 
-            categories = [];
+            isLoading = false;
 
-            populateCategorySelects();
-
+            hideTableLoading();
+            hideGlobalLoading();
         }
-
     }
 
 
-    /* ==========================================================
-       POPULATE CATEGORY SELECTS
-       ========================================================== */
+    function extractArray(
+        data
+    ) {
 
-    function populateCategorySelects() {
+        if (Array.isArray(data)) {
+            return data;
+        }
 
-        const filter =
-            byId("categoryFilter");
+        if (
+            data &&
+            Array.isArray(data.products)
+        ) {
+            return data.products;
+        }
 
+        if (
+            data &&
+            Array.isArray(data.data)
+        ) {
+            return data.data;
+        }
 
-        const form =
-            byId("productCategory");
+        if (
+            data &&
+            Array.isArray(data.rows)
+        ) {
+            return data.rows;
+        }
 
-
-        const normalizedCategories =
-            categories
-                .map(
-                    (category) => {
-
-                        if (
-                            typeof category ===
-                            "string"
-                        ) {
-
-                            return category;
-
-                        }
-
-
-                        return valueOf(
-                            category.name,
-                            category.categoryName,
-                            category.CATEGORY_NAME,
-                            category.CATEGORY
-                        );
-
-                    }
-                )
-                .filter(Boolean);
+        return [];
+    }
 
 
-        const uniqueCategories =
-            [
-                ...new Set(
-                    normalizedCategories
-                )
-            ]
+    /* =========================================================
+       CATEGORIES
+       ========================================================= */
+
+    function populateCategories() {
+
+        const categorySet =
+            new Set();
+
+        products.forEach(
+            product => {
+
+                const category =
+                    getProductCategory(
+                        product
+                    );
+
+                if (
+                    category &&
+                    category !==
+                        "Uncategorized"
+                ) {
+
+                    categorySet.add(
+                        category
+                    );
+                }
+            }
+        );
+
+        categories =
+            Array.from(categorySet)
                 .sort(
                     (a, b) =>
-                        String(a)
-                            .localeCompare(
-                                String(b)
-                            )
+                        a.localeCompare(b)
                 );
 
 
-        if (filter) {
-
-            filter.innerHTML =
-                `<option value="">All Categories</option>`;
-
-
-            uniqueCategories.forEach(
-                (category) => {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-
-                    option.value =
-                        category;
-
-
-                    option.textContent =
-                        category;
-
-
-                    filter.appendChild(
-                        option
-                    );
-
-                }
-            );
-
+        if (!categoryFilter) {
+            return;
         }
 
+        const current =
+            categoryFilter.value;
 
-        if (form) {
+        categoryFilter.innerHTML = `
+            <option value="">All Categories</option>
+            ${categories
+                .map(
+                    category => `
+                        <option value="${escapeHTML(category)}">
+                            ${escapeHTML(category)}
+                        </option>
+                    `
+                )
+                .join("")}
+        `;
 
-            form.innerHTML =
-                `<option value="">Select category</option>`;
+        if (
+            categories.includes(current)
+        ) {
 
-
-            uniqueCategories.forEach(
-                (category) => {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-
-                    option.value =
-                        category;
-
-
-                    option.textContent =
-                        category;
-
-
-                    form.appendChild(
-                        option
-                    );
-
-                }
-            );
-
+            categoryFilter.value =
+                current;
         }
-
     }
 
 
-    /* ==========================================================
-       SEARCH / FILTER
-       ========================================================== */
-
-    byId("productSearch")
-        ?.addEventListener(
-            "input",
-            () => {
-
-                currentPage = 1;
-
-                applyFilters();
-
-            }
-        );
-
-
-    byId("categoryFilter")
-        ?.addEventListener(
-            "change",
-            () => {
-
-                currentPage = 1;
-
-                applyFilters();
-
-            }
-        );
-
-
-    byId("statusFilter")
-        ?.addEventListener(
-            "change",
-            () => {
-
-                currentPage = 1;
-
-                applyFilters();
-
-            }
-        );
-
+    /* =========================================================
+       FILTER
+       ========================================================= */
 
     function applyFilters() {
 
         const search =
-            String(
-                byId("productSearch")
-                    ?.value ||
-                ""
-            )
-                .trim()
-                .toLowerCase();
-
+            normalize(
+                productSearch?.value
+            );
 
         const category =
-            String(
-                byId("categoryFilter")
-                    ?.value ||
-                ""
-            )
-                .trim()
-                .toLowerCase();
-
+            normalize(
+                categoryFilter?.value
+            );
 
         const status =
-            String(
-                byId("statusFilter")
-                    ?.value ||
-                ""
-            )
-                .trim()
-                .toUpperCase();
+            normalize(
+                statusFilter?.value
+            );
 
 
         filteredProducts =
-            allProducts.filter(
-                (product) => {
+            products.filter(
+                product => {
 
-                    const searchable = [
-                        product.name,
-                        product.sku,
-                        product.category,
-                        product.brand,
-                        product.description
-                    ]
-                        .join(" ")
-                        .toLowerCase();
+                    const name =
+                        normalize(
+                            getProductName(
+                                product
+                            )
+                        );
+
+                    const sku =
+                        normalize(
+                            product.sku ||
+                            product.product_code ||
+                            ""
+                        );
+
+                    const productCategory =
+                        normalize(
+                            getProductCategory(
+                                product
+                            )
+                        );
+
+                    const productStatus =
+                        getProductStatus(
+                            product
+                        );
 
 
                     const matchesSearch =
                         !search ||
-                        searchable.includes(
+                        name.includes(
+                            search
+                        ) ||
+                        sku.includes(
+                            search
+                        ) ||
+                        productCategory.includes(
                             search
                         );
 
 
                     const matchesCategory =
                         !category ||
-                        String(
-                            product.category
-                        )
-                            .toLowerCase() ===
-                        category;
+                        productCategory ===
+                            category;
 
 
                     const matchesStatus =
                         !status ||
-                        product.status ===
-                        status;
+                        productStatus ===
+                            status;
 
 
                     return (
@@ -1058,74 +1602,52 @@ document.addEventListener("DOMContentLoaded", async () => {
                         matchesCategory &&
                         matchesStatus
                     );
-
                 }
             );
 
 
-        renderProducts(
-            filteredProducts
-        );
+        currentPage = 1;
 
-
-        updatePagination();
-
+        renderProducts();
     }
 
 
-    /* ==========================================================
-       RENDER PRODUCTS
-       ========================================================== */
+    /* =========================================================
+       RENDER
+       ========================================================= */
 
-    function renderProducts(products) {
+    function renderProducts() {
 
-        const tbody =
-            byId(
-                "productsTableBody"
-            );
+        hideTableLoading();
 
-
-        const empty =
-            byId(
-                "emptyProducts"
-            );
-
-
-        if (!tbody) {
+        if (!productsTableBody) {
             return;
         }
 
-
-        if (!products.length) {
-
-            tbody.innerHTML = "";
+        productsTableBody.innerHTML = "";
 
 
-            if (empty) {
+        if (
+            filteredProducts.length ===
+            0
+        ) {
 
-                empty.classList.remove(
+            if (emptyState) {
+                emptyState.classList.remove(
                     "hidden"
                 );
-
             }
 
-
-            updateProductCountLabel(
-                0
-            );
-
+            updatePagination();
 
             return;
-
         }
 
 
-        if (empty) {
-
-            empty.classList.add(
+        if (emptyState) {
+            emptyState.classList.add(
                 "hidden"
             );
-
         }
 
 
@@ -1134,1940 +1656,313 @@ document.addEventListener("DOMContentLoaded", async () => {
                 currentPage -
                 1
             ) *
-            PAGE_SIZE;
+            rowsPerPage;
 
+        const end =
+            start +
+            rowsPerPage;
 
-        const pageItems =
-            products.slice(
+        const pageProducts =
+            filteredProducts.slice(
                 start,
-                start + PAGE_SIZE
+                end
             );
 
 
-        tbody.innerHTML =
-            pageItems
-                .map(
-                    productRow
-                )
-                .join("");
+        pageProducts.forEach(
+            product => {
 
+                const row =
+                    createProductRow(
+                        product
+                    );
 
-        updateProductCountLabel(
-            products.length
+                productsTableBody.appendChild(
+                    row
+                );
+            }
         );
 
 
-        attachRowEvents();
-
+        updatePagination();
     }
 
 
-    /* ==========================================================
-       PRODUCT TABLE ROW
-       ========================================================== */
+    function createProductRow(
+        product
+    ) {
 
-    function productRow(product) {
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+        const id =
+            getProductId(product);
+
+        const name =
+            getProductName(product);
+
+        const category =
+            getProductCategory(product);
+
+        const price =
+            getProductPrice(product);
 
         const stock =
-            number(
-                product.stock
-            );
+            getProductStock(product);
+
+        const status =
+            getProductStatus(product);
+
+        const statusLabel =
+            getStatusLabel(status);
+
+        const sku =
+            product.sku ||
+            product.product_code ||
+            product.productCode ||
+            "";
 
 
-        const reorder =
-            number(
-                product.reorderLevel
-            );
+        row.innerHTML = `
 
+            <td>
 
-        let stockClass =
-            "stock-normal";
+                <div class="product-name-cell">
 
-
-        let stockLabel =
-            "In Stock";
-
-
-        if (
-            stock <= 0
-        ) {
-
-            stockClass =
-                "stock-danger";
-
-            stockLabel =
-                "Out of Stock";
-
-        }
-
-        else if (
-            stock <= reorder
-        ) {
-
-            stockClass =
-                "stock-warning";
-
-            stockLabel =
-                "Low Stock";
-
-        }
-
-
-        const statusClass =
-            product.status ===
-                "ACTIVE"
-                ? "status-active"
-                : "status-inactive";
-
-
-        return `
-
-            <tr data-product-id="${esc(product.id)}">
-
-                <td>
-
-                    <div class="product-cell">
-
-                        <div class="product-icon">
-                            <i class="fa-solid fa-box"></i>
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                ${esc(
-                                    product.name ||
-                                    "Unnamed Product"
-                                )}
-                            </strong>
-
-                            <small>
-                                ${esc(
-                                    product.brand ||
-                                    "No brand"
-                                )}
-                            </small>
-
-                        </div>
-
+                    <div class="product-thumb">
+                        <i class="fa-solid fa-box"></i>
                     </div>
 
-                </td>
+                    <div class="product-name-info">
 
-
-                <td>
-
-                    <span class="sku-text">
-                        ${esc(
-                            product.sku ||
-                            "—"
-                        )}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <span class="category-text">
-                        ${esc(
-                            product.category ||
-                            "Uncategorized"
-                        )}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <strong>
-                        ${currency(
-                            product.price
-                        )}
-                    </strong>
-
-                </td>
-
-
-                <td>
-
-                    <div class="stock-cell">
-
-                        <strong class="${stockClass}">
-                            ${stock.toLocaleString()}
+                        <strong>
+                            ${escapeHTML(name)}
                         </strong>
 
                         <small>
-                            ${esc(
-                                stockLabel
-                            )}
+                            ${
+                                sku
+                                    ? escapeHTML(sku)
+                                    : "No SKU"
+                            }
                         </small>
 
                     </div>
 
-                </td>
+                </div>
+
+            </td>
 
 
-                <td>
+            <td>
 
-                    <span class="status-badge ${statusClass}">
+                <span class="category-badge">
+                    ${escapeHTML(category)}
+                </span>
 
-                        <span class="status-dot"></span>
+            </td>
 
-                        ${esc(
-                            product.status
-                        )}
 
+            <td>
+
+                <span class="price-cell">
+                    ${formatCurrency(price)}
+                </span>
+
+            </td>
+
+
+            <td>
+
+                <div class="stock-cell">
+
+                    <span class="stock-number">
+                        ${formatNumber(stock)}
                     </span>
 
-                </td>
+                    <span class="stock-label">
+                        units
+                    </span>
+
+                </div>
+
+            </td>
 
 
-                <td>
+            <td>
 
-                    <div class="row-actions">
+                <span class="status-badge ${status}">
+                    ${statusLabel}
+                </span>
 
-                        <button
-                            type="button"
-                            class="icon-btn view-product"
-                            data-id="${esc(product.id)}"
-                            title="View Product"
-                            aria-label="View Product"
-                        >
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
+            </td>
 
 
-                        <button
-                            type="button"
-                            class="icon-btn edit-product"
-                            data-id="${esc(product.id)}"
-                            title="Edit Product"
-                            aria-label="Edit Product"
-                        >
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+            <td>
+
+                <div
+                    class="product-actions"
+                    data-product-id="${escapeHTML(id)}"
+                >
+
+                    <button
+                        type="button"
+                        class="table-action view"
+                        title="View Product"
+                        data-action="view"
+                    >
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
 
 
-                        <button
-                            type="button"
-                            class="icon-btn danger delete-product"
-                            data-id="${esc(product.id)}"
-                            title="Delete Product"
-                            aria-label="Delete Product"
-                        >
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                    <button
+                        type="button"
+                        class="table-action edit"
+                        title="Edit Product"
+                        data-action="edit"
+                    >
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
 
-                    </div>
 
-                </td>
+                    <button
+                        type="button"
+                        class="table-action delete"
+                        title="Delete Product"
+                        data-action="delete"
+                    >
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
 
-            </tr>
+                </div>
+
+            </td>
 
         `;
 
+
+        return row;
     }
 
 
-    /* ==========================================================
-       TABLE EVENTS
-       ========================================================== */
-
-    function attachRowEvents() {
-
-        $$(".view-product")
-            .forEach(
-                (button) => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            viewProduct(
-                                button.dataset.id
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-
-        $$(".edit-product")
-            .forEach(
-                (button) => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            editProduct(
-                                button.dataset.id
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-
-        $$(".delete-product")
-            .forEach(
-                (button) => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            deleteProduct(
-                                button.dataset.id
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-    }
-
-
-    /* ==========================================================
+    /* =========================================================
        STATISTICS
-       ========================================================== */
+       ========================================================= */
 
     function updateStatistics() {
 
         const total =
-            allProducts.length;
+            products.length;
 
-
-        const active =
-            allProducts.filter(
-                (product) =>
-                    product.status ===
-                    "ACTIVE"
-            ).length;
-
+        const totalStock =
+            products.reduce(
+                (
+                    sum,
+                    product
+                ) =>
+                    sum +
+                    getProductStock(
+                        product
+                    ),
+                0
+            );
 
         const lowStock =
-            allProducts.filter(
-                (product) => {
-
-                    const stock =
-                        number(
-                            product.stock
-                        );
-
-
-                    const reorder =
-                        number(
-                            product.reorderLevel
-                        );
-
-
-                    return (
-                        stock > 0 &&
-                        stock <= reorder
-                    );
-
-                }
+            products.filter(
+                product =>
+                    getProductStatus(
+                        product
+                    ) === "low"
             ).length;
-
 
         const outOfStock =
-            allProducts.filter(
-                (product) =>
-                    number(
-                        product.stock
-                    ) <= 0
+            products.filter(
+                product =>
+                    getProductStatus(
+                        product
+                    ) === "out"
             ).length;
 
 
-        setText(
-            "totalProducts",
+        setStat(
+            [
+                "totalProducts",
+                "productCount",
+                "statTotalProducts"
+            ],
             total
         );
 
-
-        setText(
-            "activeProducts",
-            active
+        setStat(
+            [
+                "totalStock",
+                "stockCount",
+                "statTotalStock"
+            ],
+            totalStock
         );
 
-
-        setText(
-            "lowStockProducts",
+        setStat(
+            [
+                "lowStock",
+                "lowStockCount",
+                "statLowStock"
+            ],
             lowStock
         );
 
-
-        setText(
-            "outOfStockProducts",
+        setStat(
+            [
+                "outOfStock",
+                "outStockCount",
+                "statOutOfStock"
+            ],
             outOfStock
         );
-
     }
 
 
-    /* ==========================================================
-       PRODUCT COUNT
-       ========================================================== */
-
-    function updateProductCountLabel(
-        count
+    function setStat(
+        ids,
+        value
     ) {
 
-        const label =
-            byId(
-                "productCountLabel"
-            );
+        for (
+            const id of ids
+        ) {
 
-
-        if (!label) {
-            return;
-        }
-
-
-        label.textContent =
-            `${count} ${
-                count === 1
-                    ? "product"
-                    : "products"
-            }`;
-
-    }
-
-
-    /* ==========================================================
-       ADD PRODUCT BUTTONS
-       ========================================================== */
-
-    /*
-     * IMPORTANT:
-     *
-     * Use a direct listener AND delegated listener.
-     *
-     * This makes the Add Product button work even when:
-     * - HTML was loaded dynamically
-     * - another script replaced the button
-     * - button is inside a form
-     * - button does not have type="button"
-     */
-
-    function handleAddProductClick(event) {
-
-        /*
-         * Stop accidental form submission.
-         */
-        event.preventDefault();
-
-        event.stopPropagation();
-
-
-        /*
-         * Prevent rapid repeated modal opening.
-         */
-        if (openingProductModal) {
-            return;
-        }
-
-
-        openAddProductModal();
-
-    }
-
-
-    byId("addProductBtn")
-        ?.addEventListener(
-            "click",
-            handleAddProductClick
-        );
-
-
-    byId("emptyAddProductBtn")
-        ?.addEventListener(
-            "click",
-            handleAddProductClick
-        );
-
-
-    /*
-     * Delegated backup listener.
-     *
-     * If the button is dynamically recreated,
-     * this still catches the click.
-     */
-    document.addEventListener(
-        "click",
-        (event) => {
-
-            const button =
-                event.target.closest(
-                    "#addProductBtn, #emptyAddProductBtn"
+            const element =
+                document.getElementById(
+                    id
                 );
 
+            if (element) {
+                element.textContent =
+                    formatNumber(value);
 
-            if (!button) {
                 return;
             }
-
-
-            /*
-             * If direct listener already handled it,
-             * don't trigger twice.
-             */
-            if (
-                event.defaultPrevented
-            ) {
-                return;
-            }
-
-
-            handleAddProductClick(
-                event
-            );
-
         }
-    );
-
-
-    /* ==========================================================
-       OPEN ADD PRODUCT
-       ========================================================== */
-
-    function openAddProductModal() {
-
-        if (openingProductModal) {
-            return;
-        }
-
-
-        openingProductModal = true;
-
-
-        try {
-
-            editingProductId =
-                null;
-
-
-            selectedProduct =
-                null;
-
-
-            const form =
-                byId("productForm");
-
-
-            /*
-             * Reset form BEFORE opening the modal.
-             *
-             * This prevents the user seeing a white/blank
-             * flash while the fields are being reset.
-             */
-            if (form) {
-                form.reset();
-            }
-
-
-            const productId =
-                byId("productId");
-
-
-            if (productId) {
-
-                productId.value =
-                    "";
-
-            }
-
-
-            setText(
-                "productModalTitle",
-                "Add Product"
-            );
-
-
-            setText(
-                "saveProductText",
-                "Save Product"
-            );
-
-
-            const status =
-                byId("productStatus");
-
-
-            if (status) {
-
-                status.value =
-                    "ACTIVE";
-
-            }
-
-
-            const unit =
-                byId("productUnit");
-
-
-            if (unit) {
-
-                unit.value =
-                    "PCS";
-
-            }
-
-
-            const reorder =
-                byId("productReorder");
-
-
-            if (reorder) {
-
-                reorder.value =
-                    "10";
-
-            }
-
-
-            clearFormMessages();
-
-
-            /*
-             * Open only after the form is completely prepared.
-             */
-            openModal(
-                "productModal"
-            );
-
-        }
-
-        finally {
-
-            /*
-             * Small delay prevents double-click reopening
-             * without creating a visible flash animation.
-             */
-            setTimeout(
-                () => {
-
-                    openingProductModal =
-                        false;
-
-                },
-                120
-            );
-
-        }
-
     }
 
 
-    /* ==========================================================
-       EDIT PRODUCT
-       ========================================================== */
-
-    function editProduct(id) {
-
-        const product =
-            allProducts.find(
-                (item) =>
-                    String(item.id) ===
-                    String(id)
-            );
-
-
-        if (!product) {
-
-            showToast(
-                "Product could not be found.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        selectedProduct =
-            product;
-
-
-        editingProductId =
-            product.id;
-
-
-        setText(
-            "productModalTitle",
-            "Edit Product"
-        );
-
-
-        setText(
-            "saveProductText",
-            "Update Product"
-        );
-
-
-        setFormValue(
-            "productId",
-            product.id
-        );
-
-
-        setFormValue(
-            "productName",
-            product.name
-        );
-
-
-        setFormValue(
-            "productSku",
-            product.sku
-        );
-
-
-        setFormValue(
-            "productCategory",
-            product.category
-        );
-
-
-        setFormValue(
-            "productBrand",
-            product.brand
-        );
-
-
-        setFormValue(
-            "productUnit",
-            product.unit ||
-            "PCS"
-        );
-
-
-        setFormValue(
-            "productPrice",
-            product.price
-        );
-
-
-        setFormValue(
-            "productCost",
-            product.cost
-        );
-
-
-        setFormValue(
-            "productStock",
-            product.stock
-        );
-
-
-        setFormValue(
-            "productReorder",
-            product.reorderLevel
-        );
-
-
-        setFormValue(
-            "productStatus",
-            product.status
-        );
-
-
-        setFormValue(
-            "productDescription",
-            product.description
-        );
-
-
-        clearFormMessages();
-
-
-        openModal(
-            "productModal"
-        );
-
-    }
-
-
-    /* ==========================================================
-       VIEW PRODUCT
-       ========================================================== */
-
-    function viewProduct(id) {
-
-        const product =
-            allProducts.find(
-                (item) =>
-                    String(item.id) ===
-                    String(id)
-            );
-
-
-        if (!product) {
-
-            showToast(
-                "Product could not be found.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        selectedProduct =
-            product;
-
-
-        setText(
-            "viewProductName",
-            product.name ||
-            "Unnamed Product"
-        );
-
-
-        setText(
-            "viewProductSku",
-            product.sku
-                ? `SKU: ${product.sku}`
-                : "No SKU"
-        );
-
-
-        setText(
-            "viewProductCategory",
-            product.category ||
-            "Uncategorized"
-        );
-
-
-        setText(
-            "viewProductBrand",
-            product.brand ||
-            "No brand"
-        );
-
-
-        setText(
-            "viewProductPrice",
-            currency(
-                product.price
-            )
-        );
-
-
-        setText(
-            "viewProductCost",
-            currency(
-                product.cost
-            )
-        );
-
-
-        setText(
-            "viewProductStock",
-            number(
-                product.stock
-            ).toLocaleString()
-        );
-
-
-        setText(
-            "viewProductReorder",
-            number(
-                product.reorderLevel
-            ).toLocaleString()
-        );
-
-
-        setText(
-            "viewProductUnit",
-            product.unit ||
-            "PCS"
-        );
-
-
-        setText(
-            "viewProductStatus",
-            product.status ||
-            "ACTIVE"
-        );
-
-
-        setText(
-            "viewProductDescription",
-            product.description ||
-            "No description available."
-        );
-
-
-        openModal(
-            "viewProductModal"
-        );
-
-    }
-
-
-    /* ==========================================================
-       VIEW -> EDIT
-       ========================================================== */
-
-    byId("viewEditProductBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    !selectedProduct
-                ) {
-                    return;
-                }
-
-
-                closeModal(
-                    "viewProductModal"
-                );
-
-
-                setTimeout(
-                    () => {
-
-                        editProduct(
-                            selectedProduct.id
-                        );
-
-                    },
-                    150
-                );
-
-            }
-        );
-
-
-    /* ==========================================================
-       PRODUCT FORM
-       ========================================================== */
-
-    byId("productForm")
-        ?.addEventListener(
-            "submit",
-            async (event) => {
-
-                event.preventDefault();
-
-                await saveProduct();
-
-            }
-        );
-
-
-    /* ==========================================================
-       SAVE PRODUCT
-       ========================================================== */
-
-    async function saveProduct() {
-
-        clearFormMessages();
-
-
-        const product =
-            collectFormData();
-
-
-        const validation =
-            validateProduct(
-                product
-            );
-
-
-        if (!validation.valid) {
-
-            showFormError(
-                validation.message
-            );
-
-            return;
-
-        }
-
-
-        setButtonLoading(
-            "saveProductBtn",
-            true
-        );
-
-
-        try {
-
-            let response;
-
-
-            if (
-                editingProductId
-            ) {
-
-                response =
-                    await updateProduct(
-                        product
-                    );
-
-            }
-
-            else {
-
-                response =
-                    await createProduct(
-                        product
-                    );
-
-            }
-
-
-            if (
-                response &&
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response.message ||
-                    "Product operation failed."
-                );
-
-            }
-
-
-            showToast(
-                editingProductId
-                    ? "Product updated successfully."
-                    : "Product added successfully.",
-                "success"
-            );
-
-
-            closeModal(
-                "productModal"
-            );
-
-
-            await loadProducts();
-
-
-            setConnection(
-                "CONNECTED"
-            );
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "Save product error:",
-                error
-            );
-
-
-            showFormError(
-                error.message ||
-                "Unable to save product."
-            );
-
-
-            /*
-             * Do not immediately claim the entire system
-             * is offline just because saving failed.
-             *
-             * The API may be connected but the operation
-             * itself may have failed validation.
-             */
-            console.warn(
-                "Product save operation failed while API may still be connected."
-            );
-
-        }
-
-        finally {
-
-            setButtonLoading(
-                "saveProductBtn",
-                false
-            );
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       COLLECT FORM DATA
-       ========================================================== */
-
-    function collectFormData() {
-
-        const productId =
-            byId("productId")
-                ?.value
-                .trim() ||
-            "";
-
-
-        const productName =
-            byId("productName")
-                ?.value
-                .trim() ||
-            "";
-
-
-        const productSku =
-            byId("productSku")
-                ?.value
-                .trim() ||
-            "";
-
-
-        const productPrice =
-            number(
-                byId("productPrice")
-                    ?.value
-            );
-
-
-        const productCost =
-            number(
-                byId("productCost")
-                    ?.value
-            );
-
-
-        return {
-
-            id: productId,
-
-            productId: productId,
-
-            name: productName,
-
-            productName: productName,
-
-            sku: productSku,
-
-            productSku: productSku,
-
-            category:
-                byId("productCategory")
-                    ?.value
-                    .trim() ||
-                "",
-
-            brand:
-                byId("productBrand")
-                    ?.value
-                    .trim() ||
-                "",
-
-            unit:
-                byId("productUnit")
-                    ?.value
-                    .trim() ||
-                "PCS",
-
-            price:
-                productPrice,
-
-            sellingPrice:
-                productPrice,
-
-            cost:
-                productCost,
-
-            costPrice:
-                productCost,
-
-            stock:
-                number(
-                    byId("productStock")
-                        ?.value
-                ),
-
-            reorderLevel:
-                number(
-                    byId("productReorder")
-                        ?.value
-                ),
-
-            status:
-                byId("productStatus")
-                    ?.value
-                    .trim()
-                    .toUpperCase() ||
-                "ACTIVE",
-
-            description:
-                byId("productDescription")
-                    ?.value
-                    .trim() ||
-                ""
-
-        };
-
-    }
-
-
-    /* ==========================================================
-       VALIDATE PRODUCT
-       ========================================================== */
-
-    function validateProduct(
-        product
-    ) {
-
-        if (!product.name) {
-
-            return {
-                valid: false,
-                message:
-                    "Product name is required."
-            };
-
-        }
-
-
-        if (!product.sku) {
-
-            return {
-                valid: false,
-                message:
-                    "SKU is required."
-            };
-
-        }
-
-
-        if (!product.category) {
-
-            return {
-                valid: false,
-                message:
-                    "Please select a product category."
-            };
-
-        }
-
-
-        if (
-            product.price < 0
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "Selling price cannot be negative."
-            };
-
-        }
-
-
-        if (
-            product.cost < 0
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "Cost price cannot be negative."
-            };
-
-        }
-
-
-        if (
-            product.stock < 0
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "Stock cannot be negative."
-            };
-
-        }
-
-
-        if (
-            product.reorderLevel < 0
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "Reorder level cannot be negative."
-            };
-
-        }
-
-
-        return {
-            valid: true
-        };
-
-    }
-
-
-    /* ==========================================================
-       CREATE PRODUCT
-       ========================================================== */
-
-    async function createProduct(
-        product
-    ) {
-
-        if (
-            typeof StockFlowAPI.createProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.createProduct(
-                product
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.addProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.addProduct(
-                product
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.saveProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.saveProduct(
-                product
-            );
-
-        }
-
-
-        throw new Error(
-            "Create product API method is not available in API.js."
-        );
-
-    }
-
-
-    /* ==========================================================
-       UPDATE PRODUCT
-       ========================================================== */
-
-    async function updateProduct(
-        product
-    ) {
-
-        if (
-            typeof StockFlowAPI.updateProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.updateProduct(
-                product
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.editProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.editProduct(
-                product
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.saveProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.saveProduct(
-                product
-            );
-
-        }
-
-
-        throw new Error(
-            "Update product API method is not available in API.js."
-        );
-
-    }
-
-
-    /* ==========================================================
-       DELETE PRODUCT
-       ========================================================== */
-
-    async function deleteProduct(
-        id
-    ) {
-
-        const product =
-            allProducts.find(
-                (item) =>
-                    String(item.id) ===
-                    String(id)
-            );
-
-
-        if (!product) {
-
-            showToast(
-                "Product could not be found.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        productToDelete =
-            product;
-
-
-        setText(
-            "deleteProductName",
-            product.name ||
-            "this product"
-        );
-
-
-        openModal(
-            "deleteModal"
-        );
-
-    }
-
-
-    /* ==========================================================
-       CONFIRM DELETE
-       ========================================================== */
-
-    byId("confirmDeleteBtn")
-        ?.addEventListener(
-            "click",
-            async () => {
-
-                if (
-                    !productToDelete
-                ) {
-                    return;
-                }
-
-
-                setButtonLoading(
-                    "confirmDeleteBtn",
-                    true
-                );
-
-
-                try {
-
-                    const response =
-                        await performDeleteProduct(
-                            productToDelete
-                        );
-
-
-                    if (
-                        response &&
-                        response.success === false
-                    ) {
-
-                        throw new Error(
-                            response.message ||
-                            "Unable to delete product."
-                        );
-
-                    }
-
-
-                    closeModal(
-                        "deleteModal"
-                    );
-
-
-                    showToast(
-                        "Product deleted successfully.",
-                        "success"
-                    );
-
-
-                    productToDelete =
-                        null;
-
-
-                    await loadProducts();
-
-
-                    /*
-                     * FIX:
-                     *
-                     * The old code used:
-                     *
-                     * setConnection("SYSTEM CONNECTED")
-                     *
-                     * which the connection function did not
-                     * recognize.
-                     */
-                    setConnection(
-                        "CONNECTED"
-                    );
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "Delete product error:",
-                        error
-                    );
-
-
-                    showToast(
-                        error.message ||
-                        "Unable to delete product.",
-                        "error"
-                    );
-
-                }
-
-                finally {
-
-                    setButtonLoading(
-                        "confirmDeleteBtn",
-                        false
-                    );
-
-                }
-
-            }
-        );
-
-
-    /* ==========================================================
-       DELETE API
-       ========================================================== */
-
-    async function performDeleteProduct(
-        product
-    ) {
-
-        if (
-            typeof StockFlowAPI.deleteProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.deleteProduct(
-                product.id
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.removeProduct ===
-            "function"
-        ) {
-
-            return StockFlowAPI.removeProduct(
-                product.id
-            );
-
-        }
-
-
-        throw new Error(
-            "Delete product API method is not available in API.js."
-        );
-
-    }
-
-
-    /* ==========================================================
-       MODAL CONTROLS
-       ========================================================== */
-
-    byId("closeProductModalBtn")
-        ?.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                closeModal(
-                    "productModal"
-                );
-
-            }
-        );
-
-
-    byId("cancelProductBtn")
-        ?.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                closeModal(
-                    "productModal"
-                );
-
-            }
-        );
-
-
-    byId("cancelDeleteBtn")
-        ?.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-
-                productToDelete =
-                    null;
-
-
-                closeModal(
-                    "deleteModal"
-                );
-
-            }
-        );
-
-
-    byId("closeViewProductBtn")
-        ?.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                closeModal(
-                    "viewProductModal"
-                );
-
-            }
-        );
-
-
-    $$(".modal-backdrop")
-        .forEach(
-            (backdrop) => {
-
-                backdrop.addEventListener(
-                    "click",
-                    () => {
-
-                        const modal =
-                            backdrop.closest(
-                                ".modal"
-                            );
-
-
-                        if (modal) {
-
-                            closeModal(
-                                modal.id
-                            );
-
-                        }
-
-                    }
-                );
-
-            }
-        );
-
-
-    /* ==========================================================
-       OPEN MODAL
-       ========================================================== */
-
-    function openModal(id) {
-
-        const modal =
-            byId(id);
-
-
-        if (!modal) {
-
-            console.error(
-                `Modal #${id} was not found.`
-            );
-
-            showToast(
-                "Product window could not be opened.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * Remove possible hidden states first.
-         */
-        modal.classList.remove(
-            "hidden",
-            "closing"
-        );
-
-
-        /*
-         * Prevent the browser from showing a
-         * white page/background flash.
-         */
-        modal.style.visibility =
-            "visible";
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        /*
-         * Support all common modal class systems.
-         */
-        modal.classList.add(
-            "active"
-        );
-
-
-        modal.classList.add(
-            "show"
-        );
-
-
-        modal.classList.add(
-            "open"
-        );
-
-
-        document.body.classList.add(
-            "modal-open"
-        );
-
-
-        /*
-         * Lock page scrolling.
-         */
-        document.documentElement.classList.add(
-            "modal-open"
-        );
-
-    }
-
-
-    /* ==========================================================
-       CLOSE MODAL
-       ========================================================== */
-
-    function closeModal(id) {
-
-        const modal =
-            byId(id);
-
-
-        if (!modal) {
-            return;
-        }
-
-
-        modal.classList.remove(
-            "active",
-            "show",
-            "open",
-            "closing"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        /*
-         * Do NOT use display:none or opacity animation here.
-         *
-         * Those can cause a white flash when the modal
-         * is opened again.
-         */
-        modal.style.visibility =
-            "hidden";
-
-
-        if (
-            !$(".modal.active") &&
-            !$(".modal.show") &&
-            !$(".modal.open")
-        ) {
-
-            document.body.classList.remove(
-                "modal-open"
-            );
-
-
-            document.documentElement.classList.remove(
-                "modal-open"
-            );
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       ESC KEY
-       ========================================================== */
-
-    document.addEventListener(
-        "keydown",
-        (event) => {
-
-            if (
-                event.key !==
-                "Escape"
-            ) {
-                return;
-            }
-
-
-            const activeModal =
-                $(".modal.active") ||
-                $(".modal.show") ||
-                $(".modal.open");
-
-
-            if (
-                activeModal
-            ) {
-
-                closeModal(
-                    activeModal.id
-                );
-
-            }
-
-        }
-    );
-
-
-    /* ==========================================================
+    /* =========================================================
        PAGINATION
-       ========================================================== */
-
-    byId("previousPageBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    currentPage <=
-                    1
-                ) {
-                    return;
-                }
-
-
-                currentPage--;
-
-
-                renderProducts(
-                    filteredProducts
-                );
-
-
-                updatePagination();
-
-            }
-        );
-
-
-    byId("nextPageBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                const totalPages =
-                    Math.max(
-                        1,
-                        Math.ceil(
-                            filteredProducts.length /
-                            PAGE_SIZE
-                        )
-                    );
-
-
-                if (
-                    currentPage >=
-                    totalPages
-                ) {
-                    return;
-                }
-
-
-                currentPage++;
-
-
-                renderProducts(
-                    filteredProducts
-                );
-
-
-                updatePagination();
-
-            }
-        );
-
+       ========================================================= */
 
     function updatePagination() {
 
         const total =
             filteredProducts.length;
 
-
         const totalPages =
             Math.max(
                 1,
                 Math.ceil(
                     total /
-                    PAGE_SIZE
+                    rowsPerPage
                 )
             );
 
@@ -3079,533 +1974,1360 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             currentPage =
                 totalPages;
-
         }
 
 
-        const start =
-            total === 0
-                ? 0
-                : (
+        const info =
+            document.querySelector(
+                ".pagination-info"
+            );
+
+        if (info) {
+
+            if (!total) {
+
+                info.textContent =
+                    "Showing 0 products";
+
+            } else {
+
+                const start =
                     (
                         currentPage -
                         1
                     ) *
-                    PAGE_SIZE
-                ) + 1;
+                    rowsPerPage +
+                    1;
 
+                const end =
+                    Math.min(
+                        currentPage *
+                            rowsPerPage,
+                        total
+                    );
 
-        const end =
-            Math.min(
-                currentPage *
-                PAGE_SIZE,
-                total
-            );
-
-
-        const info =
-            byId(
-                "paginationInfo"
-            );
-
-
-        if (info) {
-
-            info.textContent =
-                total === 0
-                    ? "Showing 0 of 0 products"
-                    : `Showing ${start}-${end} of ${total} products`;
-
-        }
-
-
-        setText(
-            "currentPage",
-            currentPage
-        );
-
-
-        const previous =
-            byId(
-                "previousPageBtn"
-            );
-
-
-        const next =
-            byId(
-                "nextPageBtn"
-            );
-
-
-        if (previous) {
-
-            previous.disabled =
-                currentPage <= 1;
-
-        }
-
-
-        if (next) {
-
-            next.disabled =
-                currentPage >=
-                totalPages;
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       LOADING TABLE
-       ========================================================== */
-
-    function showTableLoading() {
-
-        const tbody =
-            byId(
-                "productsTableBody"
-            );
-
-
-        const empty =
-            byId(
-                "emptyProducts"
-            );
-
-
-        if (empty) {
-
-            empty.classList.add(
-                "hidden"
-            );
-
-        }
-
-
-        if (!tbody) {
-            return;
-        }
-
-
-        tbody.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="7"
-                    class="table-loading"
-                >
-
-                    <div class="loading-spinner"></div>
-
-                    <span>
-                        Loading products...
-                    </span>
-
-                </td>
-
-            </tr>
-
-        `;
-
-    }
-
-
-    /* ==========================================================
-       FORM MESSAGES
-       ========================================================== */
-
-    function clearFormMessages() {
-
-        const error =
-            byId(
-                "productFormError"
-            );
-
-
-        const success =
-            byId(
-                "productFormSuccess"
-            );
-
-
-        if (error) {
-
-            error.classList.add(
-                "hidden"
-            );
-
-
-            const span =
-                error.querySelector(
-                    "span"
-                );
-
-
-            if (span) {
-
-                span.textContent =
-                    "";
-
+                info.textContent =
+                    `Showing ${start}-${end} of ${total} products`;
             }
-
         }
 
-
-        if (success) {
-
-            success.classList.add(
-                "hidden"
-            );
-
-
-            const span =
-                success.querySelector(
-                    "span"
-                );
-
-
-            if (span) {
-
-                span.textContent =
-                    "";
-
-            }
-
-        }
-
-    }
-
-
-    function showFormError(
-        message
-    ) {
-
-        const box =
-            byId(
-                "productFormError"
-            );
-
-
-        if (!box) {
-
-            showToast(
-                message,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        const span =
-            box.querySelector(
-                "span"
-            );
-
-
-        if (span) {
-
-            span.textContent =
-                message;
-
-        }
-
-
-        box.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    /* ==========================================================
-       TOAST
-       ========================================================== */
-
-    function showToast(
-        message,
-        type = "info"
-    ) {
 
         const container =
-            byId(
-                "toastContainer"
+            document.querySelector(
+                ".pagination-buttons"
             );
-
 
         if (!container) {
             return;
         }
 
 
-        const toast =
+        container.innerHTML = "";
+
+
+        const previous =
             document.createElement(
-                "div"
+                "button"
             );
 
+        previous.type =
+            "button";
 
-        toast.className =
-            `toast toast-${type}`;
+        previous.className =
+            "pagination-btn";
 
+        previous.innerHTML =
+            '<i class="fa-solid fa-chevron-left"></i>';
 
-        let icon =
-            "fa-circle-info";
+        previous.disabled =
+            currentPage <= 1;
 
-
-        if (
-            type ===
-            "success"
-        ) {
-
-            icon =
-                "fa-circle-check";
-
-        }
-
-        else if (
-            type ===
-            "error"
-        ) {
-
-            icon =
-                "fa-circle-exclamation";
-
-        }
-
-        else if (
-            type ===
-            "warning"
-        ) {
-
-            icon =
-                "fa-triangle-exclamation";
-
-        }
-
-
-        toast.innerHTML = `
-
-            <i class="fa-solid ${icon}"></i>
-
-            <span>
-                ${esc(message)}
-            </span>
-
-            <button
-                type="button"
-                class="toast-close"
-                aria-label="Close notification"
-            >
-
-                <i class="fa-solid fa-xmark"></i>
-
-            </button>
-
-        `;
-
-
-        container.appendChild(
-            toast
-        );
-
-
-        requestAnimationFrame(
+        previous.addEventListener(
+            "click",
             () => {
 
-                toast.classList.add(
-                    "show"
-                );
+                if (
+                    currentPage >
+                    1
+                ) {
 
+                    currentPage--;
+
+                    renderProducts();
+                }
             }
         );
 
+        container.appendChild(
+            previous
+        );
 
-        toast
-            .querySelector(
-                ".toast-close"
-            )
-            ?.addEventListener(
-                "click",
-                () => {
 
-                    removeToast(
-                        toast
-                    );
+        const maxVisible =
+            5;
 
-                }
+        let startPage =
+            Math.max(
+                1,
+                currentPage -
+                    Math.floor(
+                        maxVisible / 2
+                    )
+            );
+
+        let endPage =
+            Math.min(
+                totalPages,
+                startPage +
+                    maxVisible -
+                    1
             );
 
 
-        setTimeout(
-            () => {
+        if (
+            endPage -
+            startPage +
+            1 <
+            maxVisible
+        ) {
 
-                removeToast(
-                    toast
+            startPage =
+                Math.max(
+                    1,
+                    endPage -
+                        maxVisible +
+                        1
+                );
+        }
+
+
+        for (
+            let pageNumber =
+                startPage;
+            pageNumber <=
+                endPage;
+            pageNumber++
+        ) {
+
+            const button =
+                document.createElement(
+                    "button"
                 );
 
-            },
-            4500
+            button.type =
+                "button";
+
+            button.className =
+                "pagination-btn";
+
+            if (
+                pageNumber ===
+                currentPage
+            ) {
+
+                button.classList.add(
+                    "active"
+                );
+            }
+
+            button.textContent =
+                pageNumber;
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    currentPage =
+                        pageNumber;
+
+                    renderProducts();
+                }
+            );
+
+            container.appendChild(
+                button
+            );
+        }
+
+
+        const next =
+            document.createElement(
+                "button"
+            );
+
+        next.type =
+            "button";
+
+        next.className =
+            "pagination-btn";
+
+        next.innerHTML =
+            '<i class="fa-solid fa-chevron-right"></i>';
+
+        next.disabled =
+            currentPage >=
+            totalPages;
+
+        next.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    currentPage <
+                    totalPages
+                ) {
+
+                    currentPage++;
+
+                    renderProducts();
+                }
+            }
         );
 
+        container.appendChild(
+            next
+        );
+
+
+        const currentPageElement =
+            document.querySelector(
+                ".current-page"
+            );
+
+        if (currentPageElement) {
+
+            currentPageElement.textContent =
+                currentPage;
+        }
     }
 
 
-    function removeToast(
-        toast
+    /* =========================================================
+       FORM DATA
+       ========================================================= */
+
+    function collectProductData() {
+
+        const getValue =
+            (...ids) => {
+
+                for (
+                    const id of ids
+                ) {
+
+                    const element =
+                        document.getElementById(
+                            id
+                        );
+
+                    if (element) {
+                        return element.value.trim();
+                    }
+                }
+
+                return "";
+            };
+
+
+        return {
+
+            product_name:
+                getValue(
+                    "productName",
+                    "name"
+                ),
+
+            category:
+                getValue(
+                    "productCategory",
+                    "category"
+                ),
+
+            price:
+                numberValue(
+                    getValue(
+                        "productPrice",
+                        "price"
+                    )
+                ),
+
+            stock:
+                numberValue(
+                    getValue(
+                        "productStock",
+                        "stock",
+                        "quantity"
+                    )
+                ),
+
+            sku:
+                getValue(
+                    "productSku",
+                    "sku",
+                    "productCode"
+                ),
+
+            description:
+                getValue(
+                    "productDescription",
+                    "description"
+                )
+        };
+    }
+
+
+    /* =========================================================
+       SAVE PRODUCT
+       ========================================================= */
+
+    async function handleProductSubmit(
+        event
     ) {
 
-        if (!toast) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!productForm) {
             return;
         }
 
 
-        toast.classList.remove(
-            "show"
-        );
+        const data =
+            collectProductData();
 
 
-        setTimeout(
-            () => {
+        if (!data.product_name) {
 
-                toast.remove();
+            showFormMessage(
+                "Please enter the product name."
+            );
 
-            },
-            250
-        );
+            return;
+        }
 
+
+        if (!data.category) {
+
+            showFormMessage(
+                "Please select or enter a category."
+            );
+
+            return;
+        }
+
+
+        if (
+            data.price < 0
+        ) {
+
+            showFormMessage(
+                "Product price cannot be negative."
+            );
+
+            return;
+        }
+
+
+        if (
+            data.stock < 0
+        ) {
+
+            showFormMessage(
+                "Product stock cannot be negative."
+            );
+
+            return;
+        }
+
+
+        const submitBtn =
+            productForm.querySelector(
+                'button[type="submit"]'
+            );
+
+
+        const originalText =
+            submitBtn
+                ? submitBtn.innerHTML
+                : "";
+
+
+        if (submitBtn) {
+
+            submitBtn.disabled =
+                true;
+
+            submitBtn.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Saving...
+            `;
+        }
+
+
+        try {
+
+            const payload = {
+                ...data
+            };
+
+
+            if (
+                editingProductId !==
+                null &&
+                editingProductId !==
+                undefined
+            ) {
+
+                payload.productId =
+                    editingProductId;
+
+                payload.product_id =
+                    editingProductId;
+
+                payload.id =
+                    editingProductId;
+            }
+
+
+            const response =
+                await apiRequest(
+                    "saveProduct",
+                    payload
+                );
+
+
+            const normalized =
+                normalizeResponse(
+                    response
+                );
+
+
+            if (
+                normalized.success ===
+                false
+            ) {
+
+                throw new Error(
+                    normalized.message ||
+                    "Unable to save product."
+                );
+            }
+
+
+            showToast(
+                editingProductId !==
+                    null
+                    ? "Product updated successfully."
+                    : "Product added successfully.",
+                "success"
+            );
+
+
+            closeProductModal();
+
+            await loadProducts(
+                false
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Save product error:",
+                error
+            );
+
+            showFormMessage(
+                error.message ||
+                "Unable to save product."
+            );
+
+            showToast(
+                error.message ||
+                "Unable to save product.",
+                "error"
+            );
+
+        } finally {
+
+            if (submitBtn) {
+
+                submitBtn.disabled =
+                    false;
+
+                submitBtn.innerHTML =
+                    originalText;
+            }
+        }
     }
 
 
-    /* ==========================================================
-       BUTTON LOADING
-       ========================================================== */
+    /* =========================================================
+       DELETE PRODUCT
+       ========================================================= */
 
-    function setButtonLoading(
-        id,
-        loading
+    async function confirmDeleteProduct() {
+
+        if (
+            deletingProductId ===
+            null ||
+            deletingProductId ===
+            undefined
+        ) {
+            return;
+        }
+
+
+        const button =
+            deleteModal?.querySelector(
+                ".danger-btn"
+            );
+
+
+        if (button) {
+
+            button.disabled =
+                true;
+
+            button.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Deleting...
+            `;
+        }
+
+
+        try {
+
+            const response =
+                await apiRequest(
+                    "deleteProduct",
+                    {
+                        productId:
+                            deletingProductId,
+
+                        product_id:
+                            deletingProductId,
+
+                        id:
+                            deletingProductId
+                    }
+                );
+
+
+            const normalized =
+                normalizeResponse(
+                    response
+                );
+
+
+            if (
+                normalized.success ===
+                false
+            ) {
+
+                throw new Error(
+                    normalized.message ||
+                    "Unable to delete product."
+                );
+            }
+
+
+            showToast(
+                "Product deleted successfully.",
+                "success"
+            );
+
+
+            closeDeleteModal();
+
+            await loadProducts(
+                false
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Delete product error:",
+                error
+            );
+
+            showToast(
+                error.message ||
+                "Unable to delete product.",
+                "error"
+            );
+
+        } finally {
+
+            if (button) {
+
+                button.disabled =
+                    false;
+
+                button.innerHTML = `
+                    <i class="fa-solid fa-trash"></i>
+                    Delete Product
+                `;
+            }
+        }
+    }
+
+
+    /* =========================================================
+       TABLE ACTIONS
+       ========================================================= */
+
+    function handleTableAction(
+        event
     ) {
 
         const button =
-            byId(id);
-
+            event.target.closest(
+                "[data-action]"
+            );
 
         if (!button) {
             return;
         }
 
 
-        if (loading) {
-
-            /*
-             * Don't overwrite the original HTML repeatedly.
-             */
-            if (
-                !button.dataset.originalHtml
-            ) {
-
-                button.dataset.originalHtml =
-                    button.innerHTML;
-
-            }
+        const action =
+            button.dataset.action;
 
 
-            button.disabled =
-                true;
+        const row =
+            button.closest("tr");
 
-
-            button.setAttribute(
-                "aria-busy",
-                "true"
-            );
-
-
-            button.innerHTML = `
-
-                <span class="button-spinner"></span>
-
-                <span>
-                    Processing...
-                </span>
-
-            `;
-
-        }
-
-        else {
-
-            button.disabled =
-                false;
-
-
-            button.removeAttribute(
-                "aria-busy"
-            );
-
-
-            if (
-                button.dataset.originalHtml
-            ) {
-
-                button.innerHTML =
-                    button.dataset.originalHtml;
-
-            }
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       SET TEXT
-       ========================================================== */
-
-    function setText(
-        id,
-        value
-    ) {
-
-        const element =
-            byId(id);
-
-
-        if (
-            element
-        ) {
-
-            element.textContent =
-                value ?? "";
-
-        }
-
-    }
-
-
-    /* ==========================================================
-       SET FORM VALUE
-       ========================================================== */
-
-    function setFormValue(
-        id,
-        value
-    ) {
-
-        const element =
-            byId(id);
-
-
-        if (!element) {
+        if (!row) {
             return;
         }
 
 
-        element.value =
-            value ?? "";
+        const actionContainer =
+            button.closest(
+                ".product-actions"
+            );
 
+        const productId =
+            actionContainer?.dataset
+                .productId;
+
+
+        const product =
+            products.find(
+                item =>
+                    String(
+                        getProductId(
+                            item
+                        )
+                    ) ===
+                    String(
+                        productId
+                    )
+            );
+
+
+        if (!product) {
+
+            showToast(
+                "Product information could not be found.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        if (
+            action ===
+            "view"
+        ) {
+
+            openViewProductModal(
+                product
+            );
+
+        } else if (
+            action ===
+            "edit"
+        ) {
+
+            openEditProductModal(
+                product
+            );
+
+        } else if (
+            action ===
+            "delete"
+        ) {
+
+            openDeleteProductModal(
+                product
+            );
+        }
     }
 
+
+    /* =========================================================
+       NOTIFICATIONS
+       ========================================================= */
+
+    function generateNotifications() {
+
+        notificationItems = [];
+
+        const lowStock =
+            products.filter(
+                product =>
+                    getProductStatus(
+                        product
+                    ) === "low"
+            );
+
+        const outOfStock =
+            products.filter(
+                product =>
+                    getProductStatus(
+                        product
+                    ) === "out"
+            );
+
+
+        outOfStock
+            .slice(0, 4)
+            .forEach(
+                product => {
+
+                    notificationItems.push({
+                        type: "danger",
+                        icon:
+                            "fa-solid fa-box-open",
+                        title:
+                            `${getProductName(product)} is out of stock`,
+                        message:
+                            "This product currently has no available stock."
+                    });
+                }
+            );
+
+
+        lowStock
+            .slice(0, 4)
+            .forEach(
+                product => {
+
+                    notificationItems.push({
+                        type: "warning",
+                        icon:
+                            "fa-solid fa-triangle-exclamation",
+                        title:
+                            `${getProductName(product)} is low on stock`,
+                        message:
+                            `${formatNumber(getProductStock(product))} unit(s) remaining.`
+                    });
+                }
+            );
+
+
+        renderNotifications();
+    }
+
+
+    function renderNotifications() {
+
+        if (!notificationList) {
+            return;
+        }
+
+
+        if (
+            notificationItems.length ===
+            0
+        ) {
+
+            notificationList.innerHTML = `
+                <div class="notification-empty">
+
+                    <i class="fa-solid fa-bell-slash"></i>
+
+                    <strong>
+                        No new notifications
+                    </strong>
+
+                    <span>
+                        Your inventory looks good.
+                    </span>
+
+                </div>
+            `;
+
+            if (notificationDot) {
+                notificationDot.classList.remove(
+                    "show"
+                );
+            }
+
+            return;
+        }
+
+
+        if (notificationDot) {
+            notificationDot.classList.add(
+                "show"
+            );
+        }
+
+
+        notificationList.innerHTML =
+            notificationItems
+                .map(
+                    item => `
+                        <div class="notification-item ${escapeHTML(item.type)}">
+
+                            <div class="notification-icon">
+                                <i class="${escapeHTML(item.icon)}"></i>
+                            </div>
+
+                            <div class="notification-content">
+
+                                <strong>
+                                    ${escapeHTML(item.title)}
+                                </strong>
+
+                                <span>
+                                    ${escapeHTML(item.message)}
+                                </span>
+
+                            </div>
+
+                        </div>
+                    `
+                )
+                .join("");
+    }
+
+
+    function toggleNotifications(
+        event
+    ) {
+
+        if (event) {
+            event.stopPropagation();
+        }
+
+        if (!notificationPanel) {
+            return;
+        }
+
+        notificationPanel.classList.toggle(
+            "show"
+        );
+    }
+
+
+    function closeNotifications() {
+
+        notificationPanel?.classList.remove(
+            "show"
+        );
+    }
+
+
+    /* =========================================================
+       SIDEBAR
+       ========================================================= */
+
+    function openSidebar() {
+
+        sidebar?.classList.add(
+            "open"
+        );
+
+        sidebarOverlay?.classList.add(
+            "show"
+        );
+
+        document.body.classList.add(
+            "sidebar-open"
+        );
+    }
+
+
+    function closeSidebar() {
+
+        sidebar?.classList.remove(
+            "open"
+        );
+
+        sidebarOverlay?.classList.remove(
+            "show"
+        );
+
+        document.body.classList.remove(
+            "sidebar-open"
+        );
+    }
+
+
+    function toggleSidebar() {
+
+        if (
+            sidebar?.classList.contains(
+                "open"
+            )
+        ) {
+
+            closeSidebar();
+
+        } else {
+
+            openSidebar();
+        }
+    }
+
+
+    /* =========================================================
+       LOGOUT
+       ========================================================= */
+
+    async function handleLogout(
+        event
+    ) {
+
+        event.preventDefault();
+
+        if (
+            window.StockFlowAuth &&
+            typeof window.StockFlowAuth.logout ===
+                "function"
+        ) {
+
+            try {
+                await window.StockFlowAuth.logout();
+            } catch (error) {
+                console.error(
+                    "Logout error:",
+                    error
+                );
+            }
+
+            return;
+        }
+
+
+        if (
+            window.StockFlowAuthUI &&
+            typeof window.StockFlowAuthUI.logout ===
+                "function"
+        ) {
+
+            window.StockFlowAuthUI.logout();
+
+            return;
+        }
+
+
+        /*
+         * Do NOT destroy the existing auth system.
+         * This is only a final fallback.
+         */
+
+        sessionStorage.clear();
+
+        window.location.href =
+            "login.html";
+    }
+
+
+    /* =========================================================
+       EVENT LISTENERS
+       ========================================================= */
+
+    /*
+     * ADD PRODUCT
+     *
+     * Delegated listener means the button
+     * still works even if HTML is dynamically
+     * rendered later.
+     */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const addButton =
+                event.target.closest(
+                    "#addProductBtn, #emptyAddProductBtn"
+                );
+
+            if (!addButton) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            openAddProductModal();
+        }
+    );
+
+
+    /*
+     * TABLE ACTIONS
+     */
+
+    productsTableBody?.addEventListener(
+        "click",
+        handleTableAction
+    );
+
+
+    /*
+     * FORM
+     */
+
+    productForm?.addEventListener(
+        "submit",
+        handleProductSubmit
+    );
+
+
+    /*
+     * SEARCH
+     */
+
+    productSearch?.addEventListener(
+        "input",
+        applyFilters
+    );
+
+
+    /*
+     * CATEGORY
+     */
+
+    categoryFilter?.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    /*
+     * STATUS
+     */
+
+    statusFilter?.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    /*
+     * NOTIFICATIONS
+     */
+
+    notificationBtn?.addEventListener(
+        "click",
+        toggleNotifications
+    );
+
+
+    notificationCloseBtn?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            closeNotifications();
+        }
+    );
+
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            if (
+                notificationPanel &&
+                !notificationPanel.contains(
+                    event.target
+                ) &&
+                !notificationBtn?.contains(
+                    event.target
+                )
+            ) {
+
+                closeNotifications();
+            }
+        }
+    );
+
+
+    /*
+     * SIDEBAR
+     */
+
+    mobileMenuBtn?.addEventListener(
+        "click",
+        toggleSidebar
+    );
+
+
+    sidebarOverlay?.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+
+    /*
+     * CLOSE MODALS
+     */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const closeButton =
+                event.target.closest(
+                    ".modal-close"
+                );
+
+            if (closeButton) {
+
+                const modal =
+                    closeButton.closest(
+                        ".modal"
+                    );
+
+                closeModal(modal);
+
+                return;
+            }
+
+
+            const backdrop =
+                event.target.closest(
+                    ".modal-backdrop"
+                );
+
+            if (backdrop) {
+
+                const modal =
+                    backdrop.closest(
+                        ".modal"
+                    );
+
+                closeModal(modal);
+            }
+        }
+    );
+
+
+    /*
+     * DELETE CONFIRM
+     */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const button =
+                event.target.closest(
+                    "[data-confirm-delete]"
+                );
+
+            if (!button) {
+                return;
+            }
+
+            event.preventDefault();
+
+            confirmDeleteProduct();
+        }
+    );
+
+
+    /*
+     * CANCEL BUTTONS
+     */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const button =
+                event.target.closest(
+                    "[data-close-modal]"
+                );
+
+            if (!button) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const modal =
+                button.closest(
+                    ".modal"
+                );
+
+            closeModal(modal);
+        }
+    );
+
+
+    logoutBtn?.addEventListener(
+        "click",
+        handleLogout
+    );
+
+
+    /*
+     * ESC KEY
+     */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key !==
+                "Escape"
+            ) {
+                return;
+            }
+
+
+            closeNotifications();
+
+
+            document
+                .querySelectorAll(
+                    ".products-page .modal.show, .products-page .modal.active"
+                )
+                .forEach(
+                    modal =>
+                        closeModal(
+                            modal
+                        )
+                );
+
+
+            closeSidebar();
+        }
+    );
+
+
+    /* =========================================================
+       INITIALIZE MODALS
+       ========================================================= */
+
+    document
+        .querySelectorAll(
+            ".products-page .modal"
+        )
+        .forEach(
+            modal => {
+
+                modal.classList.remove(
+                    "show",
+                    "active"
+                );
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+            }
+        );
+
+
+    /* =========================================================
+       INITIALIZE LOADER
+       ========================================================= */
+
+    /*
+     * IMPORTANT:
+     * Prevent the white flash on page load.
+     */
+
+    hideGlobalLoading();
+
+
+    /* =========================================================
+       INITIALIZE CONNECTION
+       ========================================================= */
+
+    setConnection(
+        true,
+        "SYSTEM CONNECTED"
+    );
+
+
+    /* =========================================================
+       INITIAL LOAD
+       ========================================================= */
+
+    loadProducts(
+        true
+    );
+
+
+    /* =========================================================
+       REFRESH NOTIFICATIONS AFTER LOAD
+       ========================================================= */
+
+    setTimeout(
+        generateNotifications,
+        500
+    );
+
+
+    /*
+     * Keep notifications synchronized
+     * whenever products change.
+     */
+
+    const originalRenderProducts =
+        renderProducts;
+
+    /*
+     * Generate after initial data is
+     * available.
+     */
+
+    setTimeout(
+        () => {
+            generateNotifications();
+        },
+        1000
+    );
+
+
+    /* =========================================================
+       EXPOSE MODULE FOR DEBUGGING / OTHER MODULES
+       ========================================================= */
+
+    window.StockFlowProducts = {
+
+        reload: () =>
+            loadProducts(false),
+
+        add: () =>
+            openAddProductModal(),
+
+        edit: product =>
+            openEditProductModal(product),
+
+        view: product =>
+            openViewProductModal(product),
+
+        delete: product =>
+            openDeleteProductModal(product),
+
+        getProducts: () =>
+            [...products]
+    };
 
 });
