@@ -1,238 +1,696 @@
 /* =========================================================
-   STOCKFLOW — SETTINGS CONTROLLER
-   ========================================================= */
+   STOCKFLOW — SETTINGS MODULE
+   Settings + session controls
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
+(() => {
+
     "use strict";
 
-    try {
 
-        /* =====================================================
-           AUTHENTICATION
-        ===================================================== */
+    /* =====================================================
+       STORAGE
+    ===================================================== */
+
+    const STORAGE_KEY =
+        "stockflow_settings";
+
+
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+
+    const $ = (id) =>
+        document.getElementById(id);
+
+
+    const getSettings = () => {
+
+        try {
+
+            const stored =
+                localStorage.getItem(
+                    STORAGE_KEY
+                );
+
+            if (!stored) {
+                return {
+                    reorder: 5,
+                    theme: "system"
+                };
+            }
+
+            const parsed =
+                JSON.parse(stored);
+
+            return {
+                reorder:
+                    Number.isFinite(
+                        Number(parsed.reorder)
+                    )
+                        ? Number(parsed.reorder)
+                        : 5,
+
+                theme:
+                    parsed.theme === "light"
+                        ? "light"
+                        : "system"
+            };
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to read STOCKFLOW settings:",
+                error
+            );
+
+            return {
+                reorder: 5,
+                theme: "system"
+            };
+        }
+    };
+
+
+    const saveSettingsToStorage = (
+        settings
+    ) => {
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(settings)
+        );
+    };
+
+
+    /* =====================================================
+       MESSAGE
+    ===================================================== */
+
+    const showMessage = (
+        message,
+        type = "success"
+    ) => {
+
+        const element =
+            $("msg");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            message || "";
+
+        element.className =
+            `settings-message ${type}`;
+
+    };
+
+
+    const clearMessage = () => {
+
+        const element =
+            $("msg");
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent = "";
+
+        element.className =
+            "settings-message";
+    };
+
+
+    /* =====================================================
+       LOAD SETTINGS
+    ===================================================== */
+
+    const loadSettings = () => {
+
+        const settings =
+            getSettings();
+
+
+        const reorder =
+            $("reorder");
+
+        const theme =
+            $("theme");
+
+
+        if (reorder) {
+
+            reorder.value =
+                settings.reorder;
+        }
+
+
+        if (theme) {
+
+            theme.value =
+                settings.theme;
+        }
+
+
+        applyTheme(
+            settings.theme
+        );
+    };
+
+
+    /* =====================================================
+       THEME
+    ===================================================== */
+
+    const applyTheme = (
+        theme
+    ) => {
+
+        /*
+         * STOCKFLOW currently uses the
+         * existing light interface.
+         *
+         * "system" and "light" are both
+         * intentionally kept compatible
+         * with the current design.
+         */
+
+        document.documentElement
+            .setAttribute(
+                "data-theme",
+                theme
+            );
+
+        document.body
+            .setAttribute(
+                "data-theme",
+                theme
+            );
+    };
+
+
+    /* =====================================================
+       SAVE SETTINGS
+    ===================================================== */
+
+    const saveSettings = (
+        event
+    ) => {
+
+        event.preventDefault();
+
+        const form =
+            $("settings");
+
+        const saveButton =
+            form?.querySelector(
+                'button[type="submit"]'
+            );
+
+        const reorder =
+            $("reorder");
+
+        const theme =
+            $("theme");
+
+
+        if (!reorder || !theme) {
+            return;
+        }
+
+
+        const reorderValue =
+            Number(
+                reorder.value
+            );
+
+
+        /* -----------------------------------------------
+           VALIDATION
+        ----------------------------------------------- */
 
         if (
-            typeof StockFlowAuth === "undefined" ||
-            typeof StockFlowAuth.requireAuth !== "function"
+            !Number.isFinite(
+                reorderValue
+            ) ||
+            reorderValue < 0
         ) {
-            console.error("StockFlowAuth is not available.");
+
+            showMessage(
+                "Please enter a valid reorder level.",
+                "error"
+            );
+
+            reorder.focus();
+
             return;
         }
 
-        const user = await StockFlowAuth.requireAuth();
 
-        if (!user) {
-            return;
+        /* -----------------------------------------------
+           LOADING STATE
+        ----------------------------------------------- */
+
+        if (saveButton) {
+
+            saveButton.disabled =
+                true;
+
+            saveButton.dataset.originalText =
+                saveButton.textContent;
+
+            saveButton.textContent =
+                "Saving...";
         }
 
 
-        /* =====================================================
-           ELEMENTS
-        ===================================================== */
+        clearMessage();
 
-        const settingsForm =
-            document.getElementById("settings");
 
-        const reorderInput =
-            document.getElementById("reorder");
+        try {
 
-        const themeSelect =
-            document.getElementById("theme");
+            const settings = {
 
-        const message =
-            document.getElementById("msg");
+                reorder:
+                    Math.floor(
+                        reorderValue
+                    ),
 
-        const logoutButton =
-            document.getElementById("logout");
+                theme:
+                    theme.value === "light"
+                        ? "light"
+                        : "system"
+            };
 
-        const menuButton =
-            document.querySelector("[data-menu]");
+
+            saveSettingsToStorage(
+                settings
+            );
+
+
+            applyTheme(
+                settings.theme
+            );
+
+
+            showMessage(
+                "Settings saved successfully.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW settings save error:",
+                error
+            );
+
+            showMessage(
+                "Unable to save settings.",
+                "error"
+            );
+
+
+        } finally {
+
+            if (saveButton) {
+
+                saveButton.disabled =
+                    false;
+
+                saveButton.textContent =
+                    saveButton.dataset
+                        .originalText ||
+                    "Save Settings";
+            }
+        }
+    };
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+    ===================================================== */
+
+    const setupMobileMenu = () => {
 
         const sidebar =
-            document.querySelector(".sf-side");
+            document.querySelector(
+                ".sf-side"
+            );
+
+        const menuButton =
+            document.querySelector(
+                "[data-menu]"
+            );
 
 
         if (
-            !settingsForm ||
-            !reorderInput ||
-            !themeSelect ||
-            !message ||
-            !logoutButton
+            !sidebar ||
+            !menuButton
         ) {
-            console.error(
-                "Settings page elements were not found."
-            );
-
             return;
         }
 
 
-        /* =====================================================
-           LOAD SAVED SETTINGS
-        ===================================================== */
-
-        const savedReorder =
-            localStorage.getItem(
-                "stockflow_reorder"
-            );
-
-        const savedTheme =
-            localStorage.getItem(
-                "stockflow_theme"
+        let overlay =
+            document.querySelector(
+                ".sf-sidebar-overlay"
             );
 
 
-        if (savedReorder !== null) {
-            reorderInput.value = savedReorder;
+        /*
+         * Create overlay only if the
+         * shared layout does not already
+         * provide one.
+         */
+
+        if (!overlay) {
+
+            overlay =
+                document.createElement(
+                    "div"
+                );
+
+            overlay.className =
+                "sf-sidebar-overlay";
+
+            document.body.appendChild(
+                overlay
+            );
         }
 
 
-        if (
-            savedTheme !== null &&
-            (
-                savedTheme === "system" ||
-                savedTheme === "light"
-            )
-        ) {
-            themeSelect.value = savedTheme;
-        }
+        const closeMenu = () => {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+            overlay.classList.remove(
+                "show"
+            );
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+            document.body.style.overflow =
+                "";
+        };
 
 
-        /* =====================================================
-           SAVE SETTINGS
-        ===================================================== */
+        const openMenu = () => {
 
-        settingsForm.addEventListener(
-            "submit",
-            (event) => {
+            sidebar.classList.add(
+                "open"
+            );
 
-                event.preventDefault();
+            overlay.classList.add(
+                "show"
+            );
 
+            menuButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
 
-                const reorderValue =
-                    Math.max(
-                        0,
-                        Number(reorderInput.value) || 0
-                    );
-
-
-                const themeValue =
-                    themeSelect.value;
+            document.body.style.overflow =
+                "hidden";
+        };
 
 
-                localStorage.setItem(
-                    "stockflow_reorder",
-                    String(reorderValue)
-                );
-
-
-                localStorage.setItem(
-                    "stockflow_theme",
-                    themeValue
-                );
-
-
-                message.textContent =
-                    "Settings saved on this browser.";
-
-                message.classList.remove("error");
-                message.classList.add("success");
-
-
-                window.setTimeout(() => {
-
-                    message.textContent = "";
-
-                    message.classList.remove(
-                        "success",
-                        "error"
-                    );
-
-                }, 3000);
-
-            }
-        );
-
-
-        /* =====================================================
-           LOGOUT
-        ===================================================== */
-
-        logoutButton.addEventListener(
+        menuButton.addEventListener(
             "click",
             () => {
 
-                if (
-                    typeof StockFlowAuth.logout ===
-                    "function"
-                ) {
-                    StockFlowAuth.logout();
-                    return;
+                const isOpen =
+                    sidebar.classList.contains(
+                        "open"
+                    );
+
+                if (isOpen) {
+                    closeMenu();
+                } else {
+                    openMenu();
                 }
-
-                console.error(
-                    "StockFlowAuth.logout is not available."
-                );
-
             }
         );
 
 
-        /* =====================================================
-           MOBILE SIDEBAR
-        ===================================================== */
+        overlay.addEventListener(
+            "click",
+            closeMenu
+        );
 
-        if (menuButton && sidebar) {
 
-            menuButton.addEventListener(
-                "click",
-                () => {
+        sidebar
+            .querySelectorAll("a")
+            .forEach(
+                link => {
 
-                    const isOpen =
-                        sidebar.classList.toggle("open");
-
-                    menuButton.setAttribute(
-                        "aria-expanded",
-                        String(isOpen)
+                    link.addEventListener(
+                        "click",
+                        closeMenu
                     );
-
                 }
             );
 
 
-            const sidebarLinks =
-                sidebar.querySelectorAll("a");
+        document.addEventListener(
+            "keydown",
+            event => {
 
-            sidebarLinks.forEach((link) => {
+                if (
+                    event.key ===
+                    "Escape"
+                ) {
+                    closeMenu();
+                }
+            }
+        );
 
-                link.addEventListener(
-                    "click",
-                    () => {
 
-                        sidebar.classList.remove(
-                            "open"
-                        );
+        window.addEventListener(
+            "resize",
+            () => {
 
-                        menuButton.setAttribute(
-                            "aria-expanded",
-                            "false"
-                        );
+                if (
+                    window.innerWidth >
+                    900
+                ) {
+                    closeMenu();
+                }
+            }
+        );
+    };
 
-                    }
-                );
 
-            });
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
 
+    const setupLogout = () => {
+
+        const logoutButton =
+            $("logout");
+
+
+        if (!logoutButton) {
+            return;
         }
 
 
-    } catch (error) {
+        logoutButton.addEventListener(
+            "click",
+            async () => {
 
-        console.error(
-            "Unable to initialize settings:",
-            error
+                if (
+                    logoutButton.disabled
+                ) {
+                    return;
+                }
+
+
+                const confirmed =
+                    window.confirm(
+                        "Are you sure you want to logout from STOCKFLOW?"
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+
+                logoutButton.disabled =
+                    true;
+
+                logoutButton.textContent =
+                    "Logging out...";
+
+
+                try {
+
+                    if (
+                        window.StockFlowAuth &&
+                        typeof window.StockFlowAuth.logout ===
+                            "function"
+                    ) {
+
+                        await window.StockFlowAuth.logout();
+
+                        return;
+                    }
+
+
+                    /*
+                     * Fallback if auth.js
+                     * is unavailable.
+                     */
+
+                    sessionStorage.clear();
+
+                    window.location.replace(
+                        "auth.html"
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "STOCKFLOW logout error:",
+                        error
+                    );
+
+
+                    sessionStorage.clear();
+
+                    window.location.replace(
+                        "auth.html"
+                    );
+                }
+            }
+        );
+    };
+
+
+    /* =====================================================
+       AUTHENTICATION
+    ===================================================== */
+
+    const initializeAuthentication =
+        async () => {
+
+            if (
+                !window.StockFlowAuth ||
+                typeof window.StockFlowAuth.requireAuth !==
+                    "function"
+            ) {
+
+                return true;
+            }
+
+
+            try {
+
+                const user =
+                    await window.StockFlowAuth
+                        .requireAuth();
+
+                return Boolean(user);
+
+            } catch (error) {
+
+                console.error(
+                    "STOCKFLOW settings authentication error:",
+                    error
+                );
+
+                return false;
+            }
+        };
+
+
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+
+    const initialize = async () => {
+
+        /*
+         * Authentication first so the
+         * settings page remains protected.
+         */
+
+        const authenticated =
+            await initializeAuthentication();
+
+
+        if (!authenticated) {
+            return;
+        }
+
+
+        loadSettings();
+
+        setupMobileMenu();
+
+        setupLogout();
+
+
+        const form =
+            $("settings");
+
+
+        if (form) {
+
+            form.addEventListener(
+                "submit",
+                saveSettings
+            );
+        }
+
+
+        const theme =
+            $("theme");
+
+
+        if (theme) {
+
+            theme.addEventListener(
+                "change",
+                () => {
+
+                    applyTheme(
+                        theme.value
+                    );
+                }
+            );
+        }
+    };
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
         );
 
+    } else {
+
+        initialize();
     }
 
-});
+})();
