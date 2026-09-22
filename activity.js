@@ -1,649 +1,854 @@
 /* =========================================================
-   STOCKFLOW — ACTIVITY LOG CONTROLLER
-   ========================================================= */
+   STOCKFLOW — ACTIVITY LOG MODULE
+   Loads and displays system activity records
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
+(() => {
     "use strict";
 
-    const rows =
-        document.getElementById("rows");
-
-    const refreshButton =
-        document.getElementById("refresh");
-
-    const menuButton =
-        document.querySelector("[data-menu]");
-
-    const sidebar =
-        document.querySelector(".sf-side");
-
 
     /* =====================================================
-       BASIC ELEMENT CHECK
-       ===================================================== */
+       STATE
+    ===================================================== */
 
-    if (!rows) {
-        console.error(
-            "Activity table body was not found."
-        );
-
-        return;
-    }
-
-
-    /* =====================================================
-       API RESOLVER
-       ===================================================== */
-
-    function getAPI() {
-
-        if (
-            typeof StockFlowAPI !== "undefined"
-        ) {
-            return StockFlowAPI;
-        }
-
-        if (
-            typeof API !== "undefined"
-        ) {
-            return API;
-        }
-
-        return null;
-    }
-
-
-    /* =====================================================
-       AUTHENTICATION
-       ===================================================== */
-
-    try {
-
-        if (
-            typeof StockFlowAuth !== "undefined" &&
-            typeof StockFlowAuth.requireAuth ===
-                "function"
-        ) {
-            const user =
-                await StockFlowAuth.requireAuth();
-
-            if (!user) {
-                return;
-            }
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Activity authentication error:",
-            error
-        );
-
-        renderMessage(
-            "Unable to verify your session."
-        );
-
-        return;
-    }
+    const state = {
+        activities: [],
+        loading: false
+    };
 
 
     /* =====================================================
        HELPERS
-       ===================================================== */
+    ===================================================== */
 
-    function escapeHTML(value) {
-
-        return String(
-            value ?? ""
-        )
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-
-    }
+    const $ = (id) => document.getElementById(id);
 
 
-    function getValue(
-        object,
-        ...keys
-    ) {
+    const escapeHTML = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
 
-        if (!object) {
-            return "";
-        }
+
+    const getValue = (item, ...keys) => {
 
         for (const key of keys) {
 
             if (
-                object[key] !== undefined &&
-                object[key] !== null
+                item &&
+                item[key] !== undefined &&
+                item[key] !== null &&
+                item[key] !== ""
             ) {
-                return object[key];
+                return item[key];
             }
-
         }
 
         return "";
+    };
 
-    }
 
+    /* =====================================================
+       DATE FORMAT
+    ===================================================== */
 
-    function formatDate(value) {
+    const formatDate = (value) => {
 
         if (!value) {
             return "—";
         }
 
-        const date =
-            new Date(value);
+        const date = new Date(value);
 
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-            return escapeHTML(value);
+        if (Number.isNaN(date.getTime())) {
+            return escapeHTML(String(value));
         }
 
-        return date.toLocaleString(
-            undefined,
+        return date.toLocaleDateString(
+            "en-PH",
             {
-                year: "numeric",
                 month: "short",
                 day: "2-digit",
+                year: "numeric"
+            }
+        );
+    };
+
+
+    const formatTime = (value) => {
+
+        if (!value) {
+            return "";
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return "";
+        }
+
+        return date.toLocaleTimeString(
+            "en-PH",
+            {
                 hour: "2-digit",
                 minute: "2-digit"
             }
         );
-
-    }
-
-
-    function normalizeAction(value) {
-
-        return String(
-            value ?? ""
-        )
-        .trim()
-        .toLowerCase()
-        .replaceAll("_", "-")
-        .replaceAll(" ", "-");
-
-    }
-
-
-    function actionClass(action) {
-
-        const normalized =
-            normalizeAction(action);
-
-        if (
-            normalized.includes("stock-in") ||
-            normalized === "in" ||
-            normalized.includes("add")
-        ) {
-            return "in";
-        }
-
-        if (
-            normalized.includes("stock-out") ||
-            normalized === "out" ||
-            normalized.includes("remove")
-        ) {
-            return "out";
-        }
-
-        if (
-            normalized.includes("delete") ||
-            normalized.includes("remove")
-        ) {
-            return "delete";
-        }
-
-        if (
-            normalized.includes("create") ||
-            normalized.includes("add")
-        ) {
-            return "create";
-        }
-
-        if (
-            normalized.includes("update") ||
-            normalized.includes("edit")
-        ) {
-            return "update";
-        }
-
-        return "";
-    }
-
-
-    function renderMessage(
-        message
-    ) {
-
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="6"
-                    class="sf-empty"
-                >
-                    ${escapeHTML(message)}
-                </td>
-            </tr>
-        `;
-
-    }
+    };
 
 
     /* =====================================================
-       EXTRACT RESPONSE DATA
-       ===================================================== */
+       EXTRACT API DATA
+    ===================================================== */
 
-    function extractRecords(response) {
+    const extractActivities = (response) => {
 
         if (!response) {
             return [];
         }
 
-
         if (Array.isArray(response)) {
             return response;
         }
 
-
-        if (
-            Array.isArray(response.data)
-        ) {
-            return response.data;
-        }
-
-
-        if (
-            Array.isArray(response.activities)
-        ) {
+        if (Array.isArray(response.activities)) {
             return response.activities;
         }
 
-
-        if (
-            Array.isArray(response.activity)
-        ) {
+        if (Array.isArray(response.activity)) {
             return response.activity;
         }
 
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
 
-        if (
-            Array.isArray(response.rows)
-        ) {
+        if (Array.isArray(response.rows)) {
             return response.rows;
         }
 
-
-        if (
-            response.data &&
-            Array.isArray(response.data.rows)
-        ) {
-            return response.data.rows;
-        }
-
-
         return [];
-
-    }
+    };
 
 
     /* =====================================================
-       RENDER ACTIVITY
-       ===================================================== */
+       GET ACTIVITY FIELDS
+    ===================================================== */
 
-    function renderActivity(
-        records
-    ) {
+    const getActivityDate = (activity) => {
 
-        if (!records.length) {
+        return getValue(
+            activity,
+            "DATE",
+            "date",
+            "CREATED_AT",
+            "createdAt",
+            "created"
+        );
+    };
 
-            renderMessage(
-                "No activity records found."
-            );
 
+    const getActivityAction = (activity) => {
+
+        return getValue(
+            activity,
+            "ACTION",
+            "action",
+            "TYPE",
+            "type"
+        ) || "SYSTEM ACTION";
+    };
+
+
+    const getActivityModule = (activity) => {
+
+        return getValue(
+            activity,
+            "MODULE",
+            "module"
+        ) || "SYSTEM";
+    };
+
+
+    const getActivityReference = (activity) => {
+
+        return getValue(
+            activity,
+            "REFERENCE",
+            "reference",
+            "REF",
+            "ref"
+        ) || "—";
+    };
+
+
+    const getActivityUser = (activity) => {
+
+        return getValue(
+            activity,
+            "USER",
+            "user",
+            "USERNAME",
+            "username",
+            "EMAIL",
+            "email"
+        ) || "System";
+    };
+
+
+    const getActivityDetails = (activity) => {
+
+        return getValue(
+            activity,
+            "DETAILS",
+            "details",
+            "DESCRIPTION",
+            "description"
+        ) || "—";
+    };
+
+
+    /* =====================================================
+       USER INITIALS
+    ===================================================== */
+
+    const getInitials = (name) => {
+
+        const value =
+            String(name || "System").trim();
+
+        const parts =
+            value
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2);
+
+        const initials =
+            parts
+                .map(
+                    part =>
+                        part.charAt(0).toUpperCase()
+                )
+                .join("");
+
+        return initials || "S";
+    };
+
+
+    /* =====================================================
+       LOADING STATE
+    ===================================================== */
+
+    const showLoading = () => {
+
+        const body = $("rows");
+
+        if (!body) {
             return;
         }
 
-
-        rows.innerHTML =
-            records.map(
-                (record) => {
-
-                    const date =
-                        getValue(
-                            record,
-                            "date",
-                            "created_at",
-                            "createdAt",
-                            "timestamp",
-                            "activity_date"
-                        );
-
-
-                    const action =
-                        getValue(
-                            record,
-                            "action",
-                            "activity",
-                            "type",
-                            "movement_type"
-                        );
-
-
-                    const module =
-                        getValue(
-                            record,
-                            "module",
-                            "source",
-                            "section"
-                        );
-
-
-                    const reference =
-                        getValue(
-                            record,
-                            "reference",
-                            "reference_no",
-                            "referenceNo",
-                            "ref"
-                        );
-
-
-                    const user =
-                        getValue(
-                            record,
-                            "user",
-                            "username",
-                            "user_name",
-                            "created_by",
-                            "createdBy"
-                        );
-
-
-                    const details =
-                        getValue(
-                            record,
-                            "details",
-                            "description",
-                            "message",
-                            "remarks"
-                        );
-
-
-                    const badgeClass =
-                        actionClass(action);
-
-
-                    return `
-                        <tr>
-
-                            <td>
-                                ${formatDate(date)}
-                            </td>
-
-                            <td>
-                                <span
-                                    class="action-badge ${badgeClass}"
-                                >
-                                    ${escapeHTML(
-                                        action || "Activity"
-                                    )}
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="activity-module">
-                                    ${escapeHTML(
-                                        module || "—"
-                                    )}
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="activity-reference">
-                                    ${escapeHTML(
-                                        reference || "—"
-                                    )}
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="activity-user">
-                                    ${escapeHTML(
-                                        user || "—"
-                                    )}
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="activity-details">
-                                    ${escapeHTML(
-                                        details || "—"
-                                    )}
-                                </span>
-                            </td>
-
-                        </tr>
-                    `;
-
-                }
-            )
-            .join("");
-
-    }
-
-
-    /* =====================================================
-       LOAD ACTIVITY
-       ===================================================== */
-
-    async function loadActivity() {
-
-        rows.innerHTML = `
+        body.innerHTML = `
             <tr>
                 <td
                     colspan="6"
                     class="sf-empty"
                 >
-                    Loading activity...
+                    <span class="activity-loading">
+                        <span class="activity-spinner"></span>
+                        Loading activity records...
+                    </span>
                 </td>
             </tr>
         `;
+    };
 
 
-        const api =
-            getAPI();
+    /* =====================================================
+       EMPTY STATE
+    ===================================================== */
 
+    const showEmpty = () => {
 
-        if (!api) {
+        const body = $("rows");
 
-            console.error(
-                "StockFlow API is not available."
-            );
-
-            renderMessage(
-                "API connection is unavailable."
-            );
-
+        if (!body) {
             return;
         }
 
+        body.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="sf-empty"
+                >
+                    No activity records found.
+                </td>
+            </tr>
+        `;
+    };
+
+
+    /* =====================================================
+       ERROR STATE
+    ===================================================== */
+
+    const showError = (message) => {
+
+        const body = $("rows");
+
+        if (!body) {
+            return;
+        }
+
+        body.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="sf-empty activity-error"
+                >
+                    ${escapeHTML(
+                        message ||
+                        "Unable to load activity records."
+                    )}
+                </td>
+            </tr>
+        `;
+    };
+
+
+    /* =====================================================
+       RENDER ACTIVITY
+    ===================================================== */
+
+    const renderActivities = () => {
+
+        const body = $("rows");
+
+        if (!body) {
+            return;
+        }
+
+        if (!state.activities.length) {
+            showEmpty();
+            return;
+        }
+
+        body.innerHTML =
+            state.activities
+                .map(renderActivityRow)
+                .join("");
+    };
+
+
+    const renderActivityRow = (activity) => {
+
+        const date =
+            getActivityDate(activity);
+
+        const action =
+            getActivityAction(activity);
+
+        const module =
+            getActivityModule(activity);
+
+        const reference =
+            getActivityReference(activity);
+
+        const user =
+            getActivityUser(activity);
+
+        const details =
+            getActivityDetails(activity);
+
+        return `
+            <tr>
+
+                <td>
+                    <div class="activity-date">
+
+                        <strong>
+                            ${formatDate(date)}
+                        </strong>
+
+                        <span>
+                            ${escapeHTML(
+                                formatTime(date)
+                            )}
+                        </span>
+
+                    </div>
+                </td>
+
+
+                <td>
+                    <span class="activity-action">
+                        ${escapeHTML(action)}
+                    </span>
+                </td>
+
+
+                <td>
+                    <span class="activity-module">
+                        ${escapeHTML(module)}
+                    </span>
+                </td>
+
+
+                <td>
+                    <span class="activity-reference">
+                        ${escapeHTML(reference)}
+                    </span>
+                </td>
+
+
+                <td>
+                    <div class="activity-user">
+
+                        <div class="activity-user-avatar">
+                            ${escapeHTML(
+                                getInitials(user)
+                            )}
+                        </div>
+
+                        <span class="activity-user-name">
+                            ${escapeHTML(user)}
+                        </span>
+
+                    </div>
+                </td>
+
+
+                <td>
+                    <div class="activity-details">
+                        ${escapeHTML(details)}
+                    </div>
+                </td>
+
+            </tr>
+        `;
+    };
+
+
+    /* =====================================================
+       LOAD ACTIVITY
+    ===================================================== */
+
+    const loadActivity = async () => {
+
+        if (state.loading) {
+            return;
+        }
+
+        state.loading = true;
+
+        showLoading();
 
         try {
 
-            let response;
+            if (
+                !window.StockFlowAPI
+            ) {
+                throw new Error(
+                    "StockFlow API is not available."
+                );
+            }
+
+
+            /*
+             * Expected API method:
+             * StockFlowAPI.listActivity()
+             */
+
+            if (
+                typeof window.StockFlowAPI.listActivity !==
+                "function"
+            ) {
+                throw new Error(
+                    "Activity Log API is not available."
+                );
+            }
+
+
+            const response =
+                await window.StockFlowAPI.listActivity();
 
 
             if (
-                typeof api.listActivity ===
-                "function"
+                response &&
+                response.success === false
             ) {
-
-                response =
-                    await api.listActivity();
-
-            }
-
-            else if (
-                typeof api.getActivity ===
-                "function"
-            ) {
-
-                response =
-                    await api.getActivity();
-
-            }
-
-            else if (
-                typeof api.request ===
-                "function"
-            ) {
-
-                response =
-                    await api.request(
-                        "listActivity"
-                    );
-
-            }
-
-            else {
-
                 throw new Error(
-                    "No activity API method was found."
+                    response.message ||
+                    "Unable to load activity records."
                 );
-
             }
 
 
-            const records =
-                extractRecords(response);
+            state.activities =
+                extractActivities(response);
 
 
-            renderActivity(records);
+            renderActivities();
 
         } catch (error) {
 
             console.error(
-                "Unable to load activity:",
+                "STOCKFLOW Activity Log error:",
                 error
             );
 
-            renderMessage(
-                error?.message ||
+            state.activities = [];
+
+            showError(
+                error.message ||
                 "Unable to load activity records."
             );
 
-        }
+        } finally {
 
-    }
+            state.loading = false;
+        }
+    };
 
 
     /* =====================================================
        REFRESH
-       ===================================================== */
+    ===================================================== */
 
-    if (refreshButton) {
+    const setupRefresh = () => {
 
-        refreshButton.addEventListener(
+        const button = $("refresh");
+
+        if (!button) {
+            return;
+        }
+
+        button.addEventListener(
             "click",
             async () => {
 
-                refreshButton.disabled = true;
+                if (state.loading) {
+                    return;
+                }
 
                 const originalText =
-                    refreshButton.textContent;
+                    button.innerHTML;
 
-                refreshButton.textContent =
-                    "↻ Loading...";
+                button.disabled = true;
 
+                button.innerHTML =
+                    "↻ Refreshing...";
 
                 try {
 
                     await loadActivity();
 
+                    showToast(
+                        "Activity log refreshed.",
+                        "success"
+                    );
+
                 } finally {
 
-                    refreshButton.disabled = false;
+                    button.disabled = false;
 
-                    refreshButton.textContent =
+                    button.innerHTML =
                         originalText;
-
                 }
-
             }
         );
-
-    }
+    };
 
 
     /* =====================================================
-       MOBILE SIDEBAR
-       ===================================================== */
+       TOAST
+    ===================================================== */
 
-    if (
-        menuButton &&
-        sidebar
-    ) {
+    const showToast = (
+        message,
+        type = "success"
+    ) => {
+
+        let container =
+            document.querySelector(
+                ".activity-toast-container"
+            );
+
+        if (!container) {
+
+            container =
+                document.createElement("div");
+
+            container.className =
+                "activity-toast-container";
+
+            document.body.appendChild(
+                container
+            );
+        }
+
+
+        const toast =
+            document.createElement("div");
+
+        toast.className =
+            "activity-toast";
+
+        toast.textContent =
+            message || "";
+
+
+        if (type === "error") {
+
+            toast.style.color =
+                "#b42318";
+
+            toast.style.background =
+                "#fff8f7";
+
+            toast.style.borderColor =
+                "#f1c7c2";
+        }
+
+
+        container.appendChild(toast);
+
+
+        window.setTimeout(() => {
+
+            toast.style.opacity = "0";
+
+            toast.style.transform =
+                "translateY(8px)";
+
+            window.setTimeout(() => {
+                toast.remove();
+            }, 180);
+
+        }, 2600);
+    };
+
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+
+    const setupSidebar = () => {
+
+        const sidebar =
+            $("sidebar");
+
+        const menuButton =
+            $("menuButton");
+
+        if (
+            !sidebar ||
+            !menuButton
+        ) {
+            return;
+        }
+
+
+        let overlay =
+            document.querySelector(
+                ".activity-sidebar-overlay"
+            );
+
+
+        if (!overlay) {
+
+            overlay =
+                document.createElement("div");
+
+            overlay.className =
+                "activity-sidebar-overlay";
+
+            Object.assign(
+                overlay.style,
+                {
+                    position: "fixed",
+                    inset: "0",
+                    background:
+                        "rgba(8, 26, 51, 0.28)",
+                    zIndex: "999",
+                    display: "none"
+                }
+            );
+
+            document.body.appendChild(
+                overlay
+            );
+        }
+
+
+        const closeSidebar = () => {
+
+            sidebar.classList.remove(
+                "is-open"
+            );
+
+            document.body.classList.remove(
+                "activity-sidebar-open"
+            );
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+            overlay.style.display =
+                "none";
+        };
+
+
+        const openSidebar = () => {
+
+            sidebar.classList.add(
+                "is-open"
+            );
+
+            document.body.classList.add(
+                "activity-sidebar-open"
+            );
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+            overlay.style.display =
+                "block";
+        };
+
 
         menuButton.addEventListener(
             "click",
             () => {
 
                 const isOpen =
-                    sidebar.classList.toggle(
-                        "open"
+                    sidebar.classList.contains(
+                        "is-open"
                     );
 
-                menuButton.setAttribute(
-                    "aria-expanded",
-                    String(isOpen)
-                );
-
+                if (isOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             }
         );
 
 
-        const links =
-            sidebar.querySelectorAll("a");
+        overlay.addEventListener(
+            "click",
+            closeSidebar
+        );
 
 
-        links.forEach(
-            (link) => {
+        sidebar
+            .querySelectorAll("a")
+            .forEach(link => {
 
                 link.addEventListener(
                     "click",
-                    () => {
-
-                        sidebar.classList.remove(
-                            "open"
-                        );
-
-                        menuButton.setAttribute(
-                            "aria-expanded",
-                            "false"
-                        );
-
-                    }
+                    closeSidebar
                 );
+            });
 
+
+        window.addEventListener(
+            "resize",
+            () => {
+
+                if (
+                    window.innerWidth > 850
+                ) {
+                    closeSidebar();
+                }
             }
         );
-
-    }
+    };
 
 
     /* =====================================================
-       INITIAL LOAD
-       ===================================================== */
+       AUTHENTICATION
+    ===================================================== */
 
-    await loadActivity();
+    const initializeAuthentication =
+        async () => {
 
-});
+            if (
+                !window.StockFlowAuth ||
+                typeof window.StockFlowAuth.requireAuth !==
+                "function"
+            ) {
+                return true;
+            }
+
+            try {
+
+                const user =
+                    await window.StockFlowAuth.requireAuth();
+
+                return Boolean(user);
+
+            } catch (error) {
+
+                console.error(
+                    "Activity authentication error:",
+                    error
+                );
+
+                return false;
+            }
+        };
+
+
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+
+    const initialize = async () => {
+
+        setupSidebar();
+
+        setupRefresh();
+
+
+        const authenticated =
+            await initializeAuthentication();
+
+
+        if (!authenticated) {
+            return;
+        }
+
+
+        await loadActivity();
+    };
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
+        );
+
+    } else {
+
+        initialize();
+    }
+
+})();
