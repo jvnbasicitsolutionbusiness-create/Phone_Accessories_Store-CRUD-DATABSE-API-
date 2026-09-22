@@ -204,12 +204,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* =====================================================
+       ROLE NORMALIZATION
+       ===================================================== */
+
     function normalizeRole(role) {
         const value = safeString(
             role,
-            "Administrator"
+            "Employee"
         ).toLowerCase();
 
+        /*
+         * Administrator / Manager
+         */
         if (
             value.includes("admin") ||
             value.includes("manager")
@@ -217,6 +224,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return "Administrator";
         }
 
+        /*
+         * Employee / Staff / Worker
+         */
         if (
             value.includes("employee") ||
             value.includes("staff") ||
@@ -225,10 +235,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return "Employee";
         }
 
-        return safeString(
-            role,
-            "Administrator"
-        );
+        /*
+         * IMPORTANT:
+         * Default role is Employee.
+         */
+        return "Employee";
     }
 
 
@@ -257,11 +268,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function readStoredUser() {
         for (const key of AUTH_STORAGE_KEYS) {
+
+            /* ---------------------------------------------
+               LOCAL STORAGE
+               --------------------------------------------- */
+
             try {
                 const localValue =
                     localStorage.getItem(key);
 
                 if (localValue) {
+
                     try {
                         return JSON.parse(
                             localValue
@@ -272,15 +289,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         };
                     }
                 }
+
             } catch {
                 // Continue.
             }
+
+
+            /* ---------------------------------------------
+               SESSION STORAGE
+               --------------------------------------------- */
 
             try {
                 const sessionValue =
                     sessionStorage.getItem(key);
 
                 if (sessionValue) {
+
                     try {
                         return JSON.parse(
                             sessionValue
@@ -291,6 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         };
                     }
                 }
+
             } catch {
                 // Continue.
             }
@@ -301,9 +326,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     async function getCurrentUser() {
-        const auth = getAuthController();
+
+        const auth =
+            getAuthController();
+
+
+        /* -------------------------------------------------
+           AUTH CONTROLLER
+           ------------------------------------------------- */
 
         if (auth) {
+
             const methods = [
                 "getCurrentUser",
                 "currentUser",
@@ -313,7 +346,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 "getSession"
             ];
 
+
             for (const method of methods) {
+
                 if (
                     typeof auth[method] !==
                     "function"
@@ -321,28 +356,47 @@ document.addEventListener("DOMContentLoaded", () => {
                     continue;
                 }
 
+
                 try {
+
                     const result =
                         await auth[method]();
+
 
                     if (result) {
                         return result;
                     }
+
                 } catch {
                     // Try next method.
                 }
             }
         }
 
+
+        /* -------------------------------------------------
+           STORAGE FALLBACK
+           ------------------------------------------------- */
+
         return readStoredUser();
     }
 
 
+    /* =====================================================
+       APPLY USER
+       ===================================================== */
+
     function applyUser(user) {
+
         const source =
             isObject(user)
                 ? user
                 : {};
+
+
+        /* -------------------------------------------------
+           USER NAME
+           ------------------------------------------------- */
 
         const name =
             safeString(
@@ -356,43 +410,70 @@ document.addEventListener("DOMContentLoaded", () => {
                 "StockFlow User"
             );
 
+
+        /* -------------------------------------------------
+           USER ROLE
+           
+           IMPORTANT:
+           Only source.role is used.
+
+           accountStatus / account_s are NOT used
+           because they represent account status,
+           not the employee role.
+           ------------------------------------------------- */
+
         const role =
             normalizeRole(
                 source.role ||
-                source.accountStatus ||
-                source.account_status ||
-                source.account_s ||
-                "Administrator"
+                "Employee"
             );
+
+
+        /* -------------------------------------------------
+           INITIALS
+           ------------------------------------------------- */
 
         const initials =
             getInitials(name);
 
+
+        /* -------------------------------------------------
+           SIDEBAR USER
+           ------------------------------------------------- */
 
         if (elements.userName) {
             elements.userName.textContent =
                 name;
         }
 
-        if (elements.topUserName) {
-            elements.topUserName.textContent =
-                name;
-        }
 
         if (elements.userRole) {
             elements.userRole.textContent =
                 role;
         }
 
-        if (elements.topUserRole) {
-            elements.topUserRole.textContent =
-                role;
-        }
 
         if (elements.userAvatar) {
             elements.userAvatar.textContent =
                 initials;
         }
+
+
+        /* -------------------------------------------------
+           TOP USER
+           ------------------------------------------------- */
+
+        if (elements.topUserName) {
+            elements.topUserName.textContent =
+                name;
+        }
+
+
+        if (elements.topUserRole) {
+            elements.topUserRole.textContent =
+                role;
+        }
+
 
         if (elements.topUserAvatar) {
             elements.topUserAvatar.textContent =
@@ -409,21 +490,26 @@ document.addEventListener("DOMContentLoaded", () => {
         connected,
         message
     ) {
+
         if (!elements.connectionBadge) {
             return;
         }
+
 
         elements.connectionBadge.classList.toggle(
             "offline",
             !connected
         );
 
+
         if (elements.connectionMessage) {
+
             elements.connectionMessage.textContent =
                 connected
                     ? "SYSTEM CONNECTED"
                     : "SYSTEM OFFLINE";
         }
+
 
         elements.connectionBadge.setAttribute(
             "title",
@@ -438,6 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function setConnected() {
+
         setConnectionStatus(
             true,
             "SYSTEM CONNECTED"
@@ -446,6 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function setOffline() {
+
         setConnectionStatus(
             false,
             "SYSTEM OFFLINE"
@@ -458,12 +546,15 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function hideAlert() {
+
         if (!elements.alert) {
             return;
         }
 
+
         elements.alert.className =
             "sf-alert";
+
 
         elements.alert.innerHTML = "";
     }
@@ -475,11 +566,14 @@ document.addEventListener("DOMContentLoaded", () => {
         actionText = "",
         actionCallback = null
     ) {
+
         if (!elements.alert) {
             return;
         }
 
+
         const icons = {
+
             error:
                 "fa-solid fa-circle-exclamation",
 
@@ -493,14 +587,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 "fa-solid fa-circle-info"
         };
 
+
         const icon =
             icons[type] ||
             icons.info;
 
+
         elements.alert.className =
             `sf-alert show ${type}`;
 
+
         elements.alert.innerHTML = `
+
             <i class="alert-icon ${icon}"></i>
 
             <div class="alert-content">
@@ -521,17 +619,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         `;
 
+
         if (
             actionText &&
             typeof actionCallback ===
                 "function"
         ) {
+
             const button =
                 elements.alert.querySelector(
                     ".alert-action"
                 );
 
+
             if (button) {
+
                 button.addEventListener(
                     "click",
                     actionCallback
@@ -546,25 +648,32 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function openSidebar() {
+
         if (!elements.sidebar) {
             return;
         }
+
 
         elements.sidebar.classList.add(
             "open"
         );
 
+
         if (elements.sidebarOverlay) {
+
             elements.sidebarOverlay.classList.add(
                 "show"
             );
         }
 
+
         elements.body.classList.add(
             "sidebar-open"
         );
 
+
         if (elements.mobileMenuBtn) {
+
             elements.mobileMenuBtn.setAttribute(
                 "aria-expanded",
                 "true"
@@ -574,23 +683,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function closeSidebar() {
+
         if (elements.sidebar) {
+
             elements.sidebar.classList.remove(
                 "open"
             );
         }
 
+
         if (elements.sidebarOverlay) {
+
             elements.sidebarOverlay.classList.remove(
                 "show"
             );
         }
 
+
         elements.body.classList.remove(
             "sidebar-open"
         );
 
+
         if (elements.mobileMenuBtn) {
+
             elements.mobileMenuBtn.setAttribute(
                 "aria-expanded",
                 "false"
@@ -600,14 +716,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function toggleSidebar() {
+
         if (
             elements.sidebar &&
             elements.sidebar.classList.contains(
                 "open"
             )
         ) {
+
             closeSidebar();
+
         } else {
+
             openSidebar();
         }
     }
@@ -618,19 +738,24 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function closeNotifications() {
+
         if (!elements.notificationPanel) {
             return;
         }
+
 
         elements.notificationPanel.classList.remove(
             "show"
         );
 
+
         elements.notificationPanel.classList.remove(
             "active"
         );
 
+
         if (elements.notificationBtn) {
+
             elements.notificationBtn.setAttribute(
                 "aria-expanded",
                 "false"
@@ -640,15 +765,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function openNotifications() {
+
         if (!elements.notificationPanel) {
             return;
         }
+
 
         elements.notificationPanel.classList.add(
             "show"
         );
 
+
         if (elements.notificationBtn) {
+
             elements.notificationBtn.setAttribute(
                 "aria-expanded",
                 "true"
@@ -658,13 +787,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function toggleNotifications(event) {
+
         if (event) {
             event.stopPropagation();
         }
 
+
         if (!elements.notificationPanel) {
             return;
         }
+
 
         const isOpen =
             elements.notificationPanel.classList.contains(
@@ -674,9 +806,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "active"
             );
 
+
         if (isOpen) {
+
             closeNotifications();
+
         } else {
+
             openNotifications();
         }
     }
@@ -687,49 +823,67 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     async function logout() {
+
         const auth =
             getAuthController();
 
+
         try {
+
             if (
                 auth &&
                 typeof auth.logout ===
                     "function"
             ) {
+
                 await auth.logout();
+
                 return;
             }
+
 
             if (
                 auth &&
                 typeof auth.signOut ===
                     "function"
             ) {
+
                 await auth.signOut();
+
                 return;
             }
+
         } catch (error) {
+
             console.error(
                 "StockFlow logout error:",
                 error
             );
         }
 
+
         for (
             const key of AUTH_STORAGE_KEYS
         ) {
+
             try {
+
                 localStorage.removeItem(
                     key
                 );
+
             } catch {}
 
+
             try {
+
                 sessionStorage.removeItem(
                     key
                 );
+
             } catch {}
         }
+
 
         window.location.href =
             "./login.html";
@@ -741,43 +895,60 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function readLocalInventory() {
+
         for (
             const key of PRODUCT_STORAGE_KEYS
         ) {
+
             let value = null;
 
+
             try {
+
                 value =
                     localStorage.getItem(key);
+
             } catch {}
 
+
             if (!value) {
+
                 try {
+
                     value =
                         sessionStorage.getItem(
                             key
                         );
+
                 } catch {}
             }
+
 
             if (!value) {
                 continue;
             }
 
+
             try {
+
                 const parsed =
                     JSON.parse(value);
+
 
                 const extracted =
                     extractArray(parsed);
 
+
                 if (extracted.length) {
+
                     return extracted;
                 }
+
             } catch {
                 // Continue.
             }
         }
+
 
         return [];
     }
@@ -788,13 +959,16 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function extractArray(data) {
+
         if (Array.isArray(data)) {
             return data;
         }
 
+
         if (!isObject(data)) {
             return [];
         }
+
 
         const possibleKeys = [
             "data",
@@ -807,15 +981,19 @@ document.addEventListener("DOMContentLoaded", () => {
             "records"
         ];
 
+
         for (
             const key of possibleKeys
         ) {
+
             if (
                 Array.isArray(data[key])
             ) {
+
                 return data[key];
             }
         }
+
 
         return [];
     }
@@ -826,6 +1004,7 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     async function requestInventoryFromAPI() {
+
         const api =
             window.StockFlowAPI ||
             window.StockFlowApi ||
@@ -833,7 +1012,9 @@ document.addEventListener("DOMContentLoaded", () => {
             window.api ||
             null;
 
+
         if (!api) {
+
             throw new Error(
                 "StockFlow API controller not found."
             );
@@ -841,7 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /* -------------------------------------------------
-           Direct inventory methods
+           DIRECT INVENTORY METHODS
            ------------------------------------------------- */
 
         const directMethods = [
@@ -853,9 +1034,11 @@ document.addEventListener("DOMContentLoaded", () => {
             "listInventories"
         ];
 
+
         for (
             const method of directMethods
         ) {
+
             if (
                 typeof api[method] !==
                 "function"
@@ -863,17 +1046,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 continue;
             }
 
+
             try {
+
                 const response =
                     await api[method]();
+
 
                 const data =
                     extractArray(response);
 
+
                 if (Array.isArray(data)) {
+
                     return data;
                 }
+
             } catch (error) {
+
                 console.warn(
                     `Inventory API method ${method} failed:`,
                     error
@@ -883,7 +1073,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /* -------------------------------------------------
-           Generic request methods
+           GENERIC REQUEST METHODS
            ------------------------------------------------- */
 
         const genericMethods = [
@@ -891,6 +1081,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "get",
             "fetch"
         ];
+
 
         const endpoints = [
             "/inventory",
@@ -901,9 +1092,11 @@ document.addEventListener("DOMContentLoaded", () => {
             "inventories"
         ];
 
+
         for (
             const method of genericMethods
         ) {
+
             if (
                 typeof api[method] !==
                 "function"
@@ -911,23 +1104,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 continue;
             }
 
+
             for (
                 const endpoint of endpoints
             ) {
+
                 try {
+
                     const response =
                         await api[method](
                             endpoint
                         );
 
+
                     const data =
                         extractArray(response);
+
 
                     if (
                         Array.isArray(data)
                     ) {
+
                         return data;
                     }
+
                 } catch {
                     // Try next endpoint.
                 }
@@ -949,6 +1149,7 @@ document.addEventListener("DOMContentLoaded", () => {
         item,
         index
     ) {
+
         const source =
             isObject(item)
                 ? item
@@ -1040,25 +1241,37 @@ document.addEventListener("DOMContentLoaded", () => {
             state === "available" ||
             state === "in stock"
         ) {
+
             if (stock <= 0) {
+
                 state = "out";
+
             } else if (
                 reorder > 0 &&
                 stock <= reorder
             ) {
+
                 state = "low";
+
             } else {
+
                 state = "available";
             }
+
         } else if (
             state.includes("out")
         ) {
+
             state = "out";
+
         } else if (
             state.includes("low")
         ) {
+
             state = "low";
+
         } else {
+
             state = "available";
         }
 
@@ -1082,17 +1295,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function normalizeInventory(
         records
     ) {
-        return records
-            .map(
-                (
+
+        return records.map(
+            (
+                item,
+                index
+            ) =>
+                normalizeInventoryItem(
                     item,
                     index
-                ) =>
-                    normalizeInventoryItem(
-                        item,
-                        index
-                    )
-            );
+                )
+        );
     }
 
 
@@ -1103,8 +1316,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function calculateStats(
         inventory
     ) {
+
         const products =
             inventory.length;
+
 
         const totalUnits =
             inventory.reduce(
@@ -1119,12 +1334,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 0
             );
 
+
         const lowStock =
             inventory.filter(
                 item =>
                     item.state ===
                     "low"
             ).length;
+
 
         const outOfStock =
             inventory.filter(
@@ -1150,44 +1367,56 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderStats(
         inventory
     ) {
+
         const stats =
             calculateStats(
                 inventory
             );
 
+
         if (elements.productCount) {
+
             elements.productCount.textContent =
                 formatNumber(
                     stats.products
                 );
         }
 
+
         if (elements.totalStock) {
+
             elements.totalStock.textContent =
                 formatNumber(
                     stats.totalUnits
                 );
         }
 
+
         if (elements.lowStock) {
+
             elements.lowStock.textContent =
                 formatNumber(
                     stats.lowStock
                 );
         }
 
+
         if (elements.outOfStock) {
+
             elements.outOfStock.textContent =
                 formatNumber(
                     stats.outOfStock
                 );
         }
 
+
         if (elements.inventoryCount) {
+
             const label =
                 stats.products === 1
                     ? "inventory record"
                     : "inventory records";
+
 
             elements.inventoryCount.textContent =
                 `${formatNumber(stats.products)} ${label}`;
@@ -1202,13 +1431,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function getStockClass(
         state
     ) {
+
         if (state === "out") {
             return "out";
         }
 
+
         if (state === "low") {
             return "low";
         }
+
 
         return "available";
     }
@@ -1217,13 +1449,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function getStockLabel(
         state
     ) {
+
         if (state === "out") {
             return "OUT";
         }
 
+
         if (state === "low") {
             return "LOW";
         }
+
 
         return "OK";
     }
@@ -1232,13 +1467,16 @@ document.addEventListener("DOMContentLoaded", () => {
     function getStateLabel(
         state
     ) {
+
         if (state === "out") {
             return "Out of Stock";
         }
 
+
         if (state === "low") {
             return "Low Stock";
         }
+
 
         return "Available";
     }
@@ -1249,16 +1487,21 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function renderLoading() {
+
         if (!elements.rows) {
             return;
         }
 
+
         elements.rows.innerHTML = `
+
             <tr>
+
                 <td
                     colspan="7"
                     class="sf-empty"
                 >
+
                     <div class="table-loading">
 
                         <div class="loading-spinner"></div>
@@ -1273,7 +1516,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         </span>
 
                     </div>
+
                 </td>
+
             </tr>
         `;
     }
@@ -1284,16 +1529,21 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function renderEmpty() {
+
         if (!elements.rows) {
             return;
         }
 
+
         elements.rows.innerHTML = `
+
             <tr>
+
                 <td
                     colspan="7"
                     class="sf-empty"
                 >
+
                     <div class="table-empty-state">
 
                         <div class="empty-icon">
@@ -1310,7 +1560,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         </span>
 
                     </div>
+
                 </td>
+
             </tr>
         `;
     }
@@ -1323,77 +1575,101 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderInventory(
         inventory
     ) {
+
         if (!elements.rows) {
             return;
         }
 
+
         if (!inventory.length) {
+
             renderEmpty();
+
             return;
         }
+
 
         const html =
             inventory
                 .map(
                     item => {
+
                         const stateClass =
                             getStockClass(
                                 item.state
                             );
 
-                        const stockLabel =
-                            getStockLabel(
-                                item.state
-                            );
 
                         const stateLabel =
                             getStateLabel(
                                 item.state
                             );
 
+
                         return `
+
                             <tr>
 
                                 <td>
+
                                     <span class="sku-cell">
                                         ${escapeHTML(item.sku)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="product-cell">
                                         ${escapeHTML(item.product)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="category-cell">
                                         ${escapeHTML(item.category)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="supplier-cell">
                                         ${escapeHTML(item.supplier)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="stock-badge ${stateClass}">
                                         ${formatNumber(item.stock)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="reorder-cell">
                                         ${formatNumber(item.reorder)}
                                     </span>
+
                                 </td>
 
+
                                 <td>
+
                                     <span class="state-badge ${stateClass}">
                                         ${escapeHTML(stateLabel)}
                                     </span>
+
                                 </td>
 
                             </tr>
@@ -1401,6 +1677,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 )
                 .join("");
+
 
         elements.rows.innerHTML =
             html;
@@ -1414,16 +1691,21 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadInventory(
         options = {}
     ) {
+
         const silent =
             options.silent === true;
 
+
         if (!silent) {
+
             renderLoading();
+
             hideAlert();
         }
 
 
         try {
+
             let records = [];
 
             let apiWorked = false;
@@ -1434,11 +1716,15 @@ document.addEventListener("DOMContentLoaded", () => {
                --------------------------------------------- */
 
             try {
+
                 records =
                     await requestInventoryFromAPI();
 
+
                 apiWorked = true;
+
             } catch (apiError) {
+
                 console.warn(
                     "Inventory API unavailable:",
                     apiError
@@ -1454,12 +1740,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 !apiWorked ||
                 !Array.isArray(records)
             ) {
+
                 records =
                     readLocalInventory();
             }
 
 
             if (!Array.isArray(records)) {
+
                 records = [];
             }
 
@@ -1474,6 +1762,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentInventory
             );
 
+
             renderInventory(
                 currentInventory
             );
@@ -1487,6 +1776,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 apiWorked ||
                 currentInventory.length >= 0
             ) {
+
                 setConnected();
             }
 
@@ -1498,13 +1788,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (
                 currentInventory.length === 0
             ) {
+
                 if (!silent) {
+
                     showAlert(
                         "info",
                         "Inventory is currently empty."
                     );
                 }
+
             } else {
+
                 hideAlert();
             }
 
@@ -1521,6 +1815,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             renderStats([]);
+
 
             renderInventory([]);
 
@@ -1544,23 +1839,29 @@ document.addEventListener("DOMContentLoaded", () => {
        ===================================================== */
 
     function startAutoRefresh() {
+
         if (refreshTimer) {
+
             clearInterval(
                 refreshTimer
             );
         }
 
+
         refreshTimer =
             setInterval(
                 () => {
+
                     if (
                         document.visibilityState ===
                         "visible"
                     ) {
+
                         loadInventory({
                             silent: true
                         });
                     }
+
                 },
                 60000
             );
@@ -1571,10 +1872,16 @@ document.addEventListener("DOMContentLoaded", () => {
        EVENT HANDLERS
        ===================================================== */
 
+    /* -----------------------------------------------------
+       MOBILE MENU
+       ----------------------------------------------------- */
+
     if (elements.mobileMenuBtn) {
+
         elements.mobileMenuBtn.addEventListener(
             "click",
             event => {
+
                 event.stopPropagation();
 
                 toggleSidebar();
@@ -1583,7 +1890,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* -----------------------------------------------------
+       SIDEBAR OVERLAY
+       ----------------------------------------------------- */
+
     if (elements.sidebarOverlay) {
+
         elements.sidebarOverlay.addEventListener(
             "click",
             closeSidebar
@@ -1591,7 +1903,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* -----------------------------------------------------
+       NOTIFICATIONS
+       ----------------------------------------------------- */
+
     if (elements.notificationBtn) {
+
         elements.notificationBtn.addEventListener(
             "click",
             toggleNotifications
@@ -1600,20 +1917,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     if (elements.notificationPanel) {
+
         elements.notificationPanel.addEventListener(
             "click",
             event => {
+
                 event.stopPropagation();
             }
         );
     }
 
 
+    /* -----------------------------------------------------
+       DOCUMENT CLICK
+       ----------------------------------------------------- */
+
     document.addEventListener(
         "click",
         event => {
 
             /* Notification */
+
             if (
                 elements.notificationPanel &&
                 elements.notificationBtn &&
@@ -1624,11 +1948,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     event.target
                 )
             ) {
+
                 closeNotifications();
             }
 
 
             /* Sidebar */
+
             if (
                 window.innerWidth <= 900 &&
                 elements.sidebar &&
@@ -1642,13 +1968,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     event.target
                 )
             ) {
+
                 closeSidebar();
             }
         }
     );
 
 
-    /* Close sidebar when navigation item is clicked */
+    /* -----------------------------------------------------
+       CLOSE SIDEBAR WHEN NAVIGATION ITEM IS CLICKED
+       ----------------------------------------------------- */
 
     document
         .querySelectorAll(
@@ -1656,13 +1985,16 @@ document.addEventListener("DOMContentLoaded", () => {
         )
         .forEach(
             link => {
+
                 link.addEventListener(
                     "click",
                     () => {
+
                         if (
                             window.innerWidth <=
                             900
                         ) {
+
                             closeSidebar();
                         }
                     }
@@ -1671,58 +2003,75 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-    /* Logout */
+    /* -----------------------------------------------------
+       LOGOUT
+       ----------------------------------------------------- */
 
     if (elements.logoutBtn) {
+
         elements.logoutBtn.addEventListener(
             "click",
             async () => {
+
                 await logout();
             }
         );
     }
 
 
-    /* Escape key */
+    /* -----------------------------------------------------
+       ESCAPE KEY
+       ----------------------------------------------------- */
 
     document.addEventListener(
         "keydown",
         event => {
+
             if (
                 event.key !== "Escape"
             ) {
                 return;
             }
 
+
             closeNotifications();
+
             closeSidebar();
         }
     );
 
 
-    /* Window resize */
+    /* -----------------------------------------------------
+       WINDOW RESIZE
+       ----------------------------------------------------- */
 
     window.addEventListener(
         "resize",
         () => {
+
             if (
                 window.innerWidth > 900
             ) {
+
                 closeSidebar();
             }
         }
     );
 
 
-    /* Refresh when returning to page */
+    /* -----------------------------------------------------
+       REFRESH WHEN RETURNING TO PAGE
+       ----------------------------------------------------- */
 
     document.addEventListener(
         "visibilitychange",
         () => {
+
             if (
                 document.visibilityState ===
                 "visible"
             ) {
+
                 loadInventory({
                     silent: true
                 });
@@ -1737,29 +2086,70 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function initialize() {
 
-        /* Default UI */
+        /* -------------------------------------------------
+           DEFAULT UI
+           ------------------------------------------------- */
+
         if (elements.userAvatar) {
+
             elements.userAvatar.textContent =
                 "SF";
         }
 
+
         if (elements.topUserAvatar) {
+
             elements.topUserAvatar.textContent =
                 "SF";
         }
 
+
+        /*
+         * DEFAULT ROLE
+         *
+         * If no authenticated user is available,
+         * Inventory will show Employee instead of
+         * Administrator.
+         */
+
+        if (elements.userRole) {
+
+            elements.userRole.textContent =
+                "Employee";
+        }
+
+
+        if (elements.topUserRole) {
+
+            elements.topUserRole.textContent =
+                "Employee";
+        }
+
+
+        /* -------------------------------------------------
+           CONNECTION
+           ------------------------------------------------- */
+
         setConnected();
 
 
-        /* User */
+        /* -------------------------------------------------
+           USER
+           ------------------------------------------------- */
+
         try {
+
             const user =
                 await getCurrentUser();
 
+
             if (user) {
+
                 applyUser(user);
             }
+
         } catch (error) {
+
             console.warn(
                 "Unable to resolve StockFlow user:",
                 error
@@ -1767,14 +2157,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /* Inventory */
+        /* -------------------------------------------------
+           INVENTORY
+           ------------------------------------------------- */
+
         await loadInventory();
 
 
-        /* Auto refresh */
+        /* -------------------------------------------------
+           AUTO REFRESH
+           ------------------------------------------------- */
+
         startAutoRefresh();
     }
 
+
+    /* =====================================================
+       START
+       ===================================================== */
 
     initialize();
 
