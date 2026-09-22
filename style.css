@@ -1,20 +1,24 @@
 /* ============================================================
    STOCKFLOW — GLOBAL STYLES
-   Version: 2.1
+   Version: 3.0
    Purpose:
    - Global reset
    - Typography
    - Colors
+   - Brand utilities
    - Buttons
    - Form controls
    - Messages
-   - Brand utilities
    - Tables
+   - Text utilities
    - Responsive utilities
+   - Accessibility
 
-   IMPORTANT:
-   Authentication-specific layout belongs in auth.css.
-   Dashboard-specific layout belongs in dashboard.css.
+   PAGE-SPECIFIC CSS:
+   - auth.css       → Login / Register / OTP / Reset
+   - dashboard.css  → Dashboard
+   - module.css     → Shared module shell
+   - inventory.css  → Inventory page
    ============================================================ */
 
 
@@ -22,16 +26,20 @@
    FONT
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url(
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+);
 
 
 /* ============================================================
-   ROOT
+   ROOT VARIABLES
    ============================================================ */
 
 :root {
 
-    /* COLORS */
+    /* --------------------------------------------------------
+       BRAND COLORS
+       -------------------------------------------------------- */
 
     --sf-navy: #071a33;
     --sf-navy-2: #0b2a52;
@@ -44,24 +52,45 @@
 
     --sf-white: #ffffff;
 
+
+    /* --------------------------------------------------------
+       TEXT
+       -------------------------------------------------------- */
+
     --sf-text: #0b1f3a;
     --sf-text-2: #1e3a5f;
     --sf-muted: #52708f;
     --sf-light: #7d96b0;
 
+
+    /* --------------------------------------------------------
+       BORDERS
+       -------------------------------------------------------- */
+
     --sf-border: #cbdcf2;
     --sf-border-light: #e5eef9;
 
+
+    /* --------------------------------------------------------
+       STATUS COLORS
+       -------------------------------------------------------- */
+
     --sf-success: #166534;
     --sf-success-bg: #f0fdf4;
+    --sf-success-border: #bbf7d0;
 
     --sf-danger: #b42318;
     --sf-danger-bg: #fef2f2;
+    --sf-danger-border: #fecaca;
 
     --sf-warning: #b45309;
     --sf-warning-bg: #fffbeb;
+    --sf-warning-border: #fde68a;
 
-    /* RADIUS */
+
+    /* --------------------------------------------------------
+       RADIUS
+       -------------------------------------------------------- */
 
     --sf-radius-xl: 26px;
     --sf-radius-lg: 20px;
@@ -69,7 +98,10 @@
     --sf-radius-sm: 10px;
     --sf-radius-xs: 8px;
 
-    /* SHADOWS */
+
+    /* --------------------------------------------------------
+       SHADOWS
+       -------------------------------------------------------- */
 
     --sf-shadow:
         0 24px 70px rgba(7, 26, 51, 0.14),
@@ -78,15 +110,30 @@
     --sf-shadow-soft:
         0 12px 30px rgba(7, 26, 51, 0.08);
 
-    /* LAYOUT */
+    --sf-shadow-sm:
+        0 4px 14px rgba(7, 26, 51, 0.06);
+
+
+    /* --------------------------------------------------------
+       LAYOUT
+       -------------------------------------------------------- */
 
     --sf-container: 1440px;
+
+
+    /* --------------------------------------------------------
+       TRANSITIONS
+       -------------------------------------------------------- */
+
+    --sf-transition-fast: 0.15s ease;
+    --sf-transition: 0.2s ease;
+    --sf-transition-slow: 0.3s ease;
 
 }
 
 
 /* ============================================================
-   RESET
+   GLOBAL RESET
    ============================================================ */
 
 *,
@@ -168,6 +215,13 @@ img {
 }
 
 
+svg {
+
+    overflow: visible;
+
+}
+
+
 /* ============================================================
    LINKS
    ============================================================ */
@@ -177,6 +231,17 @@ a {
     color: inherit;
 
     text-decoration: none;
+
+}
+
+
+a:focus-visible {
+
+    outline:
+        2px solid
+        rgba(37, 99, 235, 0.55);
+
+    outline-offset: 3px;
 
 }
 
@@ -198,12 +263,16 @@ input,
 textarea,
 select {
 
+    margin: 0;
+
     font: inherit;
 
 }
 
 
 button {
+
+    border: 0;
 
     cursor: pointer;
 
@@ -223,6 +292,16 @@ textarea,
 select {
 
     color: inherit;
+
+}
+
+
+input::placeholder,
+textarea::placeholder {
+
+    color: var(--sf-light);
+
+    opacity: 1;
 
 }
 
@@ -254,31 +333,20 @@ h4,
 h5,
 h6 {
 
-    margin-top: 0;
+    margin: 0;
 
     color: var(--sf-text);
 
     font-weight: 700;
 
-}
-
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p {
-
-    margin-bottom: 0;
+    line-height: 1.25;
 
 }
 
 
 p {
 
-    margin-top: 0;
+    margin: 0;
 
 }
 
@@ -294,6 +362,23 @@ ol {
     padding: 0;
 
     list-style: none;
+
+}
+
+
+/* ============================================================
+   HR
+   ============================================================ */
+
+hr {
+
+    height: 1px;
+
+    margin: 0;
+
+    border: 0;
+
+    background: var(--sf-border-light);
 
 }
 
@@ -325,16 +410,16 @@ ol {
 
 ::-webkit-scrollbar-track {
 
-    background: var(--sf-white);
+    background: #f8fafc;
 
 }
 
 
 ::-webkit-scrollbar-thumb {
 
-    background: var(--sf-blue-soft);
+    background: #cbdcf2;
 
-    border-radius: 20px;
+    border-radius: 999px;
 
 }
 
@@ -406,11 +491,15 @@ ol {
 
     font-weight: 800;
 
+    line-height: 1;
+
     letter-spacing: 0.04em;
 
     box-shadow:
         0 8px 20px
         rgba(37, 99, 235, 0.25);
+
+    user-select: none;
 
 }
 
@@ -430,6 +519,10 @@ ol {
 .brand-text strong,
 .brand-copy strong {
 
+    overflow: hidden;
+
+    color: inherit;
+
     font-size: 15px;
 
     font-weight: 800;
@@ -437,6 +530,10 @@ ol {
     line-height: 1.2;
 
     letter-spacing: 0.04em;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
 
 }
 
@@ -464,7 +561,7 @@ ol {
 
 
 /* ============================================================
-   BUTTON
+   GLOBAL BUTTON
    ============================================================ */
 
 .btn {
@@ -495,13 +592,15 @@ ol {
 
     white-space: nowrap;
 
+    user-select: none;
+
     transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease,
-        opacity 0.18s ease;
+        transform var(--sf-transition),
+        box-shadow var(--sf-transition),
+        background var(--sf-transition),
+        border-color var(--sf-transition),
+        color var(--sf-transition),
+        opacity var(--sf-transition);
 
 }
 
@@ -520,6 +619,21 @@ ol {
 }
 
 
+.btn:focus-visible {
+
+    outline:
+        2px solid
+        rgba(37, 99, 235, 0.5);
+
+    outline-offset: 3px;
+
+}
+
+
+/* ------------------------------------------------------------
+   PRIMARY
+   ------------------------------------------------------------ */
+
 .btn-primary {
 
     color: var(--sf-white);
@@ -530,6 +644,9 @@ ol {
             var(--sf-blue),
             var(--sf-blue-dark)
         );
+
+    border-color:
+        var(--sf-blue);
 
     box-shadow:
         0 8px 20px
@@ -549,12 +666,19 @@ ol {
             #1742a0
         );
 
+    border-color:
+        var(--sf-blue-dark);
+
     box-shadow:
         0 11px 28px
         rgba(37, 99, 235, 0.28);
 
 }
 
+
+/* ------------------------------------------------------------
+   SECONDARY
+   ------------------------------------------------------------ */
 
 .btn-secondary {
 
@@ -571,18 +695,24 @@ ol {
 
     color: var(--sf-blue-dark);
 
-    border-color: var(--sf-blue-soft);
+    border-color: #bfdbfe;
 
     background: var(--sf-blue-light);
 
 }
 
 
+/* ------------------------------------------------------------
+   DANGER
+   ------------------------------------------------------------ */
+
 .btn-danger {
 
     color: var(--sf-white);
 
     background: var(--sf-danger);
+
+    border-color: var(--sf-danger);
 
     box-shadow:
         0 8px 20px
@@ -593,10 +723,18 @@ ol {
 
 .btn-danger:hover {
 
+    color: var(--sf-white);
+
     background: #991b1b;
+
+    border-color: #991b1b;
 
 }
 
+
+/* ------------------------------------------------------------
+   FULL WIDTH
+   ------------------------------------------------------------ */
 
 .btn-full {
 
@@ -604,6 +742,10 @@ ol {
 
 }
 
+
+/* ------------------------------------------------------------
+   DISABLED
+   ------------------------------------------------------------ */
 
 .btn:disabled,
 .btn.disabled {
@@ -620,7 +762,7 @@ ol {
 
 
 /* ============================================================
-   FORM CONTROL
+   FORM CONTROLS
    ============================================================ */
 
 .form-control {
@@ -657,27 +799,9 @@ ol {
         1.4;
 
     transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease;
-
-}
-
-
-textarea.form-control {
-
-    min-height: 110px;
-
-    padding: 12px 14px;
-
-    line-height: 1.5;
-
-}
-
-
-select.form-control {
-
-    appearance: auto;
+        border-color var(--sf-transition),
+        box-shadow var(--sf-transition),
+        background var(--sf-transition);
 
 }
 
@@ -686,14 +810,6 @@ select.form-control {
 
     border-color:
         #93b7df;
-
-}
-
-
-.form-control::placeholder {
-
-    color:
-        var(--sf-light);
 
 }
 
@@ -713,6 +829,61 @@ select.form-control {
 }
 
 
+.form-control:disabled {
+
+    color:
+        var(--sf-light);
+
+    background:
+        #f8fafc;
+
+    cursor:
+        not-allowed;
+
+    opacity:
+        0.75;
+
+}
+
+
+.form-control::placeholder {
+
+    color:
+        var(--sf-light);
+
+}
+
+
+/* ------------------------------------------------------------
+   TEXTAREA
+   ------------------------------------------------------------ */
+
+textarea.form-control {
+
+    min-height: 110px;
+
+    padding: 12px 14px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ------------------------------------------------------------
+   SELECT
+   ------------------------------------------------------------ */
+
+select.form-control {
+
+    appearance: auto;
+
+}
+
+
+/* ------------------------------------------------------------
+   INVALID
+   ------------------------------------------------------------ */
+
 .form-control.invalid {
 
     border-color:
@@ -726,7 +897,7 @@ select.form-control {
 
 
 /* ============================================================
-   PASSWORD
+   PASSWORD FIELD
    ============================================================ */
 
 .password-field,
@@ -760,37 +931,53 @@ select.form-control {
 
     min-height: 32px;
 
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
     padding: 5px 8px;
 
-    border: 1px solid var(--sf-blue-soft);
+    border:
+        1px solid
+        var(--sf-blue-soft);
 
     border-radius: 8px;
 
-    background: var(--sf-blue-light);
+    background:
+        var(--sf-blue-light);
 
-    color: var(--sf-blue-dark);
+    color:
+        var(--sf-blue-dark);
 
-    font-size: 10px;
+    font-size:
+        10px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
-    line-height: 1;
+    line-height:
+        1;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
     transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
+        background var(--sf-transition),
+        border-color var(--sf-transition),
+        color var(--sf-transition);
 
 }
 
 
 .password-toggle:hover {
 
-    background: var(--sf-blue-soft);
+    background:
+        var(--sf-blue-soft);
 
-    border-color: #bfdbfe;
+    border-color:
+        #bfdbfe;
 
 }
 
@@ -801,7 +988,8 @@ select.form-control {
         2px solid
         rgba(37, 99, 235, 0.40);
 
-    outline-offset: 2px;
+    outline-offset:
+        2px;
 
 }
 
@@ -842,11 +1030,14 @@ select.form-control {
     accent-color:
         var(--sf-blue);
 
+    cursor:
+        pointer;
+
 }
 
 
 /* ============================================================
-   HIDDEN
+   HIDDEN UTILITIES
    ============================================================ */
 
 .hidden {
@@ -871,7 +1062,7 @@ select.form-control {
 
 
 /* ============================================================
-   MESSAGES
+   FORM / AUTH MESSAGES
    ============================================================ */
 
 .auth-message,
@@ -920,6 +1111,10 @@ select.form-control {
 }
 
 
+/* ------------------------------------------------------------
+   SUCCESS
+   ------------------------------------------------------------ */
+
 .auth-message.success,
 .form-message.success {
 
@@ -930,10 +1125,14 @@ select.form-control {
         var(--sf-success-bg);
 
     border-color:
-        #bbf7d0;
+        var(--sf-success-border);
 
 }
 
+
+/* ------------------------------------------------------------
+   ERROR
+   ------------------------------------------------------------ */
 
 .auth-message.error,
 .form-message.error {
@@ -945,13 +1144,32 @@ select.form-control {
         var(--sf-danger-bg);
 
     border-color:
-        #fecaca;
+        var(--sf-danger-border);
+
+}
+
+
+/* ------------------------------------------------------------
+   WARNING
+   ------------------------------------------------------------ */
+
+.auth-message.warning,
+.form-message.warning {
+
+    color:
+        var(--sf-warning);
+
+    background:
+        var(--sf-warning-bg);
+
+    border-color:
+        var(--sf-warning-border);
 
 }
 
 
 /* ============================================================
-   FOCUS
+   GLOBAL FOCUS
    ============================================================ */
 
 :focus-visible {
@@ -967,7 +1185,7 @@ select.form-control {
 
 
 /* ============================================================
-   TABLE
+   TABLE WRAPPER
    ============================================================ */
 
 .sf-table-wrapper {
@@ -978,8 +1196,14 @@ select.form-control {
 
     -webkit-overflow-scrolling: touch;
 
+    scrollbar-width: thin;
+
 }
 
+
+/* ============================================================
+   TABLE
+   ============================================================ */
 
 .sf-table-wrapper table {
 
@@ -989,9 +1213,11 @@ select.form-control {
 
     border-collapse: collapse;
 
-    color: var(--sf-text);
+    color:
+        var(--sf-text);
 
-    background: var(--sf-white);
+    background:
+        var(--sf-white);
 
 }
 
@@ -1006,9 +1232,11 @@ select.form-control {
         1px solid
         var(--sf-border-light);
 
-    text-align: left;
+    text-align:
+        left;
 
-    vertical-align: middle;
+    vertical-align:
+        middle;
 
 }
 
@@ -1056,7 +1284,7 @@ select.form-control {
 .sf-table-wrapper tbody tr {
 
     transition:
-        background 0.18s ease;
+        background var(--sf-transition);
 
 }
 
@@ -1083,34 +1311,46 @@ select.form-control {
 
 .text-primary {
 
-    color: var(--sf-blue);
+    color:
+        var(--sf-blue) !important;
 
 }
 
 
 .text-muted {
 
-    color: var(--sf-muted);
+    color:
+        var(--sf-muted) !important;
 
 }
 
 
 .text-success {
 
-    color: var(--sf-success);
+    color:
+        var(--sf-success) !important;
 
 }
 
 
 .text-danger {
 
-    color: var(--sf-danger);
+    color:
+        var(--sf-danger) !important;
+
+}
+
+
+.text-warning {
+
+    color:
+        var(--sf-warning) !important;
 
 }
 
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — TABLET
    ============================================================ */
 
 @media (max-width: 991px) {
@@ -1127,6 +1367,10 @@ select.form-control {
 
 }
 
+
+/* ============================================================
+   RESPONSIVE — MOBILE
+   ============================================================ */
 
 @media (max-width: 767px) {
 
@@ -1191,6 +1435,10 @@ select.form-control {
 }
 
 
+/* ============================================================
+   RESPONSIVE — SMALL MOBILE
+   ============================================================ */
+
 @media (max-width: 480px) {
 
     .sf-container {
@@ -1201,22 +1449,37 @@ select.form-control {
     }
 
 
-    .btn {
+    .brand-text strong,
+    .brand-copy strong {
 
-        width: 100%;
+        font-size:
+            14px;
 
     }
 
 
-    .brand-text strong,
-    .brand-copy strong {
+    .brand-text small,
+    .brand-copy small {
 
-        font-size: 14px;
+        font-size:
+            8px;
+
+    }
+
+
+    .btn {
+
+        width:
+            100%;
 
     }
 
 }
 
+
+/* ============================================================
+   RESPONSIVE — VERY SMALL DEVICES
+   ============================================================ */
 
 @media (max-width: 360px) {
 
@@ -1228,12 +1491,24 @@ select.form-control {
     }
 
 
+    .brand {
+
+        gap:
+            8px;
+
+    }
+
+
     .brand-mark {
 
-        width: 36px;
-        height: 36px;
+        width:
+            36px;
 
-        flex-basis: 36px;
+        height:
+            36px;
+
+        flex-basis:
+            36px;
 
     }
 
@@ -1241,7 +1516,8 @@ select.form-control {
     .brand-text strong,
     .brand-copy strong {
 
-        font-size: 13px;
+        font-size:
+            13px;
 
     }
 
@@ -1256,7 +1532,8 @@ select.form-control {
 
     html {
 
-        scroll-behavior: auto;
+        scroll-behavior:
+            auto;
 
     }
 
@@ -1273,6 +1550,9 @@ select.form-control {
 
         transition-duration:
             0.01ms !important;
+
+        scroll-behavior:
+            auto !important;
 
     }
 
