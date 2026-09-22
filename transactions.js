@@ -1,75 +1,41 @@
-/* =========================================================
-   STOCKFLOW — TRANSACTIONS
-   Full transaction history controller
-========================================================= */
+/* ============================================================
+   STOCKFLOW
+   TRANSACTIONS MODULE
+   ============================================================ */
 
 (() => {
-
     "use strict";
 
 
-    /* =====================================================
-       STATE
-    ===================================================== */
-
-    let allTransactions = [];
-
-    let currentFilter = "ALL";
-
-
-
-    /* =====================================================
+    /* =========================================================
        DOM HELPERS
-    ===================================================== */
+    ========================================================= */
 
     const $ = (id) => document.getElementById(id);
 
-
     const rows = $("rows");
-
     const alertBox = $("alert");
 
-    const transactionCount = $("transactionCount");
-
-    const totalCount = $("totalCount");
-
+    const totalTransactions = $("totalTransactions");
     const stockInCount = $("stockInCount");
-
     const stockOutCount = $("stockOutCount");
+    const totalUnits = $("totalUnits");
 
-    const totalQuantity = $("totalQuantity");
+    const transactionCountText = $("transactionResultText");
 
-    const tableStatus = $("tableStatus");
+    const searchInput = $("transactionSearch");
 
-    const statusDot = $("statusDot");
+    const emptyState = $("emptyState");
 
-    const sidebar = $("sidebar");
-
-    const mobileMenuBtn = $("mobileMenuBtn");
-
-    const refreshBtn = $("refreshBtn");
-
-    const clearFilterBtn = $("clearFilterBtn");
-
-    const transactionModal = $("transactionModal");
-
-    const transactionDetails = $("transactionDetails");
-
-    const transactionModalTitle = $("transactionModalTitle");
-
-    const closeModalBtn = $("closeModalBtn");
-
-    const modalDoneBtn = $("modalDoneBtn");
-
-    const logoutBtn = $("logoutBtn");
+    let allTransactions = [];
+    let currentFilter = "ALL";
 
 
-
-    /* =====================================================
+    /* =========================================================
        HTML ESCAPE
-    ===================================================== */
+    ========================================================= */
 
-    function escapeHtml(value) {
+    function escapeHTML(value) {
 
         return String(value ?? "")
             .replace(/&/g, "&amp;")
@@ -77,49 +43,51 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-
     }
 
 
-
-    /* =====================================================
-       NUMBER
-    ===================================================== */
+    /* =========================================================
+       NUMBER HELPERS
+    ============================================================ */
 
     function number(value) {
 
-        const n = Number(value);
+        const parsed = Number(value);
 
-        return Number.isFinite(n)
-            ? n
+        return Number.isFinite(parsed)
+            ? parsed
             : 0;
-
     }
 
 
+    function formatNumber(value) {
 
-    /* =====================================================
-       CURRENCY
-    ===================================================== */
-
-    function currency(value) {
-
-        return "₱" +
-            number(value).toLocaleString(
-                "en-PH",
-                {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }
-            );
-
+        return number(value).toLocaleString(
+            "en-PH",
+            {
+                maximumFractionDigits: 0
+            }
+        );
     }
 
 
+    function formatCurrency(value) {
 
-    /* =====================================================
+        return number(value).toLocaleString(
+            "en-PH",
+            {
+                style: "currency",
+                currency: "PHP",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        );
+    }
+
+
+    /* =========================================================
        DATE FORMAT
-    ===================================================== */
+    ============================================================ */
 
     function formatDate(value) {
 
@@ -127,16 +95,11 @@
             return "—";
         }
 
-
         const date = new Date(value);
 
-
         if (Number.isNaN(date.getTime())) {
-
-            return escapeHtml(value);
-
+            return escapeHTML(value);
         }
-
 
         return date.toLocaleString(
             "en-PH",
@@ -148,14 +111,12 @@
                 minute: "2-digit"
             }
         );
-
     }
 
 
-
-    /* =====================================================
-       ALERT
-    ===================================================== */
+    /* =========================================================
+       ALERTS
+    ============================================================ */
 
     function showAlert(message, type = "error") {
 
@@ -163,109 +124,60 @@
             return;
         }
 
-
         alertBox.textContent = message || "";
 
         alertBox.className =
-            "sf-alert show " +
-            (type === "success"
-                ? "success"
-                : "error");
-
-
-        window.clearTimeout(
-            showAlert.timer
-        );
-
-
-        showAlert.timer =
-            window.setTimeout(() => {
-
-                alertBox.className =
-                    "sf-alert";
-
-            }, 5000);
+            `sf-alert show ${type}`;
 
     }
 
 
+    function clearAlert() {
 
-    /* =====================================================
-       STATUS
-    ===================================================== */
-
-    function setStatus(
-        message,
-        state = "normal"
-    ) {
-
-        if (tableStatus) {
-
-            tableStatus.textContent =
-                message;
-
+        if (!alertBox) {
+            return;
         }
 
+        alertBox.textContent = "";
 
-        if (statusDot) {
-
-            statusDot.className =
-                "status-dot";
-
-            if (state === "online") {
-
-                statusDot.classList.add(
-                    "online"
-                );
-
-            }
-
-            if (state === "error") {
-
-                statusDot.classList.add(
-                    "error"
-                );
-
-            }
-
-        }
-
+        alertBox.className = "sf-alert";
     }
 
 
-
-    /* =====================================================
-       BACKEND REQUEST
-    ===================================================== */
+    /* =========================================================
+       API REQUEST
+    ============================================================ */
 
     async function requestTransactions(type) {
 
         if (
-            !window.StockFlowAPI ||
+            typeof StockFlowAPI === "undefined" ||
             typeof StockFlowAPI.request !== "function"
         ) {
-
             throw new Error(
-                "StockFlow API is not available."
+                "StockFlow API is not available. Check api.js."
             );
-
         }
 
 
-        const response =
-            await StockFlowAPI.request({
+        const response = await StockFlowAPI.request({
 
-                action: "listTransactions",
+            action: "listTransactions",
 
-                type: type
+            type,
 
-            });
+            token:
+                typeof StockFlowAPI.token === "function"
+                    ? StockFlowAPI.token()
+                    : ""
+
+        });
 
 
         if (!response) {
 
             throw new Error(
-                "No response received from the backend."
+                "The inventory server returned no response."
             );
 
         }
@@ -275,407 +187,361 @@
 
             throw new Error(
                 response.message ||
-                "Unable to load transactions."
+                `Unable to load ${type} transactions.`
             );
 
         }
 
 
-        return Array.isArray(
-            response.records
-        )
+        /*
+         * Backend returns:
+         *
+         * {
+         *     success: true,
+         *     records: [...]
+         * }
+         */
+
+        return Array.isArray(response.records)
             ? response.records
             : [];
+    }
+
+
+    /* =========================================================
+       LOAD ALL TRANSACTIONS
+    ============================================================ */
+
+    async function loadTransactions() {
+
+        clearAlert();
+
+        showLoading();
+
+
+        try {
+
+            /*
+             * Backend requires IN or OUT.
+             * Therefore ALL = combine both requests.
+             */
+
+            const [
+                stockIn,
+                stockOut
+            ] = await Promise.all([
+                requestTransactions("IN"),
+                requestTransactions("OUT")
+            ]);
+
+
+            const normalizedIn =
+                stockIn.map(record =>
+                    normalizeRecord(record, "STOCK_IN")
+                );
+
+
+            const normalizedOut =
+                stockOut.map(record =>
+                    normalizeRecord(record, "STOCK_OUT")
+                );
+
+
+            allTransactions = [
+                ...normalizedIn,
+                ...normalizedOut
+            ];
+
+
+            sortTransactions();
+
+
+            updateSummary();
+
+            renderTransactions();
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW transactions error:",
+                error
+            );
+
+
+            allTransactions = [];
+
+            updateSummary();
+
+            showErrorState();
+
+            showAlert(
+                error.message ||
+                "Unable to load transaction records.",
+                "error"
+            );
+
+        }
 
     }
 
 
+    /* =========================================================
+       NORMALIZE RECORD
+    ============================================================ */
 
-    /* =====================================================
-       NORMALIZE TRANSACTION
-    ===================================================== */
-
-    function normalizeTransaction(
-        transaction,
-        forcedType = ""
-    ) {
-
-        const rawType =
-            String(
-                transaction.TYPE ||
-                forcedType ||
-                ""
-            ).toUpperCase();
-
-
-        let type = rawType;
-
-
-        if (
-            rawType === "IN" ||
-            rawType === "STOCK_IN"
-        ) {
-
-            type = "STOCK_IN";
-
-        }
-
-
-        if (
-            rawType === "OUT" ||
-            rawType === "STOCK_OUT"
-        ) {
-
-            type = "STOCK_OUT";
-
-        }
-
+    function normalizeRecord(record, type) {
 
         return {
 
-            ID:
-                transaction.ID ||
-                transaction.id ||
+            type,
+
+            id:
+                record.ID ||
+                record.id ||
                 "",
 
-            TYPE:
-                type,
-
-            PRODUCT_ID:
-                transaction.PRODUCT_ID ||
+            date:
+                record.DATE ||
+                record.date ||
+                record.CREATED_AT ||
+                record.createdAt ||
                 "",
 
-            SKU:
-                transaction.SKU ||
-                "",
+            reference:
+                record.REFERENCE ||
+                record.reference ||
+                "—",
 
-            PRODUCT_NAME:
-                transaction.PRODUCT_NAME ||
-                transaction.PRODUCT ||
-                "",
+            product:
+                record.PRODUCT ||
+                record.PRODUCT_NAME ||
+                record.product ||
+                record.productName ||
+                "—",
 
-            QUANTITY:
+            sku:
+                record.SKU ||
+                record.sku ||
+                "—",
+
+            quantity:
                 number(
-                    transaction.QUANTITY
+                    record.QTY ??
+                    record.QUANTITY ??
+                    record.quantity
                 ),
 
-            UNIT_COST:
+            total:
                 number(
-                    transaction.UNIT_COST
+                    record.TOTAL_COST ??
+                    record.TOTAL ??
+                    record.total ??
+                    0
                 ),
 
-            TOTAL:
-                number(
-                    transaction.TOTAL
-                ),
-
-            REFERENCE:
-                transaction.REFERENCE ||
-                "",
-
-            SUPPLIER:
-                transaction.SUPPLIER ||
-                "",
-
-            NOTE:
-                transaction.NOTE ||
-                "",
-
-            USER:
-                transaction.USER ||
-                transaction.CREATED_BY ||
-                transaction.username ||
-                "",
-
-            DATE:
-                transaction.DATE ||
-                transaction.CREATED_AT ||
-                ""
+            user:
+                record.CREATED_BY ||
+                record.USER ||
+                record.username ||
+                record.user ||
+                "System"
 
         };
 
     }
 
 
+    /* =========================================================
+       SORT
+    ============================================================ */
 
-    /* =====================================================
-       LOAD ALL
-    ===================================================== */
-
-    async function loadAllTransactions() {
-
-        setStatus(
-            "Loading transaction records..."
-        );
-
-
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="9"
-                    class="table-loading"
-                >
-                    <span class="loading-spinner"></span>
-                    Loading transaction records...
-                </td>
-            </tr>
-        `;
-
-
-        /*
-         * IMPORTANT:
-         *
-         * The Apps Script backend does not support
-         * an empty transaction type.
-         *
-         * It requires:
-         * IN
-         * or
-         * OUT
-         *
-         * Therefore "All Transactions" loads both
-         * datasets and combines them.
-         */
-
-        const [
-            incoming,
-            outgoing
-        ] = await Promise.all([
-
-            requestTransactions("IN"),
-
-            requestTransactions("OUT")
-
-        ]);
-
-
-        allTransactions = [
-
-            ...incoming.map(
-                item =>
-                    normalizeTransaction(
-                        item,
-                        "IN"
-                    )
-            ),
-
-            ...outgoing.map(
-                item =>
-                    normalizeTransaction(
-                        item,
-                        "OUT"
-                    )
-            )
-
-        ];
-
-
-        /*
-         * Newest transactions first.
-         */
+    function sortTransactions() {
 
         allTransactions.sort(
             (a, b) => {
 
                 const dateA =
-                    new Date(a.DATE).getTime();
+                    new Date(a.date).getTime() || 0;
 
                 const dateB =
-                    new Date(b.DATE).getTime();
+                    new Date(b.date).getTime() || 0;
 
-                return (
-                    (Number.isFinite(dateB)
-                        ? dateB
-                        : 0)
-                    -
-                    (Number.isFinite(dateA)
-                        ? dateA
-                        : 0)
-                );
+                return dateB - dateA;
 
             }
         );
 
-
-        updateSummary();
-
-        renderTransactions();
-
-        setStatus(
-            "Transaction records synchronized.",
-            "online"
-        );
-
     }
 
 
-
-    /* =====================================================
-       FILTER
-    ===================================================== */
-
-    function getFilteredTransactions() {
-
-        if (currentFilter === "IN") {
-
-            return allTransactions.filter(
-                transaction =>
-                    transaction.TYPE === "STOCK_IN"
-            );
-
-        }
-
-
-        if (currentFilter === "OUT") {
-
-            return allTransactions.filter(
-                transaction =>
-                    transaction.TYPE === "STOCK_OUT"
-            );
-
-        }
-
-
-        return allTransactions;
-
-    }
-
-
-
-    /* =====================================================
+    /* =========================================================
        SUMMARY
-    ===================================================== */
+    ============================================================ */
 
     function updateSummary() {
 
-        const incoming =
+        const stockIn =
             allTransactions.filter(
-                transaction =>
-                    transaction.TYPE === "STOCK_IN"
+                item => item.type === "STOCK_IN"
+            );
+
+        const stockOut =
+            allTransactions.filter(
+                item => item.type === "STOCK_OUT"
             );
 
 
-        const outgoing =
-            allTransactions.filter(
-                transaction =>
-                    transaction.TYPE === "STOCK_OUT"
-            );
-
-
-        const quantity =
+        const units =
             allTransactions.reduce(
-                (sum, transaction) =>
-                    sum +
-                    number(
-                        transaction.QUANTITY
-                    ),
+                (sum, item) =>
+                    sum + number(item.quantity),
                 0
             );
 
 
-        if (totalCount) {
-
-            totalCount.textContent =
-                allTransactions.length
-                    .toLocaleString();
-
+        if (totalTransactions) {
+            totalTransactions.textContent =
+                formatNumber(allTransactions.length);
         }
 
 
         if (stockInCount) {
-
             stockInCount.textContent =
-                incoming.length
-                    .toLocaleString();
-
+                formatNumber(stockIn.length);
         }
 
 
         if (stockOutCount) {
-
             stockOutCount.textContent =
-                outgoing.length
-                    .toLocaleString();
-
+                formatNumber(stockOut.length);
         }
 
 
-        if (totalQuantity) {
-
-            totalQuantity.textContent =
-                quantity.toLocaleString();
-
+        if (totalUnits) {
+            totalUnits.textContent =
+                formatNumber(units);
         }
 
     }
 
 
+    /* =========================================================
+       FILTER
+    ============================================================ */
 
-    /* =====================================================
-       RENDER
-    ===================================================== */
+    function getFilteredTransactions() {
 
-    function renderTransactions() {
-
-        const data =
-            getFilteredTransactions();
+        let filtered =
+            [...allTransactions];
 
 
-        if (transactionCount) {
+        if (currentFilter !== "ALL") {
 
-            transactionCount.textContent =
-                `${data.length.toLocaleString()} ${
-                    data.length === 1
-                        ? "record"
-                        : "records"
-                }`;
+            filtered =
+                filtered.filter(
+                    item =>
+                        item.type === currentFilter
+                );
 
         }
 
 
-        if (!data.length) {
+        const search =
+            String(
+                searchInput?.value || ""
+            )
+                .trim()
+                .toLowerCase();
 
-            rows.innerHTML = `
-                <tr>
-                    <td
-                        colspan="9"
-                        class="table-empty"
-                    >
-                        No transactions found
-                        for this filter.
-                    </td>
-                </tr>
-            `;
+
+        if (search) {
+
+            filtered =
+                filtered.filter(item => {
+
+                    return [
+
+                        item.reference,
+
+                        item.product,
+
+                        item.sku,
+
+                        item.user,
+
+                        item.type
+
+                    ]
+                        .join(" ")
+                        .toLowerCase()
+                        .includes(search);
+
+                });
+
+        }
+
+
+        return filtered;
+
+    }
+
+
+    /* =========================================================
+       RENDER
+    ============================================================ */
+
+    function renderTransactions() {
+
+        const filtered =
+            getFilteredTransactions();
+
+
+        if (!rows) {
+            return;
+        }
+
+
+        if (!filtered.length) {
+
+            rows.innerHTML = "";
+
+            if (emptyState) {
+                emptyState.hidden = false;
+            }
+
+            updateResultText(0);
 
             return;
 
         }
 
 
+        if (emptyState) {
+            emptyState.hidden = true;
+        }
+
+
         rows.innerHTML =
-            data.map(
-                (transaction, index) =>
-                    renderRow(
-                        transaction,
-                        index
-                    )
-            ).join("");
+            filtered
+                .map(renderTransactionRow)
+                .join("");
+
+
+        updateResultText(
+            filtered.length
+        );
 
     }
 
 
+    /* =========================================================
+       TABLE ROW
+    ============================================================ */
 
-    /* =====================================================
-       ROW
-    ===================================================== */
-
-    function renderRow(
-        transaction,
-        index
-    ) {
+    function renderTransactionRow(item) {
 
         const incoming =
-            transaction.TYPE === "STOCK_IN";
+            item.type === "STOCK_IN";
 
 
         const typeLabel =
@@ -684,135 +550,85 @@
                 : "STOCK OUT";
 
 
+        const typeClass =
+            incoming
+                ? "in"
+                : "out";
+
+
+        const initials =
+            getInitials(item.user);
+
+
         return `
             <tr>
 
                 <td>
-                    ${formatDate(
-                        transaction.DATE
-                    )}
+                    ${formatDate(item.date)}
                 </td>
 
 
                 <td>
 
                     <span
-                        class="transaction-type ${
-                            incoming
-                                ? "in"
-                                : "out"
-                        }"
+                        class="transaction-type ${typeClass}"
                     >
+
+                        <span
+                            class="transaction-type-dot"
+                        ></span>
+
                         ${typeLabel}
+
                     </span>
 
                 </td>
 
 
+                <td class="reference-cell">
+                    ${escapeHTML(item.reference)}
+                </td>
+
+
+                <td class="product-cell">
+                    ${escapeHTML(item.product)}
+                </td>
+
+
                 <td>
 
-                    <span
-                        class="transaction-reference"
-                    >
-                        ${escapeHtml(
-                            transaction.REFERENCE ||
-                            "—"
-                        )}
+                    <span class="transaction-sku">
+                        ${escapeHTML(item.sku)}
                     </span>
 
                 </td>
 
 
-                <td>
+                <td class="quantity-cell">
+                    ${formatNumber(item.quantity)}
+                </td>
 
-                    <strong>
-                        ${escapeHtml(
-                            transaction.PRODUCT_NAME ||
-                            "Unknown Product"
-                        )}
-                    </strong>
 
-                    ${
-                        transaction.SKU
-                            ? `
-                                <div
-                                    style="
-                                        margin-top:4px;
-                                        color:#8a9ab1;
-                                        font-size:11px;
-                                    "
-                                >
-                                    SKU:
-                                    ${escapeHtml(
-                                        transaction.SKU
-                                    )}
-                                </div>
-                            `
-                            : ""
-                    }
-
+                <td class="total-cell">
+                    ${formatCurrency(item.total)}
                 </td>
 
 
                 <td>
 
-                    <span
-                        class="transaction-quantity"
-                    >
-                        ${
-                            transaction.QUANTITY
-                                .toLocaleString()
-                        }
-                    </span>
+                    <div class="transaction-user">
 
-                </td>
+                        <span
+                            class="transaction-user-avatar"
+                        >
+                            ${escapeHTML(initials)}
+                        </span>
 
+                        <span>
+                            ${escapeHTML(item.user)}
+                        </span>
 
-                <td>
-
-                    ${currency(
-                        transaction.UNIT_COST
-                    )}
-
-                </td>
-
-
-                <td>
-
-                    <span
-                        class="transaction-total"
-                    >
-                        ${currency(
-                            transaction.TOTAL
-                        )}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <span
-                        class="transaction-user"
-                    >
-                        ${escapeHtml(
-                            transaction.USER ||
-                            "System"
-                        )}
-                    </span>
-
-                </td>
-
-
-                <td>
-
-                    <button
-                        type="button"
-                        class="transaction-view"
-                        data-view-index="${index}"
-                    >
-                        View
-                    </button>
+                    </div>
 
                 </td>
 
@@ -822,72 +638,260 @@
     }
 
 
+    /* =========================================================
+       INITIALS
+    ============================================================ */
 
-    /* =====================================================
+    function getInitials(name) {
+
+        const value =
+            String(name || "SF")
+                .trim();
+
+
+        if (!value) {
+            return "SF";
+        }
+
+
+        const parts =
+            value
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        if (parts.length === 1) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        ).toUpperCase();
+
+    }
+
+
+    /* =========================================================
+       RESULT TEXT
+    ============================================================ */
+
+    function updateResultText(count) {
+
+        if (!transactionCountText) {
+            return;
+        }
+
+
+        const total =
+            allTransactions.length;
+
+
+        if (!total) {
+
+            transactionCountText.textContent =
+                "No transaction records";
+
+            return;
+
+        }
+
+
+        if (count === total) {
+
+            transactionCountText.textContent =
+                `${formatNumber(total)} transaction record${
+                    total === 1 ? "" : "s"
+                }`;
+
+            return;
+
+        }
+
+
+        transactionCountText.textContent =
+            `Showing ${formatNumber(count)} of ${formatNumber(total)} records`;
+
+    }
+
+
+    /* =========================================================
+       LOADING STATE
+    ============================================================ */
+
+    function showLoading() {
+
+        if (!rows) {
+            return;
+        }
+
+
+        if (emptyState) {
+            emptyState.hidden = true;
+        }
+
+
+        rows.innerHTML = `
+            <tr>
+
+                <td
+                    colspan="8"
+                    class="transaction-loading"
+                >
+
+                    <span>
+
+                        <span class="loading-spinner"></span>
+
+                        Loading transaction records...
+
+                    </span>
+
+                </td>
+
+            </tr>
+        `;
+
+    }
+
+
+    /* =========================================================
+       ERROR STATE
+    ============================================================ */
+
+    function showErrorState() {
+
+        if (!rows) {
+            return;
+        }
+
+
+        if (emptyState) {
+            emptyState.hidden = true;
+        }
+
+
+        rows.innerHTML = `
+            <tr>
+
+                <td
+                    colspan="8"
+                    class="transaction-loading"
+                >
+
+                    <span>
+                        Unable to load transaction records.
+                    </span>
+
+                </td>
+
+            </tr>
+        `;
+
+
+        if (transactionCountText) {
+
+            transactionCountText.textContent =
+                "Unable to load records";
+
+        }
+
+    }
+
+
+    /* =========================================================
        FILTER BUTTONS
-    ===================================================== */
+    ============================================================ */
 
     function setupFilters() {
 
-        const filterButtons =
+        const buttons =
             document.querySelectorAll(
                 ".transaction-filter"
             );
 
 
-        filterButtons.forEach(
-            button => {
+        buttons.forEach(button => {
 
-                button.addEventListener(
-                    "click",
-                    () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                        currentFilter =
-                            button.dataset.filter ||
-                            "ALL";
-
-
-                        filterButtons.forEach(
-                            item => {
-
-                                const active =
-                                    item === button;
-
-                                item.classList.toggle(
-                                    "active",
-                                    active
-                                );
-
-                                item.setAttribute(
-                                    "aria-pressed",
-                                    active
-                                        ? "true"
-                                        : "false"
-                                );
-
-                            }
-                        );
+                    currentFilter =
+                        button.dataset.filter ||
+                        "ALL";
 
 
-                        renderTransactions();
+                    buttons.forEach(
+                        other => {
 
-                    }
-                );
+                            const active =
+                                other === button;
 
-            }
+
+                            other.classList.toggle(
+                                "active",
+                                active
+                            );
+
+
+                            other.setAttribute(
+                                "aria-pressed",
+                                active
+                                    ? "true"
+                                    : "false"
+                            );
+
+                        }
+                    );
+
+
+                    renderTransactions();
+
+                }
+            );
+
+        });
+
+    }
+
+
+    /* =========================================================
+       SEARCH
+    ============================================================ */
+
+    function setupSearch() {
+
+        if (!searchInput) {
+            return;
+        }
+
+
+        searchInput.addEventListener(
+            "input",
+            renderTransactions
         );
 
     }
 
 
-
-    /* =====================================================
-       RESET FILTER
-    ===================================================== */
+    /* =========================================================
+       RESET
+    ============================================================ */
 
     function resetFilter() {
 
         currentFilter = "ALL";
+
+
+        if (searchInput) {
+            searchInput.value = "";
+        }
 
 
         document
@@ -897,13 +901,14 @@
             .forEach(button => {
 
                 const active =
-                    button.dataset.filter ===
-                    "ALL";
+                    button.dataset.filter === "ALL";
+
 
                 button.classList.toggle(
                     "active",
                     active
                 );
+
 
                 button.setAttribute(
                     "aria-pressed",
@@ -920,513 +925,187 @@
     }
 
 
-
-    /* =====================================================
-       MODAL
-    ===================================================== */
-
-    function openModal(transaction) {
-
-        if (!transactionModal) {
-            return;
-        }
-
-
-        const incoming =
-            transaction.TYPE === "STOCK_IN";
-
-
-        const typeLabel =
-            incoming
-                ? "STOCK IN"
-                : "STOCK OUT";
-
-
-        transactionModalTitle.textContent =
-            transaction.REFERENCE ||
-            "Transaction Details";
-
-
-        transactionDetails.innerHTML = `
-
-            <div class="detail-grid">
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Transaction Type
-                    </span>
-
-                    <strong>
-                        ${typeLabel}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Reference
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.REFERENCE ||
-                            "—"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Date
-                    </span>
-
-                    <strong>
-                        ${formatDate(
-                            transaction.DATE
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        User
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.USER ||
-                            "System"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item full">
-
-                    <span>
-                        Product
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.PRODUCT_NAME ||
-                            "Unknown Product"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        SKU
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.SKU ||
-                            "—"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Product ID
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.PRODUCT_ID ||
-                            "—"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Quantity
-                    </span>
-
-                    <strong>
-                        ${
-                            transaction.QUANTITY
-                                .toLocaleString()
-                        }
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Unit Cost
-                    </span>
-
-                    <strong>
-                        ${currency(
-                            transaction.UNIT_COST
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Total
-                    </span>
-
-                    <strong>
-                        ${currency(
-                            transaction.TOTAL
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item">
-
-                    <span>
-                        Supplier
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.SUPPLIER ||
-                            "—"
-                        )}
-                    </strong>
-
-                </div>
-
-
-                <div class="detail-item full">
-
-                    <span>
-                        Note
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(
-                            transaction.NOTE ||
-                            "No additional note."
-                        )}
-                    </strong>
-
-                </div>
-
-
-            </div>
-
-        `;
-
-
-        transactionModal.classList.add(
-            "open"
-        );
-
-
-        transactionModal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        document.body.style.overflow =
-            "hidden";
-
-    }
-
-
-
-    /* =====================================================
-       CLOSE MODAL
-    ===================================================== */
-
-    function closeModal() {
-
-        if (!transactionModal) {
-            return;
-        }
-
-
-        transactionModal.classList.remove(
-            "open"
-        );
-
-
-        transactionModal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        document.body.style.overflow =
-            "";
-
-    }
-
-
-
-    /* =====================================================
-       TABLE ACTION
-    ===================================================== */
-
-    function setupTableActions() {
-
-        rows.addEventListener(
-            "click",
-            event => {
-
-                const button =
-                    event.target.closest(
-                        "[data-view-index]"
-                    );
-
-
-                if (!button) {
-                    return;
-                }
-
-
-                const index =
-                    Number(
-                        button.dataset.viewIndex
-                    );
-
-
-                const data =
-                    getFilteredTransactions();
-
-
-                const transaction =
-                    data[index];
-
-
-                if (transaction) {
-
-                    openModal(
-                        transaction
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-
-
-    /* =====================================================
+    /* =========================================================
        REFRESH
-    ===================================================== */
+    ============================================================ */
 
-    async function refresh() {
+    function setupRefresh() {
 
-        if (refreshBtn) {
+        const refreshButton =
+            $("refreshButton");
 
-            refreshBtn.disabled = true;
+        const bottomRefreshButton =
+            $("bottomRefreshButton");
 
-            refreshBtn.style.opacity =
-                "0.6";
+
+        if (refreshButton) {
+
+            refreshButton.addEventListener(
+                "click",
+                loadTransactions
+            );
 
         }
 
+
+        if (bottomRefreshButton) {
+
+            bottomRefreshButton.addEventListener(
+                "click",
+                loadTransactions
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       USER INFORMATION
+    ============================================================ */
+
+    function populateUser() {
 
         try {
 
-            await loadAllTransactions();
+            if (
+                typeof StockFlowAuth === "undefined" ||
+                typeof StockFlowAuth.getUser !== "function"
+            ) {
+                return;
+            }
 
-            showAlert(
-                "Transaction records refreshed successfully.",
-                "success"
+
+            const user =
+                StockFlowAuth.getUser();
+
+
+            if (!user) {
+                return;
+            }
+
+
+            const name =
+                user.name ||
+                user.fullName ||
+                user.username ||
+                user.email ||
+                "StockFlow User";
+
+
+            const role =
+                user.role ||
+                user.position ||
+                "Employee";
+
+
+            const nameElements = [
+
+                $("headerUserName"),
+                $("sidebarUserName")
+
+            ];
+
+
+            const roleElements = [
+
+                $("headerUserRole"),
+                $("sidebarUserRole")
+
+            ];
+
+
+            nameElements.forEach(
+                element => {
+
+                    if (element) {
+                        element.textContent = name;
+                    }
+
+                }
             );
+
+
+            roleElements.forEach(
+                element => {
+
+                    if (element) {
+                        element.textContent = role;
+                    }
+
+                }
+            );
+
+
+            const initials =
+                getInitials(name);
+
+
+            document
+                .querySelectorAll(
+                    ".sf-user-avatar, .sf-header-avatar"
+                )
+                .forEach(
+                    avatar => {
+                        avatar.textContent =
+                            initials;
+                    }
+                );
 
         } catch (error) {
 
-            console.error(
-                "STOCKFLOW Transactions:",
+            console.warn(
+                "Unable to populate user information:",
                 error
             );
 
-
-            rows.innerHTML = `
-                <tr>
-                    <td
-                        colspan="9"
-                        class="table-empty"
-                    >
-                        Unable to load transaction records.
-                    </td>
-                </tr>
-            `;
-
-
-            setStatus(
-                error.message ||
-                "Unable to synchronize records.",
-                "error"
-            );
-
-
-            showAlert(
-                error.message ||
-                "Unable to load transactions.",
-                "error"
-            );
-
-        } finally {
-
-            if (refreshBtn) {
-
-                refreshBtn.disabled = false;
-
-                refreshBtn.style.opacity =
-                    "";
-
-            }
-
         }
 
     }
 
 
-
-    /* =====================================================
-       MOBILE SIDEBAR
-    ===================================================== */
-
-    function setupMobileNavigation() {
-
-        if (
-            !mobileMenuBtn ||
-            !sidebar
-        ) {
-
-            return;
-
-        }
-
-
-        mobileMenuBtn.addEventListener(
-            "click",
-            () => {
-
-                const open =
-                    sidebar.classList.toggle(
-                        "open"
-                    );
-
-
-                mobileMenuBtn.setAttribute(
-                    "aria-expanded",
-                    open
-                        ? "true"
-                        : "false"
-                );
-
-            }
-        );
-
-
-        document.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    window.innerWidth > 760
-                ) {
-
-                    return;
-
-                }
-
-
-                if (
-                    !sidebar.contains(
-                        event.target
-                    ) &&
-                    !mobileMenuBtn.contains(
-                        event.target
-                    )
-                ) {
-
-                    sidebar.classList.remove(
-                        "open"
-                    );
-
-
-                    mobileMenuBtn.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-
-
-    /* =====================================================
+    /* =========================================================
        LOGOUT
-    ===================================================== */
+    ============================================================ */
 
     function setupLogout() {
 
-        if (!logoutBtn) {
+        const logoutButton =
+            $("logoutButton");
+
+
+        if (!logoutButton) {
             return;
         }
 
 
-        logoutBtn.addEventListener(
+        logoutButton.addEventListener(
             "click",
             async () => {
 
                 try {
 
+                    logoutButton.disabled = true;
+
+                    logoutButton.innerHTML =
+                        "<span>↪</span><span>Signing out...</span>";
+
+
                     if (
-                        window.StockFlowAuth &&
-                        typeof StockFlowAuth.logout ===
-                            "function"
+                        typeof StockFlowAuth !== "undefined" &&
+                        typeof StockFlowAuth.logout === "function"
                     ) {
 
                         await StockFlowAuth.logout();
 
-                        return;
+                    } else {
+
+                        sessionStorage.clear();
+
+                        window.location.href =
+                            "auth.html";
 
                     }
-
-
-                    sessionStorage.clear();
-
-                    window.location.href =
-                        "login.html";
 
                 } catch (error) {
 
@@ -1438,7 +1117,7 @@
                     sessionStorage.clear();
 
                     window.location.href =
-                        "login.html";
+                        "auth.html";
 
                 }
 
@@ -1448,202 +1127,202 @@
     }
 
 
+    /* =========================================================
+       MOBILE SIDEBAR
+    ============================================================ */
 
-    /* =====================================================
-       USER DISPLAY
-    ===================================================== */
+    function setupMobileMenu() {
 
-    async function initializeUser() {
+        const menuButton =
+            $("mobileMenuButton");
+
+        const sidebar =
+            document.querySelector(
+                ".sf-sidebar"
+            );
+
+        const overlay =
+            $("sidebarOverlay");
+
+
+        if (
+            !menuButton ||
+            !sidebar ||
+            !overlay
+        ) {
+            return;
+        }
+
+
+        function openMenu() {
+
+            sidebar.classList.add(
+                "mobile-open"
+            );
+
+            overlay.hidden = false;
+
+        }
+
+
+        function closeMenu() {
+
+            sidebar.classList.remove(
+                "mobile-open"
+            );
+
+            overlay.hidden = true;
+
+        }
+
+
+        menuButton.addEventListener(
+            "click",
+            openMenu
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeMenu
+        );
+
+
+        sidebar
+            .querySelectorAll(".sf-nav-item")
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+
+            });
+
+    }
+
+
+    /* =========================================================
+       RESET BUTTON
+    ============================================================ */
+
+    function setupReset() {
+
+        const button =
+            $("resetFilterButton");
+
+
+        if (!button) {
+            return;
+        }
+
+
+        button.addEventListener(
+            "click",
+            resetFilter
+        );
+
+    }
+
+
+    /* =========================================================
+       AUTH CHECK
+    ============================================================ */
+
+    async function initializeAuth() {
+
+        if (
+            typeof StockFlowAuth === "undefined"
+        ) {
+            return true;
+        }
+
+
+        if (
+            typeof StockFlowAuth.requireAuth !==
+            "function"
+        ) {
+            return true;
+        }
+
+
+        const user =
+            await StockFlowAuth.requireAuth();
+
+
+        return Boolean(user);
+
+    }
+
+
+    /* =========================================================
+       INITIALIZE
+    ============================================================ */
+
+    async function initialize() {
 
         try {
 
-            if (
-                window.StockFlowAuth &&
-                typeof StockFlowAuth.requireAuth ===
-                    "function"
-            ) {
-
-                const user =
-                    await StockFlowAuth.requireAuth();
+            const authenticated =
+                await initializeAuth();
 
 
-                if (!user) {
-                    return;
-                }
-
-
-                document
-                    .querySelectorAll(
-                        "[data-user-name]"
-                    )
-                    .forEach(
-                        element => {
-
-                            element.textContent =
-                                user.name ||
-                                user.fullName ||
-                                user.username ||
-                                user.email ||
-                                "StockFlow User";
-
-                        }
-                    );
-
-
-                document
-                    .querySelectorAll(
-                        "[data-user-role]"
-                    )
-                    .forEach(
-                        element => {
-
-                            element.textContent =
-                                user.role ||
-                                "Employee";
-
-                        }
-                    );
-
+            if (!authenticated) {
+                return;
             }
+
+
+            populateUser();
+
+            setupFilters();
+
+            setupSearch();
+
+            setupRefresh();
+
+            setupReset();
+
+            setupLogout();
+
+            setupMobileMenu();
+
+            await loadTransactions();
 
         } catch (error) {
 
             console.error(
-                "Authentication error:",
+                "STOCKFLOW transaction initialization error:",
                 error
             );
 
+            showAlert(
+                error.message ||
+                "Unable to initialize Transactions.",
+                "error"
+            );
+
         }
 
     }
 
 
+    /* =========================================================
+       START
+    ============================================================ */
 
-    /* =====================================================
-       KEYBOARD
-    ===================================================== */
-
-    function setupKeyboard() {
+    if (
+        document.readyState === "loading"
+    ) {
 
         document.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key === "Escape"
-                ) {
-
-                    closeModal();
-
-                    if (sidebar) {
-
-                        sidebar.classList.remove(
-                            "open"
-                        );
-
-                    }
-
-                }
-
-            }
+            "DOMContentLoaded",
+            initialize
         );
 
-    }
+    } else {
 
-
-
-    /* =====================================================
-       INITIALIZE
-    ===================================================== */
-
-    async function initialize() {
-
-        setupFilters();
-
-        setupTableActions();
-
-        setupMobileNavigation();
-
-        setupLogout();
-
-        setupKeyboard();
-
-
-        if (clearFilterBtn) {
-
-            clearFilterBtn.addEventListener(
-                "click",
-                resetFilter
-            );
-
-        }
-
-
-        if (refreshBtn) {
-
-            refreshBtn.addEventListener(
-                "click",
-                refresh
-            );
-
-        }
-
-
-        if (closeModalBtn) {
-
-            closeModalBtn.addEventListener(
-                "click",
-                closeModal
-            );
-
-        }
-
-
-        if (modalDoneBtn) {
-
-            modalDoneBtn.addEventListener(
-                "click",
-                closeModal
-            );
-
-        }
-
-
-        if (transactionModal) {
-
-            const backdrop =
-                transactionModal.querySelector(
-                    ".transaction-modal-backdrop"
-                );
-
-
-            if (backdrop) {
-
-                backdrop.addEventListener(
-                    "click",
-                    closeModal
-                );
-
-            }
-
-        }
-
-
-        await initializeUser();
-
-        await refresh();
+        initialize();
 
     }
-
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        initialize
-    );
 
 })();
