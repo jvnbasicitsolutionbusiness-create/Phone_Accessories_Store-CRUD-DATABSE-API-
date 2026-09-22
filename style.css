@@ -1557,3 +1557,79 @@ select.form-control {
     }
 
 }
+
+
+/* ============================================================
+   STOCKFLOW — DASHBOARD BRAND OVERRIDE
+   ============================================================
+   Dashboard only:
+   - Changes visual "S" logo to "SF"
+   - Does not affect Login/Register pages
+   - Does not affect other modules
+   ============================================================ */
+
+.dashboard-page .brand-mark {
+
+    position: relative;
+
+    font-size: 0;
+
+    letter-spacing: 0;
+
+}
+
+
+/* Hide the original S text visually */
+
+.dashboard-page .brand-mark::before {
+
+    content: none !important;
+
+}
+
+
+/* Display SF */
+
+.dashboard-page .brand-mark::after {
+
+    content: "SF";
+
+    display: block;
+
+    color: var(--sf-white);
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    line-height: 1;
+
+    letter-spacing: 0.04em;
+
+}
+
+
+/* Slightly larger SF on desktop */
+
+@media (min-width: 768px) {
+
+    .dashboard-page .brand-mark::after {
+
+        font-size: 14px;
+
+    }
+
+}
+
+
+/* Smaller SF on mobile */
+
+@media (max-width: 767px) {
+
+    .dashboard-page .brand-mark::after {
+
+        font-size: 12px;
+
+    }
+
+}
