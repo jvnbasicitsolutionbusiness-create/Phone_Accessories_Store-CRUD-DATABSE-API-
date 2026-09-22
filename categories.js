@@ -1,352 +1,958 @@
-/* ============================================================
-   STOCKFLOW | CATEGORIES
-   categories.js
-   ============================================================ */
+/* =========================================================
+   STOCKFLOW — CATEGORIES MODULE
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
 
-    const user = await StockFlowAuth.requireAuth();
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
 
-    if (!user) return;
-
-    StockFlowAuth.bindUserUI(user);
-
-    /* ========================================================
-       GLOBAL UI
-       ======================================================== */
-
-    const logoutBtn =
-        document.querySelector("#logoutBtn");
-
-    logoutBtn?.addEventListener("click", () => {
-        StockFlowAuth.logout();
-    });
-
-    const mobileMenuBtn =
-        document.querySelector("#mobileMenuBtn");
-
-    mobileMenuBtn?.addEventListener("click", () => {
-        document.body.classList.toggle("sidebar-open");
-    });
+    const sidebar =
+        document.getElementById("sidebar");
 
     const sidebarOverlay =
-        document.querySelector("#sidebarOverlay");
+        document.getElementById("sidebarOverlay");
 
-    sidebarOverlay?.addEventListener("click", () => {
-        document.body.classList.remove("sidebar-open");
-    });
+    const mobileMenuBtn =
+        document.getElementById("mobileMenuBtn");
 
+    const logoutBtn =
+        document.getElementById("logoutBtn");
 
-    /* ========================================================
-       ELEMENTS
-       ======================================================== */
+    const connectionBadge =
+        document.getElementById("connectionBadge");
 
-    const tableBody =
-        document.querySelector("#categoriesTableBody");
-
-    const searchInput =
-        document.querySelector("#categorySearch");
-
-    const addBtn =
-        document.querySelector("#addCategoryBtn");
-
-    const modal =
-        document.querySelector("#categoryModal");
-
-    const modalTitle =
-        document.querySelector("#categoryModalTitle");
-
-    const form =
-        document.querySelector("#categoryForm");
-
-    const categoryIdInput =
-        document.querySelector("#categoryId");
-
-    const categoryNameInput =
-        document.querySelector("#categoryName");
-
-    const categoryDescriptionInput =
-        document.querySelector("#categoryDescription");
-
-    const categoryStatusInput =
-        document.querySelector("#categoryStatus");
-
-    const saveBtn =
-        document.querySelector("#saveCategoryBtn");
-
-    const closeButtons =
-        document.querySelectorAll(
-            "[data-close-category-modal]"
-        );
-
-    const loading =
-        document.querySelector("#categoriesLoading");
-
-    const emptyState =
-        document.querySelector("#categoriesEmpty");
-
-    const errorBox =
-        document.querySelector("#categoriesError");
+    const connectionMessage =
+        document.getElementById("connectionMessage");
 
     const totalCategories =
-        document.querySelector("#totalCategories");
+        document.getElementById("totalCategories");
 
     const activeCategories =
-        document.querySelector("#activeCategories");
+        document.getElementById("activeCategories");
 
-    const inactiveCategories =
-        document.querySelector("#inactiveCategories");
+    const categorizedProducts =
+        document.getElementById("categorizedProducts");
+
+    const emptyCategories =
+        document.getElementById("emptyCategories");
+
+    const addCategoryBtn =
+        document.getElementById("addCategoryBtn");
+
+    const emptyAddCategoryBtn =
+        document.getElementById("emptyAddCategoryBtn");
+
+    const refreshCategoriesBtn =
+        document.getElementById("refreshCategoriesBtn");
+
+    const retryCategoriesBtn =
+        document.getElementById("retryCategoriesBtn");
+
+    const categorySearch =
+        document.getElementById("categorySearch");
+
+    const categoryStatusFilter =
+        document.getElementById("categoryStatusFilter");
+
+    const categoriesTable =
+        document.getElementById("categoriesTable");
+
+    const categoriesTableBody =
+        document.getElementById("categoriesTableBody");
+
+    const categoriesLoading =
+        document.getElementById("categoriesLoading");
+
+    const categoriesEmpty =
+        document.getElementById("categoriesEmpty");
+
+    const categoriesError =
+        document.getElementById("categoriesError");
+
+    const categoriesErrorMessage =
+        document.getElementById("categoriesErrorMessage");
+
+    const categoryResultsInfo =
+        document.getElementById("categoryResultsInfo");
+
+    const categoryPagination =
+        document.getElementById("categoryPagination");
+
+    /* MODAL */
+
+    const categoryModal =
+        document.getElementById("categoryModal");
+
+    const categoryModalTitle =
+        document.getElementById("categoryModalTitle");
+
+    const closeCategoryModal =
+        document.getElementById("closeCategoryModal");
+
+    const cancelCategoryBtn =
+        document.getElementById("cancelCategoryBtn");
+
+    const categoryForm =
+        document.getElementById("categoryForm");
+
+    const categoryId =
+        document.getElementById("categoryId");
+
+    const categoryName =
+        document.getElementById("categoryName");
+
+    const categoryDescription =
+        document.getElementById("categoryDescription");
+
+    const categoryStatus =
+        document.getElementById("categoryStatus");
+
+    const categoryFormMessage =
+        document.getElementById("categoryFormMessage");
+
+    const saveCategoryBtn =
+        document.getElementById("saveCategoryBtn");
+
+    const saveCategorySpinner =
+        document.getElementById("saveCategorySpinner");
+
+    const saveCategoryIcon =
+        document.getElementById("saveCategoryIcon");
+
+    const saveCategoryText =
+        document.getElementById("saveCategoryText");
+
+    /* DELETE MODAL */
+
+    const deleteCategoryModal =
+        document.getElementById("deleteCategoryModal");
+
+    const deleteCategoryName =
+        document.getElementById("deleteCategoryName");
+
+    const deleteCategoryMessage =
+        document.getElementById("deleteCategoryMessage");
+
+    const cancelDeleteCategoryBtn =
+        document.getElementById("cancelDeleteCategoryBtn");
+
+    const confirmDeleteCategoryBtn =
+        document.getElementById("confirmDeleteCategoryBtn");
+
+    const deleteCategorySpinner =
+        document.getElementById("deleteCategorySpinner");
+
+    /* TOAST */
+
+    const toastContainer =
+        document.getElementById("toastContainer");
 
 
-    /* ========================================================
+    /* =====================================================
        STATE
-       ======================================================== */
+    ===================================================== */
 
     let categories = [];
+    let filteredCategories = [];
+    let editingCategory = null;
+    let deletingCategory = null;
 
-    let editingId = null;
+    let currentPage = 1;
+
+    const itemsPerPage = 8;
 
 
-    /* ========================================================
+    /* =====================================================
+       API RESOLVER
+    ===================================================== */
+
+    function getAPI() {
+
+        if (
+            window.StockFlowAPI &&
+            typeof window.StockFlowAPI === "object"
+        ) {
+            return window.StockFlowAPI;
+        }
+
+        if (
+            window.API &&
+            typeof window.API === "object"
+        ) {
+            return window.API;
+        }
+
+        return null;
+    }
+
+
+    /* =====================================================
+       API CALL
+    ===================================================== */
+
+    async function callAPI(action, payload = {}) {
+
+        const api = getAPI();
+
+        if (!api) {
+            throw new Error(
+                "StockFlow API is not available."
+            );
+        }
+
+        /*
+         * Supports:
+         * StockFlowAPI.request(action, payload)
+         * StockFlowAPI[action](payload)
+         * API.request(action, payload)
+         * API[action](payload)
+         */
+
+        if (typeof api.request === "function") {
+            return await api.request(
+                action,
+                payload
+            );
+        }
+
+        if (typeof api[action] === "function") {
+            return await api[action](payload);
+        }
+
+        throw new Error(
+            `API action "${action}" is not available.`
+        );
+    }
+
+
+    /* =====================================================
+       AUTH / USER UI
+    ===================================================== */
+
+    function loadUserUI() {
+
+        const user =
+            getCurrentUser();
+
+        if (!user) {
+            return;
+        }
+
+        const name =
+            user.fullName ||
+            user.name ||
+            user.username ||
+            "User";
+
+        const role =
+            user.role ||
+            user.accountStatus ||
+            "Employee";
+
+        const avatar =
+            name
+                .trim()
+                .charAt(0)
+                .toUpperCase() || "U";
+
+        const sidebarName =
+            document.getElementById(
+                "sidebarUserName"
+            );
+
+        const sidebarRole =
+            document.getElementById(
+                "sidebarUserRole"
+            );
+
+        const sidebarAvatar =
+            document.getElementById(
+                "sidebarUserAvatar"
+            );
+
+        const topbarName =
+            document.getElementById(
+                "topbarUserName"
+            );
+
+        const topbarRole =
+            document.getElementById(
+                "topbarUserRole"
+            );
+
+        const topbarAvatar =
+            document.getElementById(
+                "topbarUserAvatar"
+            );
+
+        if (sidebarName)
+            sidebarName.textContent = name;
+
+        if (sidebarRole)
+            sidebarRole.textContent = role;
+
+        if (sidebarAvatar)
+            sidebarAvatar.textContent = avatar;
+
+        if (topbarName)
+            topbarName.textContent = name;
+
+        if (topbarRole)
+            topbarRole.textContent = role;
+
+        if (topbarAvatar)
+            topbarAvatar.textContent = avatar;
+    }
+
+
+    function getCurrentUser() {
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getCurrentUser === "function"
+            ) {
+                return window.StockFlowAuth.getCurrentUser();
+            }
+
+        } catch (error) {
+            console.warn(
+                "Unable to read StockFlowAuth user.",
+                error
+            );
+        }
+
+        try {
+
+            const keys = [
+                "stockflowUser",
+                "currentUser",
+                "user",
+                "loggedInUser"
+            ];
+
+            for (const key of keys) {
+
+                const raw =
+                    localStorage.getItem(key);
+
+                if (!raw) {
+                    continue;
+                }
+
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    return {
+                        username: raw
+                    };
+                }
+            }
+
+        } catch (error) {
+            console.warn(
+                "Unable to read localStorage user.",
+                error
+            );
+        }
+
+        return null;
+    }
+
+
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
+    function handleLogout() {
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.logout === "function"
+            ) {
+                window.StockFlowAuth.logout();
+                return;
+            }
+
+        } catch (error) {
+            console.warn(error);
+        }
+
+        localStorage.removeItem("stockflowUser");
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("user");
+        localStorage.removeItem("loggedInUser");
+
+        window.location.href =
+            "login.html";
+    }
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+    ===================================================== */
+
+    function openSidebar() {
+
+        if (sidebar)
+            sidebar.classList.add("open");
+
+        if (sidebarOverlay)
+            sidebarOverlay.classList.add("active");
+    }
+
+
+    function closeSidebar() {
+
+        if (sidebar)
+            sidebar.classList.remove("open");
+
+        if (sidebarOverlay)
+            sidebarOverlay.classList.remove("active");
+    }
+
+
+    /* =====================================================
+       CONNECTION STATUS
+    ===================================================== */
+
+    function setConnection(
+        online,
+        message = ""
+    ) {
+
+        if (connectionBadge) {
+
+            const text =
+                connectionBadge.querySelector(
+                    "span:last-child"
+                );
+
+            if (text) {
+                text.textContent =
+                    online
+                        ? "ONLINE"
+                        : "OFFLINE";
+            }
+
+            connectionBadge.style.borderColor =
+                online
+                    ? "#d7e7dc"
+                    : "#fecaca";
+
+            connectionBadge.style.background =
+                online
+                    ? "#f5fbf7"
+                    : "#fef2f2";
+
+            connectionBadge.style.color =
+                online
+                    ? "#16803d"
+                    : "#dc2626";
+
+            const dot =
+                connectionBadge.querySelector(
+                    ".connection-dot"
+                );
+
+            if (dot) {
+                dot.style.background =
+                    online
+                        ? "#16a34a"
+                        : "#dc2626";
+            }
+        }
+
+        if (connectionMessage) {
+
+            if (message) {
+                connectionMessage.textContent =
+                    message;
+
+                connectionMessage.hidden = false;
+            } else {
+                connectionMessage.hidden = true;
+            }
+        }
+    }
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    function showToast(
+        message,
+        type = "info"
+    ) {
+
+        if (!toastContainer) {
+            return;
+        }
+
+        const toast =
+            document.createElement("div");
+
+        toast.className =
+            `toast ${type}`;
+
+        const icon =
+            type === "success"
+                ? "fa-circle-check"
+                : type === "error"
+                    ? "fa-circle-exclamation"
+                    : "fa-circle-info";
+
+        toast.innerHTML = `
+            <i class="fa-solid ${icon}"></i>
+            <span>${escapeHTML(message)}</span>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+
+            toast.style.opacity = "0";
+            toast.style.transform =
+                "translateY(8px)";
+
+            setTimeout(() => {
+                toast.remove();
+            }, 200);
+
+        }, 3500);
+    }
+
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    function escapeHTML(value) {
+
+        return String(
+            value ?? ""
+        )
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+
+    /* =====================================================
+       NORMALIZE CATEGORY
+    ===================================================== */
+
+    function normalizeCategory(item) {
+
+        if (!item || typeof item !== "object") {
+            return {};
+        }
+
+        return {
+            id:
+                item.id ??
+                item.category_id ??
+                item.categoryId ??
+                item.ID ??
+                "",
+
+            name:
+                item.name ??
+                item.category_name ??
+                item.categoryName ??
+                item.NAME ??
+                "",
+
+            description:
+                item.description ??
+                item.category_description ??
+                item.categoryDescription ??
+                item.DESCRIPTION ??
+                "",
+
+            status:
+                String(
+                    item.status ??
+                    item.category_status ??
+                    item.categoryStatus ??
+                    item.STATUS ??
+                    "ACTIVE"
+                ).toUpperCase(),
+
+            products:
+                Number(
+                    item.products ??
+                    item.product_count ??
+                    item.productCount ??
+                    item.PRODUCTS ??
+                    0
+                ),
+
+            created:
+                item.created ??
+                item.created_at ??
+                item.createdAt ??
+                item.CREATED ??
+                ""
+        };
+    }
+
+
+    /* =====================================================
        LOAD CATEGORIES
-       ======================================================== */
+    ===================================================== */
 
     async function loadCategories() {
 
-        showLoading(true);
+        showLoading();
 
-        hideError();
+        setConnection(
+            true,
+            ""
+        );
 
         try {
 
             const response =
-                await StockFlowAPI.getCategories();
-
-            if (
-                !response ||
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to load categories."
+                await callAPI(
+                    "listCategories"
                 );
 
+            const result =
+                response?.data ??
+                response?.categories ??
+                response?.rows ??
+                response;
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to load categories."
+                );
             }
 
-            categories =
-                response.categories ||
-                response.data ||
-                [];
+            const list =
+                Array.isArray(result)
+                    ? result
+                    : Array.isArray(result?.categories)
+                        ? result.categories
+                        : [];
 
-            renderCategories();
+            categories =
+                list.map(normalizeCategory);
 
             updateStatistics();
 
-        }
+            applyFilters();
 
-        catch (error) {
+            setConnection(
+                true,
+                ""
+            );
+
+        } catch (error) {
 
             console.error(
                 "Category loading error:",
                 error
             );
 
-            showError(
-                error.message ||
-                "Unable to connect to the server."
-            );
-
             categories = [];
 
-            renderCategories();
+            renderTable();
 
-            updateStatistics();
+            showError(
+                error?.message ||
+                "Unable to load categories."
+            );
 
+            setConnection(
+                false,
+                "Unable to connect to the inventory service. Please check your connection."
+            );
         }
-
-        finally {
-
-            showLoading(false);
-
-        }
-
     }
 
 
-    /* ========================================================
-       RENDER
-       ======================================================== */
+    /* =====================================================
+       FILTER
+    ===================================================== */
 
-    function renderCategories() {
+    function applyFilters() {
 
-        if (!tableBody) return;
-
-        const keyword =
+        const search =
             String(
-                searchInput?.value || ""
+                categorySearch?.value || ""
             )
-            .trim()
-            .toLowerCase();
+                .trim()
+                .toLowerCase();
 
+        const status =
+            categoryStatusFilter?.value ||
+            "ALL";
 
-        const filtered =
+        filteredCategories =
             categories.filter(category => {
 
-                const name =
-                    getCategoryName(category)
-                        .toLowerCase();
+                const matchesSearch =
+                    !search ||
+                    category.name
+                        .toLowerCase()
+                        .includes(search) ||
+                    category.description
+                        .toLowerCase()
+                        .includes(search);
 
-                const description =
-                    getCategoryDescription(category)
-                        .toLowerCase();
-
-                const status =
-                    getCategoryStatus(category)
-                        .toLowerCase();
+                const matchesStatus =
+                    status === "ALL" ||
+                    category.status === status;
 
                 return (
-                    !keyword ||
-                    name.includes(keyword) ||
-                    description.includes(keyword) ||
-                    status.includes(keyword)
+                    matchesSearch &&
+                    matchesStatus
                 );
-
             });
 
+        currentPage = 1;
 
-        tableBody.innerHTML = "";
+        renderTable();
+    }
 
 
-        if (!filtered.length) {
+    /* =====================================================
+       RENDER TABLE
+    ===================================================== */
 
-            if (emptyState) {
+    function renderTable() {
 
-                emptyState.hidden = false;
+        if (!categoriesTableBody) {
+            return;
+        }
 
+        hideStateElements();
+
+        if (
+            filteredCategories.length === 0
+        ) {
+
+            if (categoriesEmpty) {
+                categoriesEmpty.hidden = false;
+            }
+
+            updateResultsInfo();
+
+            if (categoryPagination) {
+                categoryPagination.innerHTML = "";
             }
 
             return;
-
         }
 
-
-        if (emptyState) {
-
-            emptyState.hidden = true;
-
+        if (categoriesTable) {
+            categoriesTable.style.display =
+                "table";
         }
 
+        const start =
+            (currentPage - 1) *
+            itemsPerPage;
 
-        filtered.forEach(category => {
+        const end =
+            start + itemsPerPage;
 
-            const row =
-                document.createElement("tr");
+        const visible =
+            filteredCategories.slice(
+                start,
+                end
+            );
 
-            const id =
-                getCategoryId(category);
+        categoriesTableBody.innerHTML =
+            visible.map(
+                renderCategoryRow
+            ).join("");
 
-            const name =
-                getCategoryName(category);
-
-            const description =
-                getCategoryDescription(category);
-
-            const status =
-                getCategoryStatus(category);
-
-            const createdAt =
-                getCategoryDate(category);
+        updateResultsInfo();
+        renderPagination();
+    }
 
 
-            row.innerHTML = `
+    /* =====================================================
+       CATEGORY ROW
+    ===================================================== */
+
+    function renderCategoryRow(
+        category
+    ) {
+
+        const status =
+            category.status === "ACTIVE"
+                ? "ACTIVE"
+                : "INACTIVE";
+
+        const statusClass =
+            status === "ACTIVE"
+                ? "status-active"
+                : "status-inactive";
+
+        const created =
+            formatDate(
+                category.created
+            );
+
+        const description =
+            category.description ||
+            "No description provided.";
+
+        return `
+            <tr data-id="${escapeHTML(category.id)}">
 
                 <td>
-                    <span class="category-id">
-                        ${escapeHtml(id || "—")}
-                    </span>
-                </td>
+                    <div class="category-name">
 
-                <td>
-                    <div class="category-name-cell">
                         <div class="category-icon">
                             <i class="fa-solid fa-layer-group"></i>
                         </div>
 
-                        <div>
+                        <div class="category-name-text">
+
                             <strong>
-                                ${escapeHtml(name || "Unnamed Category")}
+                                ${escapeHTML(category.name || "Unnamed")}
                             </strong>
 
-                            ${
-                                description
-                                    ? `
-                                        <small>
-                                            ${escapeHtml(description)}
-                                        </small>
-                                      `
-                                    : ""
-                            }
+                            <span>
+                                Category
+                            </span>
 
                         </div>
+
                     </div>
                 </td>
 
                 <td>
-                    <span class="
-                        status-badge
-                        ${status.toLowerCase() === "active"
-                            ? "status-active"
-                            : "status-inactive"}
-                    ">
-                        ${escapeHtml(status)}
+                    <div class="description-cell">
+                        ${escapeHTML(description)}
+                    </div>
+                </td>
+
+                <td>
+                    <strong>
+                        ${Number(category.products || 0).toLocaleString()}
+                    </strong>
+                </td>
+
+                <td>
+                    <span class="status-pill ${statusClass}">
+                        ${status}
                     </span>
                 </td>
 
                 <td>
-                    ${escapeHtml(createdAt || "—")}
+                    ${escapeHTML(created)}
                 </td>
 
                 <td>
+
                     <div class="table-actions">
 
                         <button
                             type="button"
-                            class="icon-btn edit-category-btn"
+                            class="table-action edit-category-btn"
+                            data-id="${escapeHTML(category.id)}"
                             title="Edit category"
-                            data-id="${escapeHtml(id)}"
+                            aria-label="Edit category"
                         >
                             <i class="fa-solid fa-pen"></i>
                         </button>
 
                         <button
                             type="button"
-                            class="icon-btn delete-category-btn danger"
+                            class="table-action delete-category-btn"
+                            data-id="${escapeHTML(category.id)}"
                             title="Delete category"
-                            data-id="${escapeHtml(id)}"
+                            aria-label="Delete category"
                         >
                             <i class="fa-solid fa-trash"></i>
                         </button>
 
                     </div>
+
                 </td>
 
-            `;
-
-
-            tableBody.appendChild(row);
-
-        });
-
-
-        bindRowActions();
-
+            </tr>
+        `;
     }
 
 
-    /* ========================================================
+    /* =====================================================
+       STATES
+    ===================================================== */
+
+    function hideStateElements() {
+
+        if (categoriesLoading)
+            categoriesLoading.hidden = true;
+
+        if (categoriesEmpty)
+            categoriesEmpty.hidden = true;
+
+        if (categoriesError)
+            categoriesError.hidden = true;
+    }
+
+
+    function showLoading() {
+
+        if (categoriesTable)
+            categoriesTable.style.display =
+                "none";
+
+        if (categoriesLoading)
+            categoriesLoading.hidden = false;
+
+        if (categoriesEmpty)
+            categoriesEmpty.hidden = true;
+
+        if (categoriesError)
+            categoriesError.hidden = true;
+    }
+
+
+    function showError(message) {
+
+        if (categoriesTable)
+            categoriesTable.style.display =
+                "none";
+
+        if (categoriesLoading)
+            categoriesLoading.hidden = true;
+
+        if (categoriesEmpty)
+            categoriesEmpty.hidden = true;
+
+        if (categoriesError)
+            categoriesError.hidden = false;
+
+        if (categoriesErrorMessage)
+            categoriesErrorMessage.textContent =
+                message;
+    }
+
+
+    /* =====================================================
        STATISTICS
-       ======================================================== */
+    ===================================================== */
 
     function updateStatistics() {
 
@@ -355,256 +961,477 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const active =
             categories.filter(
-                category =>
-                    getCategoryStatus(category)
-                        .toUpperCase() === "ACTIVE"
+                item => item.status === "ACTIVE"
             ).length;
 
-        const inactive =
-            total - active;
+        const products =
+            categories.reduce(
+                (sum, item) =>
+                    sum +
+                    Number(
+                        item.products || 0
+                    ),
+                0
+            );
 
+        const empty =
+            categories.filter(
+                item =>
+                    Number(
+                        item.products || 0
+                    ) === 0
+            ).length;
 
-        setText(
-            totalCategories,
-            total
-        );
+        if (totalCategories)
+            totalCategories.textContent =
+                total.toLocaleString();
 
-        setText(
-            activeCategories,
-            active
-        );
+        if (activeCategories)
+            activeCategories.textContent =
+                active.toLocaleString();
 
-        setText(
-            inactiveCategories,
-            inactive
-        );
+        if (categorizedProducts)
+            categorizedProducts.textContent =
+                products.toLocaleString();
 
+        if (emptyCategories)
+            emptyCategories.textContent =
+                empty.toLocaleString();
     }
 
 
-    /* ========================================================
-       ADD CATEGORY
-       ======================================================== */
+    /* =====================================================
+       PAGINATION
+    ===================================================== */
+
+    function renderPagination() {
+
+        if (!categoryPagination) {
+            return;
+        }
+
+        const pageCount =
+            Math.ceil(
+                filteredCategories.length /
+                itemsPerPage
+            );
+
+        categoryPagination.innerHTML = "";
+
+        if (pageCount <= 1) {
+            return;
+        }
+
+        const previous =
+            document.createElement("button");
+
+        previous.type = "button";
+        previous.innerHTML =
+            '<i class="fa-solid fa-chevron-left"></i>';
+
+        previous.disabled =
+            currentPage === 1;
+
+        previous.addEventListener(
+            "click",
+            () => {
+
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+
+            }
+        );
+
+        categoryPagination.appendChild(
+            previous
+        );
+
+        for (
+            let page = 1;
+            page <= pageCount;
+            page++
+        ) {
+
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+            button.textContent = page;
+
+            if (page === currentPage) {
+                button.classList.add("active");
+            }
+
+            button.addEventListener(
+                "click",
+                () => {
+                    currentPage = page;
+                    renderTable();
+                }
+            );
+
+            categoryPagination.appendChild(
+                button
+            );
+        }
+
+        const next =
+            document.createElement("button");
+
+        next.type = "button";
+        next.innerHTML =
+            '<i class="fa-solid fa-chevron-right"></i>';
+
+        next.disabled =
+            currentPage === pageCount;
+
+        next.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    currentPage <
+                    pageCount
+                ) {
+                    currentPage++;
+                    renderTable();
+                }
+
+            }
+        );
+
+        categoryPagination.appendChild(
+            next
+        );
+    }
+
+
+    function updateResultsInfo() {
+
+        if (!categoryResultsInfo) {
+            return;
+        }
+
+        const total =
+            filteredCategories.length;
+
+        if (total === 0) {
+
+            categoryResultsInfo.textContent =
+                "Showing 0 categories";
+
+            return;
+        }
+
+        const start =
+            (currentPage - 1) *
+            itemsPerPage +
+            1;
+
+        const end =
+            Math.min(
+                currentPage *
+                    itemsPerPage,
+                total
+            );
+
+        categoryResultsInfo.textContent =
+            `Showing ${start}-${end} of ${total} categories`;
+    }
+
+
+    /* =====================================================
+       DATE FORMAT
+    ===================================================== */
+
+    function formatDate(value) {
+
+        if (!value) {
+            return "—";
+        }
+
+        const date =
+            new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+
+        return new Intl.DateTimeFormat(
+            undefined,
+            {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            }
+        ).format(date);
+    }
+
+
+    /* =====================================================
+       OPEN ADD MODAL
+    ===================================================== */
 
     function openAddModal() {
 
-        editingId = null;
+        editingCategory = null;
 
-        if (modalTitle) {
+        categoryForm?.reset();
 
-            modalTitle.textContent =
+        if (categoryId)
+            categoryId.value = "";
+
+        if (categoryStatus)
+            categoryStatus.value =
+                "ACTIVE";
+
+        if (categoryModalTitle)
+            categoryModalTitle.textContent =
                 "Add Category";
 
-        }
+        if (saveCategoryText)
+            saveCategoryText.textContent =
+                "Save Category";
 
-        resetForm();
+        hideFormMessage();
 
-        setInputValue(
-            categoryStatusInput,
-            "ACTIVE"
+        openModal(
+            categoryModal
         );
 
-        showModal();
-
+        setTimeout(() => {
+            categoryName?.focus();
+        }, 80);
     }
 
 
-    /* ========================================================
-       EDIT CATEGORY
-       ======================================================== */
+    /* =====================================================
+       OPEN EDIT MODAL
+    ===================================================== */
 
     function openEditModal(id) {
 
         const category =
             categories.find(
                 item =>
-                    String(
-                        getCategoryId(item)
-                    ) === String(id)
+                    String(item.id) ===
+                    String(id)
             );
-
 
         if (!category) {
-
-            showError(
-                "Category could not be found."
+            showToast(
+                "Category not found.",
+                "error"
             );
-
             return;
-
         }
 
+        editingCategory =
+            category;
 
-        editingId = id;
+        if (categoryId)
+            categoryId.value =
+                category.id;
 
+        if (categoryName)
+            categoryName.value =
+                category.name;
 
-        if (modalTitle) {
+        if (categoryDescription)
+            categoryDescription.value =
+                category.description;
 
-            modalTitle.textContent =
+        if (categoryStatus)
+            categoryStatus.value =
+                category.status;
+
+        if (categoryModalTitle)
+            categoryModalTitle.textContent =
                 "Edit Category";
 
-        }
+        if (saveCategoryText)
+            saveCategoryText.textContent =
+                "Update Category";
 
+        hideFormMessage();
 
-        setInputValue(
-            categoryIdInput,
-            getCategoryId(category)
+        openModal(
+            categoryModal
         );
 
-        setInputValue(
-            categoryNameInput,
-            getCategoryName(category)
-        );
-
-        setInputValue(
-            categoryDescriptionInput,
-            getCategoryDescription(category)
-        );
-
-        setInputValue(
-            categoryStatusInput,
-            getCategoryStatus(category)
-        );
-
-
-        showModal();
-
+        setTimeout(() => {
+            categoryName?.focus();
+        }, 80);
     }
 
 
-    /* ========================================================
+    /* =====================================================
+       MODAL HELPERS
+    ===================================================== */
+
+    function openModal(modal) {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.hidden = false;
+
+        document.body.style.overflow =
+            "hidden";
+    }
+
+
+    function closeModal(modal) {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.hidden = true;
+
+        if (
+            categoryModal.hidden &&
+            deleteCategoryModal.hidden
+        ) {
+            document.body.style.overflow =
+                "";
+        }
+    }
+
+
+    /* =====================================================
+       FORM MESSAGE
+    ===================================================== */
+
+    function showFormMessage(
+        element,
+        message,
+        type = "error"
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            message;
+
+        element.className =
+            `form-message ${type}`;
+
+        element.hidden = false;
+    }
+
+
+    function hideFormMessage(
+        element = categoryFormMessage
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+        element.hidden = true;
+        element.textContent = "";
+        element.className =
+            "form-message";
+    }
+
+
+    /* =====================================================
        SAVE CATEGORY
-       ======================================================== */
+    ===================================================== */
 
     async function saveCategory() {
 
         const name =
-            String(
-                categoryNameInput?.value || ""
-            ).trim();
+            categoryName?.value
+                .trim() || "";
 
         const description =
-            String(
-                categoryDescriptionInput?.value || ""
-            ).trim();
+            categoryDescription?.value
+                .trim() || "";
 
         const status =
-            String(
-                categoryStatusInput?.value ||
-                "ACTIVE"
-            ).trim().toUpperCase();
-
+            categoryStatus?.value ||
+            "ACTIVE";
 
         if (!name) {
 
             showFormMessage(
+                categoryFormMessage,
                 "Category name is required."
             );
 
-            categoryNameInput?.focus();
+            categoryName?.focus();
 
             return;
-
         }
 
-
-        if (name.length < 2) {
+        if (name.length > 100) {
 
             showFormMessage(
-                "Category name must contain at least 2 characters."
+                categoryFormMessage,
+                "Category name cannot exceed 100 characters."
             );
 
-            categoryNameInput?.focus();
-
             return;
-
         }
 
-
-        setSaving(true);
-
+        setSaveLoading(true);
 
         try {
 
-            let response;
+            const payload = {
+                id:
+                    categoryId?.value ||
+                    null,
 
+                name,
 
-            if (editingId) {
+                description,
 
-                response =
-                    await StockFlowAPI.updateCategory({
+                status
+            };
 
-                        id:
-                            editingId,
+            const action =
+                editingCategory
+                    ? "saveCategory"
+                    : "saveCategory";
 
-                        categoryId:
-                            editingId,
-
-                        name:
-                            name,
-
-                        categoryName:
-                            name,
-
-                        description:
-                            description,
-
-                        status:
-                            status
-
-                    });
-
-            }
-
-            else {
-
-                response =
-                    await StockFlowAPI.createCategory({
-
-                        name:
-                            name,
-
-                        categoryName:
-                            name,
-
-                        description:
-                            description,
-
-                        status:
-                            status
-
-                    });
-
-            }
-
-
-            if (
-                !response ||
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to save category."
+            const response =
+                await callAPI(
+                    action,
+                    payload
                 );
 
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to save category."
+                );
             }
 
-
-            closeModal();
-
-            await loadCategories();
+            closeModal(
+                categoryModal
+            );
 
             showToast(
-                editingId
+                editingCategory
                     ? "Category updated successfully."
                     : "Category created successfully.",
                 "success"
             );
 
-        }
+            await loadCategories();
 
-        catch (error) {
+        } catch (error) {
 
             console.error(
                 "Save category error:",
@@ -612,634 +1439,350 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             showFormMessage(
-                error.message ||
+                categoryFormMessage,
+                error?.message ||
                 "Unable to save category."
             );
 
+        } finally {
+
+            setSaveLoading(false);
         }
-
-        finally {
-
-            setSaving(false);
-
-        }
-
     }
 
 
-    /* ========================================================
-       DELETE CATEGORY
-       ======================================================== */
+    function setSaveLoading(
+        loading
+    ) {
 
-    async function deleteCategory(id) {
+        if (!saveCategoryBtn) {
+            return;
+        }
+
+        saveCategoryBtn.disabled =
+            loading;
+
+        if (saveCategorySpinner)
+            saveCategorySpinner.hidden =
+                !loading;
+
+        if (saveCategoryIcon)
+            saveCategoryIcon.hidden =
+                loading;
+
+        if (saveCategoryText)
+            saveCategoryText.textContent =
+                loading
+                    ? "Saving..."
+                    : editingCategory
+                        ? "Update Category"
+                        : "Save Category";
+    }
+
+
+    /* =====================================================
+       DELETE MODAL
+    ===================================================== */
+
+    function openDeleteModal(id) {
 
         const category =
             categories.find(
                 item =>
-                    String(
-                        getCategoryId(item)
-                    ) === String(id)
+                    String(item.id) ===
+                    String(id)
             );
 
-
-        if (!category) return;
-
-
-        const name =
-            getCategoryName(category);
-
-
-        const confirmed =
-            window.confirm(
-                `Delete category "${name}"?\n\n` +
-                "This action may affect products assigned to this category."
+        if (!category) {
+            showToast(
+                "Category not found.",
+                "error"
             );
+            return;
+        }
+
+        deletingCategory =
+            category;
+
+        if (deleteCategoryName)
+            deleteCategoryName.textContent =
+                category.name;
+
+        hideFormMessage(
+            deleteCategoryMessage
+        );
+
+        openModal(
+            deleteCategoryModal
+        );
+    }
 
 
-        if (!confirmed) return;
+    function setDeleteLoading(
+        loading
+    ) {
 
+        if (!confirmDeleteCategoryBtn) {
+            return;
+        }
+
+        confirmDeleteCategoryBtn.disabled =
+            loading;
+
+        if (deleteCategorySpinner)
+            deleteCategorySpinner.hidden =
+                !loading;
+    }
+
+
+    /* =====================================================
+       DELETE CATEGORY
+    ===================================================== */
+
+    async function deleteCategory() {
+
+        if (!deletingCategory) {
+            return;
+        }
+
+        setDeleteLoading(true);
 
         try {
 
             const response =
-                await StockFlowAPI.deleteCategory({
-
-                    id:
-                        id,
-
-                    categoryId:
-                        id
-
-                });
-
-
-            if (
-                !response ||
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to delete category."
+                await callAPI(
+                    "deleteCategory",
+                    {
+                        id:
+                            deletingCategory.id
+                    }
                 );
 
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to delete category."
+                );
             }
 
-
-            await loadCategories();
-
+            closeModal(
+                deleteCategoryModal
+            );
 
             showToast(
                 "Category deleted successfully.",
                 "success"
             );
 
-        }
+            deletingCategory =
+                null;
 
-        catch (error) {
+            await loadCategories();
+
+        } catch (error) {
 
             console.error(
                 "Delete category error:",
                 error
             );
 
-            showToast(
-                error.message ||
-                "Unable to delete category.",
-                "error"
+            showFormMessage(
+                deleteCategoryMessage,
+                error?.message ||
+                "Unable to delete category."
             );
 
+        } finally {
+
+            setDeleteLoading(false);
         }
-
     }
 
 
-    /* ========================================================
-       ROW ACTIONS
-       ======================================================== */
+    /* =====================================================
+       EVENT DELEGATION
+    ===================================================== */
 
-    function bindRowActions() {
+    categoriesTableBody?.addEventListener(
+        "click",
+        event => {
 
-        document
-            .querySelectorAll(
-                ".edit-category-btn"
-            )
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        openEditModal(
-                            button.dataset.id
-                        );
-
-                    }
+            const editButton =
+                event.target.closest(
+                    ".edit-category-btn"
                 );
 
-            });
+            if (editButton) {
 
-
-        document
-            .querySelectorAll(
-                ".delete-category-btn"
-            )
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        deleteCategory(
-                            button.dataset.id
-                        );
-
-                    }
+                openEditModal(
+                    editButton.dataset.id
                 );
 
-            });
+                return;
+            }
 
-    }
+            const deleteButton =
+                event.target.closest(
+                    ".delete-category-btn"
+                );
 
+            if (deleteButton) {
 
-    /* ========================================================
-       MODAL
-       ======================================================== */
-
-    function showModal() {
-
-        if (!modal) return;
-
-        modal.hidden = false;
-
-        document.body.classList.add(
-            "modal-open"
-        );
-
-
-        setTimeout(() => {
-
-            categoryNameInput?.focus();
-
-        }, 50);
-
-    }
-
-
-    function closeModal() {
-
-        if (!modal) return;
-
-        modal.hidden = true;
-
-        document.body.classList.remove(
-            "modal-open"
-        );
-
-        editingId = null;
-
-        resetForm();
-
-        clearFormMessage();
-
-    }
-
-
-    function resetForm() {
-
-        form?.reset();
-
-        setInputValue(
-            categoryIdInput,
-            ""
-        );
-
-    }
-
-
-    /* ========================================================
-       SEARCH
-       ======================================================== */
-
-    searchInput?.addEventListener(
-        "input",
-        () => {
-
-            renderCategories();
-
+                openDeleteModal(
+                    deleteButton.dataset.id
+                );
+            }
         }
     );
 
 
-    /* ========================================================
-       BUTTON EVENTS
-       ======================================================== */
+    /* =====================================================
+       EVENTS
+    ===================================================== */
 
-    addBtn?.addEventListener(
+    addCategoryBtn?.addEventListener(
         "click",
         openAddModal
     );
 
+    emptyAddCategoryBtn?.addEventListener(
+        "click",
+        openAddModal
+    );
 
-    closeButtons.forEach(button => {
+    refreshCategoriesBtn?.addEventListener(
+        "click",
+        loadCategories
+    );
 
-        button.addEventListener(
-            "click",
-            closeModal
-        );
+    retryCategoriesBtn?.addEventListener(
+        "click",
+        loadCategories
+    );
 
-    });
+    categorySearch?.addEventListener(
+        "input",
+        applyFilters
+    );
 
+    categoryStatusFilter?.addEventListener(
+        "change",
+        applyFilters
+    );
 
-    form?.addEventListener(
+    categoryForm?.addEventListener(
         "submit",
         event => {
-
             event.preventDefault();
-
             saveCategory();
+        }
+    );
+
+    closeCategoryModal?.addEventListener(
+        "click",
+        () => closeModal(categoryModal)
+    );
+
+    cancelCategoryBtn?.addEventListener(
+        "click",
+        () => closeModal(categoryModal)
+    );
+
+    cancelDeleteCategoryBtn?.addEventListener(
+        "click",
+        () => closeModal(deleteCategoryModal)
+    );
+
+    confirmDeleteCategoryBtn?.addEventListener(
+        "click",
+        deleteCategory
+    );
+
+    categoryModal?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                categoryModal
+            ) {
+                closeModal(categoryModal);
+            }
 
         }
     );
 
+    deleteCategoryModal?.addEventListener(
+        "click",
+        event => {
 
-    /* ========================================================
-       ESCAPE KEY
-       ======================================================== */
+            if (
+                event.target ===
+                deleteCategoryModal
+            ) {
+                closeModal(
+                    deleteCategoryModal
+                );
+            }
+
+        }
+    );
+
+    mobileMenuBtn?.addEventListener(
+        "click",
+        openSidebar
+    );
+
+    sidebarOverlay?.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+    logoutBtn?.addEventListener(
+        "click",
+        handleLogout
+    );
 
     document.addEventListener(
         "keydown",
         event => {
 
             if (
-                event.key === "Escape" &&
-                modal &&
-                !modal.hidden
+                event.key === "Escape"
             ) {
 
-                closeModal();
+                if (
+                    categoryModal &&
+                    !categoryModal.hidden
+                ) {
+                    closeModal(
+                        categoryModal
+                    );
+                }
 
+                if (
+                    deleteCategoryModal &&
+                    !deleteCategoryModal.hidden
+                ) {
+                    closeModal(
+                        deleteCategoryModal
+                    );
+                }
+
+                closeSidebar();
             }
-
         }
     );
 
 
-    /* ========================================================
-       HELPER FUNCTIONS
-       ======================================================== */
-
-    function getCategoryId(category) {
-
-        return (
-            category?.id ??
-            category?.ID ??
-            category?.categoryId ??
-            category?.CATEGORY_ID ??
-            category?.uid ??
-            ""
-        );
-
-    }
-
-
-    function getCategoryName(category) {
-
-        return String(
-
-            category?.name ??
-            category?.NAME ??
-            category?.categoryName ??
-            category?.CATEGORY_NAME ??
-            ""
-
-        );
-
-    }
-
-
-    function getCategoryDescription(category) {
-
-        return String(
-
-            category?.description ??
-            category?.DESCRIPTION ??
-            ""
-
-        );
-
-    }
-
-
-    function getCategoryStatus(category) {
-
-        return String(
-
-            category?.status ??
-            category?.STATUS ??
-            category?.accountStatus ??
-            "ACTIVE"
-
-        ).trim().toUpperCase();
-
-    }
-
-
-    function getCategoryDate(category) {
-
-        const value =
-
-            category?.createdAt ??
-            category?.CREATED_AT ??
-            category?.created_at ??
-            category?.dateCreated ??
-            "";
-
-
-        if (!value) return "";
-
-
-        const date =
-            new Date(value);
-
-
-        if (
-            !isNaN(
-                date.getTime()
-            )
-        ) {
-
-            return date.toLocaleDateString(
-                undefined,
-                {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric"
-                }
-            );
-
-        }
-
-
-        return String(value);
-
-    }
-
-
-    function escapeHtml(value) {
-
-        return String(
-            value ?? ""
-        )
-        .replace(
-            /[&<>"']/g,
-            character => ({
-
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-
-            }[character])
-        );
-
-    }
-
-
-    function setText(element, value) {
-
-        if (element) {
-
-            element.textContent =
-                String(value ?? "");
-
-        }
-
-    }
-
-
-    function setInputValue(element, value) {
-
-        if (element) {
-
-            element.value =
-                value ?? "";
-
-        }
-
-    }
-
-
-    function showLoading(value) {
-
-        if (loading) {
-
-            loading.hidden =
-                !value;
-
-        }
-
-    }
-
-
-    function showError(message) {
-
-        if (!errorBox) {
-
-            console.error(message);
-
-            return;
-
-        }
-
-
-        errorBox.textContent =
-            message || "An error occurred.";
-
-        errorBox.hidden = false;
-
-    }
-
-
-    function hideError() {
-
-        if (errorBox) {
-
-            errorBox.hidden = true;
-
-            errorBox.textContent = "";
-
-        }
-
-    }
-
-
-    function showFormMessage(message) {
-
-        let messageBox =
-            document.querySelector(
-                "#categoryFormMessage"
-            );
-
-
-        if (!messageBox) {
-
-            messageBox =
-                document.createElement("div");
-
-            messageBox.id =
-                "categoryFormMessage";
-
-            messageBox.className =
-                "form-message error";
-
-            form?.prepend(
-                messageBox
-            );
-
-        }
-
-
-        messageBox.textContent =
-            message;
-
-        messageBox.hidden = false;
-
-    }
-
-
-    function clearFormMessage() {
-
-        const messageBox =
-            document.querySelector(
-                "#categoryFormMessage"
-            );
-
-
-        if (messageBox) {
-
-            messageBox.hidden = true;
-
-            messageBox.textContent = "";
-
-        }
-
-    }
-
-
-    function setSaving(value) {
-
-        if (!saveBtn) return;
-
-
-        saveBtn.disabled =
-            value;
-
-
-        if (value) {
-
-            saveBtn.dataset.originalText =
-                saveBtn.textContent;
-
-            saveBtn.innerHTML =
-                `
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    Saving...
-                `;
-
-        }
-
-        else {
-
-            saveBtn.innerHTML =
-                `
-                    <i class="fa-solid fa-floppy-disk"></i>
-                    ${
-                        saveBtn.dataset.originalText ||
-                        "Save Category"
-                    }
-                `;
-
-        }
-
-    }
-
-
-    function showToast(message, type = "success") {
-
-        let container =
-            document.querySelector(
-                "#toastContainer"
-            );
-
-
-        if (!container) {
-
-            container =
-                document.createElement("div");
-
-            container.id =
-                "toastContainer";
-
-            container.className =
-                "toast-container";
-
-            document.body.appendChild(
-                container
-            );
-
-        }
-
-
-        const toast =
-            document.createElement("div");
-
-        toast.className =
-            `toast toast-${type}`;
-
-
-        toast.innerHTML = `
-
-            <i class="fa-solid ${
-                type === "success"
-                    ? "fa-circle-check"
-                    : "fa-circle-exclamation"
-            }"></i>
-
-            <span>
-                ${escapeHtml(message)}
-            </span>
-
-        `;
-
-
-        container.appendChild(
-            toast
-        );
-
-
-        setTimeout(() => {
-
-            toast.classList.add(
-                "toast-hide"
-            );
-
-            setTimeout(() => {
-
-                toast.remove();
-
-            }, 300);
-
-        }, 3500);
-
-    }
-
-
-    /* ========================================================
+    /* =====================================================
        INITIALIZE
-       ======================================================== */
+    ===================================================== */
 
-    await loadCategories();
+    loadUserUI();
+    loadCategories();
 
 });
