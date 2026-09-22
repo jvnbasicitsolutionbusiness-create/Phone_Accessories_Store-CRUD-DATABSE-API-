@@ -1,13 +1,90 @@
-"use strict";
-
 /* =========================================================
-   STOCKFLOW ACTIVITY LOG
+   STOCKFLOW — ACTIVITY LOG CONTROLLER
    ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    "use strict";
 
-    const rows = document.getElementById("rows");
-    const refreshButton = document.getElementById("refresh");
+    const rows =
+        document.getElementById("rows");
+
+    const refreshButton =
+        document.getElementById("refresh");
+
+    const menuButton =
+        document.querySelector("[data-menu]");
+
+    const sidebar =
+        document.querySelector(".sf-side");
+
+
+    /* =====================================================
+       BASIC ELEMENT CHECK
+       ===================================================== */
+
+    if (!rows) {
+        console.error(
+            "Activity table body was not found."
+        );
+
+        return;
+    }
+
+
+    /* =====================================================
+       API RESOLVER
+       ===================================================== */
+
+    function getAPI() {
+
+        if (
+            typeof StockFlowAPI !== "undefined"
+        ) {
+            return StockFlowAPI;
+        }
+
+        if (
+            typeof API !== "undefined"
+        ) {
+            return API;
+        }
+
+        return null;
+    }
+
+
+    /* =====================================================
+       AUTHENTICATION
+       ===================================================== */
+
+    try {
+
+        if (
+            typeof StockFlowAuth !== "undefined" &&
+            typeof StockFlowAuth.requireAuth ===
+                "function"
+        ) {
+            const user =
+                await StockFlowAuth.requireAuth();
+
+            if (!user) {
+                return;
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Activity authentication error:",
+            error
+        );
+
+        renderMessage(
+            "Unable to verify your session."
+        );
+
+        return;
+    }
 
 
     /* =====================================================
@@ -16,23 +93,136 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function escapeHTML(value) {
 
-        return String(value ?? "")
-            .replace(/[&<>"']/g, char => ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-            }[char]));
+        return String(
+            value ?? ""
+        )
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
     }
 
 
-    function showMessage(message) {
+    function getValue(
+        object,
+        ...keys
+    ) {
 
-        if (!rows) {
-            return;
+        if (!object) {
+            return "";
         }
+
+        for (const key of keys) {
+
+            if (
+                object[key] !== undefined &&
+                object[key] !== null
+            ) {
+                return object[key];
+            }
+
+        }
+
+        return "";
+
+    }
+
+
+    function formatDate(value) {
+
+        if (!value) {
+            return "—";
+        }
+
+        const date =
+            new Date(value);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return escapeHTML(value);
+        }
+
+        return date.toLocaleString(
+            undefined,
+            {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    }
+
+
+    function normalizeAction(value) {
+
+        return String(
+            value ?? ""
+        )
+        .trim()
+        .toLowerCase()
+        .replaceAll("_", "-")
+        .replaceAll(" ", "-");
+
+    }
+
+
+    function actionClass(action) {
+
+        const normalized =
+            normalizeAction(action);
+
+        if (
+            normalized.includes("stock-in") ||
+            normalized === "in" ||
+            normalized.includes("add")
+        ) {
+            return "in";
+        }
+
+        if (
+            normalized.includes("stock-out") ||
+            normalized === "out" ||
+            normalized.includes("remove")
+        ) {
+            return "out";
+        }
+
+        if (
+            normalized.includes("delete") ||
+            normalized.includes("remove")
+        ) {
+            return "delete";
+        }
+
+        if (
+            normalized.includes("create") ||
+            normalized.includes("add")
+        ) {
+            return "create";
+        }
+
+        if (
+            normalized.includes("update") ||
+            normalized.includes("edit")
+        ) {
+            return "update";
+        }
+
+        return "";
+    }
+
+
+    function renderMessage(
+        message
+    ) {
 
         rows.innerHTML = `
             <tr>
@@ -49,49 +239,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       NORMALIZE ACTIVITY DATA
+       EXTRACT RESPONSE DATA
        ===================================================== */
 
-    function normalizeActivity(item) {
+    function extractRecords(response) {
 
-        return {
+        if (!response) {
+            return [];
+        }
 
-            date:
-                item.DATE ??
-                item.date ??
-                item.createdAt ??
-                item.created_at ??
-                "",
 
-            action:
-                item.ACTION ??
-                item.action ??
-                "",
+        if (Array.isArray(response)) {
+            return response;
+        }
 
-            module:
-                item.MODULE ??
-                item.module ??
-                "",
 
-            reference:
-                item.REFERENCE ??
-                item.reference ??
-                item.ref ??
-                "",
+        if (
+            Array.isArray(response.data)
+        ) {
+            return response.data;
+        }
 
-            user:
-                item.USER ??
-                item.user ??
-                item.USERNAME ??
-                item.username ??
-                "",
 
-            details:
-                item.DETAILS ??
-                item.details ??
-                ""
+        if (
+            Array.isArray(response.activities)
+        ) {
+            return response.activities;
+        }
 
-        };
+
+        if (
+            Array.isArray(response.activity)
+        ) {
+            return response.activity;
+        }
+
+
+        if (
+            Array.isArray(response.rows)
+        ) {
+            return response.rows;
+        }
+
+
+        if (
+            response.data &&
+            Array.isArray(response.data.rows)
+        ) {
+            return response.data.rows;
+        }
+
+
+        return [];
 
     }
 
@@ -100,57 +299,143 @@ document.addEventListener("DOMContentLoaded", () => {
        RENDER ACTIVITY
        ===================================================== */
 
-    function renderActivity(activity) {
+    function renderActivity(
+        records
+    ) {
 
-        if (!rows) {
+        if (!records.length) {
+
+            renderMessage(
+                "No activity records found."
+            );
+
             return;
         }
 
 
-        if (!Array.isArray(activity) || activity.length === 0) {
+        rows.innerHTML =
+            records.map(
+                (record) => {
 
-            showMessage("No activity yet.");
+                    const date =
+                        getValue(
+                            record,
+                            "date",
+                            "created_at",
+                            "createdAt",
+                            "timestamp",
+                            "activity_date"
+                        );
 
-            return;
 
-        }
+                    const action =
+                        getValue(
+                            record,
+                            "action",
+                            "activity",
+                            "type",
+                            "movement_type"
+                        );
 
 
-        rows.innerHTML = activity
-            .map(normalizeActivity)
-            .map(item => {
+                    const module =
+                        getValue(
+                            record,
+                            "module",
+                            "source",
+                            "section"
+                        );
 
-                return `
-                    <tr>
 
-                        <td>
-                            ${escapeHTML(item.date)}
-                        </td>
+                    const reference =
+                        getValue(
+                            record,
+                            "reference",
+                            "reference_no",
+                            "referenceNo",
+                            "ref"
+                        );
 
-                        <td>
-                            ${escapeHTML(item.action)}
-                        </td>
 
-                        <td>
-                            ${escapeHTML(item.module)}
-                        </td>
+                    const user =
+                        getValue(
+                            record,
+                            "user",
+                            "username",
+                            "user_name",
+                            "created_by",
+                            "createdBy"
+                        );
 
-                        <td>
-                            ${escapeHTML(item.reference)}
-                        </td>
 
-                        <td>
-                            ${escapeHTML(item.user)}
-                        </td>
+                    const details =
+                        getValue(
+                            record,
+                            "details",
+                            "description",
+                            "message",
+                            "remarks"
+                        );
 
-                        <td>
-                            ${escapeHTML(item.details)}
-                        </td>
 
-                    </tr>
-                `;
+                    const badgeClass =
+                        actionClass(action);
 
-            })
+
+                    return `
+                        <tr>
+
+                            <td>
+                                ${formatDate(date)}
+                            </td>
+
+                            <td>
+                                <span
+                                    class="action-badge ${badgeClass}"
+                                >
+                                    ${escapeHTML(
+                                        action || "Activity"
+                                    )}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-module">
+                                    ${escapeHTML(
+                                        module || "—"
+                                    )}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-reference">
+                                    ${escapeHTML(
+                                        reference || "—"
+                                    )}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-user">
+                                    ${escapeHTML(
+                                        user || "—"
+                                    )}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-details">
+                                    ${escapeHTML(
+                                        details || "—"
+                                    )}
+                                </span>
+                            </td>
+
+                        </tr>
+                    `;
+
+                }
+            )
             .join("");
 
     }
@@ -162,101 +447,97 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadActivity() {
 
-        if (!rows) {
+        rows.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="sf-empty"
+                >
+                    Loading activity...
+                </td>
+            </tr>
+        `;
+
+
+        const api =
+            getAPI();
+
+
+        if (!api) {
+
+            console.error(
+                "StockFlow API is not available."
+            );
+
+            renderMessage(
+                "API connection is unavailable."
+            );
+
             return;
         }
 
 
-        showMessage("Loading activity...");
-
-
         try {
-
-            /*
-             * Firebase / Google Sheets connection
-             * will be handled later through StockFlowAPI.
-             */
-
-            if (
-                typeof window.StockFlowAPI === "undefined"
-            ) {
-
-                showMessage(
-                    "Activity service is not connected yet."
-                );
-
-                return;
-
-            }
-
 
             let response;
 
 
-            /*
-             * Current API method
-             */
-
             if (
-                typeof window.StockFlowAPI.listActivity === "function"
+                typeof api.listActivity ===
+                "function"
             ) {
 
                 response =
-                    await window.StockFlowAPI.listActivity();
+                    await api.listActivity();
 
             }
-
-
-            /*
-             * Compatibility with older API structure
-             */
 
             else if (
-                typeof window.StockFlowInventoryAPI !== "undefined" &&
-                typeof window.StockFlowInventoryAPI.activity === "function"
+                typeof api.getActivity ===
+                "function"
             ) {
 
                 response =
-                    await window.StockFlowInventoryAPI.activity();
+                    await api.getActivity();
 
             }
 
+            else if (
+                typeof api.request ===
+                "function"
+            ) {
+
+                response =
+                    await api.request(
+                        "listActivity"
+                    );
+
+            }
 
             else {
 
-                showMessage(
-                    "Activity service is not available yet."
+                throw new Error(
+                    "No activity API method was found."
                 );
-
-                return;
 
             }
 
 
-            /* =================================================
-               NORMALIZE API RESPONSE
-               ================================================= */
-
-            const activity =
-                response?.activity ??
-                response?.activities ??
-                response?.data ??
-                [];
+            const records =
+                extractRecords(response);
 
 
-            renderActivity(activity);
+            renderActivity(records);
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "STOCKFLOW Activity Error:",
+                "Unable to load activity:",
                 error
             );
 
-
-            showMessage(
+            renderMessage(
+                error?.message ||
                 "Unable to load activity records."
             );
 
@@ -266,14 +547,94 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       REFRESH BUTTON
+       REFRESH
        ===================================================== */
 
     if (refreshButton) {
 
         refreshButton.addEventListener(
             "click",
-            loadActivity
+            async () => {
+
+                refreshButton.disabled = true;
+
+                const originalText =
+                    refreshButton.textContent;
+
+                refreshButton.textContent =
+                    "↻ Loading...";
+
+
+                try {
+
+                    await loadActivity();
+
+                } finally {
+
+                    refreshButton.disabled = false;
+
+                    refreshButton.textContent =
+                        originalText;
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+       ===================================================== */
+
+    if (
+        menuButton &&
+        sidebar
+    ) {
+
+        menuButton.addEventListener(
+            "click",
+            () => {
+
+                const isOpen =
+                    sidebar.classList.toggle(
+                        "open"
+                    );
+
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    String(isOpen)
+                );
+
+            }
+        );
+
+
+        const links =
+            sidebar.querySelectorAll("a");
+
+
+        links.forEach(
+            (link) => {
+
+                link.addEventListener(
+                    "click",
+                    () => {
+
+                        sidebar.classList.remove(
+                            "open"
+                        );
+
+                        menuButton.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+                );
+
+            }
         );
 
     }
@@ -283,6 +644,6 @@ document.addEventListener("DOMContentLoaded", () => {
        INITIAL LOAD
        ===================================================== */
 
-    loadActivity();
+    await loadActivity();
 
 });
