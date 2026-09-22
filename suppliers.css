@@ -935,3 +935,43 @@ body {
         min-width: 0;
     }
 }
+
+/* =========================================================
+   MOBILE SIDEBAR OVERLAY
+========================================================= */
+
+.sf-mobile-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 999;
+
+    background:
+        rgba(3, 15, 30, 0.48);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        visibility 0.25s ease;
+}
+
+.sf-mobile-overlay.show {
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+
+@media (min-width: 801px) {
+    .sf-mobile-overlay {
+        display: none;
+    }
+}
