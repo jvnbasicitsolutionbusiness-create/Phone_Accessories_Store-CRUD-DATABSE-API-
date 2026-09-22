@@ -15,25 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const form =
         document.getElementById("supplierForm");
 
-    const rows =
-        document.getElementById("rows");
-
-    const alertBox =
-        document.getElementById("alert");
-
-    const saveButton =
-        document.getElementById("saveButton");
-
-    const clearButton =
-        document.getElementById("clearButton");
-
-    const menuButton =
-        document.querySelector("[data-menu]");
-
-    const sidebar =
-        document.querySelector(".sf-side");
-
-
     const idInput =
         document.getElementById("id");
 
@@ -55,14 +36,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusInput =
         document.getElementById("status");
 
+    const saveButton =
+        document.getElementById("saveButton");
 
-    /* =====================================================
-       STATE
-       ===================================================== */
+    const clearButton =
+        document.getElementById("clearButton");
 
-    let suppliers = [];
+    const rows =
+        document.getElementById("rows");
 
-    let isSaving = false;
+    const alertBox =
+        document.getElementById("alert");
+
+    const menuButton =
+        document.querySelector("[data-menu]");
+
+    const sidebar =
+        document.querySelector(".sf-side");
 
 
     /* =====================================================
@@ -72,17 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function getAPI() {
 
         if (
-            window.StockFlowAPI &&
-            typeof window.StockFlowAPI.listSuppliers ===
-                "function"
+            window.StockFlowAPI
         ) {
             return window.StockFlowAPI;
         }
 
         if (
-            window.API &&
-            typeof window.API.listSuppliers ===
-                "function"
+            window.API
         ) {
             return window.API;
         }
@@ -92,12 +78,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
+       HELPERS
+       ===================================================== */
+
+    function clean(value) {
+
+        return String(
+            value ?? ""
+        ).trim();
+    }
+
+
+    function escapeHTML(value) {
+
+        return clean(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function getValue(
+        object,
+        keys
+    ) {
+
+        for (
+            const key of keys
+        ) {
+
+            if (
+                object &&
+                object[key] !== undefined &&
+                object[key] !== null
+            ) {
+
+                return object[key];
+            }
+        }
+
+        return "";
+    }
+
+
+    /* =====================================================
        ALERT
        ===================================================== */
 
     function showAlert(
         message,
-        type = "success"
+        type = "info"
     ) {
 
         if (!alertBox) {
@@ -119,12 +151,12 @@ document.addEventListener("DOMContentLoaded", () => {
             type
         );
 
-        window.clearTimeout(
+        clearTimeout(
             showAlert.timer
         );
 
         showAlert.timer =
-            window.setTimeout(() => {
+            setTimeout(() => {
 
                 alertBox.classList.remove(
                     "show"
@@ -135,121 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       VALUE HELPERS
+       LOADING
        ===================================================== */
 
-    function clean(value) {
-
-        return String(
-            value ?? ""
-        ).trim();
-    }
-
-
-    function escapeHTML(value) {
-
-        return clean(value)
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-    }
-
-
-    function normalizeStatus(status) {
-
-        const value =
-            clean(status).toUpperCase();
-
-        return value === "INACTIVE"
-            ? "INACTIVE"
-            : "ACTIVE";
-    }
-
-
-    /* =====================================================
-       RESPONSE NORMALIZATION
-       ===================================================== */
-
-    function normalizeSupplierList(
-        response
-    ) {
-
-        if (
-            Array.isArray(response)
-        ) {
-            return response;
-        }
-
-        if (
-            Array.isArray(response?.suppliers)
-        ) {
-            return response.suppliers;
-        }
-
-        if (
-            Array.isArray(response?.data)
-        ) {
-            return response.data;
-        }
-
-        if (
-            Array.isArray(response?.items)
-        ) {
-            return response.items;
-        }
-
-        if (
-            Array.isArray(response?.records)
-        ) {
-            return response.records;
-        }
-
-        if (
-            Array.isArray(response?.result)
-        ) {
-            return response.result;
-        }
-
-        return [];
-    }
-
-
-    function getSupplierId(
-        supplier
-    ) {
-
-        return (
-            supplier?.id ??
-            supplier?.supplier_id ??
-            supplier?.supplierId ??
-            supplier?.ID ??
-            ""
-        );
-    }
-
-
-    /* =====================================================
-       LOADING TABLE
-       ===================================================== */
-
-    function showTableLoading() {
+    function showLoading() {
 
         if (!rows) {
             return;
@@ -261,10 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     colspan="6"
                     class="sf-empty"
                 >
-                    <span class="sf-loading">
-                        <span class="sf-spinner"></span>
-                        Loading suppliers...
-                    </span>
+                    Loading suppliers...
                 </td>
             </tr>
         `;
@@ -272,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       EMPTY TABLE
+       EMPTY
        ===================================================== */
 
     function showEmpty() {
@@ -295,155 +213,81 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       RENDER SUPPLIERS
+       CLEAR FORM
        ===================================================== */
 
-    function renderSuppliers() {
+    function clearForm() {
 
-        if (!rows) {
-            return;
+        if (form) {
+            form.reset();
         }
 
-        if (!suppliers.length) {
-            showEmpty();
-            return;
+        if (idInput) {
+            idInput.value = "";
         }
 
-        rows.innerHTML =
-            suppliers.map(
-                (supplier) => {
+        if (statusInput) {
+            statusInput.value = "ACTIVE";
+        }
 
-                    const id =
-                        getSupplierId(
-                            supplier
-                        );
+        if (saveButton) {
+            saveButton.textContent =
+                "Save Supplier";
+        }
 
-                    const name =
-                        clean(
-                            supplier.name ??
-                            supplier.supplier_name ??
-                            supplier.supplierName
-                        );
-
-                    const contact =
-                        clean(
-                            supplier.contactPerson ??
-                            supplier.contact_person ??
-                            supplier.contact
-                        );
-
-                    const phone =
-                        clean(
-                            supplier.phone ??
-                            supplier.phone_number
-                        );
-
-                    const email =
-                        clean(
-                            supplier.email
-                        );
-
-                    const address =
-                        clean(
-                            supplier.address
-                        );
-
-                    const status =
-                        normalizeStatus(
-                            supplier.status
-                        );
-
-                    const statusClass =
-                        status === "ACTIVE"
-                            ? "active"
-                            : "inactive";
+        if (nameInput) {
+            nameInput.focus();
+        }
+    }
 
 
-                    return `
-                        <tr>
+    /* =====================================================
+       EXTRACT SUPPLIER LIST
+       ===================================================== */
 
-                            <td>
-                                <div
-                                    class="supplier-name"
-                                >
-                                    ${escapeHTML(name || "—")}
-                                </div>
+    function normalizeSuppliers(
+        response
+    ) {
 
-                                ${
-                                    address
-                                        ? `
-                                            <div
-                                                class="sf-muted"
-                                                style="
-                                                    margin-top:3px;
-                                                    font-size:11px;
-                                                "
-                                            >
-                                                ${escapeHTML(address)}
-                                            </div>
-                                          `
-                                        : ""
-                                }
-                            </td>
+        if (
+            Array.isArray(response)
+        ) {
+            return response;
+        }
 
-                            <td>
-                                <span
-                                    class="supplier-contact"
-                                >
-                                    ${escapeHTML(contact || "—")}
-                                </span>
-                            </td>
+        if (
+            Array.isArray(
+                response?.suppliers
+            )
+        ) {
+            return response.suppliers;
+        }
 
-                            <td>
-                                ${escapeHTML(phone || "—")}
-                            </td>
+        if (
+            Array.isArray(
+                response?.data
+            )
+        ) {
+            return response.data;
+        }
 
-                            <td>
-                                <span
-                                    class="supplier-email"
-                                >
-                                    ${escapeHTML(email || "—")}
-                                </span>
-                            </td>
+        if (
+            Array.isArray(
+                response?.items
+            )
+        ) {
+            return response.items;
+        }
 
-                            <td>
-                                <span
-                                    class="supplier-status ${statusClass}"
-                                >
-                                    ${escapeHTML(status)}
-                                </span>
-                            </td>
+        if (
+            Array.isArray(
+                response?.records
+            )
+        ) {
+            return response.records;
+        }
 
-                            <td>
-
-                                <div
-                                    class="supplier-actions"
-                                >
-
-                                    <button
-                                        type="button"
-                                        class="supplier-action edit"
-                                        data-edit-id="${escapeHTML(id)}"
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        class="supplier-action delete"
-                                        data-delete-id="${escapeHTML(id)}"
-                                    >
-                                        Delete
-                                    </button>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-                    `;
-                }
-            ).join("");
+        return [];
     }
 
 
@@ -456,16 +300,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const API =
             getAPI();
 
-        if (!API) {
+        if (
+            !API ||
+            typeof API.listSuppliers !==
+                "function"
+        ) {
 
-            showTableError(
-                "StockFlow API is not available."
+            showAlert(
+                "Supplier API is not available.",
+                "error"
             );
 
             return;
         }
 
-        showTableLoading();
+        showLoading();
 
         try {
 
@@ -481,18 +330,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 response &&
                 response.success === false
             ) {
+
                 throw new Error(
                     response.message ||
                     "Unable to load suppliers."
                 );
             }
 
-            suppliers =
-                normalizeSupplierList(
+            const suppliers =
+                normalizeSuppliers(
                     response
                 );
 
-            renderSuppliers();
+            renderSuppliers(
+                suppliers
+            );
 
         } catch (error) {
 
@@ -501,124 +353,379 @@ document.addEventListener("DOMContentLoaded", () => {
                 error
             );
 
-            showTableError(
+            rows.innerHTML = `
+                <tr>
+                    <td
+                        colspan="6"
+                        class="sf-empty"
+                        style="color:#b42336;"
+                    >
+                        ${escapeHTML(
+                            error?.message ||
+                            "Unable to load suppliers."
+                        )}
+                    </td>
+                </tr>
+            `;
+
+            showAlert(
                 error?.message ||
-                "Unable to load suppliers."
+                "Unable to load suppliers.",
+                "error"
             );
         }
     }
 
 
     /* =====================================================
-       TABLE ERROR
+       RENDER SUPPLIERS
        ===================================================== */
 
-    function showTableError(
-        message
+    function renderSuppliers(
+        suppliers
     ) {
 
-        if (!rows) {
+        if (!suppliers.length) {
+
+            showEmpty();
+
             return;
         }
 
-        rows.innerHTML = `
-            <tr>
-                <td
-                    colspan="6"
-                    class="sf-empty"
-                    style="color:#b42336;"
-                >
-                    ${escapeHTML(message)}
-                </td>
-            </tr>
-        `;
+        rows.innerHTML =
+            suppliers.map(
+                supplier => {
+
+                    const id =
+                        getValue(
+                            supplier,
+                            [
+                                "id",
+                                "supplier_id",
+                                "supplierId"
+                            ]
+                        );
+
+                    const name =
+                        getValue(
+                            supplier,
+                            [
+                                "name",
+                                "supplier_name",
+                                "supplierName"
+                            ]
+                        );
+
+                    const contact =
+                        getValue(
+                            supplier,
+                            [
+                                "contactPerson",
+                                "contact_person",
+                                "contact",
+                                "contactName"
+                            ]
+                        );
+
+                    const phone =
+                        getValue(
+                            supplier,
+                            [
+                                "phone",
+                                "phoneNumber",
+                                "phone_number"
+                            ]
+                        );
+
+                    const email =
+                        getValue(
+                            supplier,
+                            [
+                                "email",
+                                "emailAddress"
+                            ]
+                        );
+
+                    const status =
+                        clean(
+                            getValue(
+                                supplier,
+                                [
+                                    "status",
+                                    "supplier_status"
+                                ]
+                            )
+                        ).toUpperCase() ||
+                        "ACTIVE";
+
+
+                    const statusClass =
+                        status === "ACTIVE"
+                            ? "active"
+                            : "inactive";
+
+
+                    return `
+                        <tr>
+
+                            <td>
+                                <span
+                                    class="supplier-name"
+                                >
+                                    ${escapeHTML(
+                                        name || "—"
+                                    )}
+                                </span>
+                            </td>
+
+
+                            <td>
+                                <span
+                                    class="supplier-contact"
+                                >
+                                    ${escapeHTML(
+                                        contact || "—"
+                                    )}
+                                </span>
+                            </td>
+
+
+                            <td>
+                                <span
+                                    class="supplier-phone"
+                                >
+                                    ${escapeHTML(
+                                        phone || "—"
+                                    )}
+                                </span>
+                            </td>
+
+
+                            <td>
+                                <span
+                                    class="supplier-email"
+                                >
+                                    ${escapeHTML(
+                                        email || "—"
+                                    )}
+                                </span>
+                            </td>
+
+
+                            <td>
+                                <span
+                                    class="supplier-status ${statusClass}"
+                                >
+                                    ${escapeHTML(
+                                        status
+                                    )}
+                                </span>
+                            </td>
+
+
+                            <td>
+
+                                <div
+                                    class="supplier-actions"
+                                >
+
+                                    <button
+                                        type="button"
+                                        class="supplier-action"
+                                        data-action="edit"
+                                        data-id="${escapeHTML(id)}"
+                                    >
+                                        Edit
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="supplier-action delete"
+                                        data-action="delete"
+                                        data-id="${escapeHTML(id)}"
+                                    >
+                                        Delete
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    `;
+
+                }
+            ).join("");
     }
 
 
     /* =====================================================
-       FORM DATA
+       FIND SUPPLIER
        ===================================================== */
 
-    function getFormData() {
-
-        return {
-
-            id:
-                clean(
-                    idInput?.value
-                ),
-
-            name:
-                clean(
-                    nameInput?.value
-                ),
-
-            contactPerson:
-                clean(
-                    contactInput?.value
-                ),
-
-            phone:
-                clean(
-                    phoneInput?.value
-                ),
-
-            email:
-                clean(
-                    emailInput?.value
-                ),
-
-            address:
-                clean(
-                    addressInput?.value
-                ),
-
-            status:
-                normalizeStatus(
-                    statusInput?.value
-                )
-        };
-    }
-
-
-    /* =====================================================
-       VALIDATION
-       ===================================================== */
-
-    function validateForm(
-        data
+    async function findSupplier(
+        id
     ) {
 
-        if (!data.name) {
-
-            showAlert(
-                "Supplier name is required.",
-                "error"
-            );
-
-            nameInput?.focus();
-
-            return false;
-        }
+        const API =
+            getAPI();
 
         if (
-            data.email &&
-            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-                data.email
-            )
+            !API ||
+            typeof API.listSuppliers !==
+                "function"
         ) {
-
-            showAlert(
-                "Please enter a valid email address.",
-                "error"
-            );
-
-            emailInput?.focus();
-
-            return false;
+            return null;
         }
 
-        return true;
+        const response =
+            await API.listSuppliers();
+
+        const suppliers =
+            normalizeSuppliers(
+                response
+            );
+
+        return suppliers.find(
+            supplier => {
+
+                const supplierId =
+                    getValue(
+                        supplier,
+                        [
+                            "id",
+                            "supplier_id",
+                            "supplierId"
+                        ]
+                    );
+
+                return String(
+                    supplierId
+                ) === String(id);
+
+            }
+        ) || null;
+    }
+
+
+    /* =====================================================
+       EDIT SUPPLIER
+       ===================================================== */
+
+    async function editSupplier(
+        id
+    ) {
+
+        try {
+
+            const supplier =
+                await findSupplier(
+                    id
+                );
+
+            if (!supplier) {
+
+                showAlert(
+                    "Supplier not found.",
+                    "error"
+                );
+
+                return;
+            }
+
+            idInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "id",
+                        "supplier_id",
+                        "supplierId"
+                    ]
+                );
+
+            nameInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "name",
+                        "supplier_name",
+                        "supplierName"
+                    ]
+                );
+
+            contactInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "contactPerson",
+                        "contact_person",
+                        "contact"
+                    ]
+                );
+
+            phoneInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "phone",
+                        "phoneNumber",
+                        "phone_number"
+                    ]
+                );
+
+            emailInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "email",
+                        "emailAddress"
+                    ]
+                );
+
+            addressInput.value =
+                getValue(
+                    supplier,
+                    [
+                        "address",
+                        "supplier_address"
+                    ]
+                );
+
+            statusInput.value =
+                clean(
+                    getValue(
+                        supplier,
+                        [
+                            "status",
+                            "supplier_status"
+                        ]
+                    )
+                ).toUpperCase() ||
+                "ACTIVE";
+
+            saveButton.textContent =
+                "Update Supplier";
+
+            nameInput.focus();
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Edit supplier error:",
+                error
+            );
+
+            showAlert(
+                error?.message ||
+                "Unable to load supplier.",
+                "error"
+            );
+        }
     }
 
 
@@ -632,63 +739,107 @@ document.addEventListener("DOMContentLoaded", () => {
 
         event.preventDefault();
 
-        if (isSaving) {
-            return;
-        }
-
         const API =
             getAPI();
 
-        if (!API) {
+        if (
+            !API ||
+            typeof API.saveSupplier !==
+                "function"
+        ) {
 
             showAlert(
-                "StockFlow API is not available.",
+                "Supplier save API is not available.",
                 "error"
             );
 
             return;
         }
 
-        const data =
-            getFormData();
 
-        if (!validateForm(data)) {
+        const name =
+            clean(
+                nameInput.value
+            );
+
+        if (!name) {
+
+            showAlert(
+                "Supplier name is required.",
+                "error"
+            );
+
+            nameInput.focus();
+
             return;
         }
 
-        isSaving = true;
 
-        const editing =
-            Boolean(data.id);
+        const payload = {
 
-        saveButton.disabled = true;
+            id:
+                clean(
+                    idInput.value
+                ),
 
-        saveButton.textContent =
-            editing
-                ? "Updating..."
-                : "Saving...";
+            name:
+                name,
+
+            contactPerson:
+                clean(
+                    contactInput.value
+                ),
+
+            phone:
+                clean(
+                    phoneInput.value
+                ),
+
+            email:
+                clean(
+                    emailInput.value
+                ),
+
+            address:
+                clean(
+                    addressInput.value
+                ),
+
+            status:
+                clean(
+                    statusInput.value
+                ).toUpperCase()
+
+        };
+
+
+        const isEdit =
+            Boolean(
+                payload.id
+            );
+
+
+        if (saveButton) {
+
+            saveButton.disabled =
+                true;
+
+            saveButton.textContent =
+                isEdit
+                    ? "Updating..."
+                    : "Saving...";
+        }
+
 
         try {
 
-            let response;
-
-            if (editing) {
-
-                response =
-                    await API.updateSupplier(
-                        data
-                    );
-
-            } else {
-
-                response =
-                    await API.createSupplier(
-                        data
-                    );
-            }
+            const response =
+                await API.saveSupplier(
+                    payload
+                );
 
             console.log(
-                "StockFlow supplier save response:",
+                "Save supplier response:",
                 response
             );
 
@@ -696,6 +847,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 response &&
                 response.success === false
             ) {
+
                 throw new Error(
                     response.message ||
                     "Unable to save supplier."
@@ -703,9 +855,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             showAlert(
-                editing
+                isEdit
                     ? "Supplier updated successfully."
-                    : "Supplier added successfully.",
+                    : "Supplier saved successfully.",
                 "success"
             );
 
@@ -716,7 +868,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error(
-                "Supplier save error:",
+                "Save supplier error:",
                 error
             );
 
@@ -728,99 +880,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } finally {
 
-            isSaving = false;
+            if (saveButton) {
 
-            saveButton.disabled = false;
+                saveButton.disabled =
+                    false;
 
-            saveButton.textContent =
-                editing
-                    ? "Update Supplier"
-                    : "Save Supplier";
+                saveButton.textContent =
+                    "Save Supplier";
+            }
         }
-    }
-
-
-    /* =====================================================
-       EDIT SUPPLIER
-       ===================================================== */
-
-    function editSupplier(
-        id
-    ) {
-
-        const supplier =
-            suppliers.find(
-                (item) =>
-                    String(
-                        getSupplierId(item)
-                    ) ===
-                    String(id)
-            );
-
-        if (!supplier) {
-
-            showAlert(
-                "Supplier record could not be found.",
-                "error"
-            );
-
-            return;
-        }
-
-        idInput.value =
-            getSupplierId(
-                supplier
-            );
-
-        nameInput.value =
-            clean(
-                supplier.name ??
-                supplier.supplier_name ??
-                supplier.supplierName
-            );
-
-        contactInput.value =
-            clean(
-                supplier.contactPerson ??
-                supplier.contact_person ??
-                supplier.contact
-            );
-
-        phoneInput.value =
-            clean(
-                supplier.phone ??
-                supplier.phone_number
-            );
-
-        emailInput.value =
-            clean(
-                supplier.email
-            );
-
-        addressInput.value =
-            clean(
-                supplier.address
-            );
-
-        statusInput.value =
-            normalizeStatus(
-                supplier.status
-            );
-
-        saveButton.textContent =
-            "Update Supplier";
-
-        showAlert(
-            "Editing supplier. Update the details and save.",
-            "info"
-        );
-
-        nameInput.focus();
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
     }
 
 
@@ -832,54 +900,35 @@ document.addEventListener("DOMContentLoaded", () => {
         id
     ) {
 
-        const supplier =
-            suppliers.find(
-                (item) =>
-                    String(
-                        getSupplierId(item)
-                    ) ===
-                    String(id)
-            );
-
-        if (!supplier) {
-            return;
-        }
-
-        const name =
-            clean(
-                supplier.name ??
-                supplier.supplier_name ??
-                supplier.supplierName
-            );
-
-        const confirmed =
-            window.confirm(
-                `Delete supplier "${name || "this supplier"}"?\n\nThis action cannot be undone.`
-            );
-
-        if (!confirmed) {
-            return;
-        }
-
         const API =
             getAPI();
 
-        if (!API) {
+        if (
+            !API ||
+            typeof API.deleteSupplier !==
+                "function"
+        ) {
 
             showAlert(
-                "StockFlow API is not available.",
+                "Supplier delete API is not available.",
                 "error"
             );
 
             return;
         }
 
-        try {
 
-            showAlert(
-                "Deleting supplier...",
-                "info"
+        const confirmed =
+            window.confirm(
+                "Are you sure you want to delete this supplier?"
             );
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        try {
 
             const response =
                 await API.deleteSupplier(
@@ -887,7 +936,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             console.log(
-                "StockFlow supplier delete response:",
+                "Delete supplier response:",
                 response
             );
 
@@ -895,18 +944,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 response &&
                 response.success === false
             ) {
+
                 throw new Error(
                     response.message ||
                     "Unable to delete supplier."
                 );
-            }
-
-            if (
-                String(
-                    idInput?.value
-                ) === String(id)
-            ) {
-                clearForm();
             }
 
             showAlert(
@@ -919,7 +961,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error(
-                "Supplier delete error:",
+                "Delete supplier error:",
                 error
             );
 
@@ -933,140 +975,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       CLEAR FORM
+       TABLE ACTIONS
        ===================================================== */
 
-    function clearForm() {
-
-        if (form) {
-            form.reset();
-        }
-
-        if (idInput) {
-            idInput.value = "";
-        }
-
-        if (statusInput) {
-            statusInput.value =
-                "ACTIVE";
-        }
-
-        if (saveButton) {
-            saveButton.textContent =
-                "Save Supplier";
-
-            saveButton.disabled = false;
-        }
-    }
-
-
-    /* =====================================================
-       EVENT DELEGATION
-       ===================================================== */
-
-    function setupTableActions() {
-
-        if (!rows) {
-            return;
-        }
+    if (rows) {
 
         rows.addEventListener(
             "click",
-            (event) => {
+            async event => {
 
-                const editButton =
+                const button =
                     event.target.closest(
-                        "[data-edit-id]"
+                        "[data-action]"
                     );
 
-                if (editButton) {
-
-                    editSupplier(
-                        editButton.dataset.editId
-                    );
-
+                if (!button) {
                     return;
                 }
 
-                const deleteButton =
-                    event.target.closest(
-                        "[data-delete-id]"
-                    );
+                const action =
+                    button.dataset.action;
 
-                if (deleteButton) {
+                const id =
+                    button.dataset.id;
 
-                    deleteSupplier(
-                        deleteButton.dataset.deleteId
-                    );
-                }
-            }
-        );
-    }
-
-
-    /* =====================================================
-       MOBILE MENU
-       ===================================================== */
-
-    function setupMenu() {
-
-        if (
-            !menuButton ||
-            !sidebar
-        ) {
-            return;
-        }
-
-        menuButton.addEventListener(
-            "click",
-            () => {
-
-                sidebar.classList.toggle(
-                    "open"
-                );
-            }
-        );
-    }
-
-
-    /* =====================================================
-       CLOSE MOBILE MENU
-       ===================================================== */
-
-    function setupOutsideMenu() {
-
-        document.addEventListener(
-            "click",
-            (event) => {
-
-                if (
-                    window.innerWidth > 800
-                ) {
+                if (!id) {
                     return;
                 }
 
                 if (
-                    !sidebar?.classList.contains(
-                        "open"
-                    )
+                    action === "edit"
                 ) {
+
+                    await editSupplier(
+                        id
+                    );
+
                     return;
                 }
 
                 if (
-                    sidebar.contains(
-                        event.target
-                    ) ||
-                    menuButton?.contains(
-                        event.target
-                    )
+                    action === "delete"
                 ) {
-                    return;
+
+                    await deleteSupplier(
+                        id
+                    );
                 }
 
-                sidebar.classList.remove(
-                    "open"
-                );
             }
         );
     }
@@ -1084,6 +1040,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
+
     if (clearButton) {
 
         clearButton.addEventListener(
@@ -1092,7 +1049,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 clearForm();
 
-                nameInput?.focus();
+                showAlert(
+                    "",
+                    "info"
+                );
+            }
+        );
+    }
+
+
+    /* =====================================================
+       MOBILE MENU
+       ===================================================== */
+
+    if (
+        menuButton &&
+        sidebar
+    ) {
+
+        menuButton.addEventListener(
+            "click",
+            () => {
+
+                sidebar.classList.toggle(
+                    "open"
+                );
+            }
+        );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    window.innerWidth > 800
+                ) {
+                    return;
+                }
+
+                if (
+                    !sidebar.classList.contains(
+                        "open"
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    sidebar.contains(
+                        event.target
+                    ) ||
+                    menuButton.contains(
+                        event.target
+                    )
+                ) {
+                    return;
+                }
+
+                sidebar.classList.remove(
+                    "open"
+                );
             }
         );
     }
@@ -1102,11 +1119,7 @@ document.addEventListener("DOMContentLoaded", () => {
        INITIALIZE
        ===================================================== */
 
-    setupTableActions();
-
-    setupMenu();
-
-    setupOutsideMenu();
+    clearForm();
 
     loadSuppliers();
 
