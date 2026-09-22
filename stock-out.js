@@ -1,481 +1,1648 @@
-/* ============================================================
-   STOCKFLOW | STOCK OUT MODULE
+/* =========================================================
+   STOCKFLOW — STOCK OUT MODULE
    stock-out.js
-   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
+   Handles:
+   - Product loading
+   - Available stock
+   - Live transaction preview
+   - Quantity validation
+   - Stock-out submission
+   - Recent transactions
+   - Success/error modal
+   - Loading overlay
+   - Connection status
+   - User information
+   - Mobile sidebar
+   - Logout
+========================================================= */
 
-    const user = await StockFlowAuth.requireAuth();
-    if (!user) return;
+document.addEventListener("DOMContentLoaded", () => {
 
-    StockFlowAuth.bindUserUI(user);
+    "use strict";
 
-    const tableBody =
-        document.getElementById("stockOutTableBody");
 
-    const searchInput =
-        document.getElementById("stockOutSearch");
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
 
-    const form =
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const sidebarOverlay =
+        document.getElementById("sidebarOverlay");
+
+    const mobileMenuBtn =
+        document.getElementById("mobileMenuBtn");
+
+    const logoutBtn =
+        document.getElementById("logoutBtn");
+
+
+    const connectionBadge =
+        document.getElementById("connectionBadge");
+
+    const connectionMessage =
+        document.getElementById("connectionMessage");
+
+
+    const stockOutForm =
         document.getElementById("stockOutForm");
 
     const productSelect =
-        document.getElementById("stockOutProduct");
+        document.getElementById("productSelect");
 
     const quantityInput =
-        document.getElementById("stockOutQuantity");
+        document.getElementById("quantity");
 
-    const reasonInput =
+    const reasonSelect =
         document.getElementById("stockOutReason");
 
     const referenceInput =
-        document.getElementById("stockOutReference");
+        document.getElementById("referenceNumber");
+
+    const recipientInput =
+        document.getElementById("recipient");
 
     const dateInput =
         document.getElementById("stockOutDate");
 
-    const submitBtn =
-        document.getElementById("stockOutSubmit");
+    const notesInput =
+        document.getElementById("notes");
 
-    const cancelBtn =
-        document.getElementById("stockOutCancel");
+
+    const availableStockBox =
+        document.getElementById("availableStockBox");
+
+    const availableStock =
+        document.getElementById("availableStock");
+
+    const stockAvailabilityHelp =
+        document.getElementById(
+            "stockAvailabilityHelp"
+        );
+
+    const quantityHelp =
+        document.getElementById("quantityHelp");
+
+
+    const clearBtn =
+        document.getElementById(
+            "clearStockOutBtn"
+        );
+
+    const saveBtn =
+        document.getElementById(
+            "saveStockOutBtn"
+        );
+
+    const refreshBtn =
+        document.getElementById(
+            "refreshStockOutBtn"
+        );
+
+
+    const tableBody =
+        document.getElementById(
+            "stockOutTableBody"
+        );
+
+
+    /* =====================================================
+       PREVIEW ELEMENTS
+    ===================================================== */
+
+    const previewProduct =
+        document.getElementById(
+            "previewProduct"
+        );
+
+    const previewAvailable =
+        document.getElementById(
+            "previewAvailable"
+        );
+
+    const previewQuantity =
+        document.getElementById(
+            "previewQuantity"
+        );
+
+    const previewRemaining =
+        document.getElementById(
+            "previewRemaining"
+        );
+
+    const previewReason =
+        document.getElementById(
+            "previewReason"
+        );
+
+    const previewRecipient =
+        document.getElementById(
+            "previewRecipient"
+        );
+
+    const previewReference =
+        document.getElementById(
+            "previewReference"
+        );
+
+    const previewDate =
+        document.getElementById(
+            "previewDate"
+        );
+
+
+    /* =====================================================
+       USER ELEMENTS
+    ===================================================== */
+
+    const sidebarAvatar =
+        document.getElementById(
+            "sidebarAvatar"
+        );
+
+    const sidebarUserName =
+        document.getElementById(
+            "sidebarUserName"
+        );
+
+    const sidebarUserRole =
+        document.getElementById(
+            "sidebarUserRole"
+        );
+
+    const topbarAvatar =
+        document.getElementById(
+            "topbarAvatar"
+        );
+
+    const topbarUserName =
+        document.getElementById(
+            "topbarUserName"
+        );
+
+    const topbarUserRole =
+        document.getElementById(
+            "topbarUserRole"
+        );
+
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
 
     const modal =
-        document.getElementById("stockOutModal");
+        document.getElementById(
+            "stockOutModal"
+        );
 
-    const openBtn =
-        document.getElementById("openStockOutModal");
+    const modalClose =
+        document.getElementById(
+            "closeStockOutModal"
+        );
 
-    const closeBtn =
-        document.getElementById("closeStockOutModal");
+    const modalOk =
+        document.getElementById(
+            "stockOutModalOk"
+        );
 
-    let transactions = [];
+    const modalIcon =
+        document.getElementById(
+            "stockOutModalIcon"
+        );
+
+    const modalTitle =
+        document.getElementById(
+            "stockOutModalTitle"
+        );
+
+    const modalMessage =
+        document.getElementById(
+            "stockOutModalMessage"
+        );
+
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    const loadingOverlay =
+        document.getElementById(
+            "stockOutLoading"
+        );
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
     let products = [];
 
-    /* ==========================================================
+    let transactions = [];
+
+    let selectedProduct = null;
+
+    let isSaving = false;
+
+
+    /* =====================================================
        INITIALIZATION
-       ========================================================== */
+    ===================================================== */
 
-    setDefaultDate();
-    await loadProducts();
-    await loadStockOut();
+    init();
 
-    /* ==========================================================
-       EVENTS
-       ========================================================== */
 
-    searchInput?.addEventListener("input", () => {
-        renderTable(searchInput.value);
-    });
+    async function init() {
 
-    openBtn?.addEventListener("click", () => {
-        openModal();
-    });
+        setDefaultDate();
 
-    closeBtn?.addEventListener("click", () => {
-        closeModal();
-    });
+        initializeUser();
 
-    cancelBtn?.addEventListener("click", () => {
-        closeModal();
-    });
+        initializeConnection();
 
-    modal?.addEventListener("click", event => {
-        if (event.target === modal) {
-            closeModal();
+        initializeSidebar();
+
+        initializeFormEvents();
+
+        updatePreview();
+
+        await loadInitialData();
+
+    }
+
+
+    /* =====================================================
+       DEFAULT DATE
+    ===================================================== */
+
+    function setDefaultDate() {
+
+        if (!dateInput) {
+            return;
         }
-    });
 
-    productSelect?.addEventListener("change", updateAvailableStock);
+        if (!dateInput.value) {
 
-    quantityInput?.addEventListener("input", validateQuantity);
+            const now =
+                new Date();
 
-    form?.addEventListener("submit", handleStockOut);
+            const year =
+                now.getFullYear();
 
-    /* ==========================================================
+            const month =
+                String(
+                    now.getMonth() + 1
+                ).padStart(2, "0");
+
+            const day =
+                String(
+                    now.getDate()
+                ).padStart(2, "0");
+
+            dateInput.value =
+                `${year}-${month}-${day}`;
+        }
+
+    }
+
+
+    /* =====================================================
+       USER
+    ===================================================== */
+
+    function initializeUser() {
+
+        let user = null;
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth
+                    .getCurrentUser === "function"
+            ) {
+
+                user =
+                    window.StockFlowAuth
+                        .getCurrentUser();
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Could not read StockFlowAuth:",
+                error
+            );
+
+        }
+
+
+        if (!user) {
+
+            try {
+
+                const keys = [
+                    "stockflowUser",
+                    "currentUser",
+                    "user",
+                    "loggedInUser"
+                ];
+
+                for (const key of keys) {
+
+                    const raw =
+                        localStorage.getItem(key);
+
+                    if (!raw) {
+                        continue;
+                    }
+
+                    try {
+
+                        user =
+                            JSON.parse(raw);
+
+                    } catch {
+
+                        user = {
+                            name: raw
+                        };
+
+                    }
+
+                    if (user) {
+                        break;
+                    }
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not read user from localStorage:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        const name =
+            pick(
+                user,
+                "name",
+                "fullName",
+                "full_name",
+                "username",
+                "displayName",
+                "email"
+            ) || "StockFlow User";
+
+
+        const role =
+            pick(
+                user,
+                "role",
+                "accountStatus",
+                "account_status",
+                "position"
+            ) || "Employee";
+
+
+        const initials =
+            getInitials(name);
+
+
+        setText(
+            sidebarUserName,
+            name
+        );
+
+        setText(
+            topbarUserName,
+            name
+        );
+
+        setText(
+            sidebarUserRole,
+            role
+        );
+
+        setText(
+            topbarUserRole,
+            role
+        );
+
+        setText(
+            sidebarAvatar,
+            initials
+        );
+
+        setText(
+            topbarAvatar,
+            initials
+        );
+
+    }
+
+
+    function getInitials(name) {
+
+        if (!name) {
+            return "SF";
+        }
+
+        const parts =
+            String(name)
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+        if (!parts.length) {
+            return "SF";
+        }
+
+        if (parts.length === 1) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        ).toUpperCase();
+
+    }
+
+
+    /* =====================================================
+       CONNECTION
+    ===================================================== */
+
+    function initializeConnection() {
+
+        setConnection(
+            "online",
+            "ONLINE"
+        );
+
+    }
+
+
+    function setConnection(
+        state,
+        label
+    ) {
+
+        if (!connectionBadge) {
+            return;
+        }
+
+        connectionBadge.classList.remove(
+            "offline",
+            "connecting"
+        );
+
+        if (state === "offline") {
+
+            connectionBadge.classList.add(
+                "offline"
+            );
+
+        } else if (state === "connecting") {
+
+            connectionBadge.classList.add(
+                "connecting"
+            );
+
+        }
+
+        const labelElement =
+            connectionBadge.querySelector(
+                "span:last-child"
+            );
+
+        if (labelElement) {
+
+            labelElement.textContent =
+                label || "ONLINE";
+
+        }
+
+    }
+
+
+    function showConnectionMessage(
+        message,
+        type = "error"
+    ) {
+
+        if (!connectionMessage) {
+            return;
+        }
+
+        connectionMessage.textContent =
+            message;
+
+        connectionMessage.className =
+            `connection-message ${type}`;
+
+        connectionMessage.hidden = false;
+
+    }
+
+
+    function hideConnectionMessage() {
+
+        if (!connectionMessage) {
+            return;
+        }
+
+        connectionMessage.hidden = true;
+
+        connectionMessage.textContent = "";
+
+        connectionMessage.className =
+            "connection-message";
+
+    }
+
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+
+    function initializeSidebar() {
+
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.addEventListener(
+                "click",
+                toggleSidebar
+            );
+
+        }
+
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.addEventListener(
+                "click",
+                closeSidebar
+            );
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape" &&
+                    window.innerWidth <= 960
+                ) {
+
+                    closeSidebar();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    function toggleSidebar() {
+
+        if (!sidebar) {
+            return;
+        }
+
+        const isOpen =
+            sidebar.classList.toggle("open");
+
+        if (sidebarOverlay) {
+
+            sidebarOverlay.classList.toggle(
+                "active",
+                isOpen
+            );
+
+        }
+
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                String(isOpen)
+            );
+
+        }
+
+    }
+
+
+    function closeSidebar() {
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove(
+                "active"
+            );
+        }
+
+        if (mobileMenuBtn) {
+
+            mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FORM EVENTS
+    ===================================================== */
+
+    function initializeFormEvents() {
+
+        if (stockOutForm) {
+
+            stockOutForm.addEventListener(
+                "submit",
+                handleSubmit
+            );
+
+        }
+
+
+        if (productSelect) {
+
+            productSelect.addEventListener(
+                "change",
+                handleProductChange
+            );
+
+        }
+
+
+        if (quantityInput) {
+
+            quantityInput.addEventListener(
+                "input",
+                handleQuantityChange
+            );
+
+        }
+
+
+        if (reasonSelect) {
+
+            reasonSelect.addEventListener(
+                "change",
+                updatePreview
+            );
+
+        }
+
+
+        if (referenceInput) {
+
+            referenceInput.addEventListener(
+                "input",
+                updatePreview
+            );
+
+        }
+
+
+        if (recipientInput) {
+
+            recipientInput.addEventListener(
+                "input",
+                updatePreview
+            );
+
+        }
+
+
+        if (dateInput) {
+
+            dateInput.addEventListener(
+                "change",
+                updatePreview
+            );
+
+        }
+
+
+        if (clearBtn) {
+
+            clearBtn.addEventListener(
+                "click",
+                clearForm
+            );
+
+        }
+
+
+        if (refreshBtn) {
+
+            refreshBtn.addEventListener(
+                "click",
+                async () => {
+
+                    await loadTransactions();
+
+                }
+            );
+
+        }
+
+
+        if (modalClose) {
+
+            modalClose.addEventListener(
+                "click",
+                closeModal
+            );
+
+        }
+
+
+        if (modalOk) {
+
+            modalOk.addEventListener(
+                "click",
+                closeModal
+            );
+
+        }
+
+
+        if (modal) {
+
+            modal.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target === modal
+                    ) {
+
+                        closeModal();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape" &&
+                    modal &&
+                    !modal.hidden
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+        if (logoutBtn) {
+
+            logoutBtn.addEventListener(
+                "click",
+                handleLogout
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOAD INITIAL DATA
+    ===================================================== */
+
+    async function loadInitialData() {
+
+        setConnection(
+            "connecting",
+            "CONNECTING"
+        );
+
+        hideConnectionMessage();
+
+        try {
+
+            await Promise.all([
+                loadProducts(),
+                loadTransactions()
+            ]);
+
+            setConnection(
+                "online",
+                "ONLINE"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Stock Out initialization failed:",
+                error
+            );
+
+            setConnection(
+                "offline",
+                "OFFLINE"
+            );
+
+            showConnectionMessage(
+                error.message ||
+                "Unable to connect to the inventory service.",
+                "error"
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       API ADAPTER
+    ===================================================== */
+
+    async function apiAction(
+        action,
+        payload = {}
+    ) {
+
+        const api =
+            window.StockFlowAPI ||
+            window.stockFlowAPI ||
+            window.StockFlowApi ||
+            window.API;
+
+
+        if (!api) {
+
+            throw new Error(
+                "StockFlow API is not available. Please check API.js."
+            );
+
+        }
+
+
+        /*
+         * Preferred nested API methods.
+         */
+
+        if (
+            action === "listProducts" &&
+            api.products &&
+            typeof api.products.list === "function"
+        ) {
+
+            return await api.products.list(
+                payload
+            );
+
+        }
+
+
+        if (
+            action === "stockOut" &&
+            api.stockOut &&
+            typeof api.stockOut === "function"
+        ) {
+
+            return await api.stockOut(
+                payload
+            );
+
+        }
+
+
+        if (
+            action === "stockOut" &&
+            api.inventory &&
+            typeof api.inventory.stockOut === "function"
+        ) {
+
+            return await api.inventory.stockOut(
+                payload
+            );
+
+        }
+
+
+        if (
+            action === "listTransactions" &&
+            api.transactions &&
+            typeof api.transactions.list === "function"
+        ) {
+
+            return await api.transactions.list(
+                payload
+            );
+
+        }
+
+
+        /*
+         * Common direct methods.
+         */
+
+        const directMethods = {
+
+            listProducts: [
+                "listProducts",
+                "getProducts"
+            ],
+
+            stockOut: [
+                "stockOut",
+                "releaseStock"
+            ],
+
+            listTransactions: [
+                "listTransactions",
+                "getTransactions"
+            ]
+
+        };
+
+
+        const names =
+            directMethods[action] || [];
+
+
+        for (const methodName of names) {
+
+            if (
+                typeof api[methodName] ===
+                "function"
+            ) {
+
+                return await api[methodName](
+                    payload
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Generic API request methods.
+         */
+
+        if (
+            typeof api.request ===
+            "function"
+        ) {
+
+            try {
+
+                return await api.request({
+                    action,
+                    ...payload
+                });
+
+            } catch (firstError) {
+
+                return await api.request(
+                    action,
+                    payload
+                );
+
+            }
+
+        }
+
+
+        if (
+            typeof api.post ===
+            "function"
+        ) {
+
+            return await api.post(
+                action,
+                payload
+            );
+
+        }
+
+
+        if (
+            typeof api.call ===
+            "function"
+        ) {
+
+            return await api.call(
+                action,
+                payload
+            );
+
+        }
+
+
+        if (
+            typeof window.apiRequest ===
+            "function"
+        ) {
+
+            return await window.apiRequest(
+                action,
+                payload
+            );
+
+        }
+
+
+        throw new Error(
+            `No API method found for "${action}".`
+        );
+
+    }
+
+
+    /* =====================================================
        LOAD PRODUCTS
-       ========================================================== */
+    ===================================================== */
 
     async function loadProducts() {
 
         try {
 
             const response =
-                await StockFlowAPI.getProducts();
-
-            if (!response?.success) {
-                throw new Error(
-                    response?.message ||
-                    "Unable to load products."
+                await apiAction(
+                    "listProducts"
                 );
-            }
+
+
+            const data =
+                extractData(response);
+
 
             products =
-                response.products ||
-                response.data ||
-                [];
+                Array.isArray(data)
+                    ? data
+                    : [];
+
 
             populateProductSelect();
+
+            updateSelectedProduct();
+
 
         } catch (error) {
 
             console.error(
-                "StockFlow products error:",
+                "Failed to load products:",
                 error
             );
 
-            showToast(
-                error.message ||
-                "Unable to load products.",
-                "error"
-            );
+            if (productSelect) {
+
+                productSelect.innerHTML = `
+                    <option value="">
+                        Unable to load products
+                    </option>
+                `;
+
+            }
+
+            throw error;
 
         }
 
     }
 
-    /* ==========================================================
-       PRODUCT DROPDOWN
-       ========================================================== */
+
+    /* =====================================================
+       PRODUCT SELECT
+    ===================================================== */
 
     function populateProductSelect() {
 
-        if (!productSelect) return;
+        if (!productSelect) {
+            return;
+        }
 
         productSelect.innerHTML = `
             <option value="">
-                Select product
+                Select a product
             </option>
         `;
+
 
         products.forEach(product => {
 
             const id =
-                product.id ||
-                product.ID ||
-                product.productId ||
-                product.PRODUCT_ID ||
-                product.uid;
+                getProductId(product);
 
             const name =
-                product.name ||
-                product.NAME ||
-                product.productName ||
-                product.PRODUCT_NAME;
+                getProductName(product);
+
+            const sku =
+                getProductSku(product);
 
             const stock =
-                Number(
-                    product.stock ??
-                    product.STOCK ??
-                    product.quantity ??
-                    product.QUANTITY ??
-                    product.stockQuantity ??
-                    0
-                );
+                getProductStock(product);
 
-            if (!id || !name) return;
+
+            if (
+                id === null ||
+                id === undefined ||
+                !name
+            ) {
+
+                return;
+
+            }
+
 
             const option =
-                document.createElement("option");
+                document.createElement(
+                    "option"
+                );
 
-            option.value = id;
+
+            option.value =
+                String(id);
+
 
             option.textContent =
-                `${name} — ${stock} available`;
+                sku
+                    ? `${name} — ${sku}`
+                    : name;
 
-            option.dataset.stock = stock;
-            option.dataset.name = name;
 
-            productSelect.appendChild(option);
+            option.dataset.stock =
+                String(stock);
+
+
+            productSelect.appendChild(
+                option
+            );
 
         });
 
     }
 
-    /* ==========================================================
-       AVAILABLE STOCK
-       ========================================================== */
 
-    function updateAvailableStock() {
+    /* =====================================================
+       PRODUCT CHANGE
+    ===================================================== */
 
-        if (!productSelect) return;
+    function handleProductChange() {
 
-        const option =
-            productSelect.options[
-                productSelect.selectedIndex
-            ];
+        updateSelectedProduct();
 
-        const available =
-            Number(
-                option?.dataset?.stock || 0
-            );
+        updatePreview();
 
-        const stockDisplay =
-            document.getElementById(
-                "availableStock"
-            );
+    }
 
-        if (stockDisplay) {
 
-            stockDisplay.textContent =
-                available.toLocaleString();
+    function updateSelectedProduct() {
+
+        selectedProduct = null;
+
+        if (
+            !productSelect ||
+            !productSelect.value
+        ) {
+
+            setAvailableStock(0);
+
+            return;
 
         }
+
+
+        selectedProduct =
+            products.find(
+                product =>
+                    String(
+                        getProductId(product)
+                    ) ===
+                    String(
+                        productSelect.value
+                    )
+            ) || null;
+
+
+        const stock =
+            selectedProduct
+                ? getProductStock(
+                    selectedProduct
+                )
+                : 0;
+
+
+        setAvailableStock(stock);
+
 
         if (quantityInput) {
 
             quantityInput.max =
-                available;
-
-            quantityInput.value = "";
+                String(stock);
 
         }
+
+
+        if (selectedProduct) {
+
+            if (stock > 0) {
+
+                if (stockAvailabilityHelp) {
+
+                    stockAvailabilityHelp.textContent =
+                        `Available stock: ${formatNumber(stock)} units.`;
+
+                }
+
+            } else {
+
+                if (stockAvailabilityHelp) {
+
+                    stockAvailabilityHelp.textContent =
+                        "This product is currently out of stock.";
+
+                }
+
+            }
+
+        } else {
+
+            if (stockAvailabilityHelp) {
+
+                stockAvailabilityHelp.textContent =
+                    "Select a product to view available stock.";
+
+            }
+
+        }
+
 
         validateQuantity();
 
     }
 
-    /* ==========================================================
-       QUANTITY VALIDATION
-       ========================================================== */
+
+    /* =====================================================
+       AVAILABLE STOCK
+    ===================================================== */
+
+    function setAvailableStock(value) {
+
+        const stock =
+            Number(value) || 0;
+
+
+        if (availableStock) {
+
+            availableStock.textContent =
+                formatNumber(stock);
+
+        }
+
+
+        if (availableStockBox) {
+
+            availableStockBox.classList.remove(
+                "low-stock",
+                "out-of-stock"
+            );
+
+
+            if (stock <= 0) {
+
+                availableStockBox.classList.add(
+                    "out-of-stock"
+                );
+
+            } else if (stock <= 10) {
+
+                availableStockBox.classList.add(
+                    "low-stock"
+                );
+
+            }
+
+        }
+
+
+        if (previewAvailable) {
+
+            previewAvailable.textContent =
+                `Available stock: ${formatNumber(stock)}`;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       QUANTITY
+    ===================================================== */
+
+    function handleQuantityChange() {
+
+        validateQuantity();
+
+        updatePreview();
+
+    }
+
 
     function validateQuantity() {
 
-        if (!quantityInput || !productSelect) {
-            return;
+        if (!quantityInput) {
+            return true;
         }
 
-        const option =
-            productSelect.options[
-                productSelect.selectedIndex
-            ];
-
-        const available =
-            Number(
-                option?.dataset?.stock || 0
-            );
 
         const quantity =
             Number(
-                quantityInput.value || 0
+                quantityInput.value
+            ) || 0;
+
+
+        const stock =
+            selectedProduct
+                ? getProductStock(
+                    selectedProduct
+                )
+                : 0;
+
+
+        quantityInput.classList.remove(
+            "invalid"
+        );
+
+
+        if (quantityHelp) {
+
+            quantityHelp.classList.remove(
+                "quantity-error"
             );
 
-        const warning =
-            document.getElementById(
-                "stockOutQuantityWarning"
+        }
+
+
+        if (!quantity) {
+
+            return false;
+
+        }
+
+
+        if (quantity < 1) {
+
+            markQuantityInvalid(
+                "Quantity must be at least 1."
             );
 
-        if (
-            quantity > 0 &&
-            quantity > available
-        ) {
-
-            if (warning) {
-
-                warning.textContent =
-                    `Only ${available} unit(s) available.`;
-
-                warning.hidden = false;
-
-            }
-
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
-
-            return;
+            return false;
 
         }
 
-        if (warning) {
-            warning.hidden = true;
+
+        if (quantity > stock) {
+
+            markQuantityInvalid(
+                `Only ${formatNumber(stock)} unit(s) available.`
+            );
+
+            return false;
+
         }
 
-        if (submitBtn) {
-            submitBtn.disabled =
-                !productSelect.value ||
-                quantity <= 0;
-        }
+
+        return true;
 
     }
 
-    /* ==========================================================
-       LOAD STOCK OUT TRANSACTIONS
-       ========================================================== */
 
-    async function loadStockOut() {
+    function markQuantityInvalid(
+        message
+    ) {
 
-        setLoading(true);
+        if (quantityInput) {
 
-        try {
-
-            const response =
-                await getStockOutAPI();
-
-            if (!response?.success) {
-                throw new Error(
-                    response?.message ||
-                    "Unable to load stock-out records."
-                );
-            }
-
-            transactions =
-                response.stockOut ||
-                response.transactions ||
-                response.data ||
-                [];
-
-            renderTable();
-
-            updateSummary();
-
-        } catch (error) {
-
-            console.error(
-                "Stock-out loading error:",
-                error
+            quantityInput.classList.add(
+                "invalid"
             );
 
-            if (tableBody) {
+        }
 
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                <strong>
-                                    Unable to load stock-out records
-                                </strong>
-                                <small>
-                                    ${escapeHTML(error.message)}
-                                </small>
-                            </div>
-                        </td>
-                    </tr>
-                `;
 
-            }
+        const wrapper =
+            quantityInput
+                ? quantityInput.closest(
+                    ".input-wrapper"
+                )
+                : null;
 
-            showToast(
-                error.message ||
-                "Unable to load stock-out records.",
-                "error"
+
+        if (wrapper) {
+
+            wrapper.classList.add(
+                "invalid"
             );
 
-        } finally {
+        }
 
-            setLoading(false);
+
+        if (quantityHelp) {
+
+            quantityHelp.textContent =
+                message;
+
+            quantityHelp.classList.add(
+                "quantity-error"
+            );
 
         }
 
     }
 
-    /* ==========================================================
-       API COMPATIBILITY LAYER
-       ========================================================== */
 
-    async function getStockOutAPI() {
+    /* =====================================================
+       PREVIEW
+    ===================================================== */
 
-        if (
-            typeof StockFlowAPI.stockOut ===
-            "function"
-        ) {
+    function updatePreview() {
 
-            return await StockFlowAPI.stockOut();
+        const product =
+            selectedProduct;
 
-        }
 
-        if (
-            typeof StockFlowAPI.getStockOut ===
-            "function"
-        ) {
+        const quantity =
+            Number(
+                quantityInput
+                    ? quantityInput.value
+                    : 0
+            ) || 0;
 
-            return await StockFlowAPI.getStockOut();
 
-        }
+        const stock =
+            product
+                ? getProductStock(product)
+                : 0;
 
-        if (
-            typeof StockFlowAPI.getStockOutTransactions ===
-            "function"
-        ) {
 
-            return await StockFlowAPI
-                .getStockOutTransactions();
+        const remaining =
+            Math.max(
+                stock - quantity,
+                0
+            );
 
-        }
 
-        if (
-            typeof StockFlowAPI.inventoryTransactions ===
-            "function"
-        ) {
+        const reasonText =
+            getSelectedOptionText(
+                reasonSelect
+            );
 
-            return await StockFlowAPI
-                .inventoryTransactions(
-                    "OUT"
-                );
 
-        }
+        const recipient =
+            recipientInput &&
+            recipientInput.value.trim()
+                ? recipientInput.value.trim()
+                : "—";
 
-        throw new Error(
-            "Stock-out API method is not available in API.js."
+
+        const reference =
+            referenceInput &&
+            referenceInput.value.trim()
+                ? referenceInput.value.trim()
+                : "—";
+
+
+        const date =
+            dateInput &&
+            dateInput.value
+                ? formatDate(
+                    dateInput.value
+                )
+                : "—";
+
+
+        setText(
+            previewProduct,
+            product
+                ? getProductName(product)
+                : "No product selected"
+        );
+
+
+        setText(
+            previewAvailable,
+            product
+                ? `Available stock: ${formatNumber(stock)}`
+                : "Available stock: 0"
+        );
+
+
+        setText(
+            previewQuantity,
+            formatNumber(quantity)
+        );
+
+
+        setText(
+            previewRemaining,
+            formatNumber(remaining)
+        );
+
+
+        setText(
+            previewReason,
+            reasonText || "—"
+        );
+
+
+        setText(
+            previewRecipient,
+            recipient
+        );
+
+
+        setText(
+            previewReference,
+            reference
+        );
+
+
+        setText(
+            previewDate,
+            date
         );
 
     }
 
-    /* ==========================================================
-       CREATE STOCK OUT
-       ========================================================== */
 
-    async function handleStockOut(event) {
+    /* =====================================================
+       SUBMIT
+    ===================================================== */
+
+    async function handleSubmit(event) {
 
         event.preventDefault();
 
-        if (!productSelect) return;
 
-        const selectedOption =
-            productSelect.options[
-                productSelect.selectedIndex
-            ];
+        if (isSaving) {
+            return;
+        }
 
-        const productId =
-            productSelect.value;
 
-        const productName =
-            selectedOption?.dataset?.name ||
-            selectedOption?.textContent ||
-            "";
+        hideConnectionMessage();
 
-        const quantity =
-            Number(
-                quantityInput?.value || 0
-            );
 
-        const reason =
-            String(
-                reasonInput?.value || ""
-            ).trim();
+        if (!stockOutForm) {
+            return;
+        }
 
-        const reference =
-            String(
-                referenceInput?.value || ""
-            ).trim();
 
-        const date =
-            dateInput?.value ||
-            new Date().toISOString();
+        if (
+            !stockOutForm.checkValidity()
+        ) {
 
-        const available =
-            Number(
-                selectedOption?.dataset?.stock || 0
-            );
+            stockOutForm.reportValidity();
 
-        /* ------------------------------------------------------
-           VALIDATION
-           ------------------------------------------------------ */
+            return;
 
-        if (!productId) {
+        }
 
-            showToast(
+
+        if (!selectedProduct) {
+
+            showConnectionMessage(
                 "Please select a product.",
                 "error"
             );
@@ -484,13 +1651,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        if (
-            !Number.isInteger(quantity) ||
-            quantity <= 0
-        ) {
 
-            showToast(
-                "Please enter a valid quantity.",
+        const validQuantity =
+            validateQuantity();
+
+
+        if (!validQuantity) {
+
+            showConnectionMessage(
+                "Please enter a valid quantity that does not exceed the available stock.",
+                "error"
+            );
+
+            quantityInput?.focus();
+
+            return;
+
+        }
+
+
+        const quantity =
+            Number(
+                quantityInput.value
+            );
+
+
+        const stock =
+            getProductStock(
+                selectedProduct
+            );
+
+
+        if (quantity > stock) {
+
+            showConnectionMessage(
+                `You cannot release ${formatNumber(quantity)} unit(s). Only ${formatNumber(stock)} unit(s) are available.`,
                 "error"
             );
 
@@ -498,257 +1693,395 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
-        if (quantity > available) {
 
-            showToast(
-                `Insufficient stock. Only ${available} unit(s) available.`,
-                "error"
-            );
+        const payload = {
 
-            return;
+            productId:
+                getProductId(
+                    selectedProduct
+                ),
 
-        }
+            product:
+                getProductId(
+                    selectedProduct
+                ),
 
-        /* ------------------------------------------------------
-           CONFIRMATION
-           ------------------------------------------------------ */
+            quantity,
 
-        const confirmed =
-            window.confirm(
-                `Stock Out Confirmation\n\n` +
-                `Product: ${productName}\n` +
-                `Quantity: ${quantity}\n` +
-                `Reason: ${reason || "Not specified"}\n\n` +
-                `Continue?`
-            );
+            reason:
+                reasonSelect
+                    ? reasonSelect.value
+                    : "",
 
-        if (!confirmed) return;
+            referenceNumber:
+                referenceInput
+                    ? referenceInput.value.trim()
+                    : "",
 
-        setSubmitting(true);
+            reference:
+                referenceInput
+                    ? referenceInput.value.trim()
+                    : "",
+
+            recipient:
+                recipientInput
+                    ? recipientInput.value.trim()
+                    : "",
+
+            stockOutDate:
+                dateInput
+                    ? dateInput.value
+                    : "",
+
+            date:
+                dateInput
+                    ? dateInput.value
+                    : "",
+
+            notes:
+                notesInput
+                    ? notesInput.value.trim()
+                    : "",
+
+            productName:
+                getProductName(
+                    selectedProduct
+                )
+
+        };
+
+
+        isSaving = true;
+
+        setSavingState(true);
+
+        showLoading();
+
 
         try {
 
-            const payload = {
-
-                action:
-                    "stockOut",
-
-                productId:
-                    productId,
-
-                productID:
-                    productId,
-
-                productName:
-                    productName,
-
-                quantity:
-                    quantity,
-
-                reason:
-                    reason,
-
-                reference:
-                    reference,
-
-                date:
-                    date,
-
-                type:
-                    "OUT",
-
-                transactionType:
-                    "STOCK_OUT",
-
-                userId:
-                    user.uid ||
-                    user.id ||
-                    "",
-
-                username:
-                    user.username ||
-                    user.email ||
-                    "",
-
-                performedBy:
-                    user.name ||
-                    user.username ||
-                    user.email ||
-                    ""
-
-            };
-
             const response =
-                await saveStockOutAPI(
+                await apiAction(
+                    "stockOut",
                     payload
                 );
 
-            if (!response?.success) {
+
+            if (
+                response &&
+                response.success === false
+            ) {
 
                 throw new Error(
-                    response?.message ||
-                    "Stock-out transaction failed."
+                    response.message ||
+                    "Stock Out transaction failed."
                 );
 
             }
 
-            showToast(
-                "Stock-out recorded successfully.",
-                "success"
+
+            hideLoading();
+
+            setSavingState(false);
+
+            isSaving = false;
+
+
+            showModal(
+                true,
+                "Stock Released Successfully",
+                response?.message ||
+                "The inventory has been updated successfully."
             );
 
-            closeModal();
 
-            await loadProducts();
-            await loadStockOut();
+            await refreshAfterTransaction();
+
 
         } catch (error) {
 
             console.error(
-                "Stock-out error:",
+                "Stock Out failed:",
                 error
             );
 
-            showToast(
+
+            hideLoading();
+
+            setSavingState(false);
+
+            isSaving = false;
+
+
+            showModal(
+                false,
+                "Unable to Release Stock",
                 error.message ||
-                "Unable to save stock-out transaction.",
-                "error"
+                "The stock transaction could not be completed."
             );
-
-        } finally {
-
-            setSubmitting(false);
 
         }
 
     }
 
-    /* ==========================================================
-       SAVE STOCK OUT API
-       ========================================================== */
 
-    async function saveStockOutAPI(payload) {
+    /* =====================================================
+       REFRESH AFTER SAVE
+    ===================================================== */
 
-        if (
-            typeof StockFlowAPI.stockOut ===
-            "function"
-        ) {
+    async function refreshAfterTransaction() {
 
-            return await StockFlowAPI.stockOut(
-                payload
+        try {
+
+            await Promise.all([
+                loadProducts(),
+                loadTransactions()
+            ]);
+
+            clearForm(false);
+
+        } catch (error) {
+
+            console.error(
+                "Refresh after transaction failed:",
+                error
             );
 
         }
-
-        if (
-            typeof StockFlowAPI.createStockOut ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.createStockOut(
-                payload
-            );
-
-        }
-
-        if (
-            typeof StockFlowAPI.addStockOut ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.addStockOut(
-                payload
-            );
-
-        }
-
-        if (
-            typeof StockFlowAPI.saveStockOut ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.saveStockOut(
-                payload
-            );
-
-        }
-
-        if (
-            typeof StockFlowAPI.inventoryTransaction ===
-            "function"
-        ) {
-
-            return await StockFlowAPI
-                .inventoryTransaction(
-                    payload
-                );
-
-        }
-
-        throw new Error(
-            "Stock-out save API method is not available in API.js."
-        );
 
     }
 
-    /* ==========================================================
-       RENDER TABLE
-       ========================================================== */
 
-    function renderTable(filter = "") {
+    /* =====================================================
+       CLEAR FORM
+    ===================================================== */
 
-        if (!tableBody) return;
+    function clearForm(
+        showMessage = true
+    ) {
 
-        const query =
-            String(filter || "")
-                .trim()
-                .toLowerCase();
+        if (!stockOutForm) {
+            return;
+        }
 
-        const filtered =
-            transactions.filter(item => {
 
-                if (!query) return true;
+        stockOutForm.reset();
 
-                return [
 
-                    item.id,
-                    item.ID,
-                    item.productId,
-                    item.PRODUCT_ID,
-                    item.productName,
-                    item.PRODUCT_NAME,
-                    item.reason,
-                    item.REASON,
-                    item.reference,
-                    item.REFERENCE,
-                    item.username,
-                    item.USERNAME,
-                    item.performedBy,
-                    item.PERFORMED_BY
+        selectedProduct = null;
 
-                ]
-                .some(value =>
-                    String(value ?? "")
-                        .toLowerCase()
-                        .includes(query)
+
+        setDefaultDate();
+
+
+        setAvailableStock(0);
+
+
+        if (quantityInput) {
+
+            quantityInput.classList.remove(
+                "invalid"
+            );
+
+        }
+
+
+        const quantityWrapper =
+            quantityInput
+                ? quantityInput.closest(
+                    ".input-wrapper"
+                )
+                : null;
+
+
+        if (quantityWrapper) {
+
+            quantityWrapper.classList.remove(
+                "invalid"
+            );
+
+        }
+
+
+        if (quantityHelp) {
+
+            quantityHelp.classList.remove(
+                "quantity-error"
+            );
+
+            quantityHelp.textContent =
+                "Quantity must not exceed available stock.";
+
+        }
+
+
+        if (stockAvailabilityHelp) {
+
+            stockAvailabilityHelp.textContent =
+                "Select a product to view available stock.";
+
+        }
+
+
+        updatePreview();
+
+
+        if (showMessage) {
+
+            hideConnectionMessage();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOAD TRANSACTIONS
+    ===================================================== */
+
+    async function loadTransactions() {
+
+        if (!tableBody) {
+            return;
+        }
+
+
+        tableBody.innerHTML = `
+            <tr>
+                <td
+                    colspan="7"
+                    class="table-loading"
+                >
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading stock transactions...
+                </td>
+            </tr>
+        `;
+
+
+        try {
+
+            const response =
+                await apiAction(
+                    "listTransactions",
+                    {
+                        type: "STOCK_OUT",
+                        transactionType: "STOCK_OUT",
+                        limit: 20
+                    }
                 );
 
-            });
 
-        if (!filtered.length) {
+            const data =
+                extractData(response);
+
+
+            let list =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+
+            /*
+             * Some APIs return all transactions.
+             * Filter them here if needed.
+             */
+
+            list =
+                list.filter(
+                    transaction => {
+
+                        const type =
+                            String(
+                                pick(
+                                    transaction,
+                                    "type",
+                                    "transactionType",
+                                    "transaction_type",
+                                    "movementType",
+                                    "movement_type"
+                                ) || ""
+                            ).toUpperCase();
+
+
+                        if (!type) {
+                            return true;
+                        }
+
+
+                        return (
+                            type === "STOCK_OUT" ||
+                            type === "OUT" ||
+                            type === "STOCKOUT"
+                        );
+
+                    }
+                );
+
+
+            transactions = list;
+
+
+            renderTransactions(
+                list
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load Stock Out transactions:",
+                error
+            );
+
 
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8">
-                        <div class="empty-state">
-                            <i class="fa-solid fa-box-open"></i>
-                            <strong>
-                                No stock-out records found
-                            </strong>
-                            <small>
-                                Stock-out transactions will appear here.
-                            </small>
-                        </div>
+                    <td
+                        colspan="7"
+                        class="empty-row"
+                    >
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>
+                            Unable to load stock transactions.
+                        </span>
+                    </td>
+                </tr>
+            `;
+
+
+            throw error;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RENDER TRANSACTIONS
+    ===================================================== */
+
+    function renderTransactions(
+        list
+    ) {
+
+        if (!tableBody) {
+            return;
+        }
+
+
+        if (!list.length) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td
+                        colspan="7"
+                        class="empty-row"
+                    >
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>
+                            No Stock Out transactions found.
+                        </span>
                     </td>
                 </tr>
             `;
@@ -757,388 +2090,652 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+
         tableBody.innerHTML =
-            filtered.map(
-                (item, index) => {
-
-                    const id =
-                        item.id ||
-                        item.ID ||
-                        item.transactionId ||
-                        item.TRANSACTION_ID ||
-                        `OUT-${index + 1}`;
-
-                    const product =
-                        item.productName ||
-                        item.PRODUCT_NAME ||
-                        item.name ||
-                        item.NAME ||
-                        "Unknown product";
-
-                    const quantity =
-                        Number(
-                            item.quantity ??
-                            item.QUANTITY ??
-                            item.stockOut ??
-                            item.STOCK_OUT ??
-                            0
-                        );
-
-                    const reason =
-                        item.reason ||
-                        item.REASON ||
-                        "—";
-
-                    const reference =
-                        item.reference ||
-                        item.REFERENCE ||
-                        "—";
-
-                    const performedBy =
-                        item.performedBy ||
-                        item.PERFORMED_BY ||
-                        item.username ||
-                        item.USERNAME ||
-                        "—";
-
-                    const date =
-                        item.date ||
-                        item.DATE ||
-                        item.createdAt ||
-                        item.CREATED_AT ||
-                        "";
-
-                    return `
-                        <tr data-id="${escapeHTML(id)}">
-
-                            <td>
-                                <span class="transaction-id">
-                                    ${escapeHTML(id)}
-                                </span>
-                            </td>
-
-                            <td>
-                                <strong>
-                                    ${escapeHTML(product)}
-                                </strong>
-                            </td>
-
-                            <td>
-                                <span class="stock-out-quantity">
-                                    -${quantity.toLocaleString()}
-                                </span>
-                            </td>
-
-                            <td>
-                                ${escapeHTML(reason)}
-                            </td>
-
-                            <td>
-                                ${escapeHTML(reference)}
-                            </td>
-
-                            <td>
-                                ${escapeHTML(performedBy)}
-                            </td>
-
-                            <td>
-                                ${formatDate(date)}
-                            </td>
-
-                            <td>
-                                <span class="status-badge status-success">
-                                    COMPLETED
-                                </span>
-                            </td>
-
-                        </tr>
-                    `;
-
-                }
-            ).join("");
+            list
+                .slice(0, 50)
+                .map(
+                    transaction =>
+                        createTransactionRow(
+                            transaction
+                        )
+                )
+                .join("");
 
     }
 
-    /* ==========================================================
-       SUMMARY
-       ========================================================== */
 
-    function updateSummary() {
+    function createTransactionRow(
+        transaction
+    ) {
 
-        const totalTransactions =
-            transactions.length;
-
-        const totalUnits =
-            transactions.reduce(
-                (sum, item) =>
-                    sum +
-                    Number(
-                        item.quantity ??
-                        item.QUANTITY ??
-                        0
-                    ),
-                0
+        const date =
+            pick(
+                transaction,
+                "date",
+                "stockOutDate",
+                "stock_out_date",
+                "transactionDate",
+                "transaction_date",
+                "createdAt",
+                "created_at"
             );
 
-        const transactionCount =
-            document.getElementById(
-                "stockOutTransactionCount"
-            );
 
-        const unitCount =
-            document.getElementById(
-                "stockOutUnitCount"
-            );
+        const product =
+            pick(
+                transaction,
+                "productName",
+                "product_name",
+                "product",
+                "name"
+            ) || "Unknown Product";
 
-        if (transactionCount) {
 
-            transactionCount.textContent =
-                totalTransactions.toLocaleString();
+        const quantity =
+            Number(
+                pick(
+                    transaction,
+                    "quantity",
+                    "qty"
+                )
+            ) || 0;
 
-        }
 
-        if (unitCount) {
+        const reason =
+            pick(
+                transaction,
+                "reason",
+                "stockOutReason",
+                "stock_out_reason"
+            ) || "—";
 
-            unitCount.textContent =
-                totalUnits.toLocaleString();
 
-        }
+        const reference =
+            pick(
+                transaction,
+                "referenceNumber",
+                "reference_number",
+                "reference"
+            ) || "—";
+
+
+        const recipient =
+            pick(
+                transaction,
+                "recipient",
+                "customer",
+                "customerName",
+                "customer_name"
+            ) || "—";
+
+
+        const user =
+            pick(
+                transaction,
+                "userName",
+                "user_name",
+                "username",
+                "createdBy",
+                "created_by",
+                "employee"
+            ) || "—";
+
+
+        return `
+            <tr>
+
+                <td>
+                    ${escapeHtml(
+                        formatDateTime(date)
+                    )}
+                </td>
+
+                <td>
+                    <strong>
+                        ${escapeHtml(
+                            product
+                        )}
+                    </strong>
+                </td>
+
+                <td>
+                    <span class="transaction-quantity">
+                        -${formatNumber(quantity)}
+                    </span>
+                </td>
+
+                <td>
+                    <span class="transaction-reason">
+                        ${escapeHtml(
+                            formatReason(
+                                reason
+                            )
+                        )}
+                    </span>
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        reference
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        recipient
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        user
+                    )}
+                </td>
+
+            </tr>
+        `;
 
     }
 
-    /* ==========================================================
+
+    /* =====================================================
        MODAL
-       ========================================================== */
+    ===================================================== */
 
-    function openModal() {
+    function showModal(
+        success,
+        title,
+        message
+    ) {
 
-        modal?.classList.add("show");
-        modal?.setAttribute(
-            "aria-hidden",
-            "false"
+        if (!modal) {
+            return;
+        }
+
+
+        if (modalIcon) {
+
+            modalIcon.classList.toggle(
+                "error",
+                !success
+            );
+
+
+            modalIcon.innerHTML =
+                success
+                    ? '<i class="fa-solid fa-check"></i>'
+                    : '<i class="fa-solid fa-xmark"></i>';
+
+        }
+
+
+        setText(
+            modalTitle,
+            title
         );
 
-        document.body.classList.add(
-            "modal-open"
+        setText(
+            modalMessage,
+            message
         );
 
-        setDefaultDate();
 
-        setTimeout(
-            () =>
-                productSelect?.focus(),
-            100
-        );
+        modal.hidden = false;
+
+        document.body.style.overflow =
+            "hidden";
+
+
+        if (modalOk) {
+
+            modalOk.textContent =
+                success
+                    ? "Continue"
+                    : "Close";
+
+        }
+
+
+        setTimeout(() => {
+
+            modalClose?.focus();
+
+        }, 30);
 
     }
+
 
     function closeModal() {
 
-        modal?.classList.remove("show");
-        modal?.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-        document.body.classList.remove(
-            "modal-open"
-        );
-
-        form?.reset();
-
-        updateAvailableStock();
-
-        if (submitBtn) {
-            submitBtn.disabled = true;
+        if (!modal) {
+            return;
         }
 
-    }
+        modal.hidden = true;
 
-    /* ==========================================================
-       DEFAULT DATE
-       ========================================================== */
-
-    function setDefaultDate() {
-
-        if (!dateInput) return;
-
-        const today =
-            new Date();
-
-        const localDate =
-            new Date(
-                today.getTime() -
-                today.getTimezoneOffset() *
-                60000
-            )
-            .toISOString()
-            .split("T")[0];
-
-        dateInput.value =
-            localDate;
+        document.body.style.overflow =
+            "";
 
     }
 
-    /* ==========================================================
+
+    /* =====================================================
        LOADING
-       ========================================================== */
+    ===================================================== */
 
-    function setLoading(loading) {
+    function showLoading() {
 
-        if (!tableBody) return;
-
-        if (loading) {
-
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8">
-                        <div class="loading-state">
-                            <i class="fa-solid fa-spinner fa-spin"></i>
-                            <span>
-                                Loading stock-out records...
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            `;
-
+        if (!loadingOverlay) {
+            return;
         }
+
+        loadingOverlay.hidden = false;
 
     }
 
-    /* ==========================================================
-       SUBMITTING
-       ========================================================== */
 
-    function setSubmitting(submitting) {
+    function hideLoading() {
 
-        if (!submitBtn) return;
+        if (!loadingOverlay) {
+            return;
+        }
 
-        submitBtn.disabled =
-            submitting;
+        loadingOverlay.hidden = true;
 
-        if (submitting) {
+    }
 
-            submitBtn.dataset.originalText =
-                submitBtn.innerHTML;
 
-            submitBtn.innerHTML = `
+    function setSavingState(
+        saving
+    ) {
+
+        if (!saveBtn) {
+            return;
+        }
+
+
+        saveBtn.disabled =
+            saving;
+
+
+        if (saving) {
+
+            saveBtn.innerHTML = `
                 <i class="fa-solid fa-spinner fa-spin"></i>
-                Processing...
+                <span>
+                    Updating...
+                </span>
             `;
 
         } else {
 
-            submitBtn.innerHTML =
-                submitBtn.dataset.originalText ||
-                `
-                    <i class="fa-solid fa-arrow-up"></i>
-                    Record Stock Out
-                `;
+            saveBtn.innerHTML = `
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>
+                    Release Stock
+                </span>
+            `;
 
         }
 
     }
 
-    /* ==========================================================
-       TOAST
-       ========================================================== */
 
-    function showToast(
-        message,
-        type = "info"
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
+    async function handleLogout() {
+
+        try {
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth
+                    .logout === "function"
+            ) {
+
+                await window.StockFlowAuth.logout();
+
+                return;
+
+            }
+
+
+            if (
+                window.StockFlowAuthUI &&
+                typeof window.StockFlowAuthUI
+                    .logout === "function"
+            ) {
+
+                await window.StockFlowAuthUI.logout();
+
+                return;
+
+            }
+
+
+            localStorage.removeItem(
+                "stockflowUser"
+            );
+
+            localStorage.removeItem(
+                "currentUser"
+            );
+
+            localStorage.removeItem(
+                "user"
+            );
+
+            window.location.href =
+                "login.html";
+
+        } catch (error) {
+
+            console.error(
+                "Logout failed:",
+                error
+            );
+
+            window.location.href =
+                "login.html";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+
+    function extractData(
+        response
+    ) {
+
+        if (!response) {
+            return [];
+        }
+
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+
+        if (
+            Array.isArray(
+                response.data
+            )
+        ) {
+
+            return response.data;
+
+        }
+
+
+        if (
+            Array.isArray(
+                response.products
+            )
+        ) {
+
+            return response.products;
+
+        }
+
+
+        if (
+            Array.isArray(
+                response.transactions
+            )
+        ) {
+
+            return response.transactions;
+
+        }
+
+
+        if (
+            response.data &&
+            Array.isArray(
+                response.data.products
+            )
+        ) {
+
+            return response.data.products;
+
+        }
+
+
+        if (
+            response.data &&
+            Array.isArray(
+                response.data.transactions
+            )
+        ) {
+
+            return response.data.transactions;
+
+        }
+
+
+        return [];
+
+    }
+
+
+    function pick(
+        object,
+        ...keys
     ) {
 
         if (
-            typeof window.showToast ===
-            "function" &&
-            window.showToast !== showToast
+            !object ||
+            typeof object !== "object"
         ) {
 
-            window.showToast(
-                message,
-                type
-            );
-
-            return;
+            return null;
 
         }
 
-        let container =
-            document.getElementById(
-                "toastContainer"
-            );
 
-        if (!container) {
+        for (const key of keys) {
 
-            container =
-                document.createElement(
-                    "div"
-                );
+            if (
+                object[key] !== undefined &&
+                object[key] !== null
+            ) {
 
-            container.id =
-                "toastContainer";
+                return object[key];
 
-            container.className =
-                "toast-container";
-
-            document.body.appendChild(
-                container
-            );
+            }
 
         }
 
-        const toast =
-            document.createElement(
-                "div"
-            );
 
-        toast.className =
-            `toast toast-${type}`;
-
-        toast.innerHTML = `
-            <i class="fa-solid ${
-                type === "success"
-                    ? "fa-circle-check"
-                    : type === "error"
-                        ? "fa-circle-exclamation"
-                        : "fa-circle-info"
-            }"></i>
-
-            <span>
-                ${escapeHTML(message)}
-            </span>
-        `;
-
-        container.appendChild(
-            toast
-        );
-
-        setTimeout(() => {
-
-            toast.classList.add(
-                "toast-hide"
-            );
-
-            setTimeout(
-                () => toast.remove(),
-                300
-            );
-
-        }, 4000);
+        return null;
 
     }
 
-    /* ==========================================================
-       DATE FORMATTER
-       ========================================================== */
 
-    function formatDate(value) {
+    function getProductId(
+        product
+    ) {
 
-        if (!value) return "—";
+        return pick(
+            product,
+            "productId",
+            "product_id",
+            "id",
+            "ID",
+            "PRODUCT_ID"
+        );
+
+    }
+
+
+    function getProductName(
+        product
+    ) {
+
+        return (
+            pick(
+                product,
+                "productName",
+                "product_name",
+                "name",
+                "product",
+                "PRODUCT_NAME"
+            ) ||
+            "Unnamed Product"
+        );
+
+    }
+
+
+    function getProductSku(
+        product
+    ) {
+
+        return (
+            pick(
+                product,
+                "sku",
+                "SKU",
+                "productSku",
+                "product_sku"
+            ) ||
+            ""
+        );
+
+    }
+
+
+    function getProductStock(
+        product
+    ) {
+
+        return Number(
+            pick(
+                product,
+                "stock",
+                "quantity",
+                "currentStock",
+                "current_stock",
+                "stockQuantity",
+                "stock_quantity",
+                "availableStock",
+                "available_stock",
+                "STOCK"
+            )
+        ) || 0;
+
+    }
+
+
+    function getSelectedOptionText(
+        select
+    ) {
+
+        if (
+            !select ||
+            select.selectedIndex < 0
+        ) {
+
+            return "";
+
+        }
+
+
+        const option =
+            select.options[
+                select.selectedIndex
+            ];
+
+
+        return option
+            ? option.textContent.trim()
+            : "";
+
+    }
+
+
+    function formatReason(
+        reason
+    ) {
+
+        const map = {
+
+            SALE:
+                "Customer Sale",
+
+            DAMAGED:
+                "Damaged",
+
+            DEFECTIVE:
+                "Defective",
+
+            RETURN:
+                "Supplier Return",
+
+            TRANSFER:
+                "Stock Transfer",
+
+            INTERNAL_USE:
+                "Internal Use",
+
+            ADJUSTMENT:
+                "Inventory Adjustment",
+
+            OTHER:
+                "Other"
+
+        };
+
+
+        const normalized =
+            String(reason || "")
+                .trim()
+                .toUpperCase();
+
+
+        return (
+            map[normalized] ||
+            String(reason || "Other")
+        );
+
+    }
+
+
+    function formatNumber(
+        value
+    ) {
+
+        return Number(
+            value || 0
+        ).toLocaleString(
+            "en-PH"
+        );
+
+    }
+
+
+    function formatDate(
+        value
+    ) {
+
+        if (!value) {
+            return "—";
+        }
+
 
         const date =
-            new Date(value);
+            new Date(
+                `${value}T00:00:00`
+            );
+
 
         if (
             Number.isNaN(
@@ -1146,45 +2743,101 @@ document.addEventListener("DOMContentLoaded", async () => {
             )
         ) {
 
-            return escapeHTML(
-                String(value)
-            );
+            return String(value);
 
         }
 
-        return date.toLocaleString(
-            undefined,
+
+        return date.toLocaleDateString(
+            "en-PH",
             {
                 year: "numeric",
                 month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit"
+                day: "numeric"
             }
         );
 
     }
 
-    /* ==========================================================
-       HTML ESCAPE
-       ========================================================== */
 
-    function escapeHTML(value) {
+    function formatDateTime(
+        value
+    ) {
+
+        if (!value) {
+            return "—";
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return String(value);
+
+        }
+
+
+        return date.toLocaleDateString(
+            "en-PH",
+            {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            }
+        );
+
+    }
+
+
+    function escapeHtml(
+        value
+    ) {
 
         return String(
             value ?? ""
         )
-        .replace(
-            /[&<>"']/g,
-            char =>
-                ({
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                    "'": "&#039;"
-                })[char]
-        );
+            .replaceAll(
+                "&",
+                "&amp;"
+            )
+            .replaceAll(
+                "<",
+                "&lt;"
+            )
+            .replaceAll(
+                ">",
+                "&gt;"
+            )
+            .replaceAll(
+                '"',
+                "&quot;"
+            )
+            .replaceAll(
+                "'",
+                "&#039;"
+            );
+
+    }
+
+
+    function setText(
+        element,
+        value
+    ) {
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            value ?? "";
 
     }
 
