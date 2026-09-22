@@ -1,25 +1,124 @@
 /* =========================================================
-   STOCKFLOW — SUPPLIERS PAGE
-   Page-specific professional styling
-   Requires:
-   - styles.css
-   - modules.css
+   STOCKFLOW — SUPPLIERS
+   suppliers.css
    ========================================================= */
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: #f5f8fc;
+    color: #0b1f3a;
+}
+
+.sf-layout {
+    min-height: 100vh;
+    display: flex;
+    background: #f5f8fc;
+}
 
 
 /* =========================================================
-   PAGE FOUNDATION
+   SIDEBAR
+   ========================================================= */
+
+.sf-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 250px;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #071a33;
+    color: #ffffff;
+
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.sf-brand {
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 24px;
+
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+
+    color: #ffffff;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.sf-nav {
+    display: flex;
+    flex-direction: column;
+
+    padding: 16px 12px;
+
+    gap: 3px;
+}
+
+.sf-nav a {
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 13px;
+
+    border-radius: 9px;
+
+    color: #a9bdd4;
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.sf-nav a:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+}
+
+.sf-nav a.active {
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   MAIN
    ========================================================= */
 
 .sf-main {
+    width: calc(100% - 250px);
     min-height: 100vh;
-}
 
-.sf-main,
-.sf-card,
-.sf-form,
-.sf-table-wrap {
-    min-width: 0;
+    margin-left: 250px;
+
+    padding: 0 30px 40px;
 }
 
 
@@ -28,36 +127,91 @@
    ========================================================= */
 
 .sf-top {
+    min-height: 82px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
     gap: 20px;
+
+    border-bottom: 1px solid #e4ebf3;
+
+    margin-bottom: 24px;
 }
 
 .sf-title {
-    color: #0f172a;
-    letter-spacing: -0.02em;
+    font-size: 25px;
+    font-weight: 750;
+    line-height: 1.2;
+
+    color: #0b1f3a;
+
+    margin-bottom: 4px;
 }
 
-.sf-top .sf-muted {
-    max-width: 650px;
+.sf-muted {
+    color: #66809b;
+    font-size: 13px;
     line-height: 1.5;
 }
 
 
 /* =========================================================
-   MENU BUTTON
+   BUTTONS
    ========================================================= */
 
-.sf-top > .sf-btn.secondary[data-menu] {
-    display: none;
+.sf-btn {
+    min-height: 42px;
 
-    width: 40px;
-    height: 40px;
-
-    padding: 0;
-
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 17px;
+    padding: 0 17px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.sf-btn:hover {
+    background: #1d4ed8;
+}
+
+.sf-btn:active {
+    transform: translateY(1px);
+}
+
+.sf-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.sf-btn.secondary {
+    background: #ffffff;
+    color: #31506f;
+    border-color: #d4e0ed;
+}
+
+.sf-btn.secondary:hover {
+    background: #f5f8fc;
+    border-color: #b9cce0;
+    color: #173b61;
 }
 
 
@@ -66,24 +220,40 @@
    ========================================================= */
 
 .sf-alert {
+    display: none;
+
+    width: 100%;
+
+    margin-bottom: 18px;
+    padding: 12px 15px;
+
     border: 1px solid transparent;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+    border-radius: 9px;
+
+    font-size: 13px;
+    font-weight: 500;
 }
 
 .sf-alert.show {
-    animation: supplierAlertIn 0.18s ease-out;
+    display: block;
 }
 
-@keyframes supplierAlertIn {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
+.sf-alert.success {
+    background: #ecfdf3;
+    border-color: #b7ebcb;
+    color: #167143;
+}
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.sf-alert.error {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #b42336;
+}
+
+.sf-alert.info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
 }
 
 
@@ -92,60 +262,44 @@
    ========================================================= */
 
 .sf-card {
+    width: 100%;
+
+    margin-bottom: 22px;
+
     background: #ffffff;
 
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e1e9f2;
     border-radius: 14px;
 
     box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.03),
-        0 8px 24px rgba(15, 23, 42, 0.035);
+        0 3px 12px rgba(20, 50, 80, 0.045);
 
-    transition:
-        box-shadow 0.18s ease,
-        border-color 0.18s ease;
+    overflow: hidden;
 }
-
-.sf-card:hover {
-    border-color: #dbe2ea;
-
-    box-shadow:
-        0 2px 4px rgba(15, 23, 42, 0.035),
-        0 10px 28px rgba(15, 23, 42, 0.045);
-}
-
-
-/* =========================================================
-   CARD HEADER
-   ========================================================= */
 
 .sf-card-head {
+    min-height: 76px;
+
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
 
-    gap: 15px;
+    padding: 18px 22px;
 
-    margin-bottom: 18px;
+    border-bottom: 1px solid #e8eef5;
 }
 
 .sf-card-head h3 {
-    margin: 0;
+    margin: 0 0 4px;
 
-    color: #0f172a;
+    color: #0b1f3a;
 
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1.4;
+    font-size: 17px;
+    font-weight: 700;
 }
 
-.sf-card-head .sf-muted {
-    margin-top: 5px;
-
-    color: #64748b;
-
-    font-size: 10px;
-    line-height: 1.5;
+.sf-card-head p {
+    margin: 0;
 }
 
 
@@ -153,174 +307,88 @@
    SUPPLIER FORM
    ========================================================= */
 
-#supplierForm {
+.sf-form {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    gap: 14px;
+    gap: 15px;
+
+    padding: 22px;
 }
 
-#supplierForm input,
-#supplierForm select {
-    height: 43px;
+.sf-form input,
+.sf-form select {
+    width: 100%;
+    min-height: 45px;
 
-    color: #0f172a;
+    padding: 0 13px;
+
+    border: 1px solid #cfdae7;
+    border-radius: 8px;
+
     background: #ffffff;
+    color: #173b61;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13px;
 
     outline: none;
 
-    font-family: inherit;
-    font-size: 12px;
-
     transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        background-color 0.15s ease;
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
 }
 
-#supplierForm input {
-    padding: 0 12px;
+.sf-form input::placeholder {
+    color: #8aa0b6;
 }
 
-#supplierForm select {
-    padding: 0 35px 0 12px;
-
-    cursor: pointer;
+.sf-form input:hover,
+.sf-form select:hover {
+    border-color: #b6c8da;
 }
 
-#supplierForm input::placeholder {
-    color: #94a3b8;
-}
-
-#supplierForm input:hover,
-#supplierForm select:hover {
-    border-color: #cbd5e1;
-}
-
-#supplierForm input:focus,
-#supplierForm select:focus {
+.sf-form input:focus,
+.sf-form select:focus {
     border-color: #2563eb;
 
     box-shadow:
         0 0 0 3px rgba(37, 99, 235, 0.10);
 }
 
-#supplierForm input:disabled,
-#supplierForm select:disabled {
-    color: #94a3b8;
-    background: #f8fafc;
-
-    cursor: not-allowed;
+.sf-form select {
+    cursor: pointer;
 }
 
-
-/* =========================================================
-   FULL WIDTH FIELDS
-   ========================================================= */
-
-#supplierForm .full {
+.sf-form .full {
     grid-column: 1 / -1;
 }
 
-#address {
-    width: 100%;
-}
-
 
 /* =========================================================
-   FORM ACTIONS
+   FORM BUTTON ROW
    ========================================================= */
 
-#supplierForm .sf-row {
+.sf-row {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
 
-    gap: 9px;
+    gap: 10px;
 
-    padding-top: 5px;
-
-    border-top: 1px solid #eef2f7;
-}
-
-#supplierForm .sf-row .sf-btn {
-    min-width: 125px;
+    padding-top: 3px;
 }
 
 
 /* =========================================================
-   BUTTONS
-   ========================================================= */
-
-#supplierForm .sf-btn {
-    min-height: 40px;
-
-    padding: 9px 15px;
-
-    border-radius: 8px;
-
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-
-    transition:
-        background-color 0.15s ease,
-        color 0.15s ease,
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.1s ease;
-}
-
-#supplierForm .sf-btn:not(.secondary) {
-    background: #2563eb;
-
-    box-shadow:
-        0 2px 5px rgba(37, 99, 235, 0.16);
-}
-
-#supplierForm .sf-btn:not(.secondary):hover {
-    background: #1d4ed8;
-
-    box-shadow:
-        0 4px 10px rgba(37, 99, 235, 0.20);
-}
-
-#supplierForm .sf-btn.secondary {
-    color: #334155;
-    background: #ffffff;
-
-    border: 1px solid #dbe2ea;
-}
-
-#supplierForm .sf-btn.secondary:hover {
-    color: #0f172a;
-    background: #f8fafc;
-
-    border-color: #cbd5e1;
-}
-
-#supplierForm .sf-btn:active {
-    transform: translateY(1px);
-}
-
-#supplierForm .sf-btn:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.20);
-    outline-offset: 2px;
-}
-
-
-/* =========================================================
-   SUPPLIER DIRECTORY
+   TABLE WRAPPER
    ========================================================= */
 
 .sf-table-wrap {
     width: 100%;
 
     overflow-x: auto;
-
-    -webkit-overflow-scrolling: touch;
+    overflow-y: hidden;
 }
 
 .sf-table-wrap table {
@@ -328,41 +396,47 @@
     min-width: 760px;
 
     border-collapse: collapse;
+
+    table-layout: auto;
+}
+
+.sf-table-wrap thead {
+    background: #f7faff;
 }
 
 .sf-table-wrap th {
-    padding: 12px 13px;
+    height: 44px;
 
-    color: #64748b;
-    background: #f8fafc;
+    padding: 0 17px;
 
-    border-bottom: 1px solid #e5e7eb;
+    color: #58718c;
 
-    font-size: 9px;
-    font-weight: 800;
+    font-size: 11px;
+    font-weight: 700;
 
     text-align: left;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.45px;
 
     white-space: nowrap;
+
+    border-bottom: 1px solid #e2eaf3;
 }
 
 .sf-table-wrap td {
-    padding: 13px;
+    padding: 13px 17px;
 
-    color: #334155;
+    color: #274766;
 
-    border-bottom: 1px solid #f1f5f9;
-
-    font-size: 10px;
+    font-size: 13px;
 
     vertical-align: middle;
+
+    border-bottom: 1px solid #edf2f7;
 }
 
 .sf-table-wrap tbody tr {
-    transition:
-        background-color 0.12s ease;
+    transition: background 0.15s ease;
 }
 
 .sf-table-wrap tbody tr:hover {
@@ -375,22 +449,35 @@
 
 
 /* =========================================================
-   SUPPLIER NAME
+   EMPTY / LOADING
    ========================================================= */
 
-.sf-table-wrap td:first-child {
-    color: #0f172a;
+.sf-empty {
+    padding: 45px 20px !important;
 
-    font-weight: 700;
+    color: #7890a8 !important;
+
+    text-align: center;
+
+    font-size: 13px !important;
 }
 
 
 /* =========================================================
-   EMAIL
+   SUPPLIER NAME
    ========================================================= */
 
-.sf-table-wrap td:nth-child(4) {
-    color: #475569;
+.supplier-name {
+    color: #0b1f3a;
+    font-weight: 650;
+}
+
+.supplier-contact {
+    color: #4f6d89;
+}
+
+.supplier-email {
+    color: #3d6386;
 }
 
 
@@ -398,44 +485,30 @@
    STATUS BADGES
    ========================================================= */
 
-.sf-table-wrap .badge {
+.supplier-status {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
 
-    min-width: 64px;
+    min-height: 26px;
 
-    padding: 4px 8px;
+    padding: 0 9px;
 
     border-radius: 999px;
 
-    font-size: 8px;
-    font-weight: 800;
+    font-size: 11px;
+    font-weight: 700;
 
-    letter-spacing: 0.02em;
+    letter-spacing: 0.25px;
 }
 
-.sf-table-wrap .badge.active {
-    color: #166534;
-    background: #dcfce7;
-
-    border: 1px solid #bbf7d0;
+.supplier-status.active {
+    background: #ecfdf3;
+    color: #167143;
 }
 
-.sf-table-wrap .badge.inactive,
-.sf-table-wrap .badge.out,
-.sf-table-wrap .badge.danger {
-    color: #991b1b;
-    background: #fee2e2;
-
-    border: 1px solid #fecaca;
-}
-
-.sf-table-wrap .badge.neutral {
-    color: #475569;
+.supplier-status.inactive {
     background: #f1f5f9;
-
-    border: 1px solid #e2e8f0;
+    color: #64748b;
 }
 
 
@@ -443,255 +516,201 @@
    ACTION BUTTONS
    ========================================================= */
 
-.sf-actions {
-    display: inline-flex;
+.supplier-actions {
+    display: flex;
     align-items: center;
 
     gap: 6px;
+
+    white-space: nowrap;
 }
 
-.sf-actions button {
+.supplier-action {
+    min-height: 32px;
+
+    padding: 0 10px;
+
+    border: 1px solid #d5e1ed;
+    border-radius: 7px;
+
+    background: #ffffff;
+    color: #31506f;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+}
+
+.supplier-action:hover {
+    background: #f2f7fd;
+    border-color: #b9cce0;
+}
+
+.supplier-action.edit:hover {
+    color: #1d4ed8;
+    border-color: #93b4e8;
+}
+
+.supplier-action.delete {
+    color: #b42336;
+}
+
+.supplier-action.delete:hover {
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+
+/* =========================================================
+   LOADING STATE
+   ========================================================= */
+
+.sf-loading {
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    min-width: 32px;
-    min-height: 30px;
-
-    padding: 6px 9px;
-
-    color: #475569;
-    background: #ffffff;
-
-    border: 1px solid #dbe2ea;
-    border-radius: 7px;
-
-    cursor: pointer;
-
-    font-family: inherit;
-    font-size: 9px;
-    font-weight: 700;
-
-    transition:
-        color 0.15s ease,
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
+    gap: 8px;
 }
 
-.sf-actions button:hover {
-    color: #2563eb;
-    background: #eff6ff;
+.sf-spinner {
+    width: 15px;
+    height: 15px;
 
-    border-color: #bfdbfe;
+    border: 2px solid #dbe7f3;
+    border-top-color: #2563eb;
+
+    border-radius: 50%;
+
+    animation: sfSpin 0.7s linear infinite;
 }
 
-.sf-actions button:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.18);
-    outline-offset: 1px;
-}
-
-.sf-actions button.danger:hover {
-    color: #b91c1c;
-    background: #fef2f2;
-
-    border-color: #fecaca;
+@keyframes sfSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 
 /* =========================================================
-   EMPTY / LOADING STATE
+   MOBILE MENU
    ========================================================= */
 
-.sf-empty {
-    height: 120px;
-
-    padding: 30px 15px !important;
-
-    color: #94a3b8 !important;
-
-    font-size: 11px !important;
-
-    text-align: center !important;
-    vertical-align: middle !important;
-}
-
-.sf-empty::before {
-    content: "";
-
-    display: block;
-
-    width: 32px;
-    height: 32px;
-
-    margin: 0 auto 9px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #eff6ff,
-            #f8fafc
-        );
-
-    border: 1px solid #dbeafe;
-    border-radius: 9px;
+[data-menu] {
+    display: none;
 }
 
 
 /* =========================================================
-   FORM VALIDATION
+   RESPONSIVE
    ========================================================= */
 
-#supplierForm input:user-invalid,
-#supplierForm select:user-invalid {
-    border-color: #fca5a5;
-}
+@media (max-width: 1050px) {
 
-#supplierForm input:user-invalid:focus,
-#supplierForm select:user-invalid:focus {
-    border-color: #ef4444;
-
-    box-shadow:
-        0 0 0 3px rgba(239, 68, 68, 0.10);
-}
-
-
-/* =========================================================
-   DESKTOP SPACING
-   ========================================================= */
-
-@media (min-width: 1001px) {
+    .sf-side {
+        width: 220px;
+    }
 
     .sf-main {
-        padding-top: 28px;
+        width: calc(100% - 220px);
+        margin-left: 220px;
+
+        padding-left: 24px;
+        padding-right: 24px;
     }
 
-    .sf-card {
-        margin-bottom: 18px;
+    .sf-nav a {
+        font-size: 12px;
     }
-
 }
 
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 900px) {
-
-    #supplierForm {
-        grid-template-columns: 1fr;
-    }
-
-    #supplierForm .full {
-        grid-column: auto;
-    }
-
-    #supplierForm .sf-row {
-        grid-column: auto;
-    }
-
-}
-
-
-/* =========================================================
-   MOBILE NAVIGATION
-   ========================================================= */
 
 @media (max-width: 800px) {
 
-    .sf-top > .sf-btn.secondary[data-menu] {
-        display: inline-flex;
+    .sf-side {
+        transform: translateX(-100%);
+
+        transition: transform 0.22s ease;
+    }
+
+    .sf-side.open {
+        transform: translateX(0);
     }
 
     .sf-main {
-        padding: 18px 15px;
+        width: 100%;
+        margin-left: 0;
+
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    [data-menu] {
+        display: inline-flex;
+    }
+
+    .sf-form {
+        grid-template-columns: 1fr;
+    }
+
+    .sf-form .full {
+        grid-column: auto;
+    }
+
+    .sf-row {
+        flex-wrap: wrap;
+    }
+}
+
+
+@media (max-width: 560px) {
+
+    .sf-main {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .sf-top {
+        min-height: 72px;
     }
 
     .sf-title {
         font-size: 21px;
     }
 
-    .sf-top .sf-muted {
-        max-width: 90%;
-    }
-
-    .sf-card {
-        padding: 15px;
-        border-radius: 12px;
+    .sf-muted {
+        font-size: 12px;
     }
 
     .sf-card-head {
-        margin-bottom: 15px;
+        padding: 16px;
     }
 
-    #supplierForm {
-        gap: 12px;
+    .sf-form {
+        padding: 16px;
     }
 
-    #supplierForm .sf-row {
+    .sf-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    #supplierForm .sf-row .sf-btn {
+    .sf-row .sf-btn {
         width: 100%;
-        min-width: 0;
-    }
-
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 480px) {
-
-    .sf-main {
-        padding: 14px 11px;
-    }
-
-    .sf-top {
-        margin-bottom: 13px;
-    }
-
-    .sf-title {
-        font-size: 19px;
-    }
-
-    .sf-top .sf-muted {
-        font-size: 9px;
-    }
-
-    .sf-card {
-        padding: 13px;
-    }
-
-    .sf-card-head h3 {
-        font-size: 14px;
-    }
-
-    .sf-card-head .sf-muted {
-        font-size: 9px;
-    }
-
-    #supplierForm input,
-    #supplierForm select {
-        height: 42px;
-
-        font-size: 11px;
-    }
-
-    .sf-table-wrap table {
-        min-width: 720px;
     }
 
     .sf-table-wrap th,
     .sf-table-wrap td {
-        padding: 10px;
+        padding-left: 12px;
+        padding-right: 12px;
     }
-
 }
 
 
@@ -704,10 +723,9 @@
     *,
     *::before,
     *::after {
+        scroll-behavior: auto !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
-
         transition-duration: 0.01ms !important;
     }
-
 }
