@@ -1,26 +1,29 @@
-/* ============================================================
-   STOCKFLOW | STOCK IN
+/* =========================================================
+   STOCKFLOW — STOCK IN
    stock-in.js
-   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
+   Handles:
+   - Product loading
+   - Supplier loading
+   - Stock In form
+   - Live transaction preview
+   - Recent Stock In transactions
+   - Save stock transaction
+   - Success / error modal
+   - Loading state
+   - Connection status
+   - User information
+   - Mobile sidebar
+   - Logout
+========================================================= */
 
-    // ========================================================
-    // AUTHENTICATION
-    // ========================================================
-
-    const user = await StockFlowAuth.requireAuth();
-
-    if (!user) {
-        return;
-    }
-
-    StockFlowAuth.bindUserUI(user);
+document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
 
 
-    // ========================================================
-    // BASIC ELEMENTS
-    // ========================================================
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
 
     const form =
         document.getElementById("stockInForm");
@@ -31,32 +34,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     const quantityInput =
         document.getElementById("quantity");
 
-    const supplierInput =
-        document.getElementById("supplier");
+    const unitCostInput =
+        document.getElementById("unitCost");
+
+    const supplierSelect =
+        document.getElementById("supplierSelect");
 
     const referenceInput =
-        document.getElementById("reference");
-
-    const notesInput =
-        document.getElementById("notes");
+        document.getElementById("referenceNumber");
 
     const dateInput =
         document.getElementById("stockInDate");
 
-    const submitBtn =
-        document.getElementById("stockInSubmit");
+    const notesInput =
+        document.getElementById("notes");
 
-    const resetBtn =
-        document.getElementById("stockInReset");
+    const clearButton =
+        document.getElementById("clearStockInBtn");
+
+    const saveButton =
+        document.getElementById("saveStockInBtn");
+
+    const refreshButton =
+        document.getElementById("refreshStockInBtn");
 
     const tableBody =
         document.getElementById("stockInTableBody");
-
-    const searchInput =
-        document.getElementById("stockInSearch");
-
-    const refreshBtn =
-        document.getElementById("refreshStockInBtn");
 
     const connectionBadge =
         document.getElementById("connectionBadge");
@@ -64,831 +67,948 @@ document.addEventListener("DOMContentLoaded", async () => {
     const connectionMessage =
         document.getElementById("connectionMessage");
 
+    const loadingOverlay =
+        document.getElementById("stockInLoading");
 
-    // ========================================================
-    // MOBILE SIDEBAR
-    // ========================================================
+    const modal =
+        document.getElementById("stockInModal");
 
-    document
-        .getElementById("mobileMenuBtn")
-        ?.addEventListener(
-            "click",
-            () => {
-                document.body.classList.toggle(
-                    "sidebar-open"
-                );
-            }
-        );
+    const modalIcon =
+        document.getElementById("stockInModalIcon");
 
-    document
-        .getElementById("sidebarOverlay")
-        ?.addEventListener(
-            "click",
-            () => {
-                document.body.classList.remove(
-                    "sidebar-open"
-                );
-            }
-        );
+    const modalTitle =
+        document.getElementById("stockInModalTitle");
 
+    const modalMessage =
+        document.getElementById("stockInModalMessage");
 
-    // ========================================================
-    // LOGOUT
-    // ========================================================
+    const modalOk =
+        document.getElementById("stockInModalOk");
 
-    document
-        .getElementById("logoutBtn")
-        ?.addEventListener(
-            "click",
-            () => StockFlowAuth.logout()
-        );
+    const modalClose =
+        document.getElementById("closeStockInModal");
+
+    const mobileMenuButton =
+        document.getElementById("mobileMenuBtn");
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const sidebarOverlay =
+        document.getElementById("sidebarOverlay");
+
+    const logoutButton =
+        document.getElementById("logoutBtn");
 
 
-    // ========================================================
-    // STATE
-    // ========================================================
+    /* =====================================================
+       PREVIEW ELEMENTS
+    ===================================================== */
+
+    const previewProduct =
+        document.getElementById("previewProduct");
+
+    const previewSupplier =
+        document.getElementById("previewSupplier");
+
+    const previewQuantity =
+        document.getElementById("previewQuantity");
+
+    const previewUnitCost =
+        document.getElementById("previewUnitCost");
+
+    const previewTotal =
+        document.getElementById("previewTotal");
+
+    const previewReference =
+        document.getElementById("previewReference");
+
+    const previewDate =
+        document.getElementById("previewDate");
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
 
     let products = [];
 
-    let stockInRecords = [];
+    let suppliers = [];
 
-    let filteredRecords = [];
+    let transactions = [];
+
+    let isSaving = false;
+
+    let currentUser = null;
 
 
-    // ========================================================
-    // DEFAULT DATE
-    // ========================================================
+    /* =====================================================
+       HELPER — PICK VALUE
+    ===================================================== */
 
-    if (dateInput) {
+    function pick(object, ...keys) {
 
-        const today =
-            new Date();
+        if (!object) {
+            return "";
+        }
 
-        dateInput.value =
-            today.toISOString()
-                .split("T")[0];
+        for (const key of keys) {
 
+            if (
+                object[key] !== undefined &&
+                object[key] !== null &&
+                object[key] !== ""
+            ) {
+                return object[key];
+            }
+        }
+
+        return "";
     }
 
 
-    // ========================================================
-    // LOAD PAGE
-    // ========================================================
+    /* =====================================================
+       HELPER — PARSE RESPONSE
+    ===================================================== */
 
-    await loadProducts();
+    function parseApiResponse(response) {
 
-    await loadStockInRecords();
+        if (typeof response === "string") {
+
+            try {
+                return JSON.parse(response);
+            } catch {
+                return response;
+            }
+        }
+
+        return response;
+    }
 
 
-    // ========================================================
-    // PRODUCT LIST
-    // ========================================================
+    /* =====================================================
+       HELPER — API CALL
+    ===================================================== */
+
+    async function callApi(action, payload = {}) {
+
+        const api =
+            window.StockFlowAPI ||
+            window.StockflowAPI ||
+            window.stockFlowAPI ||
+            window.API ||
+            window.api;
+
+
+        /* -----------------------------------------------
+           NESTED STOCKFLOW API
+        ------------------------------------------------ */
+
+        if (api) {
+
+            if (
+                action === "listProducts" &&
+                api.products &&
+                typeof api.products.list === "function"
+            ) {
+                return parseApiResponse(
+                    await api.products.list(payload)
+                );
+            }
+
+
+            if (
+                action === "listSuppliers" &&
+                api.suppliers &&
+                typeof api.suppliers.list === "function"
+            ) {
+                return parseApiResponse(
+                    await api.suppliers.list(payload)
+                );
+            }
+
+
+            if (
+                action === "stockIn" &&
+                api.stockIn &&
+                typeof api.stockIn === "function"
+            ) {
+                return parseApiResponse(
+                    await api.stockIn(payload)
+                );
+            }
+
+
+            if (
+                action === "listTransactions" &&
+                api.stockIn &&
+                typeof api.stockIn.list === "function"
+            ) {
+                return parseApiResponse(
+                    await api.stockIn.list(payload)
+                );
+            }
+
+
+            /* -------------------------------------------
+               GENERIC REQUEST METHOD
+            ------------------------------------------- */
+
+            if (typeof api.request === "function") {
+
+                try {
+
+                    return parseApiResponse(
+                        await api.request({
+                            action,
+                            ...payload
+                        })
+                    );
+
+                } catch (firstError) {
+
+                    try {
+
+                        return parseApiResponse(
+                            await api.request(
+                                action,
+                                payload
+                            )
+                        );
+
+                    } catch {
+                        throw firstError;
+                    }
+                }
+            }
+
+
+            /* -------------------------------------------
+               GENERIC POST METHOD
+            ------------------------------------------- */
+
+            if (typeof api.post === "function") {
+
+                try {
+
+                    return parseApiResponse(
+                        await api.post({
+                            action,
+                            ...payload
+                        })
+                    );
+
+                } catch (firstError) {
+
+                    try {
+
+                        return parseApiResponse(
+                            await api.post(
+                                action,
+                                payload
+                            )
+                        );
+
+                    } catch {
+                        throw firstError;
+                    }
+                }
+            }
+
+
+            /* -------------------------------------------
+               GENERIC CALL METHOD
+            ------------------------------------------- */
+
+            if (typeof api.call === "function") {
+
+                return parseApiResponse(
+                    await api.call(
+                        action,
+                        payload
+                    )
+                );
+            }
+
+
+            /* -------------------------------------------
+               DIRECT METHODS
+            ------------------------------------------- */
+
+            const directMethod =
+                api[action];
+
+            if (
+                typeof directMethod === "function"
+            ) {
+
+                return parseApiResponse(
+                    await directMethod.call(
+                        api,
+                        payload
+                    )
+                );
+            }
+        }
+
+
+        /* =================================================
+           GLOBAL API FUNCTIONS
+        ================================================= */
+
+        const globalFunctions = [
+            "apiRequest",
+            "requestAPI",
+            "callAPI",
+            "sendAPIRequest"
+        ];
+
+        for (const functionName of globalFunctions) {
+
+            if (
+                typeof window[functionName] ===
+                "function"
+            ) {
+
+                return parseApiResponse(
+                    await window[functionName](
+                        action,
+                        payload
+                    )
+                );
+            }
+        }
+
+
+        throw new Error(
+            "StockFlow API module is not available."
+        );
+    }
+
+
+    /* =====================================================
+       RESPONSE DATA EXTRACTION
+    ===================================================== */
+
+    function extractArray(response, keys = []) {
+
+        response = parseApiResponse(response);
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        if (!response || typeof response !== "object") {
+            return [];
+        }
+
+        for (const key of keys) {
+
+            if (Array.isArray(response[key])) {
+                return response[key];
+            }
+        }
+
+        if (
+            response.data &&
+            Array.isArray(response.data)
+        ) {
+            return response.data;
+        }
+
+        if (
+            response.data &&
+            typeof response.data === "object"
+        ) {
+
+            for (const key of keys) {
+
+                if (
+                    Array.isArray(
+                        response.data[key]
+                    )
+                ) {
+                    return response.data[key];
+                }
+            }
+        }
+
+        return [];
+    }
+
+
+    /* =====================================================
+       RESPONSE SUCCESS CHECK
+    ===================================================== */
+
+    function ensureSuccess(response) {
+
+        response = parseApiResponse(response);
+
+        if (
+            response &&
+            typeof response === "object" &&
+            response.success === false
+        ) {
+
+            throw new Error(
+                response.message ||
+                "The server rejected the request."
+            );
+        }
+
+        return response;
+    }
+
+
+    /* =====================================================
+       CONNECTION STATUS
+    ===================================================== */
+
+    function setConnected() {
+
+        if (!connectionBadge) {
+            return;
+        }
+
+        connectionBadge.classList.remove(
+            "offline"
+        );
+
+        const text =
+            connectionBadge.querySelector(
+                "span:last-child"
+            );
+
+        if (text) {
+            text.textContent = "ONLINE";
+        }
+
+        if (connectionMessage) {
+
+            connectionMessage.hidden = true;
+
+            connectionMessage.textContent = "";
+            connectionMessage.className =
+                "connection-message";
+        }
+    }
+
+
+    function setOffline(message = "System connection unavailable.") {
+
+        if (!connectionBadge) {
+            return;
+        }
+
+        connectionBadge.classList.add(
+            "offline"
+        );
+
+        const text =
+            connectionBadge.querySelector(
+                "span:last-child"
+            );
+
+        if (text) {
+            text.textContent = "OFFLINE";
+        }
+
+        if (connectionMessage) {
+
+            connectionMessage.hidden = false;
+
+            connectionMessage.className =
+                "connection-message error";
+
+            connectionMessage.textContent =
+                message;
+        }
+    }
+
+
+    function showConnectionMessage(
+        message,
+        type = "success"
+    ) {
+
+        if (!connectionMessage) {
+            return;
+        }
+
+        connectionMessage.hidden = false;
+
+        connectionMessage.className =
+            `connection-message ${type}`;
+
+        connectionMessage.textContent =
+            message;
+    }
+
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    function showLoading() {
+
+        if (!loadingOverlay) {
+            return;
+        }
+
+        loadingOverlay.hidden = false;
+    }
+
+
+    function hideLoading() {
+
+        if (!loadingOverlay) {
+            return;
+        }
+
+        loadingOverlay.hidden = true;
+    }
+
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
+
+    function openModal(
+        success,
+        title,
+        message
+    ) {
+
+        if (!modal) {
+            return;
+        }
+
+        if (modalIcon) {
+
+            modalIcon.classList.toggle(
+                "error",
+                !success
+            );
+
+            modalIcon.innerHTML =
+                success
+                    ? '<i class="fa-solid fa-check"></i>'
+                    : '<i class="fa-solid fa-xmark"></i>';
+        }
+
+        if (modalTitle) {
+            modalTitle.textContent = title;
+        }
+
+        if (modalMessage) {
+            modalMessage.textContent = message;
+        }
+
+        modal.hidden = false;
+
+        document.body.style.overflow =
+            "hidden";
+    }
+
+
+    function closeModal() {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.hidden = true;
+
+        document.body.style.overflow = "";
+    }
+
+
+    /* =====================================================
+       MOBILE SIDEBAR
+    ===================================================== */
+
+    function openSidebar() {
+
+        if (sidebar) {
+            sidebar.classList.add("open");
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.add("show");
+        }
+    }
+
+
+    function closeSidebar() {
+
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("show");
+        }
+    }
+
+
+    if (mobileMenuButton) {
+
+        mobileMenuButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    sidebar &&
+                    sidebar.classList.contains("open")
+                ) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            }
+        );
+    }
+
+
+    if (sidebarOverlay) {
+
+        sidebarOverlay.addEventListener(
+            "click",
+            closeSidebar
+        );
+    }
+
+
+    /* =====================================================
+       USER INFORMATION
+    ===================================================== */
+
+    function findUser() {
+
+        const possibleSources = [
+
+            window.StockFlowAuth,
+
+            window.StockFlowAuthUI,
+
+            window.auth,
+
+            window.Auth
+
+        ];
+
+        for (const source of possibleSources) {
+
+            if (!source) {
+                continue;
+            }
+
+            try {
+
+                if (
+                    typeof source.getCurrentUser ===
+                    "function"
+                ) {
+
+                    const user =
+                        source.getCurrentUser();
+
+                    if (user) {
+                        return user;
+                    }
+                }
+
+                if (
+                    typeof source.getUser ===
+                    "function"
+                ) {
+
+                    const user =
+                        source.getUser();
+
+                    if (user) {
+                        return user;
+                    }
+                }
+
+            } catch {
+                // Continue to localStorage.
+            }
+        }
+
+
+        /* ---------------------------------------------
+           LOCAL STORAGE FALLBACK
+        --------------------------------------------- */
+
+        const storageKeys = [
+            "stockflowUser",
+            "StockFlowUser",
+            "currentUser",
+            "user",
+            "loggedInUser"
+        ];
+
+        for (const key of storageKeys) {
+
+            try {
+
+                const value =
+                    localStorage.getItem(key);
+
+                if (!value) {
+                    continue;
+                }
+
+                const parsed =
+                    JSON.parse(value);
+
+                if (parsed) {
+                    return parsed;
+                }
+
+            } catch {
+                // Ignore invalid storage values.
+            }
+        }
+
+        return null;
+    }
+
+
+    function updateUserUI() {
+
+        currentUser = findUser();
+
+        if (!currentUser) {
+            return;
+        }
+
+        const name =
+            pick(
+                currentUser,
+                "fullName",
+                "fullname",
+                "name",
+                "username",
+                "email"
+            ) || "User";
+
+        const role =
+            pick(
+                currentUser,
+                "role",
+                "accountRole",
+                "account_status",
+                "accountStatus"
+            ) || "Employee";
+
+        const initials =
+            getInitials(name);
+
+
+        const sidebarName =
+            document.getElementById(
+                "sidebarUserName"
+            );
+
+        const sidebarRole =
+            document.getElementById(
+                "sidebarUserRole"
+            );
+
+        const sidebarAvatar =
+            document.getElementById(
+                "sidebarAvatar"
+            );
+
+        const topbarName =
+            document.getElementById(
+                "topbarUserName"
+            );
+
+        const topbarRole =
+            document.getElementById(
+                "topbarUserRole"
+            );
+
+        const topbarAvatar =
+            document.getElementById(
+                "topbarAvatar"
+            );
+
+
+        if (sidebarName) {
+            sidebarName.textContent = name;
+        }
+
+        if (sidebarRole) {
+            sidebarRole.textContent = role;
+        }
+
+        if (sidebarAvatar) {
+            sidebarAvatar.textContent =
+                initials;
+        }
+
+        if (topbarName) {
+            topbarName.textContent = name;
+        }
+
+        if (topbarRole) {
+            topbarRole.textContent = role;
+        }
+
+        if (topbarAvatar) {
+            topbarAvatar.textContent =
+                initials;
+        }
+    }
+
+
+    function getInitials(name) {
+
+        if (!name) {
+            return "U";
+        }
+
+        const parts =
+            String(name)
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+        if (parts.length === 1) {
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+        }
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        ).toUpperCase();
+    }
+
+
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener(
+            "click",
+            async event => {
+
+                event.preventDefault();
+
+                try {
+
+                    if (
+                        window.StockFlowAuth &&
+                        typeof window.StockFlowAuth.logout ===
+                        "function"
+                    ) {
+
+                        await window.StockFlowAuth.logout();
+
+                        return;
+                    }
+
+
+                    if (
+                        window.StockFlowAuthUI &&
+                        typeof window.StockFlowAuthUI.logout ===
+                        "function"
+                    ) {
+
+                        await window.StockFlowAuthUI.logout();
+
+                        return;
+                    }
+
+
+                    localStorage.removeItem(
+                        "stockflowUser"
+                    );
+
+                    localStorage.removeItem(
+                        "StockFlowUser"
+                    );
+
+                    localStorage.removeItem(
+                        "currentUser"
+                    );
+
+                    localStorage.removeItem(
+                        "user"
+                    );
+
+                    window.location.href =
+                        "login.html";
+
+                } catch (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+                    window.location.href =
+                        "login.html";
+                }
+            }
+        );
+    }
+
+
+    /* =====================================================
+       LOAD PRODUCTS
+    ===================================================== */
 
     async function loadProducts() {
 
         try {
 
-            setConnection(
-                true,
-                "CONNECTED"
-            );
-
-
             const response =
-                await StockFlowAPI.products();
-
-
-            if (!response?.success) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to load products."
+                await callApi(
+                    "listProducts"
                 );
 
-            }
-
+            ensureSuccess(response);
 
             products =
-                normalizeProducts(
-                    response
+                extractArray(
+                    response,
+                    [
+                        "products",
+                        "items",
+                        "rows",
+                        "result"
+                    ]
                 );
-
 
             populateProductSelect();
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "StockFlow products error:",
+                "Load products error:",
                 error
             );
-
 
             products = [];
 
             populateProductSelect();
 
-
-            setConnection(
-                false,
-                "OFFLINE"
+            setOffline(
+                "Unable to load products from the inventory system."
             );
-
         }
-
     }
 
-
-    // ========================================================
-    // LOAD STOCK-IN RECORDS
-    // ========================================================
-
-    async function loadStockInRecords() {
-
-        try {
-
-            setLoadingState(
-                true
-            );
-
-
-            const response =
-                await getStockInAPI();
-
-
-            if (!response?.success) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to load stock-in records."
-                );
-
-            }
-
-
-            stockInRecords =
-                normalizeRecords(
-                    response
-                );
-
-
-            filteredRecords =
-                [...stockInRecords];
-
-
-            renderRecords();
-
-            updateStatistics();
-
-
-            setConnection(
-                true,
-                "CONNECTED"
-            );
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "StockFlow stock-in error:",
-                error
-            );
-
-
-            stockInRecords = [];
-
-            filteredRecords = [];
-
-
-            renderEmpty(
-                "Unable to load stock-in records."
-            );
-
-
-            setConnection(
-                false,
-                "OFFLINE"
-            );
-
-
-            if (connectionMessage) {
-
-                connectionMessage.textContent =
-                    error.message ||
-                    "Unable to connect to the inventory API.";
-
-            }
-
-        }
-
-        finally {
-
-            setLoadingState(
-                false
-            );
-
-        }
-
-    }
-
-
-    // ========================================================
-    // STOCK-IN API
-    // ========================================================
-    //
-    // Supports several backend API naming conventions so the
-    // frontend remains compatible with the updated API.js.
-    //
-    // ========================================================
-
-    async function getStockInAPI() {
-
-        if (
-            typeof StockFlowAPI.stockIn ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.stockIn();
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.getStockIn ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.getStockIn();
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.stockInRecords ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.stockInRecords();
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.inventoryTransactions ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.inventoryTransactions(
-                "STOCK_IN"
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.transactions ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.transactions({
-                type: "STOCK_IN"
-            });
-
-        }
-
-
-        throw new Error(
-            "Stock-in API function is not available. Please update API.js."
-        );
-
-    }
-
-
-    // ========================================================
-    // SUBMIT STOCK-IN
-    // ========================================================
-
-    form?.addEventListener(
-        "submit",
-        async (event) => {
-
-            event.preventDefault();
-
-
-            const productId =
-                String(
-                    productSelect?.value ||
-                    ""
-                ).trim();
-
-
-            const quantity =
-                Number(
-                    quantityInput?.value ||
-                    0
-                );
-
-
-            const supplier =
-                String(
-                    supplierInput?.value ||
-                    ""
-                ).trim();
-
-
-            const reference =
-                String(
-                    referenceInput?.value ||
-                    ""
-                ).trim();
-
-
-            const notes =
-                String(
-                    notesInput?.value ||
-                    ""
-                ).trim();
-
-
-            const date =
-                String(
-                    dateInput?.value ||
-                    ""
-                ).trim();
-
-
-            // ------------------------------------------------
-            // VALIDATION
-            // ------------------------------------------------
-
-            if (!productId) {
-
-                showToast(
-                    "Please select a product.",
-                    "error"
-                );
-
-                productSelect?.focus();
-
-                return;
-
-            }
-
-
-            if (
-                !Number.isFinite(quantity) ||
-                quantity <= 0
-            ) {
-
-                showToast(
-                    "Please enter a valid stock-in quantity.",
-                    "error"
-                );
-
-                quantityInput?.focus();
-
-                return;
-
-            }
-
-
-            if (
-                !Number.isInteger(quantity)
-            ) {
-
-                showToast(
-                    "Stock quantity must be a whole number.",
-                    "error"
-                );
-
-                quantityInput?.focus();
-
-                return;
-
-            }
-
-
-            if (!date) {
-
-                showToast(
-                    "Please select a stock-in date.",
-                    "error"
-                );
-
-                dateInput?.focus();
-
-                return;
-
-            }
-
-
-            // ------------------------------------------------
-            // PRODUCT
-            // ------------------------------------------------
-
-            const product =
-                findProduct(
-                    productId
-                );
-
-
-            if (!product) {
-
-                showToast(
-                    "Selected product could not be found.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            // ------------------------------------------------
-            // CONFIRMATION
-            // ------------------------------------------------
-
-            const productName =
-                product.PRODUCT_NAME ||
-                product.productName ||
-                product.NAME ||
-                product.name ||
-                "Selected product";
-
-
-            const confirmed =
-                window.confirm(
-                    `Add ${quantity} unit(s) of "${productName}" to stock?`
-                );
-
-
-            if (!confirmed) {
-
-                return;
-
-            }
-
-
-            // ------------------------------------------------
-            // LOADING
-            // ------------------------------------------------
-
-            setSubmitLoading(
-                true
-            );
-
-
-            try {
-
-                const payload = {
-
-                    action:
-                        "stockIn",
-
-                    productId:
-                        getProductId(
-                            product
-                        ),
-
-                    productID:
-                        getProductId(
-                            product
-                        ),
-
-                    productName:
-                        productName,
-
-                    quantity:
-                        quantity,
-
-                    supplier:
-                        supplier,
-
-                    reference:
-                        reference,
-
-                    notes:
-                        notes,
-
-                    date:
-                        date,
-
-                    type:
-                        "STOCK_IN",
-
-                    transactionType:
-                        "STOCK_IN",
-
-                    userId:
-                        user.uid ||
-                        user.id ||
-                        "",
-
-                    username:
-                        user.username ||
-                        "",
-
-                    performedBy:
-                        user.username ||
-                        user.name ||
-                        user.gmail ||
-                        ""
-
-                };
-
-
-                const response =
-                    await submitStockIn(
-                        payload
-                    );
-
-
-                if (
-                    !response?.success
-                ) {
-
-                    throw new Error(
-                        response?.message ||
-                        "Stock-in transaction failed."
-                    );
-
-                }
-
-
-                showToast(
-                    "Stock-in recorded successfully.",
-                    "success"
-                );
-
-
-                resetForm();
-
-                await loadProducts();
-
-                await loadStockInRecords();
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "Stock-in submission error:",
-                    error
-                );
-
-
-                showToast(
-                    error.message ||
-                    "Unable to record stock-in.",
-                    "error"
-                );
-
-            }
-
-            finally {
-
-                setSubmitLoading(
-                    false
-                );
-
-            }
-
-        }
-    );
-
-
-    // ========================================================
-    // SUBMIT STOCK-IN API
-    // ========================================================
-
-    async function submitStockIn(
-        payload
-    ) {
-
-        if (
-            typeof StockFlowAPI.stockIn ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.stockIn(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.addStockIn ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.addStockIn(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.createStockIn ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.createStockIn(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.inventoryTransaction ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.inventoryTransaction(
-                payload
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.addTransaction ===
-            "function"
-        ) {
-
-            return await StockFlowAPI.addTransaction(
-                payload
-            );
-
-        }
-
-
-        throw new Error(
-            "Stock-in submit API is not available. Please update API.js."
-        );
-
-    }
-
-
-    // ========================================================
-    // RESET
-    // ========================================================
-
-    resetBtn?.addEventListener(
-        "click",
-        () => {
-
-            resetForm();
-
-        }
-    );
-
-
-    function resetForm() {
-
-        form?.reset();
-
-
-        if (dateInput) {
-
-            const today =
-                new Date();
-
-            dateInput.value =
-                today.toISOString()
-                    .split("T")[0];
-
-        }
-
-
-        if (productSelect) {
-
-            productSelect.selectedIndex =
-                0;
-
-        }
-
-    }
-
-
-    // ========================================================
-    // REFRESH
-    // ========================================================
-
-    refreshBtn?.addEventListener(
-        "click",
-        async () => {
-
-            refreshBtn.disabled =
-                true;
-
-
-            try {
-
-                await loadProducts();
-
-                await loadStockInRecords();
-
-                showToast(
-                    "Stock-in records refreshed.",
-                    "success"
-                );
-
-            }
-
-            finally {
-
-                refreshBtn.disabled =
-                    false;
-
-            }
-
-        }
-    );
-
-
-    // ========================================================
-    // SEARCH
-    // ========================================================
-
-    searchInput?.addEventListener(
-        "input",
-        () => {
-
-            const keyword =
-                String(
-                    searchInput.value ||
-                    ""
-                )
-                .trim()
-                .toLowerCase();
-
-
-            if (!keyword) {
-
-                filteredRecords =
-                    [...stockInRecords];
-
-            }
-
-            else {
-
-                filteredRecords =
-                    stockInRecords.filter(
-                        record => {
-
-                            const text =
-                                [
-
-                                    record.productName,
-
-                                    record.PRODUCT_NAME,
-
-                                    record.productId,
-
-                                    record.PRODUCT_ID,
-
-                                    record.supplier,
-
-                                    record.SUPPLIER,
-
-                                    record.reference,
-
-                                    record.REFERENCE,
-
-                                    record.performedBy,
-
-                                    record.PERFORMED_BY
-
-                                ]
-                                .join(" ")
-                                .toLowerCase();
-
-
-                            return text.includes(
-                                keyword
-                            );
-
-                        }
-                    );
-
-            }
-
-
-            renderRecords();
-
-        }
-    );
-
-
-    // ========================================================
-    // POPULATE PRODUCT SELECT
-    // ========================================================
 
     function populateProductSelect() {
 
@@ -896,739 +1016,461 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-
-        const previous =
+        const currentValue =
             productSelect.value;
 
-
         productSelect.innerHTML =
-            `<option value="">Select product</option>`;
+            '<option value="">Select a product</option>';
 
 
-        products.forEach(
-            product => {
+        products.forEach(product => {
 
-                const id =
-                    getProductId(
-                        product
-                    );
-
-
-                if (!id) {
-                    return;
-                }
-
-
-                const name =
-                    product.PRODUCT_NAME ||
-                    product.productName ||
-                    product.NAME ||
-                    product.name ||
-                    "Unnamed Product";
-
-
-                const sku =
-                    product.SKU ||
-                    product.sku ||
-                    product.PRODUCT_CODE ||
-                    product.productCode ||
-                    "";
-
-
-                const option =
-                    document.createElement(
-                        "option"
-                    );
-
-
-                option.value =
-                    id;
-
-
-                option.textContent =
-                    sku
-                        ? `${name} — ${sku}`
-                        : name;
-
-
-                productSelect.appendChild(
-                    option
+            const id =
+                pick(
+                    product,
+                    "id",
+                    "productId",
+                    "product_id",
+                    "ID"
                 );
 
+            const name =
+                pick(
+                    product,
+                    "name",
+                    "productName",
+                    "product_name",
+                    "ProductName"
+                );
+
+            const sku =
+                pick(
+                    product,
+                    "sku",
+                    "SKU",
+                    "productSku",
+                    "product_sku"
+                );
+
+            const stock =
+                pick(
+                    product,
+                    "stock",
+                    "quantity",
+                    "currentStock",
+                    "stock_quantity"
+                );
+
+
+            if (!id || !name) {
+                return;
             }
-        );
 
 
-        if (previous) {
+            const option =
+                document.createElement(
+                    "option"
+                );
 
+            option.value = id;
+
+            option.textContent =
+                sku
+                    ? `${name} — ${sku}`
+                    : name;
+
+            option.dataset.stock =
+                stock || 0;
+
+            productSelect.appendChild(
+                option
+            );
+        });
+
+
+        if (
+            currentValue &&
+            [...productSelect.options]
+                .some(
+                    option =>
+                        option.value ===
+                        String(currentValue)
+                )
+        ) {
             productSelect.value =
-                previous;
-
+                currentValue;
         }
-
     }
 
 
-    // ========================================================
-    // RENDER RECORDS
-    // ========================================================
+    /* =====================================================
+       LOAD SUPPLIERS
+    ===================================================== */
 
-    function renderRecords() {
+    async function loadSuppliers() {
+
+        try {
+
+            const response =
+                await callApi(
+                    "listSuppliers"
+                );
+
+            ensureSuccess(response);
+
+            suppliers =
+                extractArray(
+                    response,
+                    [
+                        "suppliers",
+                        "items",
+                        "rows",
+                        "result"
+                    ]
+                );
+
+            populateSupplierSelect();
+
+        } catch (error) {
+
+            console.error(
+                "Load suppliers error:",
+                error
+            );
+
+            suppliers = [];
+
+            populateSupplierSelect();
+        }
+    }
+
+
+    function populateSupplierSelect() {
+
+        if (!supplierSelect) {
+            return;
+        }
+
+        const currentValue =
+            supplierSelect.value;
+
+        supplierSelect.innerHTML =
+            '<option value="">Select supplier</option>';
+
+
+        suppliers.forEach(supplier => {
+
+            const id =
+                pick(
+                    supplier,
+                    "id",
+                    "supplierId",
+                    "supplier_id",
+                    "ID"
+                );
+
+            const name =
+                pick(
+                    supplier,
+                    "name",
+                    "supplierName",
+                    "supplier_name",
+                    "companyName",
+                    "company_name"
+                );
+
+
+            if (!id || !name) {
+                return;
+            }
+
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value = id;
+
+            option.textContent = name;
+
+            supplierSelect.appendChild(
+                option
+            );
+        });
+
+
+        if (
+            currentValue &&
+            [...supplierSelect.options]
+                .some(
+                    option =>
+                        option.value ===
+                        String(currentValue)
+                )
+        ) {
+            supplierSelect.value =
+                currentValue;
+        }
+    }
+
+
+    /* =====================================================
+       LOAD RECENT TRANSACTIONS
+    ===================================================== */
+
+    async function loadTransactions() {
+
+        if (!tableBody) {
+            return;
+        }
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="table-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading stock transactions...
+                </td>
+            </tr>
+        `;
+
+
+        try {
+
+            const response =
+                await callApi(
+                    "listTransactions",
+                    {
+                        type: "stock_in",
+                        transactionType: "stock_in"
+                    }
+                );
+
+            ensureSuccess(response);
+
+            transactions =
+                extractArray(
+                    response,
+                    [
+                        "transactions",
+                        "stockIn",
+                        "stockIns",
+                        "items",
+                        "rows",
+                        "result"
+                    ]
+                );
+
+            renderTransactions();
+
+            setConnected();
+
+        } catch (error) {
+
+            console.error(
+                "Load transactions error:",
+                error
+            );
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="table-empty">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>Unable to load transactions</strong>
+                        <span>Check your API connection and try again.</span>
+                    </td>
+                </tr>
+            `;
+
+            setOffline(
+                "Unable to connect to the inventory API."
+            );
+        }
+    }
+
+
+    /* =====================================================
+       RENDER TRANSACTIONS
+    ===================================================== */
+
+    function renderTransactions() {
 
         if (!tableBody) {
             return;
         }
 
 
-        if (
-            !filteredRecords.length
-        ) {
+        if (!transactions.length) {
 
-            renderEmpty(
-                "No stock-in transactions found."
-            );
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="table-empty">
+                        <i class="fa-solid fa-box-open"></i>
+                        <strong>No stock-in transactions yet</strong>
+                        <span>Incoming inventory transactions will appear here.</span>
+                    </td>
+                </tr>
+            `;
 
             return;
-
         }
+
+
+        const sorted =
+            [...transactions]
+                .sort(
+                    (a, b) =>
+                        new Date(
+                            getTransactionDate(b)
+                        ) -
+                        new Date(
+                            getTransactionDate(a)
+                        )
+                )
+                .slice(0, 20);
 
 
         tableBody.innerHTML =
-            filteredRecords
-                .slice(0, 100)
+            sorted
                 .map(
-                    (
-                        record,
-                        index
-                    ) => {
-
-                        const product =
-                            record.productName ||
-                            record.PRODUCT_NAME ||
-                            record.name ||
-                            record.NAME ||
-                            "Unknown Product";
-
-
-                        const quantity =
-                            Number(
-                                record.quantity ||
-                                record.QUANTITY ||
-                                0
-                            );
-
-
-                        const supplier =
-                            record.supplier ||
-                            record.SUPPLIER ||
-                            "—";
-
-
-                        const reference =
-                            record.reference ||
-                            record.REFERENCE ||
-                            "—";
-
-
-                        const date =
-                            record.date ||
-                            record.DATE ||
-                            record.createdAt ||
-                            record.CREATED_AT ||
-                            "";
-
-
-                        const performedBy =
-                            record.performedBy ||
-                            record.PERFORMED_BY ||
-                            record.username ||
-                            record.USERNAME ||
-                            "—";
-
-
-                        return `
-
-                            <tr>
-
-                                <td>
-                                    ${escapeHTML(
-                                        formatDate(date)
-                                    )}
-                                </td>
-
-                                <td>
-
-                                    <div class="product-cell">
-
-                                        <strong>
-                                            ${escapeHTML(
-                                                product
-                                            )}
-                                        </strong>
-
-                                        ${
-                                            record.productId ||
-                                            record.PRODUCT_ID
-                                                ? `
-                                                    <small>
-                                                        ${escapeHTML(
-                                                            record.productId ||
-                                                            record.PRODUCT_ID
-                                                        )}
-                                                    </small>
-                                                  `
-                                                : ""
-                                        }
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-
-                                    <span class="quantity-badge">
-
-                                        +${formatNumber(
-                                            quantity
-                                        )}
-
-                                    </span>
-
-                                </td>
-
-                                <td>
-                                    ${escapeHTML(
-                                        supplier
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${escapeHTML(
-                                        reference
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${escapeHTML(
-                                        performedBy
-                                    )}
-                                </td>
-
-                            </tr>
-
-                        `;
-
-                    }
+                    transaction =>
+                        createTransactionRow(
+                            transaction
+                        )
                 )
                 .join("");
-
     }
 
 
-    // ========================================================
-    // EMPTY TABLE
-    // ========================================================
+    function createTransactionRow(transaction) {
 
-    function renderEmpty(
-        message
-    ) {
-
-        if (!tableBody) {
-            return;
-        }
-
-
-        tableBody.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="6"
-                    class="empty-table"
-                >
-
-                    <div class="empty-state">
-
-                        <i
-                            class="fa-solid fa-box-open"
-                        ></i>
-
-                        <strong>
-                            ${escapeHTML(
-                                message
-                            )}
-                        </strong>
-
-                        <span>
-                            Stock-in transactions will appear here.
-                        </span>
-
-                    </div>
-
-                </td>
-
-            </tr>
-
-        `;
-
-    }
-
-
-    // ========================================================
-    // STATISTICS
-    // ========================================================
-
-    function updateStatistics() {
-
-        const totalTransactions =
-            stockInRecords.length;
-
-
-        const totalUnits =
-            stockInRecords.reduce(
-                (
-                    total,
-                    record
-                ) => {
-
-                    const quantity =
-                        Number(
-                            record.quantity ||
-                            record.QUANTITY ||
-                            0
-                        );
-
-
-                    return total +
-                        (
-                            Number.isFinite(
-                                quantity
-                            )
-                                ? quantity
-                                : 0
-                        );
-
-                },
-                0
+        const date =
+            getTransactionDate(
+                transaction
             );
 
-
-        const today =
-            new Date();
-
-
-        const todayKey =
-            today
-                .toISOString()
-                .split("T")[0];
-
-
-        const todayUnits =
-            stockInRecords.reduce(
-                (
-                    total,
-                    record
-                ) => {
-
-                    const recordDate =
-                        getDateKey(
-                            record.date ||
-                            record.DATE ||
-                            record.createdAt ||
-                            record.CREATED_AT
-                        );
-
-
-                    if (
-                        recordDate !==
-                        todayKey
-                    ) {
-
-                        return total;
-
-                    }
-
-
-                    return total +
-                        Number(
-                            record.quantity ||
-                            record.QUANTITY ||
-                            0
-                        );
-
-                },
-                0
-            );
-
-
-        setText(
-            "stockInTransactions",
-            totalTransactions
-        );
-
-
-        setText(
-            "stockInTotal",
-            formatNumber(
-                totalUnits
-            )
-        );
-
-
-        setText(
-            "stockInToday",
-            formatNumber(
-                todayUnits
-            )
-        );
-
-    }
-
-
-    // ========================================================
-    // PRODUCT HELPERS
-    // ========================================================
-
-    function findProduct(
-        productId
-    ) {
-
-        return products.find(
-            product => {
-
-                return String(
-                    getProductId(
-                        product
-                    )
-                ) ===
-                String(
-                    productId
-                );
-
-            }
-        );
-
-    }
-
-
-    function getProductId(
-        product
-    ) {
-
-        return (
-            product.uid ||
-            product.id ||
-            product.ID ||
-            product.productId ||
-            product.PRODUCT_ID ||
-            product.productID ||
-            product.PRODUCT_CODE ||
-            product.productCode ||
-            ""
-        );
-
-    }
-
-
-    // ========================================================
-    // NORMALIZE PRODUCTS
-    // ========================================================
-
-    function normalizeProducts(
-        response
-    ) {
-
-        const list =
-            response.products ||
-            response.data ||
-            response.items ||
-            response.records ||
-            [];
-
-
-        if (
-            !Array.isArray(list)
-        ) {
-
-            return [];
-
-        }
-
-
-        return list;
-
-    }
-
-
-    // ========================================================
-    // NORMALIZE RECORDS
-    // ========================================================
-
-    function normalizeRecords(
-        response
-    ) {
-
-        let list =
-            response.stockIn ||
-            response.stockInRecords ||
-            response.transactions ||
-            response.records ||
-            response.data ||
-            [];
-
-
-        if (
-            response.data &&
-            !Array.isArray(list) &&
-            typeof response.data ===
-            "object"
-        ) {
-
-            list =
-                response.data.stockIn ||
-                response.data.transactions ||
-                response.data.records ||
-                [];
-
-        }
-
-
-        if (
-            !Array.isArray(list)
-        ) {
-
-            return [];
-
-        }
-
-
-        return list.filter(
-            record => {
-
-                const type =
-                    String(
-                        record.type ||
-                        record.TYPE ||
-                        record.transactionType ||
-                        record.TRANSACTION_TYPE ||
-                        record.action ||
-                        record.ACTION ||
-                        "STOCK_IN"
-                    )
-                    .trim()
-                    .toUpperCase();
-
-
-                return (
-                    type ===
-                    "STOCK_IN" ||
-                    type ===
-                    "STOCK IN" ||
-                    type ===
-                    "IN"
-                );
-
-            }
-        );
-
-    }
-
-
-    // ========================================================
-    // CONNECTION
-    // ========================================================
-
-    function setConnection(
-        online,
-        label
-    ) {
-
-        if (!connectionBadge) {
-            return;
-        }
-
-
-        connectionBadge.textContent =
-            label;
-
-
-        connectionBadge.classList.toggle(
-            "online",
-            online
-        );
-
-
-        connectionBadge.classList.toggle(
-            "offline",
-            !online
-        );
-
-    }
-
-
-    // ========================================================
-    // LOADING STATE
-    // ========================================================
-
-    function setLoadingState(
-        loading
-    ) {
-
-        if (!tableBody) {
-            return;
-        }
-
-
-        if (!loading) {
-            return;
-        }
-
-
-        tableBody.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="6"
-                    class="loading-table"
-                >
-
-                    <div class="loading-state">
-
-                        <span class="spinner"></span>
-
-                        Loading stock-in records...
-
-                    </div>
-
-                </td>
-
-            </tr>
-
-        `;
-
-    }
-
-
-    // ========================================================
-    // BUTTON LOADING
-    // ========================================================
-
-    function setSubmitLoading(
-        loading
-    ) {
-
-        if (!submitBtn) {
-            return;
-        }
-
-
-        submitBtn.disabled =
-            loading;
-
-
-        if (loading) {
-
-            submitBtn.dataset.originalText =
-                submitBtn.innerHTML;
-
-
-            submitBtn.innerHTML = `
-
-                <span class="spinner spinner-light"></span>
-
-                Recording...
-
-            `;
-
-        }
-
-        else {
-
-            submitBtn.innerHTML =
-                submitBtn.dataset.originalText ||
-                `<i class="fa-solid fa-plus"></i> Add Stock`;
-
-        }
-
-    }
-
-
-    // ========================================================
-    // TEXT HELPERS
-    // ========================================================
-
-    function setText(
-        id,
-        value
-    ) {
-
-        const element =
-            document.getElementById(
-                id
-            );
-
-
-        if (element) {
-
-            element.textContent =
-                value ?? "0";
-
-        }
-
-    }
-
-
-    function formatNumber(
-        value
-    ) {
-
-        const number =
+        const product =
+            pick(
+                transaction,
+                "productName",
+                "product_name",
+                "name",
+                "product"
+            ) || "Unknown Product";
+
+        const quantity =
             Number(
-                value || 0
-            );
+                pick(
+                    transaction,
+                    "quantity",
+                    "qty",
+                    "stockIn",
+                    "stock_in"
+                )
+            ) || 0;
+
+        const supplier =
+            pick(
+                transaction,
+                "supplierName",
+                "supplier_name",
+                "supplier"
+            ) || "—";
+
+        const reference =
+            pick(
+                transaction,
+                "referenceNumber",
+                "reference_number",
+                "reference",
+                "refNo",
+                "ref_no"
+            ) || "—";
+
+        const user =
+            pick(
+                transaction,
+                "userName",
+                "user_name",
+                "createdBy",
+                "created_by",
+                "username",
+                "user"
+            ) || "—";
 
 
-        return Number.isFinite(
-            number
-        )
-            ? number.toLocaleString()
-            : "0";
+        return `
+            <tr>
 
+                <td>
+                    ${escapeHtml(
+                        formatDate(date)
+                    )}
+                </td>
+
+                <td class="product-name-cell">
+                    ${escapeHtml(product)}
+                </td>
+
+                <td>
+                    <span class="quantity-badge">
+                        +${escapeHtml(quantity)}
+                    </span>
+                </td>
+
+                <td>
+                    ${escapeHtml(supplier)}
+                </td>
+
+                <td class="reference-cell">
+                    ${escapeHtml(reference)}
+                </td>
+
+                <td class="user-cell">
+                    ${escapeHtml(user)}
+                </td>
+
+            </tr>
+        `;
     }
 
 
-    // ========================================================
-    // DATE HELPERS
-    // ========================================================
+    function getTransactionDate(transaction) {
 
-    function formatDate(
-        value
-    ) {
+        return pick(
+            transaction,
+            "date",
+            "stockInDate",
+            "stock_in_date",
+            "transactionDate",
+            "transaction_date",
+            "createdAt",
+            "created_at",
+            "timestamp"
+        ) || "";
+    }
+
+
+    /* =====================================================
+       DATE FORMAT
+    ===================================================== */
+
+    function formatDate(value) {
 
         if (!value) {
             return "—";
         }
 
-
         const date =
-            new Date(
-                value
-            );
-
+            new Date(value);
 
         if (
             Number.isNaN(
                 date.getTime()
             )
         ) {
-
-            return String(
-                value
-            );
-
+            return String(value);
         }
-
 
         return date.toLocaleDateString(
             "en-PH",
@@ -1638,185 +1480,749 @@ document.addEventListener("DOMContentLoaded", async () => {
                 day: "numeric"
             }
         );
-
     }
 
 
-    function getDateKey(
-        value
-    ) {
+    /* =====================================================
+       MONEY FORMAT
+    ===================================================== */
 
-        if (!value) {
-            return "";
-        }
+    function formatPeso(value) {
+
+        const number =
+            Number(value) || 0;
+
+        return new Intl.NumberFormat(
+            "en-PH",
+            {
+                style: "currency",
+                currency: "PHP",
+                minimumFractionDigits: 2
+            }
+        ).format(number);
+    }
+
+
+    /* =====================================================
+       LIVE PREVIEW
+    ===================================================== */
+
+    function updatePreview() {
+
+        const selectedProduct =
+            productSelect
+                ? productSelect.options[
+                    productSelect.selectedIndex
+                ]
+                : null;
+
+        const selectedSupplier =
+            supplierSelect
+                ? supplierSelect.options[
+                    supplierSelect.selectedIndex
+                ]
+                : null;
+
+
+        const productName =
+            selectedProduct &&
+            selectedProduct.value
+                ? selectedProduct.textContent
+                : "No product selected";
+
+
+        const supplierName =
+            selectedSupplier &&
+            selectedSupplier.value
+                ? selectedSupplier.textContent
+                : "No supplier selected";
+
+
+        const quantity =
+            Math.max(
+                0,
+                Number(
+                    quantityInput
+                        ? quantityInput.value
+                        : 0
+                ) || 0
+            );
+
+
+        const unitCost =
+            Math.max(
+                0,
+                Number(
+                    unitCostInput
+                        ? unitCostInput.value
+                        : 0
+                ) || 0
+            );
+
+
+        const total =
+            quantity * unitCost;
+
+
+        const reference =
+            referenceInput &&
+            referenceInput.value.trim()
+                ? referenceInput.value.trim()
+                : "—";
 
 
         const date =
-            new Date(
-                value
+            dateInput &&
+            dateInput.value
+                ? formatDate(
+                    dateInput.value
+                )
+                : "—";
+
+
+        if (previewProduct) {
+            previewProduct.textContent =
+                productName;
+        }
+
+        if (previewSupplier) {
+            previewSupplier.textContent =
+                supplierName;
+        }
+
+        if (previewQuantity) {
+            previewQuantity.textContent =
+                quantity.toLocaleString(
+                    "en-PH"
+                );
+        }
+
+        if (previewUnitCost) {
+            previewUnitCost.textContent =
+                formatPeso(unitCost);
+        }
+
+        if (previewTotal) {
+            previewTotal.textContent =
+                formatPeso(total);
+        }
+
+        if (previewReference) {
+            previewReference.textContent =
+                reference;
+        }
+
+        if (previewDate) {
+            previewDate.textContent =
+                date;
+        }
+    }
+
+
+    /* =====================================================
+       CLEAR FORM
+    ===================================================== */
+
+    function clearForm() {
+
+        if (!form) {
+            return;
+        }
+
+        form.reset();
+
+        setDefaultDate();
+
+        updatePreview();
+
+        if (productSelect) {
+            productSelect.focus();
+        }
+    }
+
+
+    /* =====================================================
+       DEFAULT DATE
+    ===================================================== */
+
+    function setDefaultDate() {
+
+        if (!dateInput) {
+            return;
+        }
+
+        if (dateInput.value) {
+            return;
+        }
+
+        const now =
+            new Date();
+
+        const year =
+            now.getFullYear();
+
+        const month =
+            String(
+                now.getMonth() + 1
+            ).padStart(2, "0");
+
+        const day =
+            String(
+                now.getDate()
+            ).padStart(2, "0");
+
+
+        dateInput.value =
+            `${year}-${month}-${day}`;
+    }
+
+
+    /* =====================================================
+       VALIDATE FORM
+    ===================================================== */
+
+    function validateForm() {
+
+        if (!productSelect?.value) {
+
+            showConnectionMessage(
+                "Please select a product.",
+                "error"
+            );
+
+            productSelect?.focus();
+
+            return false;
+        }
+
+
+        const quantity =
+            Number(
+                quantityInput?.value
             );
 
 
         if (
-            Number.isNaN(
-                date.getTime()
-            )
+            !Number.isFinite(quantity) ||
+            quantity < 1 ||
+            !Number.isInteger(quantity)
         ) {
 
-            return String(
-                value
-            ).substring(
-                0,
-                10
+            showConnectionMessage(
+                "Quantity must be a whole number greater than 0.",
+                "error"
             );
 
+            quantityInput?.focus();
+
+            return false;
         }
 
 
-        return date
-            .toISOString()
-            .split("T")[0];
+        const unitCost =
+            Number(
+                unitCostInput?.value || 0
+            );
 
+
+        if (
+            !Number.isFinite(unitCost) ||
+            unitCost < 0
+        ) {
+
+            showConnectionMessage(
+                "Unit cost cannot be negative.",
+                "error"
+            );
+
+            unitCostInput?.focus();
+
+            return false;
+        }
+
+
+        if (!dateInput?.value) {
+
+            showConnectionMessage(
+                "Please select the stock-in date.",
+                "error"
+            );
+
+            dateInput?.focus();
+
+            return false;
+        }
+
+
+        return true;
     }
 
 
-    // ========================================================
-    // TOAST
-    // ========================================================
+    /* =====================================================
+       SAVE STOCK IN
+    ===================================================== */
 
-    function showToast(
-        message,
-        type = "info"
-    ) {
+    async function saveStockIn() {
 
-        let container =
-            document.getElementById(
-                "toastContainer"
-            );
-
-
-        if (!container) {
-
-            container =
-                document.createElement(
-                    "div"
-                );
-
-
-            container.id =
-                "toastContainer";
-
-
-            container.className =
-                "toast-container";
-
-
-            document.body.appendChild(
-                container
-            );
-
+        if (isSaving) {
+            return;
         }
 
 
-        const toast =
-            document.createElement(
-                "div"
+        if (!validateForm()) {
+            return;
+        }
+
+
+        const quantity =
+            Number(
+                quantityInput.value
+            );
+
+        const unitCost =
+            Number(
+                unitCostInput.value || 0
             );
 
 
-        toast.className =
-            `toast toast-${type}`;
+        const productId =
+            productSelect.value;
+
+        const supplierId =
+            supplierSelect?.value || "";
+
+        const referenceNumber =
+            referenceInput?.value.trim() || "";
+
+        const stockInDate =
+            dateInput.value;
+
+        const notes =
+            notesInput?.value.trim() || "";
 
 
-        const icon =
-            type === "success"
-                ? "fa-circle-check"
-                : type === "error"
-                    ? "fa-circle-exclamation"
-                    : "fa-circle-info";
+        const selectedProduct =
+            productSelect.options[
+                productSelect.selectedIndex
+            ];
 
 
-        toast.innerHTML = `
-
-            <i
-                class="fa-solid ${icon}"
-            ></i>
-
-            <span>
-                ${escapeHTML(message)}
-            </span>
-
-        `;
+        const selectedSupplier =
+            supplierSelect &&
+            supplierSelect.options[
+                supplierSelect.selectedIndex
+            ];
 
 
-        container.appendChild(
-            toast
-        );
+        const productName =
+            selectedProduct
+                ? selectedProduct.textContent
+                : "";
+
+        const supplierName =
+            selectedSupplier &&
+            selectedSupplier.value
+                ? selectedSupplier.textContent
+                : "";
 
 
-        requestAnimationFrame(
-            () => {
-                toast.classList.add(
-                    "show"
+        const payload = {
+
+            productId,
+
+            product_id: productId,
+
+            productName,
+
+            product_name:
+                productName,
+
+            quantity,
+
+            qty: quantity,
+
+            unitCost,
+
+            unit_cost:
+                unitCost,
+
+            supplierId,
+
+            supplier_id:
+                supplierId,
+
+            supplierName,
+
+            supplier_name:
+                supplierName,
+
+            referenceNumber,
+
+            reference_number:
+                referenceNumber,
+
+            stockInDate,
+
+            stock_in_date:
+                stockInDate,
+
+            notes
+
+        };
+
+
+        isSaving = true;
+
+        if (saveButton) {
+            saveButton.disabled = true;
+
+            saveButton.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>Saving...</span>
+            `;
+        }
+
+
+        showLoading();
+
+
+        try {
+
+            const response =
+                await callApi(
+                    "stockIn",
+                    payload
                 );
+
+
+            const result =
+                ensureSuccess(
+                    response
+                );
+
+
+            hideLoading();
+
+            isSaving = false;
+
+
+            if (saveButton) {
+
+                saveButton.disabled = false;
+
+                saveButton.innerHTML = `
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    <span>Add Stock</span>
+                `;
+            }
+
+
+            setConnected();
+
+
+            openModal(
+                true,
+                "Stock Added Successfully",
+                "The inventory quantity has been updated and the stock-in transaction has been recorded."
+            );
+
+
+            clearForm();
+
+
+            await Promise.all([
+                loadProducts(),
+                loadTransactions()
+            ]);
+
+
+        } catch (error) {
+
+            console.error(
+                "Stock In error:",
+                error
+            );
+
+
+            hideLoading();
+
+            isSaving = false;
+
+
+            if (saveButton) {
+
+                saveButton.disabled = false;
+
+                saveButton.innerHTML = `
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    <span>Add Stock</span>
+                `;
+            }
+
+
+            setOffline(
+                error?.message ||
+                "Unable to save the stock-in transaction."
+            );
+
+
+            openModal(
+                false,
+                "Stock In Failed",
+                error?.message ||
+                "The stock-in transaction could not be saved. Please check your connection and try again."
+            );
+        }
+    }
+
+
+    /* =====================================================
+       ESCAPE HTML
+    ===================================================== */
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+    }
+
+
+    /* =====================================================
+       EVENT — FORM SUBMIT
+    ===================================================== */
+
+    if (form) {
+
+        form.addEventListener(
+            "submit",
+            event => {
+
+                event.preventDefault();
+
+                saveStockIn();
             }
         );
-
-
-        setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "show"
-                );
-
-
-                setTimeout(
-                    () => {
-                        toast.remove();
-                    },
-                    250
-                );
-
-            },
-            3500
-        );
-
     }
 
 
-    // ========================================================
-    // HTML ESCAPE
-    // ========================================================
+    /* =====================================================
+       EVENT — CLEAR
+    ===================================================== */
 
-    function escapeHTML(
-        value
-    ) {
+    if (clearButton) {
 
-        return String(
-            value ?? ""
-        )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
+        clearButton.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                clearForm();
+            }
         );
-
     }
+
+
+    /* =====================================================
+       EVENT — REFRESH
+    ===================================================== */
+
+    if (refreshButton) {
+
+        refreshButton.addEventListener(
+            "click",
+            async event => {
+
+                event.preventDefault();
+
+                refreshButton.disabled = true;
+
+                refreshButton.innerHTML = `
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Refreshing
+                `;
+
+
+                try {
+
+                    await Promise.all([
+                        loadProducts(),
+                        loadSuppliers(),
+                        loadTransactions()
+                    ]);
+
+                } finally {
+
+                    refreshButton.disabled =
+                        false;
+
+                    refreshButton.innerHTML = `
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Refresh
+                    `;
+                }
+            }
+        );
+    }
+
+
+    /* =====================================================
+       EVENT — PREVIEW
+    ===================================================== */
+
+    [
+        productSelect,
+        quantityInput,
+        unitCostInput,
+        supplierSelect,
+        referenceInput,
+        dateInput
+    ]
+        .filter(Boolean)
+        .forEach(element => {
+
+            element.addEventListener(
+                "input",
+                updatePreview
+            );
+
+            element.addEventListener(
+                "change",
+                updatePreview
+            );
+        });
+
+
+    /* =====================================================
+       EVENT — MODAL
+    ===================================================== */
+
+    if (modalOk) {
+
+        modalOk.addEventListener(
+            "click",
+            closeModal
+        );
+    }
+
+
+    if (modalClose) {
+
+        modalClose.addEventListener(
+            "click",
+            closeModal
+        );
+    }
+
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target === modal
+                ) {
+                    closeModal();
+                }
+            }
+        );
+    }
+
+
+    /* =====================================================
+       ESC KEY
+    ===================================================== */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                if (
+                    modal &&
+                    !modal.hidden
+                ) {
+                    closeModal();
+                }
+
+                closeSidebar();
+            }
+        }
+    );
+
+
+    /* =====================================================
+       INITIALIZATION
+    ===================================================== */
+
+    async function initialize() {
+
+        try {
+
+            updateUserUI();
+
+            setDefaultDate();
+
+            updatePreview();
+
+            setConnected();
+
+
+            /*
+             * Load the initial data.
+             * The loading overlay is intentionally NOT
+             * shown here, preventing the white flashing
+             * effect during page startup.
+             */
+
+            await Promise.all([
+                loadProducts(),
+                loadSuppliers(),
+                loadTransactions()
+            ]);
+
+
+            updatePreview();
+
+
+        } catch (error) {
+
+            console.error(
+                "Stock In initialization error:",
+                error
+            );
+
+            setOffline(
+                "Stock In module could not connect to the inventory system."
+            );
+        }
+    }
+
+
+    initialize();
 
 });
