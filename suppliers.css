@@ -1,297 +1,389 @@
 /* =========================================================
    STOCKFLOW — SUPPLIERS
-   suppliers.css
-   ========================================================= */
+   Professional Phone Accessories Inventory UI
+========================================================= */
+
+:root {
+    --sf-navy: #071a33;
+    --sf-navy-2: #0b203d;
+    --sf-blue: #2864d7;
+    --sf-blue-dark: #1f56c2;
+    --sf-blue-soft: #eaf1ff;
+
+    --sf-bg: #f4f7fb;
+    --sf-card: #ffffff;
+
+    --sf-text: #12233f;
+    --sf-muted: #71819a;
+    --sf-border: #dce4ef;
+
+    --sf-success: #16a05d;
+    --sf-success-bg: #eaf8f1;
+
+    --sf-danger: #dc3f3f;
+    --sf-danger-bg: #fff0f0;
+
+    --sf-warning: #d78a0b;
+    --sf-warning-bg: #fff7e8;
+
+    --sf-radius: 16px;
+    --sf-shadow:
+        0 10px 30px rgba(15, 38, 70, 0.06);
+
+    --sf-sidebar-width: 280px;
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+}
 
 body {
     margin: 0;
-    font-family: Inter, Arial, sans-serif;
-    background: #f5f8fc;
-    color: #0b1f3a;
+    min-height: 100vh;
+
+    background: var(--sf-bg);
+    color: var(--sf-text);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    overflow-x: hidden;
 }
+
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
 
 .sf-layout {
     min-height: 100vh;
-    display: flex;
-    background: #f5f8fc;
+    width: 100%;
 }
 
 
 /* =========================================================
    SIDEBAR
-   ========================================================= */
+========================================================= */
 
 .sf-side {
     position: fixed;
-    inset: 0 auto 0 0;
 
-    width: 250px;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: var(--sf-sidebar-width);
     height: 100vh;
+
+    z-index: 1000;
 
     display: flex;
     flex-direction: column;
 
-    background: #071a33;
-    color: #fff;
+    background:
+        linear-gradient(
+            180deg,
+            var(--sf-navy) 0%,
+            #06172d 100%
+        );
 
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    color: #ffffff;
 
+    overflow-x: hidden;
     overflow-y: auto;
-    z-index: 1000;
+
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(255,255,255,0.22)
+        transparent;
 }
 
+
+/* Sidebar scrollbar */
+
+.sf-side::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sf-side::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sf-side::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.20);
+    border-radius: 999px;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
 .sf-brand {
-    min-height: 78px;
+    min-height: 106px;
 
     display: flex;
     align-items: center;
 
-    padding: 0 24px;
+    padding: 0 32px;
 
-    color: #fff;
+    border-bottom:
+        1px solid rgba(255,255,255,0.08);
 
-    font-size: 17px;
+    color: #ffffff;
+
+    font-size: 25px;
     font-weight: 800;
-    letter-spacing: 0.5px;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    letter-spacing: 0.045em;
+
+    flex-shrink: 0;
 }
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
 .sf-nav {
     display: flex;
     flex-direction: column;
 
-    gap: 3px;
+    gap: 4px;
 
-    padding: 16px 12px;
+    padding: 24px 16px 32px;
 }
 
+
 .sf-nav a {
-    min-height: 42px;
+    position: relative;
 
     display: flex;
     align-items: center;
 
-    padding: 0 13px;
+    min-height: 48px;
 
-    border-radius: 9px;
+    padding: 0 18px;
 
-    color: #a9bdd4;
+    border-radius: 11px;
+
+    color: #aebbd0;
+
     text-decoration: none;
 
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
 
     transition:
         background 0.18s ease,
-        color 0.18s ease;
+        color 0.18s ease,
+        transform 0.18s ease;
 }
+
 
 .sf-nav a:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    background: rgba(255,255,255,0.07);
+    color: #ffffff;
 }
 
+
 .sf-nav a.active {
-    background: #2563eb;
-    color: #fff;
-    font-weight: 600;
+    background: var(--sf-blue);
+    color: #ffffff;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 8px 20px rgba(40,100,215,0.22);
+}
+
+
+.sf-nav a.active:hover {
+    background: var(--sf-blue-dark);
 }
 
 
 /* =========================================================
-   MAIN
-   ========================================================= */
+   MAIN CONTENT
+========================================================= */
 
 .sf-main {
-    width: calc(100% - 250px);
+    position: relative;
+
+    margin-left: var(--sf-sidebar-width);
+
+    width: calc(100% - var(--sf-sidebar-width));
+
     min-height: 100vh;
 
-    margin-left: 250px;
+    padding: 0 38px 50px;
 
-    padding: 0 30px 40px;
+    overflow-x: hidden;
+
+    z-index: 1;
 }
 
 
 /* =========================================================
    TOP HEADER
-   ========================================================= */
+========================================================= */
 
 .sf-top {
-    min-height: 82px;
+    min-height: 111px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    gap: 20px;
+    gap: 24px;
 
-    margin-bottom: 24px;
+    padding: 24px 0;
 
-    border-bottom: 1px solid #e4ebf3;
+    border-bottom:
+        1px solid var(--sf-border);
 }
+
 
 .sf-title {
-    margin-bottom: 4px;
+    margin-bottom: 7px;
 
-    color: #0b1f3a;
+    color: var(--sf-text);
 
-    font-size: 25px;
+    font-size: 34px;
+    line-height: 1.1;
+
     font-weight: 750;
-    line-height: 1.2;
+
+    letter-spacing: -0.035em;
 }
 
+
 .sf-muted {
-    color: #66809b;
-    font-size: 13px;
-    line-height: 1.5;
+    color: var(--sf-muted);
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   MENU BUTTON
+========================================================= */
+
+[data-menu] {
+    display: none;
 }
 
 
 /* =========================================================
    ALERT
-   ========================================================= */
+========================================================= */
 
 .sf-alert {
-    display: none;
+    width: 100%;
 
-    margin-bottom: 18px;
-    padding: 12px 15px;
+    margin: 24px 0;
 
-    border-radius: 9px;
+    padding: 14px 18px;
+
     border: 1px solid transparent;
+    border-radius: 11px;
 
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.5;
+
+    display: none;
 }
+
 
 .sf-alert.show {
     display: block;
 }
 
+
 .sf-alert.success {
-    background: #ecfdf3;
-    border-color: #b7ebcb;
-    color: #167143;
+    color: #0c7745;
+    background: var(--sf-success-bg);
+    border-color: #bce8d0;
 }
+
 
 .sf-alert.error {
-    background: #fff1f2;
-    border-color: #fecdd3;
-    color: #b42336;
-}
-
-.sf-alert.info {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #1d4ed8;
+    color: #b42323;
+    background: var(--sf-danger-bg);
+    border-color: #f2bcbc;
 }
 
 
-/* =========================================================
-   BUTTONS
-   ========================================================= */
-
-.sf-btn {
-    min-height: 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 17px;
-
-    border: 1px solid transparent;
-    border-radius: 9px;
-
-    background: #2563eb;
-    color: #fff;
-
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease,
-        box-shadow 0.18s ease,
-        transform 0.18s ease;
-}
-
-.sf-btn:hover {
-    background: #1d4ed8;
-}
-
-.sf-btn:active {
-    transform: translateY(1px);
-}
-
-.sf-btn:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-}
-
-.sf-btn.secondary {
-    background: #fff;
-    color: #31506f;
-    border-color: #d4e0ed;
-}
-
-.sf-btn.secondary:hover {
-    background: #f5f8fc;
-    border-color: #b9cce0;
-    color: #173b61;
+.sf-alert.warning {
+    color: #9a6500;
+    background: var(--sf-warning-bg);
+    border-color: #f0d7a2;
 }
 
 
 /* =========================================================
    CARDS
-   ========================================================= */
+========================================================= */
 
 .sf-card {
     width: 100%;
 
-    margin-bottom: 22px;
+    margin-top: 24px;
 
-    background: #fff;
+    background: var(--sf-card);
 
-    border: 1px solid #e1e9f2;
-    border-radius: 14px;
+    border:
+        1px solid var(--sf-border);
 
-    box-shadow:
-        0 3px 12px rgba(20, 50, 80, 0.045);
+    border-radius: var(--sf-radius);
+
+    box-shadow: var(--sf-shadow);
 
     overflow: hidden;
 }
 
 
-/* =========================================================
-   CARD HEADER
-   ========================================================= */
-
 .sf-card-head {
-    min-height: 76px;
-
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: space-between;
 
-    padding: 17px 22px;
+    gap: 20px;
 
-    border-bottom: 1px solid #e8eef5;
+    padding: 30px 30px 26px;
+
+    border-bottom:
+        1px solid var(--sf-border);
 }
+
 
 .sf-card-head h3 {
-    margin: 0 0 4px;
+    margin: 0 0 6px;
 
-    color: #0b1f3a;
+    color: var(--sf-text);
 
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 21px;
     line-height: 1.3;
+
+    font-weight: 700;
 }
+
 
 .sf-card-head p {
     margin: 0;
@@ -300,7 +392,7 @@ body {
 
 /* =========================================================
    SUPPLIER FORM
-   ========================================================= */
+========================================================= */
 
 .sf-form {
     display: grid;
@@ -308,29 +400,35 @@ body {
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
 
-    gap: 16px;
+    gap: 18px;
 
-    padding: 22px;
+    padding: 28px 30px 30px;
 }
 
+
 .sf-form input,
-.sf-form select {
+.sf-form select,
+.sf-form textarea {
     width: 100%;
-    min-width: 0;
-    height: 46px;
 
-    padding: 0 13px;
+    min-height: 54px;
 
-    border: 1px solid #cbd9e8;
-    border-radius: 9px;
+    padding: 0 16px;
 
-    background: #fff;
-    color: #173b61;
+    border:
+        1px solid #cfd9e7;
 
-    font-family: inherit;
-    font-size: 13px;
+    border-radius: 10px;
 
     outline: none;
+
+    background: #ffffff;
+
+    color: var(--sf-text);
+
+    font-family: inherit;
+
+    font-size: 14px;
 
     transition:
         border-color 0.18s ease,
@@ -338,110 +436,206 @@ body {
         background 0.18s ease;
 }
 
+
 .sf-form input::placeholder {
-    color: #91a4b8;
+    color: #91a1b7;
 }
+
 
 .sf-form input:hover,
 .sf-form select:hover {
-    border-color: #aebfd1;
+    border-color: #b9c7da;
 }
+
 
 .sf-form input:focus,
 .sf-form select:focus {
-    border-color: #2563eb;
+    border-color: var(--sf-blue);
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.10);
+        0 0 0 3px rgba(40,100,215,0.12);
 }
 
-.sf-form select {
-    cursor: pointer;
-}
 
+.sf-form input.full,
+.sf-form select.full,
 .sf-form .full {
     grid-column: 1 / -1;
 }
 
 
-/* =========================================================
-   FORM ACTIONS
-   ========================================================= */
+/* Address occupies full row */
 
-.sf-form .sf-row {
+#address {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   FORM ROW
+========================================================= */
+
+.sf-row {
     display: flex;
     align-items: center;
 
-    gap: 10px;
+    gap: 12px;
 
-    padding-top: 3px;
+    padding-top: 4px;
 }
 
-.sf-form .sf-row .sf-btn {
-    min-width: 125px;
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.sf-btn {
+    min-height: 48px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 0 22px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: var(--sf-blue);
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease,
+        opacity 0.18s ease;
+}
+
+
+.sf-btn:hover {
+    background: var(--sf-blue-dark);
+
+    box-shadow:
+        0 8px 18px rgba(40,100,215,0.20);
+}
+
+
+.sf-btn:active {
+    transform: translateY(1px);
+}
+
+
+.sf-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+
+.sf-btn.secondary {
+    background: #ffffff;
+
+    color: #30445f;
+
+    border:
+        1px solid #cfd9e7;
+
+    box-shadow: none;
+}
+
+
+.sf-btn.secondary:hover {
+    background: #f7f9fc;
+
+    border-color: #b8c6d8;
+
+    box-shadow: none;
 }
 
 
 /* =========================================================
    TABLE
-   ========================================================= */
+========================================================= */
 
 .sf-table-wrap {
     width: 100%;
 
     overflow-x: auto;
-    overflow-y: hidden;
 }
+
 
 .sf-table-wrap table {
     width: 100%;
-    min-width: 760px;
+
+    min-width: 850px;
 
     border-collapse: collapse;
+
+    table-layout: auto;
 }
+
 
 .sf-table-wrap thead {
-    background: #f7faff;
+    background: #f7f9fc;
 }
+
 
 .sf-table-wrap th {
-    height: 44px;
+    padding: 15px 18px;
 
-    padding: 0 16px;
+    color: #657792;
 
-    color: #58718c;
-
-    font-size: 11px;
-    font-weight: 700;
+    border-bottom:
+        1px solid var(--sf-border);
 
     text-align: left;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+
     text-transform: uppercase;
-    letter-spacing: 0.4px;
 
     white-space: nowrap;
-
-    border-bottom: 1px solid #e2eaf3;
 }
+
 
 .sf-table-wrap td {
-    padding: 13px 16px;
+    padding: 17px 18px;
 
-    color: #274766;
+    color: #334967;
 
-    font-size: 12.5px;
+    border-bottom:
+        1px solid #edf1f6;
+
+    font-size: 14px;
 
     vertical-align: middle;
-
-    border-bottom: 1px solid #edf2f7;
 }
+
 
 .sf-table-wrap tbody tr {
-    transition: background 0.15s ease;
+    transition:
+        background 0.15s ease;
 }
 
+
 .sf-table-wrap tbody tr:hover {
-    background: #f8fbff;
+    background: #fafcff;
 }
+
 
 .sf-table-wrap tbody tr:last-child td {
     border-bottom: 0;
@@ -449,180 +643,177 @@ body {
 
 
 /* =========================================================
-   SUPPLIER NAME
-   ========================================================= */
+   TABLE EMPTY
+========================================================= */
 
-.supplier-name {
-    color: #0b1f3a;
-    font-weight: 650;
+.sf-empty {
+    padding: 55px 20px !important;
+
+    text-align: center !important;
+
+    color: #8291a7 !important;
 }
 
 
 /* =========================================================
-   CONTACT
-   ========================================================= */
+   STATUS BADGE
+========================================================= */
 
-.supplier-contact {
-    color: #31506f;
-    font-weight: 500;
-}
-
-
-/* =========================================================
-   PHONE / EMAIL
-   ========================================================= */
-
-.supplier-phone,
-.supplier-email {
-    color: #52708f;
-}
-
-.supplier-email {
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   STATUS
-   ========================================================= */
-
-.supplier-status {
+.sf-status {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
 
-    min-height: 25px;
+    min-height: 28px;
 
-    padding: 0 9px;
+    padding: 0 10px;
 
     border-radius: 999px;
 
-    font-size: 10.5px;
-    font-weight: 700;
+    font-size: 11px;
 
-    letter-spacing: 0.25px;
+    font-weight: 800;
+
+    letter-spacing: 0.04em;
 }
 
-.supplier-status.active {
-    background: #ecfdf3;
-    border: 1px solid #c9efd8;
-    color: #167143;
+
+.sf-status.active {
+    background: var(--sf-success-bg);
+    color: #13804d;
 }
 
-.supplier-status.inactive {
-    background: #f1f5f9;
-    border: 1px solid #dbe3eb;
-    color: #64748b;
+
+.sf-status.inactive {
+    background: #f1f3f6;
+    color: #718096;
 }
 
 
 /* =========================================================
    TABLE ACTIONS
-   ========================================================= */
+========================================================= */
 
-.supplier-actions {
+.sf-actions {
     display: flex;
     align-items: center;
 
     gap: 7px;
 }
 
-.supplier-action {
-    min-height: 32px;
 
-    padding: 0 10px;
+.sf-action {
+    width: 34px;
+    height: 34px;
 
-    border: 1px solid #d4e0ed;
-    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    background: #fff;
-    color: #31506f;
+    border:
+        1px solid #d8e1ed;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #60728d;
 
     font-family: inherit;
-    font-size: 11px;
-    font-weight: 600;
 
     cursor: pointer;
 
     transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
-}
-
-.supplier-action:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #1d4ed8;
-}
-
-.supplier-action.delete {
-    color: #b42336;
-}
-
-.supplier-action.delete:hover {
-    background: #fff1f2;
-    border-color: #fecdd3;
-    color: #b42336;
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
 }
 
 
-/* =========================================================
-   EMPTY STATE
-   ========================================================= */
+.sf-action:hover {
+    background: var(--sf-blue-soft);
 
-.sf-empty {
-    padding: 48px 20px !important;
+    border-color: #bfd2f7;
 
-    color: #7890a8 !important;
+    color: var(--sf-blue);
+}
 
-    text-align: center;
 
-    font-size: 13px !important;
+.sf-action.delete:hover {
+    background: var(--sf-danger-bg);
+
+    border-color: #efc0c0;
+
+    color: var(--sf-danger);
 }
 
 
 /* =========================================================
-   MOBILE MENU
-   ========================================================= */
+   LOADING
+========================================================= */
 
-[data-menu] {
-    display: none;
+.sf-loading {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.sf-spinner {
+    width: 16px;
+    height: 16px;
+
+    border:
+        2px solid rgba(255,255,255,0.35);
+
+    border-top-color: #ffffff;
+
+    border-radius: 50%;
+
+    animation:
+        sf-spin 0.7s linear infinite;
+}
+
+
+@keyframes sf-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 
 /* =========================================================
    RESPONSIVE
-   ========================================================= */
+========================================================= */
 
-@media (max-width: 1050px) {
+@media (max-width: 1100px) {
 
-    .sf-side {
-        width: 220px;
+    :root {
+        --sf-sidebar-width: 250px;
     }
 
     .sf-main {
-        width: calc(100% - 220px);
-
-        margin-left: 220px;
-
-        padding-left: 24px;
-        padding-right: 24px;
+        padding-left: 28px;
+        padding-right: 28px;
     }
 
-    .sf-nav a {
-        font-size: 12px;
+    .sf-form {
+        gap: 15px;
     }
-
 }
 
 
 @media (max-width: 800px) {
 
+    :root {
+        --sf-sidebar-width: 280px;
+    }
+
     .sf-side {
         transform: translateX(-100%);
 
-        transition: transform 0.22s ease;
+        transition:
+            transform 0.25s ease;
     }
 
     .sf-side.open {
@@ -630,96 +821,117 @@ body {
     }
 
     .sf-main {
-        width: 100%;
         margin-left: 0;
 
-        padding-left: 18px;
-        padding-right: 18px;
+        width: 100%;
+
+        padding:
+            0 20px 40px;
+    }
+
+    .sf-top {
+        min-height: 90px;
+    }
+
+    .sf-title {
+        font-size: 28px;
     }
 
     [data-menu] {
         display: inline-flex;
+
+        width: 46px;
+        min-width: 46px;
+
+        padding: 0;
     }
-
-}
-
-
-@media (max-width: 650px) {
 
     .sf-form {
         grid-template-columns: 1fr;
-
-        padding: 18px;
     }
 
-    .sf-form .full {
-        grid-column: auto;
+    .sf-form input.full,
+    .sf-form select.full,
+    .sf-form .full,
+    #address {
+        grid-column: 1;
     }
-
-    .sf-form .sf-row {
-        flex-direction: row;
-    }
-
 }
 
 
-@media (max-width: 560px) {
+@media (max-width: 520px) {
 
     .sf-main {
-        padding-left: 14px;
-        padding-right: 14px;
+        padding:
+            0 14px 30px;
     }
 
     .sf-top {
-        min-height: 72px;
+        min-height: 82px;
+
+        gap: 12px;
     }
 
     .sf-title {
-        font-size: 21px;
+        font-size: 24px;
     }
 
     .sf-muted {
-        font-size: 12px;
+        font-size: 13px;
     }
 
     .sf-card-head {
-        padding: 16px;
+        padding:
+            24px 20px 21px;
     }
 
     .sf-form {
-        padding: 16px;
+        padding:
+            22px 20px 24px;
     }
 
-    .sf-form .sf-row {
+    .sf-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .sf-form .sf-row .sf-btn {
+    .sf-row .sf-btn {
         width: 100%;
     }
 
     .sf-table-wrap th,
     .sf-table-wrap td {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding-left: 14px;
+        padding-right: 14px;
     }
-
 }
 
 
 /* =========================================================
-   REDUCED MOTION
-   ========================================================= */
+   FINAL LAYOUT OVERRIDE
+   Prevent sidebar from covering supplier content
+========================================================= */
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 801px) {
 
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+    .sf-side {
+        position: fixed;
+
+        left: 0;
+        top: 0;
+        bottom: 0;
+
+        width: var(--sf-sidebar-width);
+
+        transform: none !important;
     }
 
+    .sf-main {
+        margin-left: var(--sf-sidebar-width) !important;
+
+        width:
+            calc(100% - var(--sf-sidebar-width)) !important;
+
+        min-width: 0;
+    }
 }
