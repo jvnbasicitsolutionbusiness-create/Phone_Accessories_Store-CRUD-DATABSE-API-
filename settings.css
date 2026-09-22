@@ -2,57 +2,25 @@
    STOCKFLOW — SETTINGS PAGE
    ========================================================= */
 
-
-/* =========================================================
-   PAGE FOUNDATION
-   ========================================================= */
-
-.sf-main {
+.settings-page {
     min-height: 100vh;
-}
-
-.sf-main,
-.sf-card,
-.sf-form {
-    min-width: 0;
+    background: #f6f9fd;
 }
 
 
 /* =========================================================
-   TOP HEADER
+   MAIN CONTENT
    ========================================================= */
 
-.sf-top {
-    gap: 20px;
+.settings-page .sf-main {
+    min-height: 100vh;
+    padding-bottom: 32px;
 }
 
-.sf-title {
-    color: #0f172a;
-    letter-spacing: -0.02em;
-}
-
-.sf-top .sf-muted {
-    max-width: 650px;
-    line-height: 1.5;
-}
-
-
-/* =========================================================
-   MOBILE MENU
-   ========================================================= */
-
-.settings-menu-btn {
-    display: none;
-
-    width: 40px;
-    height: 40px;
-
-    padding: 0;
-
-    align-items: center;
-    justify-content: center;
-
-    font-size: 17px;
+.settings-page .settings-content {
+    width: 100%;
+    max-width: 980px;
+    padding: 26px 30px 40px;
 }
 
 
@@ -60,27 +28,18 @@
    SETTINGS CARD
    ========================================================= */
 
-.settings-card {
+.settings-page .settings-card {
+    width: 100%;
+    margin: 0 0 20px;
     background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-
-    box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.03),
-        0 8px 24px rgba(15, 23, 42, 0.035);
-
-    transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease;
+    border: 1px solid var(--sf-border-light);
+    border-radius: 16px;
+    box-shadow: var(--sf-shadow-sm);
+    overflow: hidden;
 }
 
-.settings-card:hover {
-    border-color: #dbe2ea;
-
-    box-shadow:
-        0 2px 4px rgba(15, 23, 42, 0.035),
-        0 10px 28px rgba(15, 23, 42, 0.045);
+.settings-page .settings-card:last-child {
+    margin-bottom: 0;
 }
 
 
@@ -88,30 +47,25 @@
    CARD HEADER
    ========================================================= */
 
-.settings-card .sf-card-head {
+.settings-page .settings-card .sf-card-head {
+    min-height: 84px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--sf-border-light);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-
-    gap: 20px;
+    gap: 16px;
 }
 
-.settings-card .sf-card-head h3 {
-    margin: 0;
-
-    color: #0f172a;
-
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1.4;
+.settings-page .settings-card .sf-card-head h3 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--sf-text);
 }
 
-.settings-card .sf-card-head .sf-muted {
-    margin-top: 5px;
-
-    color: #64748b;
-
-    font-size: 10px;
+.settings-page .settings-card .sf-card-head .sf-muted {
+    font-size: 12px;
     line-height: 1.5;
 }
 
@@ -120,77 +74,60 @@
    CARD ICON
    ========================================================= */
 
-.settings-card-icon {
+.settings-page .settings-card-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 auto;
+    border-radius: 12px;
 
-    width: 38px;
-    height: 38px;
+    background: var(--sf-blue-light);
+    color: var(--sf-blue);
 
-    color: #2563eb;
-    background: #eff6ff;
-
-    border: 1px solid #dbeafe;
-    border-radius: 10px;
-
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 700;
 }
 
-.settings-card-icon.session-icon {
-    color: #64748b;
-    background: #f8fafc;
-
-    border-color: #e2e8f0;
+.settings-page .session-icon {
+    background: #f1f5f9;
+    color: var(--sf-text-2);
 }
 
 
 /* =========================================================
-   SETTINGS FORM
+   FORM
    ========================================================= */
 
-.settings-form {
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 18px;
+.settings-page .settings-form {
+    padding: 22px;
 }
 
-
-/* =========================================================
-   SETTINGS FIELD
-   ========================================================= */
-
-.settings-field {
+.settings-page .settings-field {
     display: flex;
     flex-direction: column;
-
-    min-width: 0;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
-.settings-field label {
-    margin-bottom: 6px;
+.settings-page .settings-field label {
+    margin-bottom: 5px;
 
-    color: #1e293b;
-
-    font-size: 11px;
-    font-weight: 800;
+    color: var(--sf-text);
+    font-size: 13px;
+    font-weight: 700;
 }
 
-.settings-help {
-    min-height: 30px;
+.settings-page .settings-help {
+    display: block;
+    margin-bottom: 9px;
 
-    margin-bottom: 8px;
-
-    color: #64748b;
-
-    font-size: 9px;
-    line-height: 1.5;
+    color: var(--sf-muted);
+    font-size: 12px;
+    line-height: 1.45;
 }
 
 
@@ -198,96 +135,81 @@
    INPUTS
    ========================================================= */
 
-.settings-form input,
-.settings-form select {
+.settings-page .settings-field input,
+.settings-page .settings-field select {
     width: 100%;
-    height: 43px;
+    max-width: 560px;
+    height: 44px;
 
-    padding: 0 12px;
+    padding: 0 13px;
 
-    color: #0f172a;
+    border: 1px solid var(--sf-border);
+    border-radius: 10px;
+
     background: #ffffff;
-
-    border: 1px solid #dbe2ea;
-    border-radius: 9px;
-
-    outline: none;
+    color: var(--sf-text);
 
     font-family: inherit;
-    font-size: 12px;
+    font-size: 13px;
+
+    outline: none;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
+}
+
+.settings-page .settings-field input:hover,
+.settings-page .settings-field select:hover {
+    border-color: #a9c2df;
+}
+
+.settings-page .settings-field input:focus,
+.settings-page .settings-field select:focus {
+    border-color: var(--sf-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+
+/* =========================================================
+   SETTINGS ACTIONS
+   ========================================================= */
+
+.settings-page .settings-actions {
+    padding-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.settings-page .settings-actions .sf-btn {
+    min-height: 44px;
+    padding: 0 18px;
+
+    border-radius: 10px;
+
+    background: var(--sf-blue);
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
 
     transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        background-color 0.15s ease;
+        background 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
 }
 
-.settings-form input::placeholder {
-    color: #94a3b8;
+.settings-page .settings-actions .sf-btn:hover {
+    background: var(--sf-blue-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22);
 }
 
-.settings-form input:hover,
-.settings-form select:hover {
-    border-color: #cbd5e1;
-}
-
-.settings-form input:focus,
-.settings-form select:focus {
-    border-color: #2563eb;
-
-    box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.10);
-}
-
-.settings-form select {
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   FULL WIDTH
-   ========================================================= */
-
-.settings-form .full {
-    grid-column: 1 / -1;
-}
-
-
-/* =========================================================
-   FORM ACTIONS
-   ========================================================= */
-
-.settings-actions {
-    display: flex;
-
-    align-items: center;
-
-    padding-top: 4px;
-
-    border-top: 1px solid #eef2f7;
-}
-
-.settings-actions .sf-btn {
-    min-width: 130px;
-}
-
-
-/* =========================================================
-   SAVE BUTTON
-   ========================================================= */
-
-.settings-actions .sf-btn:not(.secondary) {
-    background: #2563eb;
-
-    box-shadow:
-        0 2px 6px rgba(37, 99, 235, 0.16);
-}
-
-.settings-actions .sf-btn:not(.secondary):hover {
-    background: #1d4ed8;
-
-    box-shadow:
-        0 4px 10px rgba(37, 99, 235, 0.20);
+.settings-page .settings-actions .sf-btn:active {
+    transform: translateY(0);
 }
 
 
@@ -295,217 +217,220 @@
    STATUS MESSAGE
    ========================================================= */
 
-.settings-message {
-    min-height: 17px;
-
-    margin: 12px 0 0;
-
-    color: #64748b;
-
-    font-size: 10px;
-    line-height: 1.5;
-}
-
-.settings-message.success {
-    color: #15704f;
-}
-
-.settings-message.error {
-    color: #b42318;
-}
-
-
-/* =========================================================
-   SESSION CARD
-   ========================================================= */
-
-.session-card {
-    margin-top: 18px;
-}
-
-.session-content {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding-top: 5px;
-}
-
-.session-content strong {
-    display: block;
-
-    color: #0f172a;
+.settings-page .settings-message {
+    min-height: 0;
+    margin: 0;
+    padding: 0 22px 20px;
 
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 600;
 }
 
-.session-content p {
-    margin: 5px 0 0;
+.settings-page .settings-message.success {
+    color: #15803d;
+}
 
-    color: #64748b;
+.settings-page .settings-message.error {
+    color: #dc2626;
+}
 
-    font-size: 10px;
+
+/* =========================================================
+   SESSION
+   ========================================================= */
+
+.settings-page .session-content {
+    padding: 20px 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.settings-page .session-info {
+    min-width: 0;
+}
+
+.settings-page .session-info strong {
+    display: block;
+    margin-bottom: 4px;
+
+    color: var(--sf-text);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.settings-page .session-info p {
+    margin: 0;
+
+    color: var(--sf-muted);
+    font-size: 12px;
     line-height: 1.5;
 }
 
-.session-content .sf-btn.danger {
+
+/* =========================================================
+   LOGOUT BUTTON
+   ========================================================= */
+
+.settings-page .session-content .sf-btn.danger {
     flex: 0 0 auto;
 
-    min-width: 90px;
+    min-height: 42px;
+    padding: 0 17px;
 
-    box-shadow:
-        0 2px 5px rgba(185, 28, 28, 0.10);
+    border-radius: 10px;
+
+    background: #fff1f2;
+    color: #dc2626;
+    border: 1px solid #fecdd3;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
 }
 
-.session-content .sf-btn.danger:hover {
-    background: #b91c1c;
+.settings-page .session-content .sf-btn.danger:hover {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    transform: translateY(-1px);
 }
 
 
 /* =========================================================
-   FOCUS ACCESSIBILITY
+   MOBILE MENU BUTTON
    ========================================================= */
 
-.settings-form input:focus-visible,
-.settings-form select:focus-visible,
-.settings-actions button:focus-visible,
-.session-content button:focus-visible {
-    outline: 3px solid rgba(37, 99, 235, 0.18);
-    outline-offset: 2px;
+.settings-page .settings-menu-btn {
+    display: none;
 }
 
 
 /* =========================================================
-   TABLET
+   RESPONSIVE
    ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .settings-page .settings-content {
+        max-width: 100%;
+    }
+
+}
+
 
 @media (max-width: 900px) {
 
-    .settings-form {
-        grid-template-columns: 1fr;
+    .settings-page .sf-side {
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        z-index: 1000;
     }
 
-    .settings-form .full {
-        grid-column: auto;
+    .settings-page .sf-side.open {
+        transform: translateX(0);
     }
 
-}
+    .settings-page .sf-main {
+        margin-left: 0;
+    }
 
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 800px) {
-
-    .settings-menu-btn {
+    .settings-page .settings-menu-btn {
         display: inline-flex;
-    }
+        align-items: center;
+        justify-content: center;
 
-    .sf-main {
-        padding: 18px 15px;
-    }
-
-    .sf-title {
-        font-size: 21px;
-    }
-
-    .sf-card {
-        padding: 16px;
-        border-radius: 12px;
-    }
-
-    .settings-card .sf-card-head {
-        gap: 12px;
-    }
-
-    .settings-card-icon {
-        width: 34px;
-        height: 34px;
-
-        font-size: 15px;
-    }
-
-    .settings-form {
-        gap: 14px;
-    }
-
-    .session-content {
-        align-items: stretch;
-
-        flex-direction: column;
-
-        gap: 14px;
-    }
-
-    .session-content .sf-btn.danger {
-        width: 100%;
-    }
-
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 480px) {
-
-    .sf-main {
-        padding: 14px 11px;
-    }
-
-    .sf-title {
-        font-size: 19px;
-    }
-
-    .sf-top .sf-muted {
-        font-size: 9px;
-    }
-
-    .sf-card {
-        padding: 14px;
-    }
-
-    .settings-card .sf-card-head h3 {
-        font-size: 14px;
-    }
-
-    .settings-card .sf-card-head .sf-muted {
-        font-size: 9px;
-    }
-
-    .settings-form input,
-    .settings-form select {
+        width: 42px;
         height: 42px;
 
-        font-size: 11px;
+        padding: 0;
+
+        font-size: 18px;
     }
 
-    .settings-actions .sf-btn {
+    .settings-page .settings-content {
+        padding: 22px 24px 34px;
+    }
+
+}
+
+
+@media (max-width: 640px) {
+
+    .settings-page .settings-content {
+        padding: 18px 16px 28px;
+    }
+
+    .settings-page .settings-card .sf-card-head {
+        min-height: 76px;
+        padding: 17px 18px;
+    }
+
+    .settings-page .settings-card .sf-card-head h3 {
+        font-size: 16px;
+    }
+
+    .settings-page .settings-card-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        border-radius: 10px;
+        font-size: 17px;
+    }
+
+    .settings-page .settings-form {
+        padding: 18px;
+    }
+
+    .settings-page .settings-field {
+        margin-bottom: 18px;
+    }
+
+    .settings-page .settings-field input,
+    .settings-page .settings-field select {
+        max-width: none;
+        height: 44px;
+    }
+
+    .settings-page .session-content {
+        padding: 18px;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .settings-page .session-content .sf-btn.danger {
         width: 100%;
     }
 
 }
 
 
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
+@media (max-width: 420px) {
 
-@media (prefers-reduced-motion: reduce) {
+    .settings-page .settings-content {
+        padding: 14px 12px 24px;
+    }
 
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
+    .settings-page .settings-card .sf-card-head {
+        padding: 15px;
+    }
 
-        transition-duration: 0.01ms !important;
+    .settings-page .settings-form {
+        padding: 15px;
+    }
+
+    .settings-page .settings-message {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .settings-page .session-content {
+        padding: 15px;
     }
 
 }
