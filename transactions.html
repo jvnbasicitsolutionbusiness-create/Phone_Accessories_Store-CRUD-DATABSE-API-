@@ -1,8 +1,6 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-
     <meta charset="utf-8">
 
     <meta
@@ -17,296 +15,173 @@
 
     <meta
         name="theme-color"
-        content="#08152d"
+        content="#0b1830"
     >
 
     <title>STOCKFLOW | Transactions</title>
 
+    <!-- Base module styles -->
+    <link rel="stylesheet" href="modules.css">
 
-    <!-- Global styles -->
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <!-- Transaction page styles -->
-    <link
-        rel="stylesheet"
-        href="transactions.css"
-    >
-
+    <!-- Dedicated Transactions page styles -->
+    <link rel="stylesheet" href="transactions.css">
 </head>
-
 
 <body class="transactions-page">
 
+<div class="sf-layout">
 
-<div class="sf-app">
-
-
-    <!-- =====================================================
+    <!-- =========================================================
          SIDEBAR
-    ====================================================== -->
+    ========================================================== -->
 
-    <aside
-        class="sf-sidebar"
-        id="sidebar"
-    >
+    <aside class="sf-sidebar">
 
         <!-- BRAND -->
 
         <div class="sf-sidebar-brand">
 
-            <a
-                href="dashboard.html"
-                class="sf-brand-link"
-            >
+            <div class="sf-brand-mark">
+                SF
+            </div>
 
-                <span class="sf-brand-mark">
-                    SF
-                </span>
-
-                <span class="sf-brand-copy">
-
-                    <strong>
-                        STOCKFLOW
-                    </strong>
-
-                    <small>
-                        INVENTORY SYSTEM
-                    </small>
-
-                </span>
-
-            </a>
+            <div class="sf-brand-text">
+                <strong>STOCKFLOW</strong>
+                <span>INVENTORY SYSTEM</span>
+            </div>
 
         </div>
 
 
         <!-- NAVIGATION -->
 
-        <nav class="sf-navigation">
-
-            <!-- OVERVIEW -->
+        <nav class="sf-sidebar-nav">
 
             <div class="sf-nav-section">
-
-                <div class="sf-nav-label">
-                    Overview
-                </div>
-
-                <a
-                    href="dashboard.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ◔
-                    </span>
-
-                    <span>
-                        Dashboard
-                    </span>
-
-                </a>
-
+                OVERVIEW
             </div>
 
+            <a
+                href="dashboard.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">◔</span>
+                <span>Dashboard</span>
+            </a>
 
-            <!-- INVENTORY -->
 
             <div class="sf-nav-section">
-
-                <div class="sf-nav-label">
-                    Inventory
-                </div>
-
-                <a
-                    href="products.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ▣
-                    </span>
-
-                    <span>
-                        Products
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="inventory.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ▤
-                    </span>
-
-                    <span>
-                        Inventory
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="stock-in.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ↓
-                    </span>
-
-                    <span>
-                        Stock In
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="stock-out.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ↑
-                    </span>
-
-                    <span>
-                        Stock Out
-                    </span>
-
-                </a>
-
+                INVENTORY
             </div>
 
+            <a
+                href="products.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">▣</span>
+                <span>Products</span>
+            </a>
 
-            <!-- MANAGEMENT -->
+            <a
+                href="inventory.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">▤</span>
+                <span>Inventory</span>
+            </a>
+
+            <a
+                href="stock-in.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">↓</span>
+                <span>Stock In</span>
+            </a>
+
+            <a
+                href="stock-out.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">↑</span>
+                <span>Stock Out</span>
+            </a>
+
 
             <div class="sf-nav-section">
-
-                <div class="sf-nav-label">
-                    Management
-                </div>
-
-
-                <a
-                    href="transactions.html"
-                    class="sf-nav-item active"
-                    aria-current="page"
-                >
-
-                    <span class="sf-nav-icon">
-                        ⇄
-                    </span>
-
-                    <span>
-                        Transactions
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="categories.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ◫
-                    </span>
-
-                    <span>
-                        Categories
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="suppliers.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ▰
-                    </span>
-
-                    <span>
-                        Suppliers
-                    </span>
-
-                </a>
-
-
-                <a
-                    href="activity.html"
-                    class="sf-nav-item"
-                >
-
-                    <span class="sf-nav-icon">
-                        ◷
-                    </span>
-
-                    <span>
-                        Activity Log
-                    </span>
-
-                </a>
-
+                MANAGEMENT
             </div>
+
+            <a
+                href="transactions.html"
+                class="sf-nav-item active"
+                aria-current="page"
+            >
+                <span class="sf-nav-icon">⇄</span>
+                <span>Transactions</span>
+            </a>
+
+            <a
+                href="categories.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">▥</span>
+                <span>Categories</span>
+            </a>
+
+            <a
+                href="suppliers.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">▰</span>
+                <span>Suppliers</span>
+            </a>
+
+            <a
+                href="activity.html"
+                class="sf-nav-item"
+            >
+                <span class="sf-nav-icon">◷</span>
+                <span>Activity Log</span>
+            </a>
 
         </nav>
 
 
-        <!-- SIDEBAR FOOTER -->
+        <!-- SIDEBAR USER -->
 
-        <div class="sf-sidebar-footer">
+        <div class="sf-sidebar-bottom">
 
             <a
                 href="profile.html"
-                class="sf-user-card"
+                class="sf-sidebar-user"
             >
 
-                <span class="sf-user-avatar">
+                <div class="sf-user-avatar">
                     SF
-                </span>
+                </div>
 
-                <span class="sf-user-info">
+                <div class="sf-user-info">
 
-                    <strong data-user-name>
+                    <strong id="sidebarUserName">
                         StockFlow User
                     </strong>
 
-                    <small data-user-role>
+                    <span id="sidebarUserRole">
                         Employee
-                    </small>
+                    </span>
 
-                </span>
+                </div>
 
             </a>
 
 
             <button
                 type="button"
-                id="logoutBtn"
                 class="sf-logout"
+                id="logoutButton"
             >
-
-                <span>
-                    ↪
-                </span>
-
-                <span>
-                    Logout
-                </span>
-
+                <span>↪</span>
+                <span>Logout</span>
             </button>
 
         </div>
@@ -314,13 +189,11 @@
     </aside>
 
 
-
-    <!-- =====================================================
-         MAIN CONTENT
-    ====================================================== -->
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
 
     <main class="sf-main">
-
 
         <!-- TOP HEADER -->
 
@@ -330,34 +203,20 @@
 
                 <button
                     type="button"
-                    id="mobileMenuBtn"
                     class="sf-mobile-menu"
+                    id="mobileMenuButton"
                     aria-label="Open navigation"
-                    aria-controls="sidebar"
-                    aria-expanded="false"
                 >
                     ☰
                 </button>
 
-
                 <div>
 
                     <div class="sf-breadcrumb">
-
-                        <span>
-                            STOCKFLOW
-                        </span>
-
-                        <span>
-                            ›
-                        </span>
-
-                        <span>
-                            TRANSACTIONS
-                        </span>
-
+                        <span>STOCKFLOW</span>
+                        <span>›</span>
+                        <span>TRANSACTIONS</span>
                     </div>
-
 
                     <h1>
                         Transactions
@@ -372,52 +231,52 @@
             </div>
 
 
-            <div class="sf-header-actions">
+            <div class="sf-header-right">
 
                 <button
                     type="button"
-                    id="refreshBtn"
                     class="sf-icon-button"
-                    title="Refresh transactions"
+                    id="refreshButton"
                     aria-label="Refresh transactions"
+                    title="Refresh transactions"
                 >
                     ↻
                 </button>
 
 
-                <div class="sf-header-user">
+                <a
+                    href="profile.html"
+                    class="sf-header-user"
+                >
 
-                    <span class="sf-header-avatar">
+                    <div class="sf-header-avatar">
                         SF
-                    </span>
+                    </div>
 
-                    <span class="sf-header-user-info">
+                    <div class="sf-header-user-text">
 
-                        <strong data-user-name>
+                        <strong id="headerUserName">
                             StockFlow User
                         </strong>
 
-                        <small data-user-role>
+                        <span id="headerUserRole">
                             Employee
-                        </small>
+                        </span>
 
+                    </div>
+
+                    <span class="sf-header-chevron">
+                        ⌄
                     </span>
 
-                    <span class="sf-chevron">
-                       ⌄
-                    </span>
-
-                </div>
+                </a>
 
             </div>
 
         </header>
 
 
-
-        <!-- =====================================================
-             ALERT
-        ====================================================== -->
+        <!-- ALERT -->
 
         <div
             id="alert"
@@ -427,160 +286,158 @@
         ></div>
 
 
-
         <!-- =====================================================
-             PAGE CONTENT
+             SUMMARY CARDS
         ====================================================== -->
 
-        <section class="transactions-content">
+        <section class="transaction-summary">
+
+            <article class="transaction-stat">
+
+                <div class="transaction-stat-icon blue">
+                    ⇄
+                </div>
+
+                <div class="transaction-stat-content">
+
+                    <span>
+                        TOTAL TRANSACTIONS
+                    </span>
+
+                    <strong id="totalTransactions">
+                        —
+                    </strong>
+
+                    <small>
+                        All recorded movements
+                    </small>
+
+                </div>
+
+            </article>
 
 
-            <!-- SUMMARY CARDS -->
+            <article class="transaction-stat">
 
-            <div class="transaction-summary-grid">
+                <div class="transaction-stat-icon green">
+                    ↓
+                </div>
 
+                <div class="transaction-stat-content">
 
-                <article class="transaction-summary-card">
+                    <span>
+                        STOCK IN
+                    </span>
 
-                    <div class="summary-icon total">
-                        ⇄
-                    </div>
+                    <strong id="stockInCount">
+                        —
+                    </strong>
 
-                    <div class="summary-info">
+                    <small>
+                        Incoming inventory records
+                    </small>
 
-                        <span>
-                            TOTAL TRANSACTIONS
-                        </span>
+                </div>
 
-                        <strong id="totalCount">
-                            —
-                        </strong>
-
-                        <small>
-                            All recorded movements
-                        </small>
-
-                    </div>
-
-                </article>
+            </article>
 
 
-                <article class="transaction-summary-card">
+            <article class="transaction-stat">
 
-                    <div class="summary-icon incoming">
-                        ↓
-                    </div>
+                <div class="transaction-stat-icon orange">
+                    ↑
+                </div>
 
-                    <div class="summary-info">
+                <div class="transaction-stat-content">
 
-                        <span>
-                            STOCK IN
-                        </span>
+                    <span>
+                        STOCK OUT
+                    </span>
 
-                        <strong id="stockInCount">
-                            —
-                        </strong>
+                    <strong id="stockOutCount">
+                        —
+                    </strong>
 
-                        <small>
-                            Incoming inventory records
-                        </small>
+                    <small>
+                        Released inventory records
+                    </small>
 
-                    </div>
+                </div>
 
-                </article>
-
-
-                <article class="transaction-summary-card">
-
-                    <div class="summary-icon outgoing">
-                        ↑
-                    </div>
-
-                    <div class="summary-info">
-
-                        <span>
-                            STOCK OUT
-                        </span>
-
-                        <strong id="stockOutCount">
-                            —
-                        </strong>
-
-                        <small>
-                            Released inventory records
-                        </small>
-
-                    </div>
-
-                </article>
+            </article>
 
 
-                <article class="transaction-summary-card">
+            <article class="transaction-stat">
 
-                    <div class="summary-icon quantity">
-                        #
-                    </div>
+                <div class="transaction-stat-icon purple">
+                    #
+                </div>
 
-                    <div class="summary-info">
+                <div class="transaction-stat-content">
 
-                        <span>
-                            TOTAL UNITS MOVED
-                        </span>
+                    <span>
+                        TOTAL UNITS MOVED
+                    </span>
 
-                        <strong id="totalQuantity">
-                            —
-                        </strong>
+                    <strong id="totalUnits">
+                        —
+                    </strong>
 
-                        <small>
-                            Combined stock movement
-                        </small>
+                    <small>
+                        Combined stock movement
+                    </small>
 
-                    </div>
+                </div>
 
-                </article>
+            </article>
 
-            </div>
-
-
-
-            <!-- FILTER CARD -->
-
-            <section class="transaction-filter-card">
-
-                <div class="section-heading">
-
-                    <div>
-
-                        <span class="section-kicker">
-                            TRANSACTION HISTORY
-                        </span>
-
-                        <h2>
-                            Inventory Movements
-                        </h2>
-
-                        <p>
-                            Review and filter recorded stock movements.
-                        </p>
-
-                    </div>
+        </section>
 
 
-                    <button
-                        type="button"
-                        id="clearFilterBtn"
-                        class="sf-secondary-btn"
-                    >
-                        Reset Filter
-                    </button>
+        <!-- =====================================================
+             TRANSACTION HISTORY
+        ====================================================== -->
+
+        <section class="sf-panel">
+
+            <div class="sf-panel-header">
+
+                <div>
+
+                    <span class="sf-panel-eyebrow">
+                        TRANSACTION HISTORY
+                    </span>
+
+                    <h2>
+                        Inventory Movements
+                    </h2>
+
+                    <p>
+                        Review and filter recorded stock movements.
+                    </p>
 
                 </div>
 
 
+                <button
+                    type="button"
+                    id="resetFilterButton"
+                    class="sf-outline-button"
+                >
+                    Reset Filter
+                </button>
+
+            </div>
+
+
+            <!-- FILTER BAR -->
+
+            <div class="transaction-toolbar">
+
                 <div
                     class="transaction-filters"
                     role="group"
-                    aria-label="Transaction filters"
+                    aria-label="Transaction type filter"
                 >
 
                     <button
@@ -589,106 +446,55 @@
                         data-filter="ALL"
                         aria-pressed="true"
                     >
-
-                        <span>
-                            ⇄
-                        </span>
-
                         All Transactions
-
                     </button>
-
 
                     <button
                         type="button"
                         class="transaction-filter"
-                        data-filter="IN"
+                        data-filter="STOCK_IN"
                         aria-pressed="false"
                     >
-
-                        <span>
-                            ↓
-                        </span>
-
+                        <span class="filter-dot in"></span>
                         Stock In
-
                     </button>
-
 
                     <button
                         type="button"
                         class="transaction-filter"
-                        data-filter="OUT"
+                        data-filter="STOCK_OUT"
                         aria-pressed="false"
                     >
-
-                        <span>
-                            ↑
-                        </span>
-
+                        <span class="filter-dot out"></span>
                         Stock Out
-
                     </button>
 
                 </div>
 
-            </section>
 
+                <div class="transaction-search">
+
+                    <span>
+                        ⌕
+                    </span>
+
+                    <input
+                        type="search"
+                        id="transactionSearch"
+                        placeholder="Search transactions..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+            </div>
 
 
             <!-- TABLE -->
 
-            <section class="transaction-table-card">
+            <div class="transaction-table-container">
 
-
-                <div class="table-card-header">
-
-                    <div>
-
-                        <span class="section-kicker">
-                            RECORDS
-                        </span>
-
-                        <h2>
-                            Transaction Records
-                        </h2>
-
-                        <p>
-                            Complete record of inventory activity.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                        class="transaction-count"
-                        id="transactionCount"
-                    >
-                        0 records
-                    </div>
-
-                </div>
-
-
-                <div class="table-toolbar">
-
-                    <div class="table-status">
-
-                        <span
-                            class="status-dot"
-                            id="statusDot"
-                        ></span>
-
-                        <span id="tableStatus">
-                            Loading records...
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="transaction-table-container">
+                <div class="transaction-table-scroll">
 
                     <table class="transaction-table">
 
@@ -713,11 +519,11 @@
                                 </th>
 
                                 <th>
-                                    QTY
+                                    SKU
                                 </th>
 
                                 <th>
-                                    UNIT COST
+                                    QTY
                                 </th>
 
                                 <th>
@@ -726,10 +532,6 @@
 
                                 <th>
                                     USER
-                                </th>
-
-                                <th>
-                                    ACTION
                                 </th>
 
                             </tr>
@@ -742,13 +544,15 @@
                             <tr>
 
                                 <td
-                                    colspan="9"
-                                    class="table-loading"
+                                    colspan="8"
+                                    class="transaction-loading"
                                 >
 
-                                    <span class="loading-spinner"></span>
+                                    <div class="loading-spinner"></div>
 
-                                    Loading transaction records...
+                                    <span>
+                                        Loading transaction records...
+                                    </span>
 
                                 </td>
 
@@ -760,7 +564,49 @@
 
                 </div>
 
-            </section>
+
+                <!-- EMPTY STATE -->
+
+                <div
+                    id="emptyState"
+                    class="transaction-empty"
+                    hidden
+                >
+
+                    <div class="empty-icon">
+                        ⇄
+                    </div>
+
+                    <h3>
+                        No transactions found
+                    </h3>
+
+                    <p>
+                        There are no inventory movements matching the current filter.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="transaction-footer">
+
+                <span id="transactionResultText">
+                    Loading records...
+                </span>
+
+                <button
+                    type="button"
+                    class="sf-refresh-link"
+                    id="bottomRefreshButton"
+                >
+                    Refresh records ↻
+                </button>
+
+            </div>
 
         </section>
 
@@ -769,85 +615,24 @@
 </div>
 
 
-
-<!-- =====================================================
-     TRANSACTION DETAILS MODAL
-====================================================== -->
+<!-- =========================================================
+     OVERLAY FOR MOBILE SIDEBAR
+========================================================== -->
 
 <div
-    class="transaction-modal"
-    id="transactionModal"
-    aria-hidden="true"
->
-
-    <div class="transaction-modal-backdrop"></div>
-
-    <div
-        class="transaction-modal-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="transactionModalTitle"
-    >
-
-        <div class="modal-header">
-
-            <div>
-
-                <span class="section-kicker">
-                    TRANSACTION DETAILS
-                </span>
-
-                <h2 id="transactionModalTitle">
-                    Transaction
-                </h2>
-
-            </div>
+    class="sf-sidebar-overlay"
+    id="sidebarOverlay"
+    hidden
+></div>
 
 
-            <button
-                type="button"
-                id="closeModalBtn"
-                class="modal-close"
-                aria-label="Close transaction details"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <div
-            class="modal-content"
-            id="transactionDetails"
-        ></div>
-
-
-        <div class="modal-footer">
-
-            <button
-                type="button"
-                id="modalDoneBtn"
-                class="sf-primary-btn"
-            >
-                Done
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- =====================================================
+<!-- =========================================================
      SCRIPTS
-====================================================== -->
+========================================================== -->
 
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="auth.js"></script>
-<script src="main.js"></script>
 <script src="transactions.js"></script>
 
 </body>
