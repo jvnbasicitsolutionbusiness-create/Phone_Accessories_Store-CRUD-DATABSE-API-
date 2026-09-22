@@ -5,6 +5,7 @@
    ------------------------------------------------------------
    Features:
    - Authentication
+   - Employee user display
    - Responsive sidebar
    - Mobile sidebar overlay
    - Desktop sidebar collapse
@@ -22,14 +23,18 @@
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+
     "use strict";
+
 
     /* ========================================================
        CONFIGURATION
        ======================================================== */
 
     const MOBILE_BREAKPOINT = 900;
+
     const AUTO_REFRESH_INTERVAL = 60000;
+
     const MAX_ACTIVITY_ITEMS = 8;
 
 
@@ -40,29 +45,52 @@ document.addEventListener("DOMContentLoaded", () => {
     const get = (id) =>
         document.getElementById(id);
 
+
     const $ = (selector) =>
         document.querySelector(selector);
 
+
     const $$ = (selector) =>
-        Array.from(document.querySelectorAll(selector));
+        Array.from(
+            document.querySelectorAll(selector)
+        );
 
 
-    const setText = (id, value) => {
-        const element = get(id);
+    const setText = (
+        id,
+        value
+    ) => {
+
+        const element =
+            get(id);
+
 
         if (element) {
+
             element.textContent =
                 value ?? "0";
+
         }
+
     };
 
 
-    const setHTML = (id, html) => {
-        const element = get(id);
+    const setHTML = (
+        id,
+        html
+    ) => {
+
+        const element =
+            get(id);
+
 
         if (element) {
-            element.innerHTML = html;
+
+            element.innerHTML =
+                html;
+
         }
+
     };
 
 
@@ -72,7 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function esc(value) {
 
-        return String(value ?? "")
+        return String(
+            value ?? ""
+        )
             .replace(
                 /[&<>"']/g,
                 character => ({
@@ -87,10 +117,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function toNumber(value, fallback = 0) {
+    function toNumber(
+        value,
+        fallback = 0
+    ) {
 
         const number =
             Number(value);
+
 
         return Number.isFinite(number)
             ? number
@@ -110,19 +144,26 @@ document.addEventListener("DOMContentLoaded", () => {
     function formatDate(value) {
 
         if (!value) {
+
             return "—";
+
         }
+
 
         const date =
             new Date(value);
+
 
         if (
             Number.isNaN(
                 date.getTime()
             )
         ) {
+
             return esc(value);
+
         }
+
 
         return date.toLocaleString(
             undefined,
@@ -144,23 +185,32 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         if (!object) {
+
             return "";
+
         }
 
-        for (const key of keys) {
+
+        for (
+            const key of keys
+        ) {
 
             const value =
                 object[key];
+
 
             if (
                 value !== undefined &&
                 value !== null &&
                 value !== ""
             ) {
+
                 return value;
+
             }
 
         }
+
 
         return "";
 
@@ -180,7 +230,8 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshTimer: null,
 
         previousMobileState:
-            window.innerWidth <= MOBILE_BREAKPOINT,
+            window.innerWidth <=
+            MOBILE_BREAKPOINT,
 
         notificationPanel: null
 
@@ -194,14 +245,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebar =
         get("sidebar");
 
+
     const mobileMenuBtn =
         get("mobileMenuBtn");
+
 
     const sidebarOverlay =
         get("sidebarOverlay");
 
+
     const notificationBtn =
         get("notificationBtn");
+
 
     const logoutBtn =
         get("logoutBtn");
@@ -232,9 +287,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             if (!state.currentUser) {
+
                 return false;
+
             }
 
+
+            /* ------------------------------------------------
+               USER INFORMATION
+               ------------------------------------------------
+               Current system:
+               Registered users are employees.
+
+               Administrator login will be added later.
+               ------------------------------------------------ */
 
             if (
                 typeof StockFlowAuth.bindUserUI ===
@@ -248,6 +314,35 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
+            /*
+             * Current dashboard is for employee accounts.
+             *
+             * We intentionally display Employee here so that
+             * an old/default "Administrator" value from the
+             * dashboard HTML does not appear for employees.
+             *
+             * Administrator login can be enabled later when
+             * the admin authentication system is implemented.
+             */
+
+            const employeeRoleElements = [
+
+                get("userRole"),
+                get("topUserRole")
+
+            ];
+
+
+            employeeRoleElements
+                .filter(Boolean)
+                .forEach(element => {
+
+                    element.textContent =
+                        "Employee";
+
+                });
+
+
             return true;
 
         }
@@ -258,6 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "StockFlow authentication error:",
                 error
             );
+
 
             return false;
 
@@ -287,16 +383,21 @@ document.addEventListener("DOMContentLoaded", () => {
     function openMobileSidebar() {
 
         if (!sidebar) {
+
             return;
+
         }
+
 
         sidebar.classList.add(
             "open"
         );
 
+
         document.body.classList.add(
             "sidebar-open"
         );
+
 
         if (sidebarOverlay) {
 
@@ -305,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
         }
+
 
         if (mobileMenuBtn) {
 
@@ -328,9 +430,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
         document.body.classList.remove(
             "sidebar-open"
         );
+
 
         if (sidebarOverlay) {
 
@@ -339,6 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
         }
+
 
         if (mobileMenuBtn) {
 
@@ -355,7 +460,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function toggleSidebar() {
 
         if (!sidebar) {
+
             return;
+
         }
 
 
@@ -373,11 +480,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 closeMobileSidebar();
 
-            } else {
+            }
+
+            else {
 
                 openMobileSidebar();
 
             }
+
 
             return;
 
@@ -418,10 +528,12 @@ document.addEventListener("DOMContentLoaded", () => {
             mobileMenuBtn.type =
                 "button";
 
+
             mobileMenuBtn.setAttribute(
                 "aria-label",
                 "Toggle navigation menu"
             );
+
 
             mobileMenuBtn.setAttribute(
                 "aria-expanded",
@@ -463,7 +575,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     () => {
 
                         if (isMobile()) {
+
                             closeMobileSidebar();
+
                         }
 
                     }
@@ -509,7 +623,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function initializeLogout() {
 
         if (!logoutBtn) {
+
             return;
+
         }
 
 
@@ -531,6 +647,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             logoutBtn.disabled =
                 true;
+
 
             logoutBtn.classList.add(
                 "loading"
@@ -560,6 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             logoutBtn.disabled =
                 false;
+
 
             logoutBtn.classList.remove(
                 "loading"
@@ -594,13 +712,16 @@ document.addEventListener("DOMContentLoaded", () => {
             state.notificationPanel =
                 existing;
 
+
             return existing;
 
         }
 
 
         if (!notificationBtn) {
+
             return null;
+
         }
 
 
@@ -611,7 +732,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!wrapper) {
+
             return null;
+
         }
 
 
@@ -645,16 +768,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <button
                     type="button"
                     class="notification-close"
                     id="notificationCloseBtn"
                     aria-label="Close notifications"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </div>
+
 
             <div
                 class="notification-list"
@@ -702,7 +829,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!panel) {
+
             return;
+
         }
 
 
@@ -730,7 +859,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!panel) {
+
             return;
+
         }
 
 
@@ -758,7 +889,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!panel) {
+
             return;
+
         }
 
 
@@ -772,7 +905,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             closeNotifications();
 
-        } else {
+        }
+
+        else {
 
             openNotifications();
 
@@ -784,7 +919,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function initializeNotifications() {
 
         if (!notificationBtn) {
+
             return;
+
         }
 
 
@@ -853,7 +990,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 if (!panel) {
+
                     return;
+
                 }
 
 
@@ -921,6 +1060,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const badge =
             get("connectionBadge");
+
 
         const connectionMessage =
             get("connectionMessage");
@@ -1102,7 +1242,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!list) {
+
             return;
+
         }
 
 
@@ -1250,6 +1392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             `;
 
+
             return;
 
         }
@@ -1269,6 +1412,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <i class="${esc(item.icon)}"></i>
 
                         </div>
+
 
                         <div class="notification-content">
 
@@ -1303,7 +1447,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!container) {
+
             return;
+
         }
 
 
@@ -1320,6 +1466,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "No recent transactions",
                     "Stock In and Stock Out transactions will appear here."
                 );
+
 
             return;
 
@@ -1392,6 +1539,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             </div>
 
+
                             <div class="activity-content">
 
                                 <strong>
@@ -1403,6 +1551,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </small>
 
                             </div>
+
 
                             <div class="activity-meta">
 
@@ -1439,7 +1588,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!container) {
+
             return;
+
         }
 
 
@@ -1456,6 +1607,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "No recent activity",
                     "Your latest inventory activities will appear here."
                 );
+
 
             return;
 
@@ -1516,6 +1668,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             </div>
 
+
                             <div class="activity-content">
 
                                 <strong>
@@ -1527,6 +1680,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </small>
 
                             </div>
+
 
                             <div class="activity-meta">
 
@@ -1559,7 +1713,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!container) {
+
             return;
+
         }
 
 
@@ -1606,6 +1762,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     </div>
 
+
                     <div>
 
                         <strong>
@@ -1629,6 +1786,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     </div>
 
+
                     <div>
 
                         <strong>
@@ -1651,6 +1809,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <i class="fa-solid fa-circle-xmark"></i>
 
                     </div>
+
 
                     <div>
 
@@ -1694,7 +1853,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         counters.forEach(
-            id => setText(id, "—")
+            id => setText(
+                id,
+                "—"
+            )
         );
 
 
@@ -1761,12 +1923,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } = options;
 
 
-        /* ----------------------------------------------------
-           PREVENT DUPLICATE REQUESTS
-           ---------------------------------------------------- */
-
         if (state.isLoading) {
+
             return false;
+
         }
 
 
@@ -2107,21 +2267,24 @@ document.addEventListener("DOMContentLoaded", () => {
             get("refreshDashboardBtn"),
             get("refreshBtn")
 
-        ].filter(Boolean);
+        ]
+            .filter(Boolean);
 
 
-        buttons.forEach(button => {
+        buttons.forEach(
+            button => {
 
-            button.disabled =
-                loading;
+                button.disabled =
+                    loading;
 
 
-            button.classList.toggle(
-                "loading",
-                loading
-            );
+                button.classList.toggle(
+                    "loading",
+                    loading
+                );
 
-        });
+            }
+        );
 
     }
 
@@ -2133,7 +2296,9 @@ document.addEventListener("DOMContentLoaded", () => {
     async function refreshDashboard() {
 
         if (state.isLoading) {
+
             return false;
+
         }
 
 
@@ -2181,7 +2346,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 if (!button) {
+
                     return;
+
                 }
 
 
@@ -2214,7 +2381,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!button) {
+
             return;
+
         }
 
 
@@ -2223,6 +2392,7 @@ document.addEventListener("DOMContentLoaded", () => {
             event => {
 
                 event.preventDefault();
+
 
                 window.location.href =
                     destination;
@@ -2285,6 +2455,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.refreshTimer
             );
 
+
             state.refreshTimer =
                 null;
 
@@ -2301,12 +2472,6 @@ document.addEventListener("DOMContentLoaded", () => {
         state.refreshTimer =
             setInterval(
                 () => {
-
-                    /*
-                     * Silent refresh prevents the dashboard
-                     * from showing a fake "Connecting..."
-                     * state every 60 seconds.
-                     */
 
                     loadDashboard({
                         silent: true
@@ -2375,11 +2540,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
 
-
-                /*
-                 * Refresh when the user returns
-                 * to the dashboard.
-                 */
 
                 loadDashboard({
                     silent: true
@@ -2452,7 +2612,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!authenticated) {
+
             return;
+
         }
 
 
@@ -2471,7 +2633,6 @@ document.addEventListener("DOMContentLoaded", () => {
         initializeConnectionEvents();
 
         initializeVisibilityHandler();
-
 
         exposeDashboardAPI();
 
