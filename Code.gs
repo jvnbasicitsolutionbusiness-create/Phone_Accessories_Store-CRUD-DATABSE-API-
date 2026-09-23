@@ -1,6 +1,6 @@
 /* =========================================================
    STOCKFLOW — API CONNECTION
-   File: api.js
+   File: Code.gs (actually api.js)
 
    FRONTEND
        ↓
