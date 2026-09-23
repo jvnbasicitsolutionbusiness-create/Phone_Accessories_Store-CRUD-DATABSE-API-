@@ -1,6 +1,6 @@
 /* =========================================================
    STOCKFLOW — ACTIVITY LOG
-   Picture 2 Sidebar / Professional Inventory UI
+   Dashboard-matched professional module UI
 ========================================================= */
 
 
@@ -8,11 +8,21 @@
    PAGE FOUNDATION
 ========================================================= */
 
-.activity-page {
-    min-height: 100vh;
+body.activity-page {
     margin: 0;
-    background: #f4f7fb;
+    min-height: 100vh;
+
+    overflow-x: hidden;
+
+    background: #f1f4f8;
+
     color: #10203a;
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
 }
 
 
@@ -20,48 +30,46 @@
    MAIN LAYOUT
 ========================================================= */
 
-.activity-page .sf-layout {
+body.activity-page .sf-layout {
+    display: flex;
+
     width: 100%;
     min-height: 100vh;
-    display: flex;
 }
 
 
 /* =========================================================
-   SIDEBAR — PICTURE 2 STYLE
+   SIDEBAR
 ========================================================= */
 
-.activity-page .sf-side {
+body.activity-page .sf-side {
     position: fixed;
 
     top: 0;
     left: 0;
     bottom: 0;
 
-    width: 250px;
-    min-width: 250px;
+    width: 273px;
 
     display: flex;
     flex-direction: column;
 
+    box-sizing: border-box;
+
     background:
         linear-gradient(
             180deg,
-            #081a31 0%,
-            #07172b 100%
+            #07152c 0%,
+            #081a33 52%,
+            #061326 100%
         );
 
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid rgba(255,255,255,0.06);
 
-    overflow-x: hidden;
-    overflow-y: auto;
+    box-shadow:
+        10px 0 35px rgba(4, 18, 38, 0.10);
 
     z-index: 1000;
-
-    box-sizing: border-box;
-
-    scrollbar-width: thin;
-    scrollbar-color: #263753 transparent;
 }
 
 
@@ -69,85 +77,81 @@
    BRAND
 ========================================================= */
 
-.activity-page .sf-brand {
-    position: relative;
-
-    min-height: 124px;
+body.activity-page .sf-brand {
+    height: 84px;
+    min-height: 84px;
 
     display: flex;
     align-items: center;
 
-    padding: 0 32px;
+    gap: 13px;
+
+    padding: 0 22px;
 
     box-sizing: border-box;
 
-    color: #ffffff;
-
-    font-size: 23px;
-    font-weight: 800;
-
-    letter-spacing: 0.07em;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-
-    flex-shrink: 0;
+    border-bottom:
+        1px solid rgba(255,255,255,0.055);
 }
 
 
-/* SF LOGO */
-
-.activity-page .sf-brand::before {
-    content: "SF";
-
-    width: 62px;
-    height: 62px;
+body.activity-page .sf-brand-mark {
+    width: 43px;
+    height: 43px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    margin-right: 15px;
+    flex: 0 0 43px;
 
-    border-radius: 17px;
+    border-radius: 12px;
 
-    background: linear-gradient(
-        145deg,
-        #3478f6,
-        #2864d7
-    );
+    background:
+        linear-gradient(
+            135deg,
+            #3478f6,
+            #2162dc
+        );
 
     color: #ffffff;
 
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 800;
-
-    letter-spacing: 0;
 
     box-shadow:
-        0 10px 25px rgba(37, 99, 235, 0.30);
+        0 8px 20px rgba(37,99,235,0.32);
 }
 
 
-/* STOCKFLOW NAME + SUBTITLE */
-
-.activity-page .sf-brand {
-    font-size: 0;
+body.activity-page .sf-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 
-.activity-page .sf-brand::after {
-    content: "STOCKFLOW\A INVENTORY SYSTEM";
-
-    white-space: pre;
-
+body.activity-page .sf-brand-text strong {
     color: #ffffff;
 
-    font-size: 19px;
+    font-size: 16px;
+    line-height: 1;
+
     font-weight: 800;
 
-    line-height: 1.65;
+    letter-spacing: 0.10em;
+}
 
-    letter-spacing: 0.055em;
+
+body.activity-page .sf-brand-text span {
+    color: #7185a5;
+
+    font-size: 9px;
+    line-height: 1;
+
+    font-weight: 600;
+
+    letter-spacing: 0.10em;
 }
 
 
@@ -155,48 +159,65 @@
    NAVIGATION
 ========================================================= */
 
-.activity-page .sf-nav {
-    display: flex;
-    flex-direction: column;
+body.activity-page .sf-nav {
+    flex: 1;
 
-    gap: 4px;
+    width: 100%;
 
-    padding: 22px 16px 26px;
+    padding: 18px 12px;
 
     box-sizing: border-box;
+
+    overflow-y: auto;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(255,255,255,0.14)
+        transparent;
 }
 
 
-/* =========================================================
-   NAV LINKS
-========================================================= */
+body.activity-page .sf-nav-section {
+    padding: 13px 12px 7px;
 
-.activity-page .sf-nav a {
+    color: #7083a2;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.16em;
+}
+
+
+body.activity-page .sf-nav-section:first-child {
+    padding-top: 4px;
+}
+
+
+body.activity-page .sf-nav a {
     position: relative;
+
+    min-height: 44px;
 
     display: flex;
     align-items: center;
 
-    min-height: 48px;
+    gap: 13px;
 
-    width: 100%;
+    margin: 3px 0;
 
-    padding: 0 16px;
+    padding: 0 14px;
+
+    border-radius: 10px;
 
     box-sizing: border-box;
 
-    border-radius: 11px;
-
-    color: #91a4bf;
-
-    background: transparent;
+    color: #a4b4cc;
 
     text-decoration: none;
 
-    font-size: 14px;
-    font-weight: 600;
-
-    letter-spacing: 0.01em;
+    font-size: 13px;
+    font-weight: 650;
 
     transition:
         color 0.18s ease,
@@ -205,174 +226,208 @@
 }
 
 
-/* =========================================================
-   NAV ICONS
-========================================================= */
-
-.activity-page .sf-nav a::before {
-    width: 28px;
-
-    margin-right: 12px;
-
-    color: #7086a6;
-
-    font-size: 17px;
-    font-weight: 600;
-
-    text-align: center;
-
-    flex: 0 0 28px;
-
-    transition: color 0.18s ease;
-}
-
-
-/* INDIVIDUAL ICONS */
-
-.activity-page .sf-nav a:nth-child(1)::before {
-    content: "⌂";
-}
-
-.activity-page .sf-nav a:nth-child(2)::before {
-    content: "▦";
-}
-
-.activity-page .sf-nav a:nth-child(3)::before {
-    content: "▣";
-}
-
-.activity-page .sf-nav a:nth-child(4)::before {
-    content: "▤";
-}
-
-.activity-page .sf-nav a:nth-child(5)::before {
-    content: "▰";
-}
-
-.activity-page .sf-nav a:nth-child(6)::before {
-    content: "↑";
-}
-
-.activity-page .sf-nav a:nth-child(7)::before {
-    content: "↓";
-}
-
-.activity-page .sf-nav a:nth-child(8)::before {
-    content: "⇄";
-}
-
-.activity-page .sf-nav a:nth-child(9)::before {
-    content: "▱";
-}
-
-.activity-page .sf-nav a:nth-child(10)::before {
-    content: "◔";
-}
-
-.activity-page .sf-nav a:nth-child(11)::before {
-    content: "●";
-}
-
-
-/* =========================================================
-   HOVER
-========================================================= */
-
-.activity-page .sf-nav a:hover {
+body.activity-page .sf-nav a:hover {
     color: #ffffff;
 
-    background: rgba(255, 255, 255, 0.055);
+    background:
+        rgba(255,255,255,0.045);
+
+    transform: translateX(2px);
 }
 
 
-.activity-page .sf-nav a:hover::before {
-    color: #9eb3d1;
-}
-
-
-/* =========================================================
-   ACTIVE PAGE
-========================================================= */
-
-.activity-page .sf-nav a.active,
-.activity-page .sf-nav a[aria-current="page"] {
+body.activity-page .sf-nav a.active,
+body.activity-page .sf-nav a[aria-current="page"] {
     color: #ffffff;
 
     background:
         linear-gradient(
-            90deg,
-            #2864d7,
-            #2f6ce0
+            135deg,
+            rgba(37,99,235,0.30),
+            rgba(37,99,235,0.15)
         );
 
-    font-weight: 700;
-
     box-shadow:
-        0 8px 20px rgba(37, 99, 235, 0.22);
+        inset 0 1px 0 rgba(255,255,255,0.035);
 }
 
 
-.activity-page .sf-nav a.active::before,
-.activity-page .sf-nav a[aria-current="page"]::before {
+body.activity-page .sf-nav a.active::before,
+body.activity-page .sf-nav a[aria-current="page"]::before {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 7px;
+    bottom: 7px;
+
+    width: 3px;
+
+    border-radius: 0 4px 4px 0;
+
+    background: #4385ff;
+}
+
+
+body.activity-page .sf-nav-icon {
+    width: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #8196b6;
+
+    font-size: 15px;
+
+    flex: 0 0 20px;
+}
+
+
+body.activity-page .sf-nav a:hover .sf-nav-icon,
+body.activity-page .sf-nav a.active .sf-nav-icon {
+    color: #67a0ff;
+}
+
+
+/* =========================================================
+   SIDEBAR FOOTER
+========================================================= */
+
+body.activity-page .sf-side-footer {
+    padding: 12px 13px 14px;
+
+    border-top:
+        1px solid rgba(255,255,255,0.055);
+
+    background:
+        rgba(4,12,27,0.30);
+}
+
+
+body.activity-page .sf-user-card {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 11px;
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,0.055);
+}
+
+
+body.activity-page .sf-user-avatar {
+    width: 39px;
+    height: 39px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 39px;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #3478f6,
+            #2162dc
+        );
+
     color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+
+body.activity-page .sf-user-details {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+body.activity-page .sf-user-details strong {
+    color: #ffffff;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+body.activity-page .sf-user-details span {
+    color: #8395b0;
+
+    font-size: 10px;
+}
+
+
+body.activity-page .sf-logout {
+    width: 100%;
+
+    min-height: 40px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    margin-top: 7px;
+
+    padding: 0 12px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #8fa1bb;
+
+    font: inherit;
+    font-size: 12px;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        color 0.18s ease,
+        background 0.18s ease;
+}
+
+
+body.activity-page .sf-logout:hover {
+    color: #ffffff;
+
+    background:
+        rgba(255,255,255,0.055);
+}
+
+
+body.activity-page .sf-logout-icon {
+    font-size: 16px;
 }
 
 
 /* =========================================================
-   MANAGEMENT SECTION LABEL
-   Appears before Transactions
+   SIDEBAR OVERLAY
 ========================================================= */
 
-.activity-page .sf-nav a:nth-child(8) {
-    margin-top: 25px;
-}
-
-
-.activity-page .sf-nav a:nth-child(8)::after {
-    content: "MANAGEMENT";
-
-    position: absolute;
-
-    left: 16px;
-    bottom: calc(100% + 13px);
-
-    color: #7086a6;
-
-    font-size: 10px;
-    font-weight: 800;
-
-    letter-spacing: 0.18em;
-
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   SYSTEM SECTION LABEL
-   Appears before Profile
-========================================================= */
-
-.activity-page .sf-nav a:nth-child(10) {
-    margin-top: 25px;
-}
-
-
-.activity-page .sf-nav a:nth-child(10)::after {
-    content: "SYSTEM";
-
-    position: absolute;
-
-    left: 16px;
-    bottom: calc(100% + 13px);
-
-    color: #7086a6;
-
-    font-size: 10px;
-    font-weight: 800;
-
-    letter-spacing: 0.18em;
-
-    pointer-events: none;
+body.activity-page .sf-sidebar-overlay {
+    display: none;
 }
 
 
@@ -380,16 +435,24 @@
    MAIN CONTENT
 ========================================================= */
 
-.activity-page .sf-main {
-    width: calc(100% - 250px);
-
+body.activity-page .sf-main {
+    width: calc(100% - 273px);
+    min-width: 0;
     min-height: 100vh;
 
-    margin-left: 250px;
-
-    padding: 0 40px 48px;
+    margin-left: 273px;
 
     box-sizing: border-box;
+
+    padding: 25px 31px 45px;
+
+    background:
+        radial-gradient(
+            circle at 95% 0%,
+            rgba(37,99,235,0.045),
+            transparent 30%
+        ),
+        #f1f4f8;
 }
 
 
@@ -397,68 +460,353 @@
    TOP HEADER
 ========================================================= */
 
-.activity-page .sf-top {
-    min-height: 110px;
+body.activity-page .sf-top {
+    min-height: 68px;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 30px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid #dfe5ed;
+}
+
+
+body.activity-page .sf-breadcrumb {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 7px;
+
+    color: #71839e;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 0.10em;
+}
+
+
+body.activity-page .sf-breadcrumb span {
+    color: #aab6c6;
+
+    font-size: 13px;
+}
+
+
+body.activity-page .sf-title {
+    margin: 0;
+
+    color: #101b31;
+
+    font-size: 27px;
+    line-height: 1.15;
+
+    font-weight: 800;
+
+    letter-spacing: -0.035em;
+}
+
+
+body.activity-page .sf-top .sf-muted {
+    margin: 7px 0 0;
+
+    color: #71819a;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   TOP ACTIONS
+========================================================= */
+
+body.activity-page .sf-top-actions {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+/* =========================================================
+   NOTIFICATION
+========================================================= */
+
+body.activity-page .sf-notification {
+    position: relative;
+}
+
+
+body.activity-page .sf-icon-btn {
+    position: relative;
+
+    width: 43px;
+    height: 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #dce3eb;
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    color: #40516b;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 14px rgba(15,35,65,0.045);
+
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+
+body.activity-page .sf-icon-btn:hover {
+    color: #2563eb;
+
+    border-color: #bcd0ef;
+
+    box-shadow:
+        0 7px 18px rgba(15,35,65,0.08);
+}
+
+
+body.activity-page .sf-bell-icon {
+    font-size: 18px;
+}
+
+
+body.activity-page .sf-notification-dot {
+    position: absolute;
+
+    top: 8px;
+    right: 8px;
+
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+
+    box-shadow:
+        0 0 0 3px #ffffff;
+}
+
+
+/* =========================================================
+   NOTIFICATION PANEL
+========================================================= */
+
+body.activity-page .sf-notification-panel {
+    position: absolute;
+
+    top: 52px;
+    right: 0;
+
+    width: 320px;
+
+    overflow: hidden;
+
+    border: 1px solid #dce3eb;
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 18px 45px rgba(15,35,65,0.15);
+
+    z-index: 1200;
+}
+
+
+body.activity-page .sf-notification-head {
+    height: 52px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    gap: 24px;
+    padding: 0 16px;
 
-    padding: 24px 0;
-
-    box-sizing: border-box;
-
-    border-bottom: 1px solid #dce3ec;
+    border-bottom: 1px solid #edf1f5;
 }
 
 
-.activity-page .sf-title {
-    color: #10203a;
+body.activity-page .sf-notification-head strong {
+    color: #15233b;
 
-    font-size: 32px;
-    font-weight: 750;
-
-    line-height: 1.15;
-
-    letter-spacing: -0.025em;
+    font-size: 13px;
 }
 
 
-.activity-page .sf-top .sf-muted {
-    margin-top: 7px;
+body.activity-page .sf-notification-head button {
+    width: 28px;
+    height: 28px;
 
-    color: #60738f;
+    border: 0;
+    border-radius: 7px;
 
-    font-size: 14px;
+    background: transparent;
+
+    color: #7c8ca3;
+
+    font-size: 18px;
+
+    cursor: pointer;
+}
+
+
+body.activity-page .sf-notification-head button:hover {
+    background: #f3f6fa;
+
+    color: #1d3557;
+}
+
+
+body.activity-page .sf-notification-body {
+    max-height: 300px;
+
+    overflow-y: auto;
+}
+
+
+body.activity-page .sf-notification-empty {
+    padding: 32px 20px;
+
+    color: #8493a8;
+
+    font-size: 12px;
+
+    text-align: center;
 }
 
 
 /* =========================================================
-   MENU BUTTON
+   TOP USER
 ========================================================= */
 
-.activity-page .activity-menu-btn {
+body.activity-page .sf-top-user {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 3px 2px;
+
+    text-decoration: none;
+}
+
+
+body.activity-page .sf-top-avatar {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #3478f6,
+            #2162dc
+        );
+
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    box-shadow:
+        0 7px 17px rgba(37,99,235,0.22);
+}
+
+
+body.activity-page .sf-top-user-info {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+body.activity-page .sf-top-user-info strong {
+    color: #17243a;
+
+    font-size: 12px;
+}
+
+
+body.activity-page .sf-top-user-info span {
+    color: #74849d;
+
+    font-size: 10px;
+}
+
+
+body.activity-page .sf-top-user-arrow {
+    margin-left: 4px;
+
+    color: #7789a3;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+body.activity-page .sf-mobile-menu {
     display: none;
 
-    width: 44px;
-    height: 44px;
+    width: 43px;
+    height: 43px;
 
-    padding: 0;
+    border: 1px solid #dce3eb;
+    border-radius: 11px;
 
-    flex: 0 0 auto;
+    background: #ffffff;
+
+    color: #40516b;
+
+    font-size: 17px;
+
+    cursor: pointer;
 }
 
 
 /* =========================================================
-   ACTIVITY TOOLBAR
+   CONTENT
 ========================================================= */
 
-.activity-page .activity-toolbar {
-    max-width: none;
+body.activity-page .activity-content {
+    padding-top: 20px;
+}
 
-    margin-top: 26px;
+
+/* =========================================================
+   STATUS BAR
+========================================================= */
+
+body.activity-page .activity-status {
+    min-height: 58px;
 
     display: flex;
     align-items: center;
@@ -466,108 +814,196 @@
 
     gap: 20px;
 
-    padding: 20px 24px;
+    margin-bottom: 17px;
+    padding: 0 17px;
 
-    background: #ffffff;
+    border: 1px solid #cfe8d9;
+    border-radius: 13px;
 
-    border: 1px solid #dce3ec;
-    border-radius: 14px;
-
-    box-shadow:
-        0 5px 18px rgba(15, 35, 60, 0.04);
-
-    box-sizing: border-box;
+    background:
+        linear-gradient(
+            90deg,
+            #f4fbf6,
+            #ffffff
+        );
 }
 
 
-.activity-page .activity-toolbar-info {
+body.activity-page .activity-status-left {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+}
+
+
+body.activity-page .activity-status-icon {
+    width: 29px;
+    height: 29px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #e1f6e8;
+
+    color: #16a34a;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+
+body.activity-page .activity-status-left > div:last-child {
     display: flex;
     flex-direction: column;
 
-    gap: 5px;
+    gap: 3px;
 }
 
 
-.activity-page .activity-toolbar-info strong {
-    color: #172b4d;
-
-    font-size: 15px;
-    font-weight: 700;
-}
-
-
-.activity-page .activity-toolbar-info .sf-muted {
-    color: #71829d;
+body.activity-page .activity-status-left strong {
+    color: #176b3b;
 
     font-size: 12px;
 }
 
 
+body.activity-page .activity-status-left span {
+    color: #668171;
+
+    font-size: 10px;
+}
+
+
+body.activity-page .activity-status-badge {
+    padding: 6px 11px;
+
+    border-radius: 999px;
+
+    background: #e6f8ec;
+
+    color: #169447;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.12em;
+}
+
+
 /* =========================================================
-   ACTIVITY TABLE CARD
+   ACTIVITY CARD
 ========================================================= */
 
-.activity-page .activity-table-card {
-    margin-top: 20px;
+body.activity-page .activity-card {
+    margin: 0;
 
-    width: 100%;
+    overflow: hidden;
 
-    padding: 0;
+    border: 1px solid #dfe5ed;
+    border-radius: 17px;
 
     background: #ffffff;
 
-    border: 1px solid #dce3ec;
-    border-radius: 16px;
-
     box-shadow:
-        0 5px 20px rgba(15, 35, 60, 0.05);
-
-    overflow: hidden;
+        0 7px 25px rgba(15,35,65,0.045);
 }
 
 
 /* =========================================================
-   TABLE HEADER
+   CARD HEADER
 ========================================================= */
 
-.activity-page .sf-table-header {
+body.activity-page .activity-card-header {
+    min-height: 105px;
+
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
 
-    padding: 25px 28px;
+    gap: 25px;
 
-    border-bottom: 1px solid #e5eaf0;
+    padding: 22px 23px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #e9edf3;
 }
 
 
-.activity-page .sf-table-header h2 {
+body.activity-page .activity-kicker {
+    margin-bottom: 6px;
+
+    color: #2563eb;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.16em;
+}
+
+
+body.activity-page .activity-card-header h2 {
     margin: 0;
 
-    color: #10203a;
+    color: #142038;
 
-    font-size: 19px;
+    font-size: 18px;
+
+    font-weight: 800;
+
+    letter-spacing: -0.02em;
+}
+
+
+body.activity-page .activity-card-header p {
+    margin: 6px 0 0;
+
+    font-size: 11px;
+}
+
+
+body.activity-page .activity-refresh {
+    min-height: 39px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 14px;
+
+    border: 1px solid #d7e0eb;
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #40536f;
+
+    font-size: 11px;
     font-weight: 700;
+
+    cursor: pointer;
+
+    white-space: nowrap;
 }
 
 
-.activity-page .sf-table-header p {
-    margin: 7px 0 0;
+body.activity-page .activity-refresh:hover {
+    color: #2563eb;
 
-    color: #71829d;
+    border-color: #b9cdf6;
 
-    font-size: 13px;
+    background: #f7faff;
 }
 
 
-/* =========================================================
-   TABLE WRAPPER
-========================================================= */
-
-.activity-page .sf-table-wrapper {
-    width: 100%;
-
-    overflow-x: auto;
+body.activity-page .activity-refresh span {
+    font-size: 15px;
 }
 
 
@@ -575,34 +1011,40 @@
    TABLE
 ========================================================= */
 
-.activity-page .sf-table {
+body.activity-page .sf-table-wrapper {
     width: 100%;
 
-    min-width: 850px;
+    overflow-x: auto;
 
-    border-collapse: collapse;
-
-    font-size: 13px;
+    box-sizing: border-box;
 }
 
 
-/* =========================================================
-   TABLE HEADER
-========================================================= */
+body.activity-page .activity-table {
+    width: 100%;
 
-.activity-page .sf-table thead th {
-    padding: 14px 18px;
+    min-width: 900px;
 
-    background: #f8fafc;
+    border-collapse: collapse;
+}
 
-    color: #64748b;
+
+body.activity-page .activity-table thead {
+    background: #f7f9fc;
+}
+
+
+body.activity-page .activity-table th {
+    padding: 13px 19px;
 
     border-bottom: 1px solid #e2e8f0;
 
-    font-size: 11px;
+    color: #71819a;
+
+    font-size: 9px;
     font-weight: 800;
 
-    letter-spacing: 0.06em;
+    letter-spacing: 0.10em;
 
     text-align: left;
 
@@ -610,45 +1052,189 @@
 }
 
 
-/* =========================================================
-   TABLE BODY
-========================================================= */
-
-.activity-page .sf-table tbody td {
-    padding: 16px 18px;
-
-    color: #334155;
+body.activity-page .activity-table td {
+    padding: 16px 19px;
 
     border-bottom: 1px solid #edf1f5;
 
+    color: #3b4d66;
+
+    font-size: 11px;
+    line-height: 1.5;
+
     vertical-align: middle;
-
-    line-height: 1.45;
 }
 
 
-.activity-page .sf-table tbody tr:last-child td {
-    border-bottom: none;
+body.activity-page .activity-table tbody tr {
+    transition:
+        background 0.15s ease;
 }
 
 
-.activity-page .sf-table tbody tr:hover {
-    background: #f8fafc;
+body.activity-page .activity-table tbody tr:hover {
+    background: #f8fbff;
+}
+
+
+body.activity-page .activity-table tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 
 /* =========================================================
-   EMPTY STATE
+   ACTIVITY ACTION BADGES
 ========================================================= */
 
-.activity-page .sf-table .sf-empty {
-    padding: 42px 20px;
+body.activity-page .activity-action {
+    display: inline-flex;
+    align-items: center;
 
-    color: #7b8ca5;
+    min-height: 25px;
+
+    padding: 0 9px;
+
+    border-radius: 999px;
+
+    background: #edf4ff;
+
+    color: #2563eb;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.04em;
+
+    text-transform: uppercase;
+}
+
+
+body.activity-page .activity-action.is-danger {
+    background: #fff0f0;
+    color: #dc2626;
+}
+
+
+body.activity-page .activity-action.is-warning {
+    background: #fff7e8;
+    color: #d97706;
+}
+
+
+body.activity-page .activity-action.is-success {
+    background: #eaf8ef;
+    color: #15803d;
+}
+
+
+/* =========================================================
+   MODULE / REFERENCE
+========================================================= */
+
+body.activity-page .activity-module {
+    color: #566982;
+
+    font-weight: 650;
+}
+
+
+body.activity-page .activity-reference {
+    color: #2563eb;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+body.activity-page .activity-user {
+    color: #1c2d47;
+
+    font-weight: 650;
+
+    white-space: nowrap;
+}
+
+
+body.activity-page .activity-details {
+    max-width: 310px;
+
+    color: #71819a;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   EMPTY / LOADING
+========================================================= */
+
+body.activity-page .sf-empty {
+    padding: 65px 20px !important;
+
+    color: #8190a6 !important;
 
     text-align: center;
 
-    font-size: 13px;
+    font-size: 11px !important;
+}
+
+
+body.activity-page .activity-loading {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+
+body.activity-page .activity-spinner {
+    width: 16px;
+    height: 16px;
+
+    display: inline-block;
+
+    border: 2px solid #e1e7ef;
+    border-top-color: #2563eb;
+
+    border-radius: 50%;
+
+    animation:
+        activity-spin 0.8s linear infinite;
+}
+
+
+@keyframes activity-spin {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   CARD FOOTER
+========================================================= */
+
+body.activity-page .activity-card-footer {
+    min-height: 47px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 0 19px;
+
+    border-top: 1px solid #edf1f5;
+
+    color: #8997aa;
+
+    font-size: 9px;
+
+    letter-spacing: 0.03em;
 }
 
 
@@ -658,29 +1244,24 @@
 
 @media (max-width: 1000px) {
 
-    .activity-page .sf-side {
-        width: 220px;
-        min-width: 220px;
+    body.activity-page .sf-side {
+        width: 250px;
     }
 
-    .activity-page .sf-main {
-        width: calc(100% - 220px);
+    body.activity-page .sf-main {
+        width: calc(100% - 250px);
 
-        margin-left: 220px;
+        margin-left: 250px;
 
-        padding-left: 28px;
-        padding-right: 28px;
+        padding-left: 24px;
+        padding-right: 24px;
     }
 
-    .activity-page .sf-brand {
-        padding-left: 22px;
-        padding-right: 22px;
+    body.activity-page .sf-top-user-info,
+    body.activity-page .sf-top-user-arrow {
+        display: none;
     }
 
-    .activity-page .sf-nav {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
 }
 
 
@@ -688,114 +1269,185 @@
    RESPONSIVE — MOBILE
 ========================================================= */
 
-@media (max-width: 760px) {
+@media (max-width: 800px) {
 
-    .activity-page .sf-layout {
+    body.activity-page .sf-side {
+        width: 276px;
+
+        transform: translateX(-105%);
+
+        transition:
+            transform 0.25s ease;
+    }
+
+
+    body.activity-page .sf-side.open {
+        transform: translateX(0);
+    }
+
+
+    body.activity-page .sf-sidebar-overlay {
+        position: fixed;
+
+        inset: 0;
+
         display: block;
+
+        background:
+            rgba(4,12,27,0.48);
+
+        opacity: 0;
+        visibility: hidden;
+
+        transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease;
+
+        z-index: 900;
     }
 
 
-    .activity-page .sf-side {
-        left: -270px;
-
-        width: 260px;
-        min-width: 260px;
-
-        transition: left 0.22s ease;
-
-        box-shadow:
-            8px 0 30px rgba(0, 0, 0, 0.20);
+    body.activity-page .sf-sidebar-overlay.open {
+        opacity: 1;
+        visibility: visible;
     }
 
 
-    .activity-page .sf-side.open {
-        left: 0;
-    }
-
-
-    .activity-page .sf-main {
+    body.activity-page .sf-main {
         width: 100%;
 
         margin-left: 0;
 
-        padding:
-            0 20px 36px;
+        padding: 21px 19px 35px;
     }
 
 
-    .activity-page .sf-top {
-        min-height: 86px;
-
-        padding: 18px 0;
-    }
-
-
-    .activity-page .sf-title {
-        font-size: 27px;
-    }
-
-
-    .activity-page .activity-menu-btn {
+    body.activity-page .sf-mobile-menu {
         display: flex;
-
         align-items: center;
         justify-content: center;
     }
 
 
-    .activity-page .activity-toolbar {
-        align-items: flex-start;
-        flex-direction: column;
+    body.activity-page .sf-top {
+        align-items: center;
     }
 
 
-    .activity-page .activity-toolbar .sf-btn {
-        width: 100%;
-    }
-}
-
-
-/* =========================================================
-   RESPONSIVE — SMALL MOBILE
-========================================================= */
-
-@media (max-width: 520px) {
-
-    .activity-page .sf-main {
-        padding-left: 14px;
-        padding-right: 14px;
-    }
-
-
-    .activity-page .sf-title {
+    body.activity-page .sf-title {
         font-size: 24px;
     }
 
 
-    .activity-page .sf-top .sf-muted {
-        font-size: 12px;
+    body.activity-page .sf-top-actions {
+        gap: 7px;
     }
 
 
-    .activity-page .activity-toolbar {
-        padding: 18px;
-        margin-top: 18px;
+    body.activity-page .sf-top-user {
+        display: none;
     }
 
 
-    .activity-page .activity-table-card {
-        margin-top: 16px;
+    body.activity-page .activity-card-header {
+        align-items: flex-start;
 
-        border-radius: 13px;
+        flex-direction: column;
+
+        padding: 20px;
     }
 
 
-    .activity-page .sf-table-header {
-        padding: 21px;
+    body.activity-page .activity-refresh {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+
+    body.activity-page .sf-main {
+        padding: 17px 13px 28px;
     }
 
 
-    .activity-page .sf-table-header h2 {
-        font-size: 18px;
+    body.activity-page .sf-top {
+        padding-bottom: 17px;
     }
+
+
+    body.activity-page .sf-breadcrumb {
+        font-size: 8px;
+    }
+
+
+    body.activity-page .sf-title {
+        font-size: 22px;
+    }
+
+
+    body.activity-page .sf-top .sf-muted {
+        font-size: 10px;
+    }
+
+
+    body.activity-page .sf-icon-btn,
+    body.activity-page .sf-mobile-menu {
+        width: 40px;
+        height: 40px;
+    }
+
+
+    body.activity-page .activity-status {
+        min-height: 65px;
+
+        padding: 0 13px;
+    }
+
+
+    body.activity-page .activity-status-badge {
+        display: none;
+    }
+
+
+    body.activity-page .activity-card {
+        border-radius: 14px;
+    }
+
+
+    body.activity-page .activity-card-header {
+        padding: 19px;
+    }
+
+
+    body.activity-page .activity-card-header h2 {
+        font-size: 17px;
+    }
+
+
+    body.activity-page .activity-card-footer {
+        padding: 0 15px;
+    }
+
+
+    body.activity-page .activity-card-footer span:last-child {
+        display: none;
+    }
+
+
+    body.activity-page .sf-notification-panel {
+        position: fixed;
+
+        top: 72px;
+        left: 13px;
+        right: 13px;
+
+        width: auto;
+    }
+
 }
