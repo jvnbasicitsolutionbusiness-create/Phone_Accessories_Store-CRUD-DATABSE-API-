@@ -1,424 +1,499 @@
 /* =========================================================
-   STOCKFLOW — MODULES.CSS
-   MASTER MODULE STYLESHEET
-
-   Shared architecture:
-   Dashboard
-   Inventory Dashboard
-   Products
-   Inventory
-   Categories
-   Suppliers
-   Stock In
-   Stock Out
-   Transactions
-   Activity Log
-   Profile
-   Settings
-
-   Design direction:
-   - Picture 2 style
-   - Professional inventory dashboard
-   - Dark navy sidebar
-   - Blue active navigation
-   - Clean white cards
-   - Soft shadows
-   - Responsive layout
-   - Page-specific sections are scoped
+   STOCKFLOW — TRANSACTIONS PAGE
+   FINAL LAYOUT / SIDEBAR FIX
+   Prevent sidebar from covering transaction content
 ========================================================= */
 
-
-/* =========================================================
-   01. MODULE VARIABLES
-========================================================= */
-
-:root {
-    --sf-blue: #2f6df6;
-    --sf-blue-dark: #245fe0;
-    --sf-blue-soft: #eaf1ff;
-
-    --sf-navy: #07182d;
-    --sf-navy-2: #081a31;
-    --sf-navy-3: #061426;
-
-    --sf-sidebar-text: #9aabc4;
-    --sf-sidebar-muted: #7084a3;
-    --sf-sidebar-line: rgba(255, 255, 255, 0.07);
-
-    --sf-bg: #f4f7fb;
-    --sf-card: #ffffff;
-
-    --sf-text: #10203a;
-    --sf-text-2: #172b4d;
-    --sf-muted: #71829d;
-
-    --sf-line: #e2e8f0;
-    --sf-line-soft: #edf1f6;
-
-    --sf-success: #15803d;
-    --sf-success-bg: #eaf7ef;
-
-    --sf-warning: #b45309;
-    --sf-warning-bg: #fff7e8;
-
-    --sf-danger: #b42318;
-    --sf-danger-bg: #fff3f2;
-
-    --sf-info: #2563eb;
-    --sf-info-bg: #eef4ff;
-
-    --sf-shadow:
-        0 10px 30px rgba(15, 35, 65, 0.055);
-
-    --sf-shadow-hover:
-        0 14px 34px rgba(15, 35, 65, 0.085);
-
-    --sf-radius: 16px;
-    --sf-radius-sm: 10px;
-
-    --sf-sidebar-width: 270px;
-}
-
-
-/* =========================================================
-   02. MODULE BASE
-========================================================= */
-
-html {
-    min-height: 100%;
-}
+/* ---------------------------------------------------------
+   GLOBAL TRANSACTION LAYOUT
+--------------------------------------------------------- */
 
 body {
-    min-height: 100vh;
-    margin: 0;
     overflow-x: hidden;
-    background: var(--sf-bg);
-    color: var(--sf-text);
-    font-family:
-        Inter,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
 }
 
 
-/* =========================================================
-   03. MAIN STOCKFLOW LAYOUT
-========================================================= */
+/* ---------------------------------------------------------
+   SIDEBAR
+--------------------------------------------------------- */
 
-.sf-layout {
-    width: 100%;
-    min-height: 100vh;
-
-    display: flex;
-    align-items: stretch;
-}
-
-
-/* =========================================================
-   04. STOCKFLOW SIDEBAR
-   Picture 2 inspired
-========================================================= */
-
-.sf-side {
+.sidebar {
     position: fixed;
-
     top: 0;
     left: 0;
-    bottom: 0;
 
-    width: var(--sf-sidebar-width);
-    min-width: var(--sf-sidebar-width);
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+
+    height: 100vh;
 
     z-index: 1000;
-
-    display: flex;
-    flex-direction: column;
 
     box-sizing: border-box;
 
     overflow-x: hidden;
     overflow-y: auto;
-
-    background:
-        linear-gradient(
-            180deg,
-            var(--sf-navy) 0%,
-            var(--sf-navy-2) 48%,
-            var(--sf-navy-3) 100%
-        );
-
-    border-right:
-        1px solid rgba(255, 255, 255, 0.045);
-
-    box-shadow:
-        14px 0 40px rgba(4, 15, 30, 0.10);
-
-    scrollbar-width: thin;
-    scrollbar-color:
-        rgba(148, 163, 184, 0.22)
-        transparent;
 }
 
 
-/* SIDEBAR SCROLLBAR */
+/* ---------------------------------------------------------
+   MAIN CONTENT
+--------------------------------------------------------- */
 
-.sf-side::-webkit-scrollbar {
-    width: 6px;
+.main-content {
+    position: relative;
+
+    margin-left: 280px;
+
+    width: calc(100% - 280px);
+    min-width: 0;
+
+    box-sizing: border-box;
+
+    overflow-x: hidden;
 }
 
-.sf-side::-webkit-scrollbar-track {
-    background: transparent;
+
+/* ---------------------------------------------------------
+   TOPBAR
+--------------------------------------------------------- */
+
+.main-content .topbar {
+    width: 100%;
+    box-sizing: border-box;
+
+    min-height: 82px;
 }
 
-.sf-side::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.20);
-    border-radius: 999px;
+
+/* ---------------------------------------------------------
+   PAGE CONTENT
+--------------------------------------------------------- */
+
+.main-content .page-content {
+    width: 100%;
+    max-width: none;
+
+    box-sizing: border-box;
+
+    padding: 28px 32px 40px;
+}
+
+
+/* ---------------------------------------------------------
+   TRANSACTION CONTENT CARDS
+--------------------------------------------------------- */
+
+.main-content .content-card,
+.main-content .stats-grid,
+.main-content .info-panel,
+.main-content .transaction-card,
+.main-content .transactions-card {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+
+/* ---------------------------------------------------------
+   TRANSACTION TABLE
+--------------------------------------------------------- */
+
+.main-content .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    box-sizing: border-box;
+}
+
+.main-content .data-table {
+    width: 100%;
+    min-width: 900px;
+
+    border-collapse: collapse;
+}
+
+
+/* ---------------------------------------------------------
+   TRANSACTION TOOLBAR
+--------------------------------------------------------- */
+
+.main-content .table-toolbar {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    flex-wrap: wrap;
+
+    box-sizing: border-box;
+}
+
+.main-content .search-box {
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.main-content .filter-group {
+    flex: 0 0 auto;
+}
+
+
+/* ---------------------------------------------------------
+   TRANSACTION STATS
+--------------------------------------------------------- */
+
+.main-content .stats-grid {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 20px;
+}
+
+.main-content .stat-card {
+    min-width: 0;
+}
+
+
+/* ---------------------------------------------------------
+   PREVENT LONG TEXT FROM BREAKING LAYOUT
+--------------------------------------------------------- */
+
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.main-content p,
+.main-content span,
+.main-content td,
+.main-content th {
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE SIDEBAR
+--------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+
+    .sidebar {
+        width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+    }
+
+    .main-content {
+        margin-left: 260px;
+        width: calc(100% - 260px);
+    }
+
+    .main-content .stats-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE / TABLET
+--------------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        width: 280px;
+        min-width: 280px;
+        max-width: 280px;
+
+        transform: translateX(-100%);
+
+        transition:
+            transform 0.25s ease;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+
+    .main-content .page-content {
+        padding: 22px 18px 32px;
+    }
+
+
+    .main-content .stats-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .main-content .table-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .main-content .search-box {
+        width: 100%;
+        flex: none;
+    }
+
+
+    .main-content .filter-group {
+        width: 100%;
+    }
+
+
+    .main-content .filter-group select {
+        width: 100%;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   SMALL MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 480px) {
+
+    .main-content .page-content {
+        padding: 18px 14px 28px;
+    }
+
+
+    .main-content .topbar {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+
+    .main-content .data-table {
+        min-width: 820px;
+    }
 }
 
 
 /* =========================================================
-   05. STOCKFLOW BRAND
+   TRANSACTION PAGE — LAYERING FIX
 ========================================================= */
 
-.sf-brand {
+.sidebar-overlay {
+    z-index: 999;
+}
+
+.sidebar {
+    z-index: 1000;
+}
+
+.main-content {
+    z-index: 1;
+}
+
+.topbar {
+    position: relative;
+    z-index: 10;
+}
+
+
+/* =========================================================
+   IMPORTANT:
+   Never allow the sidebar to become part of the main
+   content width on desktop.
+========================================================= */
+
+@media (min-width: 769px) {
+
+    .sidebar {
+        left: 0;
+        right: auto;
+
+        transform: none !important;
+    }
+
+    .main-content {
+        margin-left: 280px !important;
+        width: calc(100% - 280px) !important;
+    }
+}
+
+/* =========================================================
+   STOCKFLOW — SUPPLIERS MODULE OVERRIDES
+   Scoped only to .suppliers-page
+   Does not affect Transactions or other modules
+========================================================= */
+
+
+/* =========================================================
+   SUPPLIERS PAGE FOUNDATION
+========================================================= */
+
+body.suppliers-page {
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    background: #f4f7fb;
+}
+
+
+/* =========================================================
+   SUPPLIERS LAYOUT
+========================================================= */
+
+body.suppliers-page .sf-layout {
+    display: flex;
+    align-items: stretch;
+
+    width: 100%;
+    min-height: 100vh;
+}
+
+
+/* =========================================================
+   SUPPLIERS SIDEBAR
+========================================================= */
+
+body.suppliers-page .sf-side {
     position: relative;
 
+    width: 276px;
+    min-width: 276px;
+    flex: 0 0 276px;
+
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    background:
+        linear-gradient(
+            180deg,
+            #07172c 0%,
+            #081a31 52%,
+            #061426 100%
+        );
+
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+    box-shadow:
+        12px 0 38px rgba(3, 15, 31, 0.08);
+
+    z-index: 50;
+}
+
+
+/* =========================================================
+   SUPPLIERS BRAND
+========================================================= */
+
+body.suppliers-page .sf-brand {
+    height: 124px;
     min-height: 124px;
 
     display: flex;
     align-items: center;
 
-    padding: 0 30px 0 104px;
+    padding: 0 34px;
 
     box-sizing: border-box;
 
     color: #ffffff;
 
-    font-size: 23px;
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 25px;
     font-weight: 800;
 
-    letter-spacing: 0.055em;
+    letter-spacing: 0.065em;
 
-    border-bottom:
-        1px solid var(--sf-sidebar-line);
-
-    flex-shrink: 0;
-}
-
-
-/* SF LOGO BOX */
-
-.sf-brand::before {
-    content: "SF";
-
-    position: absolute;
-
-    left: 30px;
-    top: 50%;
-
-    width: 62px;
-    height: 62px;
-
-    transform: translateY(-50%);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 17px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #3b7cff,
-            #2463df
-        );
-
-    color: #ffffff;
-
-    font-size: 22px;
-    font-weight: 800;
-
-    letter-spacing: -0.02em;
-
-    box-shadow:
-        0 10px 28px rgba(37, 99, 235, 0.30),
-        inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-
-
-/* INVENTORY SYSTEM LABEL */
-
-.sf-brand::after {
-    content: "INVENTORY SYSTEM";
-
-    position: absolute;
-
-    left: 104px;
-    bottom: 31px;
-
-    color: #7185a5;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    letter-spacing: 0.12em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 
 /* =========================================================
-   06. SIDEBAR NAVIGATION
+   SUPPLIERS NAVIGATION
 ========================================================= */
 
-.sf-nav {
+body.suppliers-page .sf-nav {
+    width: 100%;
+
     display: flex;
     flex-direction: column;
 
-    gap: 5px;
+    gap: 6px;
 
-    padding: 25px 16px 30px;
+    padding: 25px 16px;
 
     box-sizing: border-box;
+
+    overflow-y: auto;
 }
 
 
-/* NAV LINK */
-
-.sf-nav a {
-    position: relative;
-
-    min-height: 46px;
+body.suppliers-page .sf-nav a {
+    min-height: 48px;
 
     display: flex;
     align-items: center;
 
-    box-sizing: border-box;
+    padding: 0 18px;
 
-    padding: 0 18px 0 48px;
+    box-sizing: border-box;
 
     border-radius: 12px;
 
-    color: var(--sf-sidebar-text);
+    color: #91a4c1;
 
     text-decoration: none;
 
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
     font-size: 14px;
-    font-weight: 500;
-
-    line-height: 1.2;
-
-    white-space: nowrap;
+    font-weight: 600;
 
     transition:
-        color 0.18s ease,
         background 0.18s ease,
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
-}
-
-
-/* NAV ICON PLACEHOLDER */
-
-.sf-nav a::before {
-    position: absolute;
-
-    left: 18px;
-
-    width: 20px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: #7890b3;
-
-    font-size: 16px;
-    font-weight: 700;
-
-    transition:
         color 0.18s ease,
         transform 0.18s ease;
 }
 
 
-/* =========================================================
-   NAV ICONS BY DESTINATION
-   Keeps existing HTML unchanged
-========================================================= */
-
-.sf-nav a[href*="dashboard.html"]::before {
-    content: "⌂";
-}
-
-.sf-nav a[href*="inventory-dashboard.html"]::before {
-    content: "▦";
-}
-
-.sf-nav a[href*="products.html"]::before {
-    content: "▣";
-}
-
-.sf-nav a[href="inventory.html"]::before {
-    content: "▤";
-}
-
-.sf-nav a[href*="categories.html"]::before {
-    content: "≋";
-}
-
-.sf-nav a[href*="suppliers.html"]::before {
-    content: "▰";
-}
-
-.sf-nav a[href*="stock-in.html"]::before {
-    content: "↓";
-}
-
-.sf-nav a[href*="stock-out.html"]::before {
-    content: "↑";
-}
-
-.sf-nav a[href*="transactions.html"]::before {
-    content: "⇄";
-}
-
-.sf-nav a[href*="activity.html"]::before {
-    content: "↶";
-}
-
-.sf-nav a[href*="profile.html"]::before {
-    content: "●";
-}
-
-.sf-nav a[href*="settings.html"]::before {
-    content: "⚙";
-}
-
-
-/* HOVER */
-
-.sf-nav a:hover {
+body.suppliers-page .sf-nav a:hover {
     color: #ffffff;
 
-    background:
-        rgba(255, 255, 255, 0.045);
+    background: rgba(255, 255, 255, 0.045);
 
     transform: translateX(2px);
 }
 
-.sf-nav a:hover::before {
-    color: #a9bde0;
 
-    transform: scale(1.06);
-}
-
-
-/* ACTIVE */
-
-.sf-nav a.active,
-.sf-nav a[aria-current="page"] {
+body.suppliers-page .sf-nav a.active,
+body.suppliers-page .sf-nav a[aria-current="page"] {
     color: #ffffff;
 
     font-weight: 700;
@@ -426,56 +501,51 @@ body {
     background:
         linear-gradient(
             135deg,
-            #2f6df6,
-            #2866e7
+            #2d6df6 0%,
+            #2463df 100%
         );
 
     box-shadow:
-        0 9px 25px rgba(37, 99, 235, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.10);
-}
+        0 9px 24px rgba(37, 99, 235, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
-.sf-nav a.active::before,
-.sf-nav a[aria-current="page"]::before {
-    color: #ffffff;
+    transform: none;
 }
 
 
 /* =========================================================
-   07. MAIN CONTENT
+   SUPPLIERS MAIN CONTENT
 ========================================================= */
 
-.sf-main {
-    position: relative;
+body.suppliers-page .sf-main {
+    flex: 1 1 auto;
 
-    width: calc(100% - var(--sf-sidebar-width));
+    width: auto;
     min-width: 0;
-
-    margin-left: var(--sf-sidebar-width);
+    min-height: 100vh;
 
     box-sizing: border-box;
 
-    padding:
-        30px
-        34px
-        50px;
+    padding: 32px 38px 50px;
 
     background:
         radial-gradient(
             circle at 92% 0%,
-            rgba(47, 109, 246, 0.055),
-            transparent 31%
+            rgba(37, 99, 235, 0.055),
+            transparent 30%
         ),
-        var(--sf-bg);
+        #f4f7fb;
 }
 
 
 /* =========================================================
-   08. TOP HEADER
+   SUPPLIERS TOPBAR
 ========================================================= */
 
-.sf-top {
-    min-height: 72px;
+body.suppliers-page .sf-top {
+    width: 100%;
+
+    min-height: 70px;
 
     display: flex;
     align-items: center;
@@ -483,57 +553,58 @@ body {
 
     gap: 24px;
 
-    margin-bottom: 26px;
+    margin: 0 0 26px;
+    padding: 0 0 22px;
 
-    padding-bottom: 22px;
+    box-sizing: border-box;
 
-    border-bottom:
-        1px solid var(--sf-line);
+    border-bottom: 1px solid #e1e7ef;
 }
 
 
-.sf-title {
+body.suppliers-page .sf-title {
     margin: 0;
 
-    color: var(--sf-text);
+    color: #10203a;
 
     font-size: 30px;
     line-height: 1.15;
 
     font-weight: 800;
-
     letter-spacing: -0.025em;
 }
 
 
-.sf-top .sf-muted {
+body.suppliers-page .sf-top .sf-muted {
     margin-top: 7px;
+
+    color: #71829d;
+
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 
 /* =========================================================
-   09. TOPBAR MENU BUTTON
+   SUPPLIERS MENU BUTTON
 ========================================================= */
 
-.sf-top .sf-btn[data-menu] {
+body.suppliers-page .sf-top .sf-btn[data-menu] {
     width: 44px;
     height: 44px;
 
-    min-width: 44px;
-
-    padding: 0;
+    flex: 0 0 44px;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
+    padding: 0;
+
+    border: 1px solid #d7e0eb;
     border-radius: 11px;
 
-    border:
-        1px solid #d8e0eb;
-
     background: #ffffff;
-
     color: #40536f;
 
     box-shadow:
@@ -544,283 +615,153 @@ body {
     transition:
         color 0.18s ease,
         border-color 0.18s ease,
-        background 0.18s ease,
-        transform 0.18s ease;
+        background 0.18s ease;
 }
 
 
-.sf-top .sf-btn[data-menu]:hover {
-    color: var(--sf-blue);
+body.suppliers-page .sf-top .sf-btn[data-menu]:hover {
+    color: #2563eb;
 
     border-color: #b9cdf6;
 
     background: #f8fbff;
-
-    transform: translateY(-1px);
 }
 
 
 /* =========================================================
-   10. MUTED TEXT
+   SUPPLIERS ALERT
 ========================================================= */
 
-.sf-muted {
-    color: var(--sf-muted);
+body.suppliers-page #alert {
+    min-height: 0;
+
+    width: 100%;
+
+    margin: 0 0 18px;
+    padding: 0;
+
+    border-radius: 12px;
 
     font-size: 13px;
+    line-height: 1.5;
+}
 
-    line-height: 1.6;
+
+body.suppliers-page #alert:not(:empty) {
+    padding: 13px 16px;
+
+    border: 1px solid #f0c1c1;
+
+    background: #fff5f5;
+    color: #b42318;
 }
 
 
 /* =========================================================
-   11. CARDS
+   SUPPLIERS CARDS
 ========================================================= */
 
-.sf-card {
+body.suppliers-page .sf-card {
     width: 100%;
 
     margin: 0 0 22px;
-
     padding: 0;
 
     box-sizing: border-box;
 
     overflow: hidden;
 
-    border:
-        1px solid var(--sf-line);
+    border: 1px solid #dfe6ef;
+    border-radius: 18px;
 
-    border-radius: var(--sf-radius);
+    background: #ffffff;
 
-    background: var(--sf-card);
-
-    box-shadow: var(--sf-shadow);
-
-    transition:
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
+    box-shadow:
+        0 10px 30px rgba(15, 35, 65, 0.055);
 }
 
 
 /* =========================================================
-   12. CARD HEADER
+   SUPPLIERS CARD HEADER
 ========================================================= */
 
-.sf-card-head {
+body.suppliers-page .sf-card-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
 
-    gap: 24px;
+    gap: 20px;
 
-    padding:
-        26px
-        30px
-        22px;
+    padding: 26px 30px 23px;
 
-    border-bottom:
-        1px solid var(--sf-line-soft);
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #edf1f6;
 }
 
 
-.sf-card-head h2,
-.sf-card-head h3 {
+body.suppliers-page .sf-card-head h3 {
     margin: 0;
 
-    color: var(--sf-text);
+    color: #10203a;
 
-    font-size: 19px;
-
+    font-size: 20px;
     line-height: 1.3;
 
     font-weight: 750;
-
     letter-spacing: -0.015em;
 }
 
 
-.sf-card-head p {
+body.suppliers-page .sf-card-head .sf-muted {
     margin: 7px 0 0;
-}
 
-
-/* =========================================================
-   13. CARD BODY HELPERS
-========================================================= */
-
-.sf-card-body {
-    padding: 26px 30px 30px;
-}
-
-
-/* =========================================================
-   14. BUTTON SYSTEM
-========================================================= */
-
-.sf-btn {
-    min-height: 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    gap: 7px;
-
-    box-sizing: border-box;
-
-    padding:
-        0
-        16px;
-
-    border:
-        1px solid transparent;
-
-    border-radius: 10px;
-
-    background:
-        linear-gradient(
-            135deg,
-            var(--sf-blue),
-            var(--sf-blue-dark)
-        );
-
-    color: #ffffff;
-
-    font-family: inherit;
+    color: #71829d;
 
     font-size: 13px;
-
-    font-weight: 700;
-
-    line-height: 1;
-
-    text-decoration: none;
-
-    cursor: pointer;
-
-    box-shadow:
-        0 7px 18px rgba(37, 99, 235, 0.18);
-
-    transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease,
-        opacity 0.18s ease;
-}
-
-
-.sf-btn:hover {
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 10px 22px rgba(37, 99, 235, 0.25);
-}
-
-
-.sf-btn:active {
-    transform: translateY(0);
-}
-
-
-.sf-btn.secondary {
-    background: #ffffff;
-
-    color: #40536f;
-
-    border-color: #d5deea;
-
-    box-shadow: none;
-}
-
-
-.sf-btn.secondary:hover {
-    color: var(--sf-blue);
-
-    border-color: #b9cdf6;
-
-    background: #f8fbff;
-
-    box-shadow: none;
-}
-
-
-.sf-btn.danger {
-    background:
-        linear-gradient(
-            135deg,
-            #dc4b42,
-            #c9362e
-        );
-
-    color: #ffffff;
-
-    box-shadow:
-        0 7px 18px rgba(185, 28, 28, 0.16);
-}
-
-
-.sf-btn.danger:hover {
-    box-shadow:
-        0 10px 22px rgba(185, 28, 28, 0.22);
-}
-
-
-.sf-btn:disabled {
-    opacity: 0.58;
-
-    cursor: not-allowed;
-
-    transform: none !important;
-
-    box-shadow: none !important;
+    line-height: 1.6;
 }
 
 
 /* =========================================================
-   15. FORM SYSTEM
+   SUPPLIERS FORM
 ========================================================= */
 
-.sf-form {
+body.suppliers-page #supplierForm {
+    width: 100%;
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+        repeat(2, minmax(0, 1fr));
 
     gap: 16px;
 
     padding: 28px 30px 30px;
+
+    box-sizing: border-box;
 }
 
 
-.sf-form input,
-.sf-form select,
-.sf-form textarea {
+body.suppliers-page #supplierForm input,
+body.suppliers-page #supplierForm select {
     width: 100%;
+    min-width: 0;
+    min-height: 50px;
 
-    min-height: 48px;
+    padding: 0 15px;
 
     box-sizing: border-box;
 
-    padding:
-        0
-        14px;
-
-    border:
-        1px solid #d5deea;
-
-    border-radius: 10px;
+    border: 1px solid #d4deea;
+    border-radius: 11px;
 
     outline: none;
 
     background: #f9fbfd;
-
-    color: var(--sf-text-2);
+    color: #172b4d;
 
     font-family: inherit;
-
     font-size: 14px;
 
     transition:
@@ -830,449 +771,212 @@ body {
 }
 
 
-.sf-form textarea {
-    min-height: 110px;
-
-    padding: 13px 14px;
-
-    resize: vertical;
+body.suppliers-page #supplierForm input::placeholder {
+    color: #8b9bb1;
+    opacity: 1;
 }
 
 
-.sf-form input::placeholder,
-.sf-form textarea::placeholder {
-    color: #8a9ab1;
-}
-
-
-.sf-form input:hover,
-.sf-form select:hover,
-.sf-form textarea:hover {
-    border-color: #b9c7d9;
-
+body.suppliers-page #supplierForm input:hover,
+body.suppliers-page #supplierForm select:hover {
+    border-color: #b8c7d9;
     background: #ffffff;
 }
 
 
-.sf-form input:focus,
-.sf-form select:focus,
-.sf-form textarea:focus {
-    border-color: var(--sf-blue);
-
+body.suppliers-page #supplierForm input:focus,
+body.suppliers-page #supplierForm select:focus {
+    border-color: #2d6df6;
     background: #ffffff;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.11);
+        0 0 0 3px rgba(45, 109, 246, 0.11);
 }
 
 
-.sf-form .full {
+body.suppliers-page #supplierForm .full {
     grid-column: 1 / -1;
 }
 
 
 /* =========================================================
-   16. FORM ROW
+   SUPPLIERS FORM BUTTONS
 ========================================================= */
 
-.sf-row {
-    display: flex;
+body.suppliers-page #supplierForm .sf-row {
+    grid-column: 1 / -1;
 
+    display: flex;
     align-items: center;
 
-    gap: 10px;
+    gap: 11px;
 
-    flex-wrap: wrap;
+    padding-top: 3px;
+}
+
+
+body.suppliers-page #supplierForm .sf-btn {
+    min-height: 46px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 22px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2d6df6 0%,
+            #2463df 100%
+        );
+
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 20px rgba(37, 99, 235, 0.20);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        opacity 0.18s ease;
+}
+
+
+body.suppliers-page #supplierForm .sf-btn:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 11px 25px rgba(37, 99, 235, 0.27);
+}
+
+
+body.suppliers-page #supplierForm .sf-btn.secondary {
+    background: #ffffff;
+
+    color: #40536f;
+
+    border: 1px solid #d5deea;
+
+    box-shadow: none;
+}
+
+
+body.suppliers-page #supplierForm .sf-btn.secondary:hover {
+    color: #2563eb;
+
+    border-color: #b9cdf6;
+
+    background: #f8fbff;
 }
 
 
 /* =========================================================
-   17. TABLE FOUNDATION
+   SUPPLIERS TABLE
 ========================================================= */
 
-.sf-table-wrap,
-.sf-table-wrapper {
+body.suppliers-page .sf-table-wrap {
     width: 100%;
 
     overflow-x: auto;
-    overflow-y: hidden;
-
     box-sizing: border-box;
 }
 
 
-.sf-table-wrap table,
-.sf-table-wrapper table,
-.sf-table {
+body.suppliers-page .sf-table-wrap table {
     width: 100%;
+    min-width: 850px;
 
     border-collapse: collapse;
 }
 
 
-/* Keep existing wide tables scrollable */
-
-.sf-table-wrap table,
-.sf-table-wrapper table {
-    min-width: 800px;
+body.suppliers-page .sf-table-wrap thead {
+    background: #f5f8fc;
 }
 
 
-/* TABLE HEADER */
+body.suppliers-page .sf-table-wrap th {
+    padding: 15px 20px;
 
-.sf-table-wrap thead,
-.sf-table-wrapper thead,
-.sf-table thead {
-    background: #f7f9fc;
-}
+    border-bottom: 1px solid #e1e7ef;
 
-
-.sf-table-wrap th,
-.sf-table-wrap td,
-.sf-table-wrapper th,
-.sf-table-wrapper td,
-.sf-table th,
-.sf-table td {
-    box-sizing: border-box;
-
-    text-align: left;
-
-    border-bottom:
-        1px solid var(--sf-line-soft);
-}
-
-
-.sf-table-wrap th,
-.sf-table-wrapper th,
-.sf-table th {
-    padding:
-        14px
-        18px;
-
-    color: var(--sf-muted);
+    color: #71829d;
 
     font-size: 10px;
-
     font-weight: 800;
 
-    letter-spacing: 0.09em;
+    letter-spacing: 0.10em;
 
+    text-align: left;
     text-transform: uppercase;
 
     white-space: nowrap;
 }
 
 
-.sf-table-wrap td,
-.sf-table-wrapper td,
-.sf-table td {
-    padding:
-        15px
-        18px;
+body.suppliers-page .sf-table-wrap td {
+    padding: 17px 20px;
+
+    border-bottom: 1px solid #edf1f6;
 
     color: #334866;
 
     font-size: 13px;
+    line-height: 1.5;
 
     vertical-align: middle;
 }
 
 
-.sf-table-wrap tbody tr,
-.sf-table-wrapper tbody tr,
-.sf-table tbody tr {
-    transition:
-        background 0.16s ease;
+body.suppliers-page .sf-table-wrap tbody tr {
+    background: #ffffff;
+
+    transition: background 0.16s ease;
 }
 
 
-.sf-table-wrap tbody tr:hover,
-.sf-table-wrapper tbody tr:hover,
-.sf-table tbody tr:hover {
+body.suppliers-page .sf-table-wrap tbody tr:hover {
     background: #f8fbff;
 }
 
 
-.sf-table-wrap tbody tr:last-child td,
-.sf-table-wrapper tbody tr:last-child td,
-.sf-table tbody tr:last-child td {
+body.suppliers-page .sf-table-wrap tbody tr:last-child td {
     border-bottom: 0;
 }
 
 
 /* =========================================================
-   18. GENERIC TABLE ELEMENTS
+   SUPPLIERS TABLE ACTIONS
 ========================================================= */
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+body.suppliers-page .sf-table-wrap td button {
+    min-height: 34px;
 
-
-table button {
-    font-family: inherit;
-}
-
-
-/* =========================================================
-   19. BADGES
-========================================================= */
-
-.sf-badge {
     display: inline-flex;
-
     align-items: center;
     justify-content: center;
 
-    padding:
-        5px
-        10px;
+    margin: 0 5px 0 0;
+    padding: 0 11px;
 
-    border-radius: 999px;
-
-    background: #eaf0f8;
-
-    color: #40536f;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    letter-spacing: 0.04em;
-
-    white-space: nowrap;
-}
-
-
-.sf-badge.success,
-.sf-badge.active {
-    background: var(--sf-success-bg);
-    color: var(--sf-success);
-}
-
-
-.sf-badge.warning,
-.sf-badge.pending {
-    background: var(--sf-warning-bg);
-    color: var(--sf-warning);
-}
-
-
-.sf-badge.danger,
-.sf-badge.inactive {
-    background: var(--sf-danger-bg);
-    color: var(--sf-danger);
-}
-
-
-.sf-badge.info {
-    background: var(--sf-info-bg);
-    color: var(--sf-info);
-}
-
-
-/* =========================================================
-   20. STATUS CLASSES
-========================================================= */
-
-.status,
-[class*="status"] {
-    font-family: inherit;
-}
-
-
-/* =========================================================
-   21. ALERT SYSTEM
-========================================================= */
-
-.sf-alert {
-    min-height: 0;
-
-    margin: 0 0 18px;
-
-    box-sizing: border-box;
-
-    border-radius: 11px;
-
-    font-size: 13px;
-
-    line-height: 1.5;
-}
-
-
-.sf-alert:empty {
-    display: none;
-}
-
-
-.sf-alert.show,
-.sf-alert.ok,
-.sf-alert.err {
-    padding:
-        12px
-        15px;
-}
-
-
-.sf-alert.ok {
-    border:
-        1px solid #b7e2c4;
-
-    background:
-        #effaf2;
-
-    color:
-        #166534;
-}
-
-
-.sf-alert.err {
-    border:
-        1px solid #f0c1bd;
-
-    background:
-        #fff4f3;
-
-    color:
-        #b42318;
-}
-
-
-/* =========================================================
-   22. EMPTY STATES
-========================================================= */
-
-.sf-empty {
-    padding:
-        44px
-        20px !important;
-
-    color: #8a9ab1 !important;
-
-    text-align: center !important;
-
-    font-size: 13px !important;
-
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   23. GENERIC GRID
-========================================================= */
-
-.sf-grid {
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
-
-    gap: 18px;
-}
-
-
-/* =========================================================
-   24. STAT CARDS
-========================================================= */
-
-.sf-stat {
-    min-width: 0;
-
-    padding: 20px;
-
-    box-sizing: border-box;
-
-    border:
-        1px solid var(--sf-line);
-
-    border-radius: 14px;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 7px 24px rgba(15, 35, 65, 0.045);
-}
-
-
-.sf-stat b {
-    display: block;
-
-    margin-top: 8px;
-
-    color: var(--sf-text);
-
-    font-size: 27px;
-
-    line-height: 1.1;
-}
-
-
-/* =========================================================
-   25. GENERIC SEARCH / TOOLBAR
-========================================================= */
-
-.table-toolbar,
-.sf-toolbar {
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 16px;
-
-    flex-wrap: wrap;
-}
-
-
-.search-box {
-    flex:
-        1
-        1
-        260px;
-
-    min-width: 220px;
-}
-
-
-.filter-group {
-    flex: 0 0 auto;
-}
-
-
-/* =========================================================
-   26. ACTION BUTTONS INSIDE TABLES
-========================================================= */
-
-.sf-table-wrap td button,
-.sf-table-wrapper td button,
-.sf-table td button {
-    min-height: 34px;
-
-    padding:
-        0
-        11px;
-
-    margin-right: 5px;
-
-    border:
-        1px solid #d7e0eb;
-
+    border: 1px solid #d5deea;
     border-radius: 8px;
 
     background: #ffffff;
-
     color: #40536f;
 
     font-family: inherit;
-
     font-size: 11px;
-
     font-weight: 700;
 
     cursor: pointer;
@@ -1280,1083 +984,168 @@ table button {
     transition:
         border-color 0.18s ease,
         background 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
+        color 0.18s ease;
 }
 
 
-.sf-table-wrap td button:hover,
-.sf-table-wrapper td button:hover,
-.sf-table td button:hover {
+body.suppliers-page .sf-table-wrap td button:hover {
     border-color: #b9cdf6;
 
     background: #f4f8ff;
-
-    color: var(--sf-blue);
-
-    transform: translateY(-1px);
+    color: #2563eb;
 }
 
 
-.sf-table-wrap td button[data-action="delete"],
-.sf-table-wrap td button.delete,
-.sf-table-wrapper td button[data-action="delete"],
-.sf-table-wrapper td button.delete,
-.sf-table td button[data-action="delete"],
-.sf-table td button.delete {
+body.suppliers-page .sf-table-wrap td button[data-action="delete"],
+body.suppliers-page .sf-table-wrap td button.delete {
     color: #c2413b;
 }
 
 
-.sf-table-wrap td button[data-action="delete"]:hover,
-.sf-table-wrap td button.delete:hover,
-.sf-table-wrapper td button[data-action="delete"]:hover,
-.sf-table-wrapper td button.delete:hover,
-.sf-table td button[data-action="delete"]:hover,
-.sf-table td button.delete:hover {
+body.suppliers-page .sf-table-wrap td button[data-action="delete"]:hover,
+body.suppliers-page .sf-table-wrap td button.delete:hover {
     border-color: #f0b8b5;
 
     background: #fff5f4;
-
     color: #b42318;
 }
 
 
 /* =========================================================
-   27. PAGE — DASHBOARD
+   SUPPLIERS EMPTY STATE
 ========================================================= */
 
-.dashboard-page .sf-main {
-    background:
-        radial-gradient(
-            circle at 92% 0%,
-            rgba(47, 109, 246, 0.055),
-            transparent 31%
-        ),
-        var(--sf-bg);
-}
+body.suppliers-page .sf-empty {
+    padding: 50px 20px !important;
 
+    color: #8a9ab1 !important;
 
-.dashboard-page .sf-card {
-    border-radius: 16px;
+    text-align: center;
+
+    font-size: 13px !important;
 }
 
 
 /* =========================================================
-   28. PAGE — INVENTORY DASHBOARD
+   SUPPLIERS RESPONSIVE LAYOUT
 ========================================================= */
 
-.inventory-dashboard-page .sf-main {
-    background:
-        radial-gradient(
-            circle at 92% 0%,
-            rgba(47, 109, 246, 0.055),
-            transparent 31%
-        ),
-        var(--sf-bg);
-}
-
-
-.inventory-dashboard-page .sf-card {
-    border-radius: 16px;
-}
-
-
-/* =========================================================
-   29. PAGE — PRODUCTS
-========================================================= */
-
-.products-page .sf-card {
-    border-radius: 16px;
-}
-
-
-.products-page .sf-form {
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-}
-
-
-/* =========================================================
-   30. PAGE — INVENTORY
-========================================================= */
-
-.inventory-page .sf-card {
-    border-radius: 16px;
-}
-
-
-.inventory-page .sf-table-wrap,
-.inventory-page .sf-table-wrapper {
-    overflow-x: auto;
-}
-
-
-/* =========================================================
-   31. PAGE — CATEGORIES
-========================================================= */
-
-.categories-page .sf-card {
-    border-radius: 16px;
-}
-
-
-.categories-page .sf-form {
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-}
-
-
-/* =========================================================
-   32. PAGE — SUPPLIERS
-========================================================= */
-
-.suppliers-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.suppliers-page #supplierForm {
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 16px;
-
-    padding:
-        28px
-        30px
-        30px;
-}
-
-
-.suppliers-page #supplierForm .full {
-    grid-column: 1 / -1;
-}
-
-
-.suppliers-page #supplierForm input,
-.suppliers-page #supplierForm select {
-    min-height: 50px;
-
-    width: 100%;
-
-    box-sizing: border-box;
-}
-
-
-.suppliers-page .sf-table-wrap table {
-    min-width: 850px;
-}
-
-
-/* =========================================================
-   33. PAGE — STOCK IN
-========================================================= */
-
-.stock-in-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.stock-in-page .sf-form {
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-}
-
-
-/* =========================================================
-   34. PAGE — STOCK OUT
-========================================================= */
-
-.stock-out-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.stock-out-page .sf-form {
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-}
-
-
-/* =========================================================
-   35. PAGE — TRANSACTIONS
-========================================================= */
-
-.transactions-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.transactions-page .stats-grid {
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
-
-    gap: 18px;
-}
-
-
-.transactions-page .table-toolbar {
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 16px;
-
-    flex-wrap: wrap;
-}
-
-
-.transactions-page .search-box {
-    flex:
-        1
-        1
-        260px;
-
-    min-width: 220px;
-}
-
-
-.transactions-page .filter-group {
-    flex: 0 0 auto;
-}
-
-
-.transactions-page .table-wrapper {
-    width: 100%;
-
-    overflow-x: auto;
-}
-
-
-.transactions-page .data-table {
-    width: 100%;
-
-    min-width: 900px;
-
-    border-collapse: collapse;
-}
-
-
-/* =========================================================
-   36. PAGE — ACTIVITY LOG
-========================================================= */
-
-.activity-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.activity-page .activity-toolbar {
-    min-height: 76px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding:
-        18px
-        22px;
-}
-
-
-.activity-page .activity-toolbar-info {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 4px;
-}
-
-
-.activity-page .activity-toolbar-info strong {
-    color: var(--sf-text);
-
-    font-size: 14px;
-
-    font-weight: 750;
-}
-
-
-.activity-page .activity-table-card {
-    overflow: hidden;
-}
-
-
-.activity-page .sf-table-wrapper {
-    overflow-x: auto;
-}
-
-
-.activity-page .sf-table {
-    min-width: 850px;
-}
-
-
-/* =========================================================
-   37. PAGE — PROFILE
-========================================================= */
-
-.profile-page .sf-card {
-    border-radius: 17px;
-}
-
-
-.profile-page .profile-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 0;
-
-    padding: 8px 30px 30px;
-}
-
-
-.profile-page .profile-item {
-    min-width: 0;
-
-    padding:
-        22px
-        18px;
-
-    border-bottom:
-        1px solid var(--sf-line-soft);
-}
-
-
-.profile-page .profile-item:nth-last-child(-n + 2) {
-    border-bottom: 0;
-}
-
-
-.profile-page .profile-item small {
-    display: block;
-
-    margin-bottom: 8px;
-
-    color: #8292a9;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    letter-spacing: 0.10em;
-}
-
-
-.profile-page .profile-item h3 {
-    margin: 0;
-
-    color: var(--sf-text);
-
-    font-size: 15px;
-
-    font-weight: 700;
-
-    line-height: 1.5;
-
-    overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   38. PAGE — SETTINGS
-========================================================= */
-
-.settings-page .settings-content {
-    width: 100%;
-
-    max-width: 1100px;
-
-    margin: 0 auto;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 22px;
-}
-
-
-.settings-page .settings-card {
-    width: 100%;
-
-    box-sizing: border-box;
-}
-
-
-.settings-page .settings-form {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 24px;
-
-    padding:
-        28px
-        30px
-        30px;
-}
-
-
-.settings-page .settings-field {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 8px;
-
-    max-width: 680px;
-}
-
-
-.settings-page .settings-field label {
-    color: var(--sf-text-2);
-
-    font-size: 14px;
-
-    font-weight: 700;
-}
-
-
-.settings-page .settings-help {
-    color: var(--sf-muted);
-
-    font-size: 12px;
-
-    line-height: 1.55;
-}
-
-
-.settings-page .settings-field input,
-.settings-page .settings-field select {
-    width: 100%;
-
-    min-height: 48px;
-
-    box-sizing: border-box;
-
-    padding:
-        0
-        14px;
-
-    border:
-        1px solid #cbd5e1;
-
-    border-radius: 10px;
-
-    background: #ffffff;
-
-    color: var(--sf-text-2);
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    outline: none;
-}
-
-
-.settings-page .settings-field input:focus,
-.settings-page .settings-field select:focus {
-    border-color: var(--sf-blue);
-
-    box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-
-.settings-page .settings-field input[type="number"] {
-    max-width: 260px;
-}
-
-
-.settings-page .settings-field select {
-    max-width: 420px;
-
-    cursor: pointer;
-}
-
-
-.settings-page .settings-actions {
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding-top: 4px;
-}
-
-
-.settings-page .settings-actions .sf-btn {
-    min-width: 150px;
-}
-
-
-.settings-page .settings-message {
-    min-height: 20px;
-
-    margin:
-        0
-        30px
-        24px;
-
-    font-size: 13px;
-
-    line-height: 1.5;
-}
-
-
-.settings-page .settings-message:empty {
-    display: none;
-}
-
-
-.settings-page .settings-message.success {
-    color: var(--sf-success);
-}
-
-
-.settings-page .settings-message.error {
-    color: var(--sf-danger);
-}
-
-
-.settings-page .session-card {
-    margin-bottom: 0;
-}
-
-
-.settings-page .session-content {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 24px;
-
-    padding:
-        26px
-        30px
-        30px;
-}
-
-
-.settings-page .session-info {
-    min-width: 0;
-}
-
-
-.settings-page .session-info strong {
-    display: block;
-
-    color: var(--sf-text-2);
-
-    font-size: 15px;
-
-    font-weight: 700;
-}
-
-
-.settings-page .session-info p {
-    margin:
-        7px
-        0
-        0;
-
-    max-width: 650px;
-
-    color: var(--sf-muted);
-
-    font-size: 13px;
-
-    line-height: 1.6;
-}
-
-
-.settings-page .session-content .sf-btn.danger {
-    flex:
-        0
-        0
-        auto;
-
-    min-width: 110px;
-}
-
-
-/* =========================================================
-   39. LONG TEXT PROTECTION
-========================================================= */
-
-.sf-main h1,
-.sf-main h2,
-.sf-main h3,
-.sf-main h4,
-.sf-main p,
-.sf-main span,
-.sf-main td,
-.sf-main th {
-    max-width: 100%;
-
-    overflow-wrap: break-word;
-}
-
-
-/* =========================================================
-   40. FOCUS ACCESSIBILITY
-========================================================= */
-
-.sf-nav a:focus-visible,
-.sf-btn:focus-visible,
-.sf-form input:focus-visible,
-.sf-form select:focus-visible,
-.sf-form textarea:focus-visible {
-    outline:
-        3px solid rgba(47, 109, 246, 0.28);
-
-    outline-offset: 2px;
-}
-
-
-/* =========================================================
-   41. TABLET
-========================================================= */
-
-@media (max-width: 1100px) {
-
-    :root {
-        --sf-sidebar-width: 245px;
+@media (max-width: 900px) {
+
+    body.suppliers-page .sf-side {
+        width: 260px;
+        min-width: 260px;
+        flex-basis: 260px;
     }
 
-
-    .sf-main {
-        padding:
-            26px
-            26px
-            42px;
+    body.suppliers-page .sf-main {
+        padding: 26px 24px 42px;
     }
 
-
-    .sf-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+    body.suppliers-page #supplierForm {
+        grid-template-columns: 1fr;
     }
 
-
-    .transactions-page .stats-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+    body.suppliers-page #supplierForm .full,
+    body.suppliers-page #supplierForm .sf-row {
+        grid-column: auto;
     }
-
-
-    .sf-form {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
 }
 
-
-/* =========================================================
-   42. MOBILE SIDEBAR / MAIN
-========================================================= */
 
 @media (max-width: 800px) {
 
-    :root {
-        --sf-sidebar-width: 270px;
+    body.suppliers-page .sf-layout {
+        display: block;
     }
 
+    body.suppliers-page .sf-side {
+        position: fixed;
 
-    .sf-side {
-        width: 270px;
-        min-width: 270px;
+        top: 0;
+        left: 0;
+        bottom: 0;
 
-        transform: translateX(-100%);
+        width: 280px;
+        min-width: 280px;
+        height: 100vh;
 
-        transition:
-            transform 0.25s ease;
+        transform: translateX(-105%);
+
+        transition: transform 0.25s ease;
+
+        z-index: 1000;
     }
 
-
-    .sf-side.open {
+    body.suppliers-page .sf-side.open {
         transform: translateX(0);
     }
 
-
-    .sf-main {
+    body.suppliers-page .sf-main {
         width: 100%;
+        min-height: 100vh;
 
-        margin-left: 0;
-
-        padding:
-            22px
-            20px
-            36px;
+        padding: 22px 20px 40px;
     }
 
-
-    .sf-top {
-        min-height: 62px;
-
-        margin-bottom: 22px;
-
-        padding-bottom: 18px;
-    }
-
-
-    .sf-title {
+    body.suppliers-page .sf-title {
         font-size: 27px;
     }
 
-
-    .sf-card-head {
-        padding:
-            23px
-            22px
-            20px;
-    }
-
-
-    .sf-form {
+    body.suppliers-page #supplierForm {
         grid-template-columns: 1fr;
 
-        padding:
-            23px
-            22px
-            24px;
+        padding: 24px 22px 26px;
     }
 
-
-    .sf-form .full {
+    body.suppliers-page #supplierForm .full,
+    body.suppliers-page #supplierForm .sf-row {
         grid-column: auto;
     }
-
-
-    .sf-grid {
-        grid-template-columns: 1fr;
-    }
-
-
-    .transactions-page .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-
-    .transactions-page .table-toolbar {
-        align-items: stretch;
-
-        flex-direction: column;
-    }
-
-
-    .transactions-page .search-box {
-        width: 100%;
-
-        flex: none;
-    }
-
-
-    .transactions-page .filter-group {
-        width: 100%;
-    }
-
-
-    .transactions-page .filter-group select {
-        width: 100%;
-    }
-
-
-    .activity-page .activity-toolbar {
-        align-items: flex-start;
-
-        flex-direction: column;
-    }
-
-
-    .activity-page .activity-toolbar .sf-btn {
-        width: 100%;
-    }
-
-
-    .profile-page .profile-grid {
-        grid-template-columns: 1fr;
-
-        padding:
-            4px
-            22px
-            22px;
-    }
-
-
-    .profile-page .profile-item {
-        padding:
-            20px
-            10px;
-    }
-
-
-    .profile-page .profile-item:nth-last-child(-n + 2) {
-        border-bottom:
-            1px solid var(--sf-line-soft);
-    }
-
-
-    .profile-page .profile-item:last-child {
-        border-bottom: 0;
-    }
-
-
-    .settings-page .settings-content {
-        max-width: none;
-    }
-
-
-    .settings-page .settings-form {
-        padding:
-            23px
-            22px
-            24px;
-    }
-
-
-    .settings-page .settings-field,
-    .settings-page .settings-field input,
-    .settings-page .settings-field select {
-        width: 100%;
-
-        max-width: none;
-    }
-
-
-    .settings-page .settings-actions {
-        width: 100%;
-    }
-
-
-    .settings-page .settings-actions .sf-btn {
-        width: 100%;
-    }
-
-
-    .settings-page .session-content {
-        align-items: flex-start;
-
-        flex-direction: column;
-
-        padding:
-            23px
-            22px
-            24px;
-    }
-
-
-    .settings-page .session-content .sf-btn.danger {
-        width: 100%;
-    }
-
 }
 
-
-/* =========================================================
-   43. SMALL MOBILE
-========================================================= */
 
 @media (max-width: 520px) {
 
-    .sf-main {
-        padding:
-            18px
-            14px
-            30px;
+    body.suppliers-page .sf-main {
+        padding: 18px 14px 30px;
     }
 
-
-    .sf-top {
-        gap: 14px;
-    }
-
-
-    .sf-title {
+    body.suppliers-page .sf-title {
         font-size: 24px;
     }
 
+    body.suppliers-page .sf-top {
+        min-height: 58px;
 
-    .sf-top .sf-muted {
-        font-size: 12px;
+        gap: 14px;
+
+        padding-bottom: 17px;
     }
 
-
-    .sf-top .sf-btn[data-menu] {
-        width: 42px;
-        height: 42px;
-
-        min-width: 42px;
-    }
-
-
-    .sf-card {
-        border-radius: 14px;
-    }
-
-
-    .sf-card-head {
-        padding:
-            20px
-            18px
-            18px;
-    }
-
-
-    .sf-card-head h2,
-    .sf-card-head h3 {
-        font-size: 18px;
-    }
-
-
-    .sf-form {
-        padding:
-            20px
-            18px
-            22px;
-    }
-
-
-    .sf-btn {
-        min-height: 42px;
-    }
-
-
-    .sf-nav {
-        padding-left: 14px;
-        padding-right: 14px;
-    }
-
-
-    .sf-brand {
-        min-height: 108px;
-
-        padding-left: 92px;
-    }
-
-
-    .sf-brand::before {
-        left: 24px;
-
-        width: 56px;
-        height: 56px;
-
+    body.suppliers-page .sf-card {
         border-radius: 15px;
     }
 
-
-    .sf-brand::after {
-        left: 92px;
-
-        bottom: 25px;
-
-        font-size: 9px;
+    body.suppliers-page .sf-card-head {
+        padding: 21px 20px;
     }
 
-
-    .sf-brand {
-        font-size: 21px;
+    body.suppliers-page .sf-card-head h3 {
+        font-size: 18px;
     }
 
-
-    .sf-nav a {
-        min-height: 45px;
-
-        font-size: 14px;
+    body.suppliers-page #supplierForm {
+        padding: 20px;
+        gap: 14px;
     }
 
-
-    .settings-page .settings-form {
-        padding:
-            20px
-            18px
-            22px;
+    body.suppliers-page #supplierForm .sf-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-
-    .settings-page .settings-message {
-        margin-left: 18px;
-        margin-right: 18px;
+    body.suppliers-page #supplierForm .sf-btn {
+        width: 100%;
     }
-
-
-    .profile-page .profile-grid {
-        padding-left: 18px;
-        padding-right: 18px;
-    }
-
-}
-
-
-/* =========================================================
-   44. VERY SMALL MOBILE
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .sf-main {
-        padding:
-            16px
-            12px
-            26px;
-    }
-
-
-    .sf-title {
-        font-size: 22px;
-    }
-
-
-    .sf-brand {
-        padding-left: 84px;
-
-        font-size: 19px;
-    }
-
-
-    .sf-brand::before {
-        left: 20px;
-
-        width: 52px;
-        height: 52px;
-    }
-
-
-    .sf-brand::after {
-        left: 84px;
-    }
-
-
-    .sf-nav a {
-        padding-left: 44px;
-
-        font-size: 13px;
-    }
-
-
-    .sf-nav a::before {
-        left: 15px;
-    }
-
 }
