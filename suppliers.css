@@ -1,23 +1,42 @@
 /* =========================================================
-   STOCKFLOW — SHARED DASHBOARD NAVIGATION
-   Canonical Sidebar UI
-   Used by Dashboard / Products / Inventory / Suppliers /
-   Categories / Stock In / Stock Out / Transactions / etc.
+   STOCKFLOW — SUPPLIERS PAGE
+   Professional Dashboard-Style Module UI
    ========================================================= */
 
 
 /* =========================================================
-   GLOBAL LAYOUT
+   PAGE VARIABLES
    ========================================================= */
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-}
+.suppliers-page {
+    --sf-blue: #2563eb;
+    --sf-blue-dark: #1d4ed8;
+    --sf-blue-soft: #eff6ff;
 
-body {
-    min-height: 100vh;
+    --sf-navy: #111827;
+    --sf-text: #172033;
+    --sf-text-muted: #6b7688;
+    --sf-text-light: #8b95a5;
+
+    --sf-border: #e4e9f0;
+    --sf-border-light: #edf0f4;
+
+    --sf-bg: #f3f5f9;
+    --sf-card: #ffffff;
+
+    --sf-success: #16a34a;
+    --sf-success-soft: #ecfdf3;
+
+    --sf-danger: #dc2626;
+    --sf-danger-soft: #fef2f2;
+
+    --sf-warning: #d97706;
+    --sf-warning-soft: #fff7ed;
+
+    --sf-radius: 10px;
+    --sf-radius-small: 7px;
+
+    color: var(--sf-text);
 }
 
 
@@ -25,310 +44,353 @@ body {
    MAIN CONTENT
    ========================================================= */
 
-.main-content {
-    margin-left: 272px;
-
-    min-height: 100vh;
-
-    background: #f3f5f9;
-
-    transition:
-        margin-left 0.2s ease;
+.suppliers-page .main-content {
+    background: var(--sf-bg);
 }
 
 
 /* =========================================================
-   SIDEBAR
+   TOPBAR
    ========================================================= */
 
-.sidebar {
-    position: fixed;
-
+.suppliers-page .topbar {
+    position: sticky;
     top: 0;
-    left: 0;
-    bottom: 0;
 
-    width: 272px;
+    z-index: 900;
 
-    display: flex;
-    flex-direction: column;
-
-    background: #111827;
-    color: #ffffff;
-
-    z-index: 1000;
-
-    overflow: hidden;
-}
-
-
-/* =========================================================
-   SIDEBAR BRAND
-   ========================================================= */
-
-.sidebar-brand {
-    height: 76px;
-
-    flex: 0 0 76px;
+    min-height: 76px;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
 
-    padding: 0 22px;
+    padding: 0 30px;
 
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.96);
+
+    border-bottom: 1px solid var(--sf-border);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
-.brand-logo {
-    width: 38px;
-    height: 38px;
 
-    flex: 0 0 38px;
+/* =========================================================
+   TOPBAR LEFT
+   ========================================================= */
 
-    display: grid;
-    place-items: center;
+.suppliers-page .topbar-left {
+    min-width: 0;
 
-    border-radius: 9px;
-
-    background: #2563eb;
-
-    color: #ffffff;
-
-    font-size: 12px;
-    font-weight: 800;
-
-    letter-spacing: -0.03em;
-}
-
-.brand-text {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+}
 
-    margin-left: 11px;
-
+.suppliers-page .page-heading {
     min-width: 0;
 }
 
-.brand-text strong {
-    color: #ffffff;
+.suppliers-page .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 7px;
 
-    font-size: 15px;
-    line-height: 1.2;
+    margin-bottom: 5px;
 
-    font-weight: 800;
+    color: #8a94a4;
 
-    letter-spacing: -0.02em;
-}
+    font-size: 10px;
+    line-height: 1;
 
-.brand-text small {
-    margin-top: 3px;
-
-    color: #8d98aa;
-
-    font-size: 9px;
-    line-height: 1.2;
-
-    font-weight: 600;
+    font-weight: 700;
 
     letter-spacing: 0.02em;
 }
 
-
-/* =========================================================
-   SIDEBAR NAV
-   ========================================================= */
-
-.sidebar-nav {
-    flex: 1;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    padding: 18px 12px 12px;
-
-    scrollbar-width: thin;
-    scrollbar-color: #2c3545 transparent;
+.suppliers-page .breadcrumb span {
+    color: #b5bdc9;
 }
 
-.sidebar-nav::-webkit-scrollbar {
-    width: 5px;
-}
+.suppliers-page .page-heading h1 {
+    margin: 0;
 
-.sidebar-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
+    color: var(--sf-navy);
 
-.sidebar-nav::-webkit-scrollbar-thumb {
-    background: #2c3545;
-    border-radius: 10px;
-}
-
-
-/* =========================================================
-   NAV SECTION LABEL
-   ========================================================= */
-
-.nav-section-title {
-    margin: 14px 11px 7px;
-
-    color: #687487;
-
-    font-size: 9px;
+    font-size: 21px;
     line-height: 1.2;
 
     font-weight: 800;
 
-    letter-spacing: 0.11em;
-
-    text-transform: uppercase;
+    letter-spacing: -0.035em;
 }
 
-.nav-section-title:first-child {
-    margin-top: 2px;
+.suppliers-page .page-heading p {
+    margin: 5px 0 0;
+
+    color: var(--sf-text-muted);
+
+    font-size: 11px;
+    line-height: 1.45;
+
+    font-weight: 500;
 }
 
 
 /* =========================================================
-   NAV ITEM
+   TOPBAR RIGHT
    ========================================================= */
 
-.nav-item {
-    position: relative;
-
-    height: 43px;
-
+.suppliers-page .topbar-right {
     display: flex;
     align-items: center;
 
-    margin: 2px 0;
+    gap: 14px;
 
-    padding: 0 12px;
+    margin-left: 20px;
+}
 
+
+/* =========================================================
+   CONNECTION BADGE
+   ========================================================= */
+
+.suppliers-page .connection-badge {
+    height: 31px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 0 10px;
+
+    border: 1px solid #dcefe4;
     border-radius: 7px;
 
-    color: #aeb7c6;
+    background: #f5fbf7;
 
-    text-decoration: none;
+    color: #4d735d;
 
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.suppliers-page .connection-dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    box-shadow:
+        0 0 0 3px rgba(34, 197, 94, 0.10);
+}
+
+
+/* =========================================================
+   NOTIFICATION
+   ========================================================= */
+
+.suppliers-page .notification-wrapper {
+    position: relative;
+}
+
+.suppliers-page .notification-btn {
+    position: relative;
+
+    width: 36px;
+    height: 36px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--sf-border);
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #667286;
+
+    cursor: pointer;
 
     transition:
         background 0.15s ease,
-        color 0.15s ease;
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
-.nav-item i {
-    width: 20px;
+.suppliers-page .notification-btn:hover {
+    background: #f8fafc;
 
-    margin-right: 10px;
+    border-color: #d7dee8;
 
-    color: #7f8a9d;
-
-    font-size: 13px;
-
-    text-align: center;
-
-    transition:
-        color 0.15s ease;
-}
-
-.nav-item span {
-    line-height: 1;
-}
-
-
-/* =========================================================
-   NAV HOVER
-   ========================================================= */
-
-.nav-item:hover {
-    background: rgba(255, 255, 255, 0.055);
-
-    color: #ffffff;
-}
-
-.nav-item:hover i {
-    color: #cbd5e1;
-}
-
-
-/* =========================================================
-   ACTIVE NAV ITEM
-   ========================================================= */
-
-.nav-item.active {
-    background: #2563eb;
-
-    color: #ffffff;
+    color: var(--sf-blue);
 
     box-shadow:
-        0 4px 10px rgba(37, 99, 235, 0.18);
+        0 3px 10px rgba(15, 23, 42, 0.05);
 }
 
-.nav-item.active i {
-    color: #ffffff;
+.suppliers-page .notification-btn i {
+    font-size: 14px;
 }
 
-
-/* =========================================================
-   ACTIVE LEFT INDICATOR
-   ========================================================= */
-
-.nav-item.active::before {
-    content: "";
-
+.suppliers-page .notification-dot {
     position: absolute;
 
-    left: -12px;
+    top: 8px;
+    right: 8px;
 
-    top: 7px;
-    bottom: 7px;
+    width: 5px;
+    height: 5px;
 
-    width: 3px;
+    border: 1px solid #ffffff;
+    border-radius: 50%;
 
-    border-radius: 0 3px 3px 0;
-
-    background: #60a5fa;
+    background: var(--sf-blue);
 }
 
 
 /* =========================================================
-   SIDEBAR FOOTER
+   NOTIFICATION PANEL
    ========================================================= */
 
-.sidebar-footer {
-    flex: 0 0 auto;
+.suppliers-page .notification-panel {
+    position: absolute;
 
-    padding: 12px;
+    top: calc(100% + 10px);
+    right: 0;
 
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    width: 300px;
 
-    background: #111827;
+    overflow: hidden;
+
+    border: 1px solid var(--sf-border);
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 18px 45px rgba(15, 23, 42, 0.13);
+
+    animation: supplierNotificationIn 0.16s ease;
 }
 
+@keyframes supplierNotificationIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
 
-/* =========================================================
-   SIDEBAR USER
-   ========================================================= */
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-.sidebar-user {
-    min-height: 54px;
+.suppliers-page .notification-panel[hidden] {
+    display: none;
+}
+
+.suppliers-page .notification-panel-head {
+    min-height: 57px;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
 
-    padding: 7px 9px;
+    padding: 0 15px;
 
-    margin-bottom: 7px;
-
-    border-radius: 8px;
-
-    background: rgba(255, 255, 255, 0.045);
+    border-bottom: 1px solid var(--sf-border-light);
 }
 
-.sidebar-avatar {
+.suppliers-page .notification-panel-head > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.suppliers-page .notification-panel-head strong {
+    color: var(--sf-navy);
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.suppliers-page .notification-panel-head span {
+    margin-top: 3px;
+
+    color: var(--sf-text-light);
+
+    font-size: 9px;
+    font-weight: 500;
+}
+
+.suppliers-page .notification-panel-head > i {
+    color: #9aa4b3;
+
+    font-size: 13px;
+}
+
+.suppliers-page .notification-empty {
+    padding: 27px 20px 30px;
+
+    text-align: center;
+}
+
+.suppliers-page .notification-empty-icon {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    margin: 0 auto 10px;
+
+    border-radius: 50%;
+
+    background: var(--sf-success-soft);
+
+    color: var(--sf-success);
+
+    font-size: 16px;
+}
+
+.suppliers-page .notification-empty strong {
+    display: block;
+
+    color: var(--sf-navy);
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.suppliers-page .notification-empty p {
+    margin: 5px 0 0;
+
+    color: var(--sf-text-muted);
+
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   TOPBAR USER
+   ========================================================= */
+
+.suppliers-page .topbar-user {
+    display: flex;
+    align-items: center;
+
+    min-width: 0;
+
+    padding-left: 3px;
+}
+
+.suppliers-page .topbar-avatar {
     width: 34px;
     height: 34px;
 
@@ -339,15 +401,15 @@ body {
 
     border-radius: 8px;
 
-    background: #2563eb;
+    background: var(--sf-blue);
 
     color: #ffffff;
 
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
 }
 
-.sidebar-user-info {
+.suppliers-page .topbar-user-info {
     min-width: 0;
 
     display: flex;
@@ -356,24 +418,26 @@ body {
     margin-left: 9px;
 }
 
-.sidebar-user-info strong {
+.suppliers-page .topbar-user-info strong {
+    max-width: 125px;
+
     overflow: hidden;
 
-    color: #f3f4f6;
+    color: var(--sf-navy);
 
     font-size: 10px;
     line-height: 1.3;
 
-    font-weight: 700;
+    font-weight: 800;
 
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.sidebar-user-info span {
+.suppliers-page .topbar-user-info span {
     margin-top: 2px;
 
-    color: #7f8a9d;
+    color: var(--sf-text-light);
 
     font-size: 9px;
     line-height: 1.2;
@@ -383,204 +447,1057 @@ body {
 
 
 /* =========================================================
-   LOGOUT
+   CONNECTION MESSAGE
    ========================================================= */
 
-.logout-btn {
-    width: 100%;
-    height: 39px;
+.suppliers-page .connection-message {
+    margin: 18px 30px 0;
+}
+
+.suppliers-page .connection-message[hidden] {
+    display: none;
+}
+
+
+/* =========================================================
+   PAGE CONTENT
+   ========================================================= */
+
+.suppliers-page .page-content {
+    max-width: 1500px;
+
+    margin: 0 auto;
+
+    padding: 28px 30px 42px;
+}
+
+
+/* =========================================================
+   CONTENT INTRO
+   ========================================================= */
+
+.suppliers-page .content-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 22px;
+}
+
+.suppliers-page .content-intro > div:first-child {
+    min-width: 0;
+}
+
+.suppliers-page .section-kicker {
+    display: inline-block;
+
+    margin-bottom: 7px;
+
+    color: var(--sf-blue);
+
+    font-size: 9px;
+    line-height: 1;
+
+    font-weight: 800;
+
+    letter-spacing: 0.13em;
+}
+
+.suppliers-page .content-intro h2 {
+    margin: 0;
+
+    color: var(--sf-navy);
+
+    font-size: 18px;
+    line-height: 1.25;
+
+    font-weight: 800;
+
+    letter-spacing: -0.025em;
+}
+
+.suppliers-page .content-intro p {
+    max-width: 620px;
+
+    margin: 6px 0 0;
+
+    color: var(--sf-text-muted);
+
+    font-size: 11px;
+    line-height: 1.55;
+
+    font-weight: 500;
+}
+
+.suppliers-page .content-intro-icon {
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid #dbe7fb;
+    border-radius: 10px;
+
+    background: var(--sf-blue-soft);
+
+    color: var(--sf-blue);
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   SUPPLIER CARD
+   ========================================================= */
+
+.suppliers-page .supplier-card {
+    margin-bottom: 20px;
+
+    border: 1px solid var(--sf-border);
+    border-radius: var(--sf-radius);
+
+    background: var(--sf-card);
+
+    box-shadow:
+        0 2px 7px rgba(15, 23, 42, 0.025);
+}
+
+.suppliers-page .supplier-card:last-child {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.suppliers-page .supplier-card-header {
+    min-height: 72px;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
 
-    padding: 0 10px;
+    padding: 0 20px;
 
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid var(--sf-border-light);
+}
+
+.suppliers-page .supplier-card-heading {
+    display: flex;
+    align-items: center;
+
+    min-width: 0;
+}
+
+.suppliers-page .card-icon {
+    width: 36px;
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 8px;
+
+    background: #f4f7fb;
+
+    color: #64748b;
+
+    font-size: 13px;
+}
+
+.suppliers-page .card-icon.blue {
+    background: var(--sf-blue-soft);
+
+    color: var(--sf-blue);
+}
+
+.suppliers-page .supplier-card-heading > div:last-child {
+    min-width: 0;
+
+    margin-left: 11px;
+}
+
+.suppliers-page .supplier-card-heading h3 {
+    margin: 0;
+
+    color: var(--sf-navy);
+
+    font-size: 12px;
+    line-height: 1.3;
+
+    font-weight: 800;
+}
+
+.suppliers-page .supplier-card-heading p {
+    margin: 3px 0 0;
+
+    color: var(--sf-text-light);
+
+    font-size: 9px;
+    line-height: 1.4;
+
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   HEADER LABELS
+   ========================================================= */
+
+.suppliers-page .form-status,
+.suppliers-page .directory-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #7b8797;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.suppliers-page .status-indicator {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: var(--sf-blue);
+}
+
+.suppliers-page .directory-label i {
+    color: #94a0af;
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SUPPLIER FORM
+   ========================================================= */
+
+.suppliers-page .supplier-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 17px 18px;
+
+    padding: 22px 20px 20px;
+}
+
+.suppliers-page .form-group {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.suppliers-page .form-group-wide {
+    grid-column: span 2;
+}
+
+
+/* =========================================================
+   FORM LABEL
+   ========================================================= */
+
+.suppliers-page .form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #455165;
+
+    font-size: 9px;
+    line-height: 1.2;
+
+    font-weight: 800;
+
+    letter-spacing: 0.01em;
+}
+
+.suppliers-page .form-group label span {
+    margin-left: 2px;
+
+    color: var(--sf-danger);
+}
+
+
+/* =========================================================
+   INPUT WRAP
+   ========================================================= */
+
+.suppliers-page .input-wrap {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+}
+
+.suppliers-page .input-wrap > i:first-child {
+    position: absolute;
+
+    left: 12px;
+
+    z-index: 2;
+
+    width: 15px;
+
+    color: #9aa4b3;
+
+    font-size: 11px;
+
+    text-align: center;
+
+    pointer-events: none;
+
+    transition: color 0.15s ease;
+}
+
+
+/* =========================================================
+   INPUT / SELECT
+   ========================================================= */
+
+.suppliers-page .input-wrap input,
+.suppliers-page .input-wrap select {
+    width: 100%;
+    height: 40px;
+
+    box-sizing: border-box;
+
+    padding: 0 12px 0 35px;
+
+    border: 1px solid #dfe5ec;
     border-radius: 7px;
 
-    background: transparent;
+    outline: none;
 
-    color: #9da7b7;
+    background: #ffffff;
+
+    color: #273246;
 
     font-family: inherit;
 
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease;
+}
+
+.suppliers-page .input-wrap input::placeholder {
+    color: #a5aebb;
+
+    opacity: 1;
+}
+
+.suppliers-page .input-wrap input:hover,
+.suppliers-page .input-wrap select:hover {
+    border-color: #cbd5e1;
+}
+
+.suppliers-page .input-wrap input:focus,
+.suppliers-page .input-wrap select:focus {
+    border-color: var(--sf-blue);
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.09);
+}
+
+.suppliers-page .input-wrap:focus-within > i:first-child {
+    color: var(--sf-blue);
+}
+
+
+/* =========================================================
+   SELECT
+   ========================================================= */
+
+.suppliers-page .select-wrap select {
+    appearance: none;
+    -webkit-appearance: none;
+
+    cursor: pointer;
+
+    padding-right: 36px;
+}
+
+.suppliers-page .select-arrow {
+    position: absolute !important;
+
+    left: auto !important;
+    right: 12px;
+
+    width: auto !important;
+
+    color: #8d98a8 !important;
+
+    font-size: 9px !important;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   FORM MESSAGE
+   ========================================================= */
+
+.suppliers-page .supplier-form-message {
+    grid-column: 1 / -1;
+
+    min-height: 0;
+
+    margin-top: -2px;
+
+    font-size: 10px;
+    line-height: 1.45;
+
+    font-weight: 600;
+}
+
+.suppliers-page .supplier-form-message:empty {
+    display: none;
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+   ========================================================= */
+
+.suppliers-page .supplier-form-actions {
+    grid-column: 1 / -1;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    padding-top: 2px;
+
+    border-top: 1px solid var(--sf-border-light);
+}
+
+
+/* =========================================================
+   SUPPLIER BUTTONS
+   ========================================================= */
+
+.suppliers-page .supplier-btn {
+    height: 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 14px;
+
+    border-radius: 7px;
+
+    font-family: inherit;
+
+    font-size: 10px;
+    font-weight: 800;
 
     cursor: pointer;
 
     transition:
         background 0.15s ease,
+        border-color 0.15s ease,
         color 0.15s ease,
-        border-color 0.15s ease;
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
 }
 
-.logout-btn i {
-    width: 20px;
-
-    margin-right: 9px;
-
-    color: #7f8a9d;
-
-    font-size: 12px;
-
-    text-align: center;
-
-    transition: color 0.15s ease;
+.suppliers-page .supplier-btn i {
+    font-size: 10px;
 }
 
-.logout-btn:hover {
-    background: rgba(239, 68, 68, 0.08);
+.suppliers-page .supplier-btn.primary {
+    border: 1px solid var(--sf-blue);
 
-    border-color: rgba(239, 68, 68, 0.14);
+    background: var(--sf-blue);
 
-    color: #fca5a5;
+    color: #ffffff;
+
+    box-shadow:
+        0 3px 8px rgba(37, 99, 235, 0.14);
 }
 
-.logout-btn:hover i {
-    color: #f87171;
+.suppliers-page .supplier-btn.primary:hover {
+    border-color: var(--sf-blue-dark);
+
+    background: var(--sf-blue-dark);
+
+    box-shadow:
+        0 5px 13px rgba(37, 99, 235, 0.18);
+
+    transform: translateY(-1px);
+}
+
+.suppliers-page .supplier-btn.primary:active {
+    transform: translateY(0);
+}
+
+.suppliers-page .supplier-btn.secondary {
+    border: 1px solid #dfe5ec;
+
+    background: #ffffff;
+
+    color: #657184;
+}
+
+.suppliers-page .supplier-btn.secondary:hover {
+    border-color: #cbd5e1;
+
+    background: #f8fafc;
+
+    color: #334155;
 }
 
 
 /* =========================================================
-   SIDEBAR OVERLAY
+   DIRECTORY TABLE
    ========================================================= */
 
-.sidebar-overlay {
-    display: none;
+.suppliers-page .supplier-table-container {
+    width: 100%;
 
-    position: fixed;
-
-    inset: 0;
-
-    background: rgba(15, 23, 42, 0.45);
-
-    z-index: 999;
+    overflow: hidden;
 }
 
-.sidebar-overlay.active {
+.suppliers-page .table-scroll {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+.suppliers-page .supplier-table {
+    width: 100%;
+
+    min-width: 760px;
+
+    border-collapse: collapse;
+
+    table-layout: auto;
+}
+
+
+/* =========================================================
+   TABLE HEAD
+   ========================================================= */
+
+.suppliers-page .supplier-table thead {
+    background: #f8fafc;
+}
+
+.suppliers-page .supplier-table th {
+    height: 42px;
+
+    padding: 0 20px;
+
+    border-bottom: 1px solid var(--sf-border);
+
+    color: #7b8797;
+
+    font-size: 8px;
+    line-height: 1;
+
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+
+    text-align: left;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+.suppliers-page .supplier-table td {
+    height: 60px;
+
+    padding: 10px 20px;
+
+    border-bottom: 1px solid var(--sf-border-light);
+
+    color: #536073;
+
+    font-size: 10px;
+    line-height: 1.4;
+
+    font-weight: 500;
+
+    vertical-align: middle;
+}
+
+.suppliers-page .supplier-table tbody tr {
+    transition:
+        background 0.12s ease;
+}
+
+.suppliers-page .supplier-table tbody tr:hover {
+    background: #fafcff;
+}
+
+.suppliers-page .supplier-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   TABLE ACTIONS
+   ========================================================= */
+
+.suppliers-page .actions-column {
+    width: 135px;
+
+    text-align: right !important;
+}
+
+.suppliers-page .supplier-table td:last-child {
+    text-align: right;
+}
+
+
+/* =========================================================
+   TABLE EMPTY / LOADING
+   ========================================================= */
+
+.suppliers-page .supplier-empty {
+    height: 180px !important;
+
+    padding: 20px !important;
+
+    text-align: center !important;
+}
+
+.suppliers-page .table-loading {
+    min-height: 140px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    gap: 9px;
+
+    color: #8b96a6;
+}
+
+.suppliers-page .table-loading i {
+    color: var(--sf-blue);
+
+    font-size: 18px;
+}
+
+.suppliers-page .table-loading span {
+    font-size: 10px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   COMMON TABLE CONTENT
+   Supports rows generated by suppliers.js
+   ========================================================= */
+
+.suppliers-page .supplier-table td strong {
+    color: #273246;
+
+    font-size: 10px;
+
+    font-weight: 800;
+}
+
+.suppliers-page .supplier-table td small {
     display: block;
+
+    margin-top: 3px;
+
+    color: #929cac;
+
+    font-size: 8px;
+
+    font-weight: 500;
 }
 
 
 /* =========================================================
-   MOBILE MENU BUTTON
+   STATUS BADGES
    ========================================================= */
 
-.mobile-menu-btn {
-    display: none;
-
-    width: 36px;
-    height: 36px;
-
-    margin-right: 11px;
-
+.suppliers-page .status-badge,
+.suppliers-page .supplier-status {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    border: 1px solid #e1e6ee;
-    border-radius: 8px;
+    min-height: 24px;
 
-    background: #ffffff;
-    color: #5f6b7d;
+    padding: 0 8px;
 
-    cursor: pointer;
+    border-radius: 6px;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.03em;
+
+    text-transform: uppercase;
 }
 
-.mobile-menu-btn:hover {
-    background: #f7f9fc;
+.suppliers-page .status-badge.active,
+.suppliers-page .supplier-status.active {
+    background: var(--sf-success-soft);
 
-    color: #2563eb;
-
-    border-color: #d6deea;
+    color: var(--sf-success);
 }
 
-.mobile-menu-btn i {
-    font-size: 14px;
+.suppliers-page .status-badge.inactive,
+.suppliers-page .supplier-status.inactive {
+    background: var(--sf-danger-soft);
+
+    color: var(--sf-danger);
 }
 
 
 /* =========================================================
-   LARGE TABLET / MOBILE
+   TABLE ACTION BUTTONS
+   Supports dynamically generated supplier actions
+   ========================================================= */
+
+.suppliers-page .table-action,
+.suppliers-page .supplier-action {
+    width: 30px;
+    height: 30px;
+
+    display: inline-grid;
+    place-items: center;
+
+    margin-left: 4px;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #758195;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.suppliers-page .table-action:hover,
+.suppliers-page .supplier-action:hover {
+    border-color: #cbd5e1;
+
+    background: #f8fafc;
+
+    color: var(--sf-blue);
+}
+
+.suppliers-page .table-action i,
+.suppliers-page .supplier-action i {
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.suppliers-page .table-scroll {
+    scrollbar-width: thin;
+
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.suppliers-page .table-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.suppliers-page .table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.suppliers-page .table-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   DISABLED STATE
+   ========================================================= */
+
+.suppliers-page button:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.6;
+
+    transform: none !important;
+}
+
+.suppliers-page input:disabled,
+.suppliers-page select:disabled {
+    cursor: not-allowed;
+
+    background: #f7f8fa;
+
+    color: #8b95a5;
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET
    ========================================================= */
 
 @media (max-width: 1100px) {
 
-    .main-content {
-        margin-left: 0;
+    .suppliers-page .topbar {
+        padding: 0 22px;
     }
 
-    .sidebar {
-        transform: translateX(-100%);
-
-        box-shadow:
-            10px 0 35px rgba(15, 23, 42, 0.15);
-
-        transition:
-            transform 0.22s ease;
+    .suppliers-page .page-content {
+        padding: 25px 22px 38px;
     }
 
-    body.sidebar-open .sidebar {
-        transform: translateX(0);
+    .suppliers-page .supplier-form {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
     }
 
-    body.sidebar-open .sidebar-overlay {
-        display: block;
-    }
-
-    .mobile-menu-btn {
-        display: inline-flex;
+    .suppliers-page .form-group-wide {
+        grid-column: span 2;
     }
 }
 
 
 /* =========================================================
-   MOBILE
+   RESPONSIVE — TABLET / SMALL DESKTOP
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .suppliers-page .connection-badge {
+        display: none;
+    }
+
+    .suppliers-page .topbar-right {
+        gap: 9px;
+    }
+
+    .suppliers-page .topbar-user-info {
+        display: none;
+    }
+
+    .suppliers-page .topbar-avatar {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE — MOBILE
    ========================================================= */
 
 @media (max-width: 760px) {
 
-    .sidebar {
-        width: 270px;
+    .suppliers-page .topbar {
+        min-height: 68px;
+
+        padding: 0 16px;
     }
 
-    .sidebar-brand {
-        height: 70px;
-
-        flex-basis: 70px;
-
-        padding: 0 18px;
+    .suppliers-page .page-heading h1 {
+        font-size: 18px;
     }
 
-    .sidebar-nav {
-        padding: 15px 10px 10px;
+    .suppliers-page .page-heading p {
+        display: none;
     }
 
-    .sidebar-footer {
-        padding: 10px;
+    .suppliers-page .breadcrumb {
+        margin-bottom: 4px;
+
+        font-size: 8px;
     }
 
-    .nav-item {
+    .suppliers-page .topbar-right {
+        margin-left: 10px;
+    }
+
+    .suppliers-page .page-content {
+        padding: 21px 16px 30px;
+    }
+
+    .suppliers-page .content-intro {
+        align-items: flex-start;
+
+        margin-bottom: 18px;
+    }
+
+    .suppliers-page .content-intro h2 {
+        font-size: 16px;
+    }
+
+    .suppliers-page .content-intro p {
+        font-size: 10px;
+    }
+
+    .suppliers-page .content-intro-icon {
+        width: 42px;
         height: 42px;
+
+        flex-basis: 42px;
+
+        font-size: 15px;
+    }
+
+    .suppliers-page .supplier-card-header {
+        min-height: 65px;
+
+        padding: 0 15px;
+    }
+
+    .suppliers-page .form-status,
+    .suppliers-page .directory-label {
+        display: none;
+    }
+
+    .suppliers-page .supplier-form {
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+        padding: 18px 15px;
+    }
+
+    .suppliers-page .form-group-wide {
+        grid-column: auto;
+    }
+
+    .suppliers-page .supplier-form-actions {
+        justify-content: stretch;
+
+        padding-top: 4px;
+    }
+
+    .suppliers-page .supplier-btn {
+        flex: 1;
+    }
+
+    .suppliers-page .supplier-table th,
+    .suppliers-page .supplier-table td {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .suppliers-page .notification-panel {
+        position: fixed;
+
+        top: 68px;
+        right: 12px;
+
+        width: min(300px, calc(100vw - 24px));
     }
 }
 
 
 /* =========================================================
-   SMALL MOBILE
+   RESPONSIVE — SMALL MOBILE
    ========================================================= */
 
 @media (max-width: 480px) {
 
-    .sidebar {
-        width: 260px;
+    .suppliers-page .topbar {
+        padding: 0 12px;
     }
 
-    .mobile-menu-btn {
+    .suppliers-page .page-heading h1 {
+        font-size: 17px;
+    }
+
+    .suppliers-page .topbar-right {
+        gap: 6px;
+    }
+
+    .suppliers-page .notification-btn {
         width: 34px;
         height: 34px;
+    }
 
-        margin-right: 8px;
+    .suppliers-page .topbar-avatar {
+        width: 32px;
+        height: 32px;
+
+        flex-basis: 32px;
+    }
+
+    .suppliers-page .page-content {
+        padding: 18px 12px 25px;
+    }
+
+    .suppliers-page .content-intro-icon {
+        display: none;
+    }
+
+    .suppliers-page .supplier-card {
+        border-radius: 8px;
+    }
+
+    .suppliers-page .supplier-card-header {
+        padding: 0 13px;
+    }
+
+    .suppliers-page .supplier-card-heading h3 {
+        font-size: 11px;
+    }
+
+    .suppliers-page .supplier-card-heading p {
+        font-size: 8px;
+    }
+
+    .suppliers-page .supplier-form {
+        padding: 16px 13px;
+    }
+
+    .suppliers-page .supplier-form-actions {
+        flex-direction: column;
+    }
+
+    .suppliers-page .supplier-btn {
+        width: 100%;
     }
 }
 
@@ -589,19 +1506,28 @@ body {
    ACCESSIBILITY
    ========================================================= */
 
-.nav-item:focus-visible,
-.logout-btn:focus-visible,
-.mobile-menu-btn:focus-visible {
-    outline: 2px solid #60a5fa;
+.suppliers-page button:focus-visible,
+.suppliers-page input:focus-visible,
+.suppliers-page select:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.45);
 
     outline-offset: 2px;
 }
 
 
 /* =========================================================
-   PREVENT HORIZONTAL OVERFLOW
+   REDUCED MOTION
    ========================================================= */
 
-body {
-    overflow-x: hidden;
+@media (prefers-reduced-motion: reduce) {
+
+    .suppliers-page *,
+    .suppliers-page *::before,
+    .suppliers-page *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
