@@ -569,27 +569,299 @@ document.addEventListener("DOMContentLoaded", async () => {
        LOAD LOGGED-IN USER
     ===================================================== */
 
-    async function loadCurrentUser() {
+   async function loadCurrentUser() {
 
-        if (
-            !window.StockFlowAPI ||
-            typeof window.StockFlowAPI.requireSession !==
-                "function"
-        ) {
+    console.log(
+        "STOCKFLOW PROFILE: loading current user..."
+    );
 
-            console.error(
-                "StockFlowAPI.requireSession() is not available."
+
+    /* =====================================================
+       CHECK API
+       ===================================================== */
+
+    if (
+        !window.StockFlowAPI
+    ) {
+
+        console.error(
+            "STOCKFLOW PROFILE: StockFlowAPI is unavailable."
+        );
+
+        showProfileError(
+            "Authentication service is unavailable."
+        );
+
+        return;
+    }
+
+
+    /* =====================================================
+       1. LOAD STORED USER FIRST
+       ===================================================== */
+
+    let storedUser = null;
+
+    if (
+        typeof window.StockFlowAPI.getStoredUser ===
+        "function"
+    ) {
+
+        try {
+
+            storedUser =
+                window.StockFlowAPI.getStoredUser();
+
+            console.log(
+                "STOCKFLOW PROFILE: stored user:",
+                storedUser
             );
 
-            showProfileError(
-                "Authentication service is unavailable."
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW PROFILE: could not read stored user:",
+                error
+            );
+        }
+    }
+
+
+    let currentUser =
+        normalizeUser(
+            storedUser
+        );
+
+
+    /* =====================================================
+       2. DISPLAY STORED USER IMMEDIATELY
+       ===================================================== */
+
+    if (currentUser) {
+
+        console.log(
+            "STOCKFLOW PROFILE: displaying stored user:",
+            currentUser
+        );
+
+        displayUser(
+            currentUser
+        );
+    }
+
+
+    /* =====================================================
+       3. VALIDATE SESSION USING session()
+       ===================================================== */
+
+    if (
+        typeof window.StockFlowAPI.session ===
+        "function"
+    ) {
+
+        try {
+
+            const sessionResponse =
+                await window.StockFlowAPI.session();
+
+
+            console.log(
+                "STOCKFLOW PROFILE: session response:",
+                sessionResponse
             );
 
-            return;
+
+            const sessionUser =
+                normalizeUser(
+                    sessionResponse
+                );
+
+
+            /*
+             * If the session endpoint returned actual
+             * user information, use it.
+             */
+
+            if (sessionUser) {
+
+                const hasUsefulData =
+                    Boolean(
+                        sessionUser.uid ||
+                        sessionUser.fullName ||
+                        sessionUser.username ||
+                        sessionUser.email ||
+                        sessionUser.phone
+                    );
+
+
+                if (hasUsefulData) {
+
+                    currentUser =
+                        sessionUser;
+
+
+                    displayUser(
+                        currentUser
+                    );
+
+
+                    console.log(
+                        "STOCKFLOW PROFILE: using session user."
+                    );
+                }
+            }
+
+        } catch (sessionError) {
+
+            /*
+             * IMPORTANT:
+             *
+             * Session refresh failure does NOT destroy
+             * the already loaded stored user.
+             */
+
+            console.warn(
+                "STOCKFLOW PROFILE: session refresh failed:",
+                sessionError
+            );
+        }
+    }
+
+
+    /* =====================================================
+       4. REFRESH USER FROM getUser()
+       ===================================================== */
+
+    if (
+        currentUser &&
+        typeof window.StockFlowAPI.getUser ===
+            "function"
+    ) {
+
+        const identity =
+            getUserIdentity(
+                currentUser
+            );
+
+
+        console.log(
+            "STOCKFLOW PROFILE: user identity:",
+            identity
+        );
+
+
+        if (identity) {
+
+            try {
+
+                const response =
+                    await window.StockFlowAPI.getUser(
+                        identity
+                    );
+
+
+                console.log(
+                    "STOCKFLOW PROFILE: getUser response:",
+                    response
+                );
+
+
+                const serverUser =
+                    normalizeUser(
+                        response
+                    );
+
+
+                if (serverUser) {
+
+                    const hasUsefulData =
+                        Boolean(
+                            serverUser.uid ||
+                            serverUser.fullName ||
+                            serverUser.username ||
+                            serverUser.email ||
+                            serverUser.phone
+                        );
+
+
+                    if (hasUsefulData) {
+
+                        currentUser =
+                            serverUser;
+
+
+                        displayUser(
+                            currentUser
+                        );
+
+
+                        console.log(
+                            "STOCKFLOW PROFILE: fresh backend user loaded."
+                        );
+                    }
+                }
+
+            } catch (serverError) {
+
+                /*
+                 * Do NOT show the red account error here.
+                 *
+                 * The stored user is already displayed.
+                 */
+
+                console.warn(
+                    "STOCKFLOW PROFILE: getUser refresh failed:",
+                    serverError
+                );
+            }
+        }
+    }
+
+
+    /* =====================================================
+       5. FINAL CHECK
+       ===================================================== */
+
+    if (currentUser) {
+
+        /*
+         * We have valid local/session information.
+         * Profile is considered successfully loaded.
+         */
+
+        const errorBox =
+            document.querySelector(
+                ".profile-load-error"
+            );
+
+        if (errorBox) {
+
+            errorBox.remove();
         }
 
 
-        try {
+        console.log(
+            "STOCKFLOW PROFILE: profile loaded successfully.",
+            currentUser
+        );
+
+        return;
+    }
+
+
+    /* =====================================================
+       6. NOTHING WAS FOUND
+       ===================================================== */
+
+    console.error(
+        "STOCKFLOW PROFILE: no stored user and no session user."
+    );
+
+
+    showProfileError(
+        "Unable to load your account information."
+    );
+}
 
             /* ---------------------------------------------
                1. VERIFY CURRENT SESSION
