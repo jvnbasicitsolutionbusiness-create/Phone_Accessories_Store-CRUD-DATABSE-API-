@@ -1,6 +1,6 @@
 /* =========================================================
-   STOCKFLOW — SETTINGS MODULE
-   Complete page + sidebar + responsive layout
+   STOCKFLOW — SETTINGS PAGE
+   Profile-style dashboard design
 ========================================================= */
 
 
@@ -8,232 +8,12 @@
    PAGE FOUNDATION
 ========================================================= */
 
-.settings-page {
+body.settings-page {
     min-height: 100vh;
     margin: 0;
+    overflow-x: hidden;
     background: #f4f7fb;
     color: #10203a;
-}
-
-
-/* =========================================================
-   MAIN STOCKFLOW LAYOUT
-========================================================= */
-
-.settings-page .sf-layout {
-    min-height: 100vh;
-    display: flex;
-    width: 100%;
-}
-
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-.settings-page .sf-side {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-
-    width: 250px;
-    min-width: 250px;
-
-    display: flex;
-    flex-direction: column;
-
-    background: #071a31;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-
-    overflow-y: auto;
-    overflow-x: hidden;
-
-    z-index: 1000;
-}
-
-
-/* =========================================================
-   BRAND
-========================================================= */
-
-.settings-page .sf-brand {
-    height: 104px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 0 32px;
-
-    box-sizing: border-box;
-
-    color: #ffffff;
-
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-
-    flex-shrink: 0;
-}
-
-
-/* =========================================================
-   NAVIGATION
-========================================================= */
-
-.settings-page .sf-nav {
-    display: flex;
-    flex-direction: column;
-
-    gap: 5px;
-
-    padding: 22px 16px 28px;
-
-    box-sizing: border-box;
-}
-
-
-/* NAV LINK */
-
-.settings-page .sf-nav a {
-    display: flex;
-    align-items: center;
-
-    width: 100%;
-    min-height: 48px;
-
-    padding: 0 18px;
-
-    box-sizing: border-box;
-
-    border-radius: 11px;
-
-    color: #b7c6d9;
-
-    background: transparent;
-
-    text-decoration: none;
-
-    font-size: 14px;
-    font-weight: 500;
-
-    line-height: 1.2;
-
-    transition:
-        background 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
-}
-
-
-/* HOVER */
-
-.settings-page .sf-nav a:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.07);
-}
-
-
-/* ACTIVE */
-
-.settings-page .sf-nav a.active,
-.settings-page .sf-nav a[aria-current="page"] {
-    color: #ffffff;
-
-    background: #2864d7;
-
-    font-weight: 700;
-
-    box-shadow:
-        0 5px 14px rgba(40, 100, 215, 0.20);
-}
-
-
-/* ACTIVE HOVER */
-
-.settings-page .sf-nav a.active:hover,
-.settings-page .sf-nav a[aria-current="page"]:hover {
-    background: #2d69df;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-========================================================= */
-
-.settings-page .sf-main {
-    width: calc(100% - 250px);
-
-    min-height: 100vh;
-
-    margin-left: 250px;
-
-    padding: 0 40px 48px;
-
-    box-sizing: border-box;
-}
-
-
-/* =========================================================
-   TOP HEADER
-========================================================= */
-
-.settings-page .sf-top {
-    min-height: 110px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 24px;
-
-    padding: 24px 0;
-
-    box-sizing: border-box;
-
-    border-bottom: 1px solid #dce3ec;
-}
-
-
-/* PAGE TITLE */
-
-.settings-page .sf-title {
-    color: #10203a;
-
-    font-size: 32px;
-    font-weight: 750;
-
-    line-height: 1.15;
-
-    letter-spacing: -0.02em;
-}
-
-
-/* DESCRIPTION */
-
-.settings-page .sf-top .sf-muted {
-    margin-top: 7px;
-
-    color: #60738f;
-
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-
-/* MENU BUTTON */
-
-.settings-page .settings-menu-btn {
-    display: none;
-
-    flex: 0 0 auto;
-
-    width: 44px;
-    height: 44px;
-
-    padding: 0;
 }
 
 
@@ -241,37 +21,36 @@
    SETTINGS CONTENT
 ========================================================= */
 
-.settings-page .settings-content {
+body.settings-page .settings-content {
     width: 100%;
-    max-width: 1120px;
-
-    margin: 28px auto 0;
+    max-width: 100%;
+    box-sizing: border-box;
 
     display: flex;
     flex-direction: column;
-
-    gap: 24px;
+    gap: 22px;
 }
 
 
 /* =========================================================
-   CARD
+   SETTINGS CARD
 ========================================================= */
 
-.settings-page .settings-card {
+body.settings-page .settings-card {
     width: 100%;
-
     box-sizing: border-box;
+
+    margin: 0;
+
+    overflow: hidden;
+
+    border: 1px solid #dfe6ef;
+    border-radius: 18px;
 
     background: #ffffff;
 
-    border: 1px solid #dce3ec;
-    border-radius: 16px;
-
     box-shadow:
-        0 5px 20px rgba(15, 35, 60, 0.05);
-
-    overflow: hidden;
+        0 10px 30px rgba(15, 35, 65, 0.055);
 }
 
 
@@ -279,284 +58,37 @@
    CARD HEADER
 ========================================================= */
 
-.settings-page .sf-card-head {
+body.settings-page .settings-card .sf-card-head {
+    min-height: 94px;
+
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
 
-    gap: 24px;
+    gap: 20px;
 
-    padding: 26px 30px;
+    padding: 25px 30px;
 
     box-sizing: border-box;
 
-    border-bottom: 1px solid #e5eaf0;
+    border-bottom: 1px solid #edf1f6;
 }
 
 
-.settings-page .sf-card-head h3 {
+body.settings-page .settings-card .sf-card-head h3 {
     margin: 0;
 
     color: #10203a;
 
     font-size: 20px;
-    font-weight: 700;
-
     line-height: 1.3;
+
+    font-weight: 750;
+    letter-spacing: -0.015em;
 }
 
 
-.settings-page .sf-card-head .sf-muted {
-    margin: 7px 0 0;
-
-    color: #71829d;
-
-    font-size: 13px;
-    line-height: 1.55;
-}
-
-
-/* =========================================================
-   CARD ICON
-========================================================= */
-
-.settings-page .settings-card-icon {
-    width: 46px;
-    height: 46px;
-
-    flex: 0 0 46px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 12px;
-
-    background: #edf3ff;
-    color: #2563eb;
-
-    font-size: 20px;
-    font-weight: 700;
-}
-
-
-.settings-page .settings-card-icon.session-icon {
-    background: #f1f4f8;
-    color: #475569;
-}
-
-
-/* =========================================================
-   SETTINGS FORM
-========================================================= */
-
-.settings-page .settings-form {
-    display: flex;
-    flex-direction: column;
-
-    gap: 25px;
-
-    padding: 28px 30px 30px;
-
-    box-sizing: border-box;
-}
-
-
-/* =========================================================
-   SETTINGS FIELD
-========================================================= */
-
-.settings-page .settings-field {
-    width: 100%;
-    max-width: 680px;
-
-    display: flex;
-    flex-direction: column;
-
-    gap: 8px;
-}
-
-
-.settings-page .settings-field label {
-    color: #172b4d;
-
-    font-size: 14px;
-    font-weight: 700;
-}
-
-
-.settings-page .settings-help {
-    color: #71829d;
-
-    font-size: 12px;
-    line-height: 1.55;
-}
-
-
-/* =========================================================
-   INPUTS
-========================================================= */
-
-.settings-page .settings-field input,
-.settings-page .settings-field select {
-    width: 100%;
-    min-height: 48px;
-
-    padding: 0 14px;
-
-    box-sizing: border-box;
-
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-
-    background: #ffffff;
-
-    color: #172b4d;
-
-    font-family: inherit;
-    font-size: 14px;
-
-    outline: none;
-
-    transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease;
-}
-
-
-.settings-page .settings-field input:hover,
-.settings-page .settings-field select:hover {
-    border-color: #aebdce;
-}
-
-
-.settings-page .settings-field input:focus,
-.settings-page .settings-field select:focus {
-    border-color: #2563eb;
-
-    box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-
-/* =========================================================
-   NUMBER INPUT
-========================================================= */
-
-.settings-page .settings-field input[type="number"] {
-    max-width: 280px;
-}
-
-
-/* =========================================================
-   SELECT
-========================================================= */
-
-.settings-page .settings-field select {
-    max-width: 440px;
-
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   ACTIONS
-========================================================= */
-
-.settings-page .settings-actions {
-    display: flex;
-    align-items: center;
-
-    gap: 12px;
-
-    padding-top: 3px;
-}
-
-
-/* =========================================================
-   SAVE BUTTON
-========================================================= */
-
-.settings-page .settings-actions .sf-btn {
-    min-width: 150px;
-}
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
-
-.settings-page .settings-message {
-    min-height: 20px;
-
-    margin: 0;
-
-    padding: 0 30px 24px;
-
-    box-sizing: border-box;
-
-    color: #15803d;
-
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-
-.settings-page .settings-message:empty {
-    display: none;
-}
-
-
-.settings-page .settings-message.success {
-    color: #15803d;
-}
-
-
-.settings-page .settings-message.error {
-    color: #dc2626;
-}
-
-
-/* =========================================================
-   SESSION CARD
-========================================================= */
-
-.settings-page .session-card {
-    margin-bottom: 24px;
-}
-
-
-.settings-page .session-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 24px;
-
-    padding: 28px 30px 30px;
-
-    box-sizing: border-box;
-}
-
-
-.settings-page .session-info {
-    min-width: 0;
-}
-
-
-.settings-page .session-info strong {
-    display: block;
-
-    color: #172b4d;
-
-    font-size: 15px;
-    font-weight: 700;
-}
-
-
-.settings-page .session-info p {
-    max-width: 650px;
-
+body.settings-page .settings-card .sf-card-head .sf-muted {
     margin: 7px 0 0;
 
     color: #71829d;
@@ -567,13 +99,388 @@
 
 
 /* =========================================================
-   LOGOUT
+   CARD ICON
 ========================================================= */
 
-.settings-page .session-content .sf-btn.danger {
+body.settings-page .settings-card-icon {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #edf3ff;
+    color: #2563eb;
+
+    font-size: 18px;
+    line-height: 1;
+
+    box-sizing: border-box;
+}
+
+
+body.settings-page .settings-card-icon.session-icon {
+    background: #f1f4f8;
+    color: #52657f;
+}
+
+
+/* =========================================================
+   SETTINGS FORM
+========================================================= */
+
+body.settings-page .settings-form {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    padding: 28px 30px 30px;
+
+    gap: 24px;
+}
+
+
+/* =========================================================
+   SETTINGS FIELD
+========================================================= */
+
+body.settings-page .settings-field {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+}
+
+
+body.settings-page .settings-field label {
+    margin-bottom: 6px;
+
+    color: #263a57;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+
+body.settings-page .settings-help {
+    margin-bottom: 11px;
+
+    color: #8291a7;
+
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   SETTINGS INPUTS
+========================================================= */
+
+body.settings-page .settings-field input,
+body.settings-page .settings-field select {
+    width: 100%;
+    min-height: 50px;
+
+    box-sizing: border-box;
+
+    padding: 0 15px;
+
+    border: 1px solid #d4deea;
+    border-radius: 11px;
+
+    outline: none;
+
+    background: #f9fbfd;
+    color: #172b4d;
+
+    font-family: inherit;
+    font-size: 14px;
+
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+
+body.settings-page .settings-field input:hover,
+body.settings-page .settings-field select:hover {
+    border-color: #b8c7d9;
+
+    background: #ffffff;
+}
+
+
+body.settings-page .settings-field input:focus,
+body.settings-page .settings-field select:focus {
+    border-color: #2d6df6;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(45, 109, 246, 0.11);
+}
+
+
+body.settings-page .settings-field input::placeholder {
+    color: #8b9bb1;
+}
+
+
+/* =========================================================
+   SETTINGS ACTIONS
+========================================================= */
+
+body.settings-page .settings-actions {
+    display: flex;
+    align-items: center;
+
+    padding-top: 2px;
+}
+
+
+body.settings-page .settings-actions .sf-btn {
+    min-height: 46px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 22px;
+
+    border: 0;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+========================================================= */
+
+body.settings-page .settings-actions .sf-btn.primary {
+    background:
+        linear-gradient(
+            135deg,
+            #2d6df6 0%,
+            #2463df 100%
+        );
+
+    color: #ffffff;
+
+    box-shadow:
+        0 8px 20px rgba(37, 99, 235, 0.20);
+}
+
+
+body.settings-page .settings-actions .sf-btn.primary:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 11px 25px rgba(37, 99, 235, 0.27);
+}
+
+
+body.settings-page .settings-actions .sf-btn.primary:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   SETTINGS MESSAGE
+========================================================= */
+
+body.settings-page .settings-message {
+    min-height: 0;
+
+    margin: 0;
+    padding: 0 30px 22px;
+
+    color: #52657f;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+body.settings-page .settings-message:not(:empty) {
+    padding-top: 13px;
+
+    color: #2459a6;
+}
+
+
+/* =========================================================
+   SESSION CARD
+========================================================= */
+
+body.settings-page .session-card .sf-card-head {
+    min-height: 94px;
+}
+
+
+/* =========================================================
+   SESSION CONTENT
+========================================================= */
+
+body.settings-page .session-content {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    padding: 27px 30px 30px;
+
+    box-sizing: border-box;
+}
+
+
+body.settings-page .session-info {
+    min-width: 0;
+}
+
+
+body.settings-page .session-info strong {
+    display: block;
+
+    margin: 0;
+
+    color: #263a57;
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    font-weight: 750;
+}
+
+
+body.settings-page .session-info p {
+    max-width: 620px;
+
+    margin: 6px 0 0;
+
+    color: #8291a7;
+
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   LOGOUT BUTTON
+========================================================= */
+
+body.settings-page .session-content .sf-btn.danger {
+    min-height: 44px;
+
     flex: 0 0 auto;
 
-    min-width: 110px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 20px;
+
+    border: 1px solid #efc8c5;
+    border-radius: 10px;
+
+    background: #fff7f6;
+    color: #b42318;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+body.settings-page .session-content .sf-btn.danger:hover {
+    background: #fff0ee;
+
+    border-color: #e6aaa5;
+
+    color: #a51d13;
+
+    transform: translateY(-1px);
+}
+
+
+body.settings-page .session-content .sf-btn.danger:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   SETTINGS MENU BUTTON
+========================================================= */
+
+body.settings-page .settings-menu-btn {
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #d7e0eb;
+    border-radius: 11px;
+
+    background: #ffffff;
+    color: #40536f;
+
+    box-shadow:
+        0 5px 16px rgba(15, 35, 65, 0.06);
+
+    cursor: pointer;
+
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease;
+}
+
+
+body.settings-page .settings-menu-btn:hover {
+    color: #2563eb;
+
+    border-color: #b9cdf6;
+
+    background: #f8fbff;
 }
 
 
@@ -581,103 +488,96 @@
    TABLET
 ========================================================= */
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
 
-    .settings-page .sf-side {
-        width: 220px;
-        min-width: 220px;
+    body.settings-page .sf-main {
+        padding: 28px 24px 42px;
     }
 
-    .settings-page .sf-main {
-        width: calc(100% - 220px);
-        margin-left: 220px;
-
-        padding-left: 28px;
-        padding-right: 28px;
+    body.settings-page .settings-form {
+        padding: 25px 26px 28px;
     }
 
-    .settings-page .sf-brand {
-        padding-left: 24px;
-        padding-right: 24px;
+    body.settings-page .settings-message {
+        padding-left: 26px;
+        padding-right: 26px;
     }
 
-    .settings-page .sf-nav {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-
-    .settings-page .sf-nav a {
-        padding-left: 15px;
-        padding-right: 15px;
+    body.settings-page .session-content {
+        padding-left: 26px;
+        padding-right: 26px;
     }
 }
 
 
 /* =========================================================
-   MOBILE NAVIGATION
+   MOBILE
 ========================================================= */
 
-@media (max-width: 760px) {
+@media (max-width: 800px) {
 
-    .settings-page .sf-layout {
+    body.settings-page .sf-layout {
         display: block;
     }
 
-
-    .settings-page .sf-side {
+    body.settings-page .sf-side {
         position: fixed;
 
         top: 0;
-        left: -280px;
+        left: 0;
         bottom: 0;
 
-        width: 260px;
-        min-width: 260px;
+        width: 280px;
+        min-width: 280px;
 
-        transition: left 0.22s ease;
+        height: 100vh;
 
-        box-shadow:
-            8px 0 30px rgba(0, 0, 0, 0.18);
+        transform: translateX(-105%);
+
+        transition:
+            transform 0.25s ease;
+
+        z-index: 1000;
     }
 
-
-    .settings-page .sf-side.open {
-        left: 0;
+    body.settings-page .sf-side.open {
+        transform: translateX(0);
     }
 
-
-    .settings-page .sf-main {
+    body.settings-page .sf-main {
         width: 100%;
+        min-height: 100vh;
 
-        margin-left: 0;
-
-        padding:
-            0 20px 36px;
+        padding: 22px 20px 40px;
     }
 
-
-    .settings-page .sf-top {
-        min-height: 86px;
-
-        padding: 18px 0;
-    }
-
-
-    .settings-page .sf-title {
+    body.settings-page .sf-title {
         font-size: 27px;
     }
 
-
-    .settings-page .settings-menu-btn {
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
+    body.settings-page .settings-content {
+        gap: 18px;
     }
 
+    body.settings-page .settings-card {
+        border-radius: 16px;
+    }
 
-    .settings-page .settings-content {
-        margin-top: 20px;
+    body.settings-page .settings-card .sf-card-head {
+        padding: 23px 24px;
+    }
+
+    body.settings-page .settings-form {
+        padding: 24px;
+    }
+
+    body.settings-page .settings-message {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    body.settings-page .session-content {
+        padding: 24px;
     }
 }
 
@@ -688,87 +588,77 @@
 
 @media (max-width: 520px) {
 
-    .settings-page .sf-main {
-        padding-left: 14px;
-        padding-right: 14px;
+    body.settings-page .sf-main {
+        padding: 18px 14px 30px;
     }
 
-
-    .settings-page .sf-title {
+    body.settings-page .sf-title {
         font-size: 24px;
     }
 
+    body.settings-page .sf-top {
+        min-height: 58px;
 
-    .settings-page .sf-top .sf-muted {
-        font-size: 12px;
+        gap: 14px;
+
+        padding-bottom: 17px;
     }
 
-
-    .settings-page .settings-card {
-        border-radius: 13px;
+    body.settings-page .settings-card {
+        border-radius: 15px;
     }
 
+    body.settings-page .settings-card .sf-card-head {
+        min-height: 82px;
 
-    .settings-page .sf-card-head {
-        padding: 21px;
+        padding: 20px;
     }
 
-
-    .settings-page .sf-card-head h3 {
+    body.settings-page .settings-card .sf-card-head h3 {
         font-size: 18px;
     }
 
+    body.settings-page .settings-card-icon {
+        width: 38px;
+        height: 38px;
 
-    .settings-page .settings-card-icon {
-        width: 40px;
-        height: 40px;
+        flex-basis: 38px;
 
-        flex-basis: 40px;
-
-        font-size: 17px;
+        font-size: 16px;
     }
 
-
-    .settings-page .settings-form {
-        padding: 22px 21px 24px;
+    body.settings-page .settings-form {
+        padding: 20px;
 
         gap: 21px;
     }
 
-
-    .settings-page .settings-field,
-    .settings-page .settings-field input,
-    .settings-page .settings-field select {
-        max-width: none;
+    body.settings-page .settings-actions {
         width: 100%;
     }
 
-
-    .settings-page .settings-actions {
+    body.settings-page .settings-actions .sf-btn.primary {
         width: 100%;
     }
 
-
-    .settings-page .settings-actions .sf-btn {
-        width: 100%;
+    body.settings-page .settings-message {
+        padding: 0 20px 20px;
     }
 
-
-    .settings-page .settings-message {
-        padding-left: 21px;
-        padding-right: 21px;
-    }
-
-
-    .settings-page .session-content {
-        align-items: stretch;
+    body.settings-page .session-content {
         flex-direction: column;
+        align-items: stretch;
 
-        padding: 22px 21px 24px;
+        gap: 20px;
+
+        padding: 20px;
     }
 
+    body.settings-page .session-info p {
+        max-width: none;
+    }
 
-    .settings-page .session-content .sf-btn.danger {
+    body.settings-page .session-content .sf-btn.danger {
         width: 100%;
     }
 }
