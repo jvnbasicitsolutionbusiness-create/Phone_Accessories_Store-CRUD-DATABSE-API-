@@ -1,114 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <meta
-        name="description"
-        content="STOCKFLOW Phone Accessories Inventory Management System"
-    >
-
-    <meta
-        name="theme-color"
-        content="#0b1730"
-    >
-
-    <title>Products | STOCKFLOW</title>
-
-    <!-- =====================================================
-         STOCKFLOW STYLES
-    ====================================================== -->
+    <title>Products | StockFlow Inventory System</title>
 
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
     <link rel="stylesheet" href="./navigation.css">
     <link rel="stylesheet" href="./products.css">
 
-    <!-- =====================================================
-         FONT AWESOME
-    ====================================================== -->
-
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
-
-    <!-- =====================================================
-         STOCKFLOW CORE
-    ====================================================== -->
-
-    <script src="./config.js"></script>
-    <script src="./api.js"></script>
-    <script src="./auth.js"></script>
-
 </head>
-
 
 <body class="products-page">
 
     <!-- =====================================================
-         MOBILE SIDEBAR OVERLAY
+         SIDEBAR
     ====================================================== -->
 
-    <div
-        id="sidebarOverlay"
-        class="sidebar-overlay"
-        aria-hidden="true"
-    ></div>
+    <aside class="sidebar" id="sidebar">
 
+        <div class="sidebar-brand">
 
-    <!-- =====================================================
-         APPLICATION SHELL
-    ====================================================== -->
-
-    <div class="app-shell">
-
-
-        <!-- =================================================
-             SIDEBAR
-        ================================================== -->
-
-        <aside
-            id="sidebar"
-            class="sidebar"
-            aria-label="Main navigation"
-        >
-
-            <!-- BRAND -->
-
-            <div class="sidebar-brand">
+            <a href="./dashboard.html" class="brand-link">
 
                 <div class="brand-logo">
-                    <span>SF</span>
+                    SF
                 </div>
 
                 <div class="brand-text">
-
                     <strong>STOCKFLOW</strong>
-
-                    <small>
-                        INVENTORY SYSTEM
-                    </small>
-
+                    <span>INVENTORY SYSTEM</span>
                 </div>
 
-            </div>
+            </a>
+
+        </div>
 
 
-            <!-- NAVIGATION -->
+        <nav class="sidebar-nav">
 
-            <nav class="sidebar-nav">
-
-                <!-- OVERVIEW -->
+            <div class="nav-group">
 
                 <div class="nav-section-title">
-                    Overview
+                    OVERVIEW
                 </div>
 
                 <a
@@ -119,17 +62,18 @@
                     <span>Dashboard</span>
                 </a>
 
+            </div>
 
-                <!-- INVENTORY -->
+
+            <div class="nav-group">
 
                 <div class="nav-section-title">
-                    Inventory
+                    INVENTORY
                 </div>
 
                 <a
                     href="./products.html"
                     class="nav-item active"
-                    aria-current="page"
                 >
                     <i class="fa-solid fa-box"></i>
                     <span>Products</span>
@@ -159,18 +103,20 @@
                     <span>Stock Out</span>
                 </a>
 
+            </div>
 
-                <!-- MANAGEMENT -->
+
+            <div class="nav-group">
 
                 <div class="nav-section-title">
-                    Management
+                    MANAGEMENT
                 </div>
 
                 <a
                     href="./transactions.html"
                     class="nav-item"
                 >
-                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <i class="fa-solid fa-right-left"></i>
                     <span>Transactions</span>
                 </a>
 
@@ -198,11 +144,13 @@
                     <span>Activity Log</span>
                 </a>
 
+            </div>
 
-                <!-- SYSTEM -->
+
+            <div class="nav-group">
 
                 <div class="nav-section-title">
-                    System
+                    ACCOUNT
                 </div>
 
                 <a
@@ -221,508 +169,481 @@
                     <span>Settings</span>
                 </a>
 
-            </nav>
+            </div>
+
+        </nav>
 
 
-            <!-- SIDEBAR FOOTER -->
+        <!-- SIDEBAR FOOTER -->
 
-            <div class="sidebar-footer">
+        <div class="sidebar-footer">
+
+            <div class="sidebar-user">
+
+                <div class="sidebar-user-avatar">
+                    SF
+                </div>
+
+                <div class="sidebar-user-info">
+
+                    <strong id="sidebarUserName">
+                        StockFlow User
+                    </strong>
+
+                    <span id="sidebarUserRole">
+                        Administrator
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="logout-button"
+                id="logoutButton"
+            >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MOBILE OVERLAY -->
+
+    <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+    ></div>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div class="topbar-left">
 
                 <button
                     type="button"
-                    id="logoutBtn"
-                    class="logout-btn"
+                    class="mobile-menu-btn"
+                    id="mobileMenuBtn"
+                    aria-label="Open menu"
                 >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <span>Logout</span>
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+
+                <div class="topbar-heading">
+
+                    <div class="breadcrumb">
+                        <span>STOCKFLOW</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                        <span>INVENTORY</span>
+                    </div>
+
+                    <h1>Products</h1>
+
+                    <p>
+                        Manage your products, stock levels, and product information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <!-- NOTIFICATION -->
+
+                <button
+                    type="button"
+                    class="notification-button"
+                    id="notificationButton"
+                    aria-label="Notifications"
+                >
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-dot"></span>
+                </button>
+
+
+                <div
+                    class="notification-panel"
+                    id="notificationPanel"
+                    hidden
+                >
+                    <div class="notification-header">
+                        <strong>Notifications</strong>
+                        <button
+                            type="button"
+                            id="closeNotification"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="notification-empty">
+                        <i class="fa-regular fa-bell-slash"></i>
+                        <span>No new notifications</span>
+                    </div>
+                </div>
+
+
+                <!-- USER -->
+
+                <div class="topbar-user">
+
+                    <div class="user-avatar">
+                        SF
+                    </div>
+
+                    <div class="user-info">
+
+                        <strong id="topbarUserName">
+                            StockFlow User
+                        </strong>
+
+                        <span id="topbarUserRole">
+                            Employee
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-down user-chevron"></i>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             PRODUCTS CONTENT
+        ================================================== -->
+
+        <section class="products-content">
+
+
+            <!-- PAGE INTRO -->
+
+            <div class="products-page-intro">
+
+                <div>
+
+                    <div class="intro-label">
+                        STOCKFLOW INVENTORY MANAGEMENT
+                    </div>
+
+                    <h2>Product Management</h2>
+
+                    <p>
+                        View, add, edit, and manage all products in your inventory.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="primary-btn"
+                    id="addProductBtn"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Product</span>
                 </button>
 
             </div>
 
-        </aside>
-
-
-        <!-- =================================================
-             MAIN CONTENT
-        ================================================== -->
-
-        <main class="main-content">
-
 
             <!-- =================================================
-                 TOPBAR
+                 PRODUCT STATISTICS
             ================================================== -->
 
-            <header class="topbar">
+            <div class="product-stats-grid">
 
-                <div class="topbar-left">
 
-                    <button
-                        type="button"
-                        id="mobileMenuBtn"
-                        class="mobile-menu-btn"
-                        aria-label="Open navigation menu"
-                        aria-expanded="false"
+                <div class="product-stat-card stat-blue">
+
+                    <div class="stat-card-top">
+
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+
+                        <span>PRODUCTS</span>
+
+                    </div>
+
+                    <strong
+                        class="stat-value"
+                        id="totalProducts"
                     >
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
+                        0
+                    </strong>
 
+                    <div class="stat-card-bottom">
 
-                    <div class="topbar-heading">
-
-                        <div class="breadcrumb">
-
-                            <span>STOCKFLOW</span>
-
-                            <i class="fa-solid fa-chevron-right"></i>
-
-                            <span>INVENTORY</span>
-
-                            <i class="fa-solid fa-chevron-right"></i>
-
-                            <strong>PRODUCTS</strong>
-
-                        </div>
-
-                        <h1>
-                            Products
-                        </h1>
-
-                        <p>
-                            Manage your phone accessories and product catalog.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="topbar-right">
-
-
-                    <!-- CONNECTION -->
-
-                    <div class="connection-badge">
-                        <span class="connection-dot"></span>
-                        <span>System Connected</span>
-                    </div>
-
-
-                    <!-- NOTIFICATIONS -->
-
-                    <div class="notification-wrapper">
-
-                        <button
-                            type="button"
-                            id="notificationBtn"
-                            class="header-icon-btn"
-                            aria-label="Notifications"
-                            aria-expanded="false"
-                        >
-                            <i class="fa-regular fa-bell"></i>
-
-                            <span
-                                id="notificationDot"
-                                class="notification-dot"
-                            ></span>
-                        </button>
-
-
-                        <div
-                            id="notificationPanel"
-                            class="notification-panel"
-                            hidden
-                        >
-
-                            <div class="notification-panel-header">
-
-                                <div>
-
-                                    <strong>
-                                        Notifications
-                                    </strong>
-
-                                    <span>
-                                        STOCKFLOW system alerts
-                                    </span>
-
-                                </div>
-
-                                <i class="fa-regular fa-bell"></i>
-
-                            </div>
-
-
-                            <div
-                                id="notificationContent"
-                                class="notification-content"
-                            >
-
-                                <div class="notification-empty">
-
-                                    <i class="fa-regular fa-circle-check"></i>
-
-                                    <span>
-                                        No new notifications
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- USER -->
-
-                    <div
-                        class="topbar-user"
-                        id="topbarUser"
-                    >
-
-                        <div
-                            id="userAvatar"
-                            class="user-avatar"
-                            data-user-initials
-                        >
-                            SF
-                        </div>
-
-                        <div class="user-info">
-
-                            <strong
-                                id="userName"
-                                data-user-name
-                            >
-                                StockFlow User
-                            </strong>
-
-                            <small
-                                id="userRole"
-                                data-user-role
-                            >
-                                Employee
-                            </small>
-
-                        </div>
-
-                        <i class="fa-solid fa-chevron-down user-chevron"></i>
-
-                    </div>
-
-                </div>
-
-            </header>
-
-
-            <!-- =================================================
-                 PAGE CONTENT
-            ================================================== -->
-
-            <section class="products-content">
-
-
-                <!-- PAGE INTRO -->
-
-                <div class="products-page-intro">
-
-                    <div>
-
-                        <span class="section-eyebrow">
-                            PRODUCT MANAGEMENT
+                        <span>
+                            Total registered products
                         </span>
 
-                        <h2>
-                            Product Catalog
-                        </h2>
-
-                        <p>
-                            Add, update, monitor and manage your phone
-                            accessory products.
-                        </p>
+                        <a href="#productsTable">
+                            View
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
 
                     </div>
-
-
-                    <button
-                        type="button"
-                        id="addProductBtn"
-                        class="primary-btn"
-                    >
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Add Product</span>
-                    </button>
 
                 </div>
 
 
-                <!-- =================================================
-                     PRODUCT STATISTICS
-                ================================================== -->
+                <div class="product-stat-card stat-green">
 
-                <div class="product-stats-grid">
+                    <div class="stat-card-top">
 
-
-                    <article class="product-stat-card stat-blue">
-
-                        <div class="product-stat-icon">
-                            <i class="fa-solid fa-boxes-stacked"></i>
-                        </div>
-
-                        <div class="product-stat-content">
-
-                            <span>Products</span>
-
-                            <strong id="totalProducts">
-                                0
-                            </strong>
-
-                            <small>
-                                Total registered products
-                            </small>
-
-                        </div>
-
-                    </article>
-
-
-                    <article class="product-stat-card stat-green">
-
-                        <div class="product-stat-icon">
+                        <div class="stat-icon">
                             <i class="fa-solid fa-circle-check"></i>
                         </div>
 
-                        <div class="product-stat-content">
+                        <span>ACTIVE PRODUCTS</span>
 
-                            <span>Active Products</span>
+                    </div>
 
-                            <strong id="activeProducts">
-                                0
-                            </strong>
+                    <strong
+                        class="stat-value"
+                        id="activeProducts"
+                    >
+                        0
+                    </strong>
 
-                            <small>
-                                Currently available
-                            </small>
+                    <div class="stat-card-bottom">
 
-                        </div>
+                        <span>
+                            Currently available
+                        </span>
 
-                    </article>
+                        <a href="#productsTable">
+                            View
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
 
-
-                    <article class="product-stat-card stat-orange">
-
-                        <div class="product-stat-icon">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-
-                        <div class="product-stat-content">
-
-                            <span>Low Stock</span>
-
-                            <strong id="lowStockProducts">
-                                0
-                            </strong>
-
-                            <small>
-                                Products needing attention
-                            </small>
-
-                        </div>
-
-                    </article>
-
-
-                    <article class="product-stat-card stat-red">
-
-                        <div class="product-stat-icon">
-                            <i class="fa-solid fa-circle-xmark"></i>
-                        </div>
-
-                        <div class="product-stat-content">
-
-                            <span>Out of Stock</span>
-
-                            <strong id="outOfStockProducts">
-                                0
-                            </strong>
-
-                            <small>
-                                Products unavailable
-                            </small>
-
-                        </div>
-
-                    </article>
+                    </div>
 
                 </div>
 
 
-                <!-- =================================================
-                     PRODUCTS PANEL
-                ================================================== -->
+                <div class="product-stat-card stat-orange">
 
-                <section class="products-panel">
+                    <div class="stat-card-top">
 
-
-                    <!-- PANEL HEADER -->
-
-                    <div class="products-panel-header">
-
-                        <div class="products-panel-title">
-
-                            <div class="products-panel-icon">
-                                <i class="fa-solid fa-box"></i>
-                            </div>
-
-                            <div>
-
-                                <span class="section-eyebrow">
-                                    INVENTORY
-                                </span>
-
-                                <h3>
-                                    All Products
-                                </h3>
-
-                                <span id="productCountLabel">
-                                    0 products
-                                </span>
-
-                            </div>
-
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
 
+                        <span>LOW STOCK</span>
 
-                        <!-- FILTERS -->
+                    </div>
 
-                        <div class="product-filters">
+                    <strong
+                        class="stat-value"
+                        id="lowStockProducts"
+                    >
+                        0
+                    </strong>
 
-                            <div class="product-search">
+                    <div class="stat-card-bottom">
 
-                                <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>
+                            Products needing attention
+                        </span>
 
-                                <input
-                                    type="search"
-                                    id="productSearch"
-                                    placeholder="Search products..."
-                                    autocomplete="off"
-                                >
+                        <a href="#productsTable">
+                            Review
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
 
-                            </div>
+                    </div>
 
-
-                            <select
-                                id="categoryFilter"
-                                class="product-filter-select"
-                            >
-                                <option value="">
-                                    All Categories
-                                </option>
-                            </select>
+                </div>
 
 
-                            <select
-                                id="statusFilter"
-                                class="product-filter-select"
-                            >
-                                <option value="">
-                                    All Status
-                                </option>
+                <div class="product-stat-card stat-red">
 
-                                <option value="ACTIVE">
-                                    Active
-                                </option>
+                    <div class="stat-card-top">
 
-                                <option value="INACTIVE">
-                                    Inactive
-                                </option>
-                            </select>
+                        <div class="stat-icon">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+
+                        <span>OUT OF STOCK</span>
+
+                    </div>
+
+                    <strong
+                        class="stat-value"
+                        id="outOfStockProducts"
+                    >
+                        0
+                    </strong>
+
+                    <div class="stat-card-bottom">
+
+                        <span>
+                            Products unavailable
+                        </span>
+
+                        <a href="#productsTable">
+                            Restock
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PRODUCTS TABLE PANEL
+            ================================================== -->
+
+            <section
+                class="products-panel"
+                id="productsTable"
+            >
+
+                <div class="products-panel-header">
+
+                    <div class="products-panel-title">
+
+                        <div class="products-panel-icon">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>Products</h3>
+
+                            <p>
+                                Complete list of inventory products.
+                            </p>
 
                         </div>
 
                     </div>
 
 
-                    <!-- PRODUCT TABLE -->
+                    <div class="products-count">
+                        <span id="productCount">0</span>
+                        Products
+                    </div>
 
-                    <div class="products-table-container">
+                </div>
 
-                        <table
-                            class="products-table"
-                            id="productsTable"
+
+                <!-- FILTERS -->
+
+                <div class="product-filters">
+
+                    <div class="product-search">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                        <input
+                            type="search"
+                            id="productSearch"
+                            placeholder="Search products, SKU, or brand..."
+                            autocomplete="off"
                         >
 
-                            <thead>
-
-                                <tr>
-
-                                    <th>Product</th>
-                                    <th>SKU</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Status</th>
-                                    <th class="actions-column">
-                                        Actions
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody id="productsTableBody">
-
-                                <tr>
-
-                                    <td
-                                        colspan="7"
-                                        class="table-loading"
-                                    >
-
-                                        <div class="loading-spinner"></div>
-
-                                        <span>
-                                            Loading products...
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
                     </div>
+
+
+                    <select
+                        id="categoryFilter"
+                        class="product-filter-select"
+                    >
+                        <option value="">All Categories</option>
+                    </select>
+
+
+                    <select
+                        id="statusFilter"
+                        class="product-filter-select"
+                    >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+
+                </div>
+
+
+                <!-- TABLE -->
+
+                <div class="products-table-container">
+
+                    <table class="products-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>PRODUCT</th>
+                                <th>SKU</th>
+                                <th>CATEGORY</th>
+                                <th>PRICE</th>
+                                <th>STOCK</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="productsTableBody">
+
+                            <!-- products.js inserts rows here -->
+
+                        </tbody>
+
+                    </table>
 
 
                     <!-- EMPTY STATE -->
 
                     <div
-                        id="emptyProducts"
-                        class="empty-state hidden"
+                        class="empty-state"
+                        id="emptyState"
+                        hidden
                     >
 
-                        <div class="empty-icon">
+                        <div class="empty-state-icon">
                             <i class="fa-solid fa-box-open"></i>
                         </div>
 
-                        <h3>
-                            No products found
-                        </h3>
+                        <h3>No Products Found</h3>
 
                         <p>
-                            There are no products matching your search
-                            or filter.
+                            There are no products matching your current search or filters.
                         </p>
 
                         <button
                             type="button"
+                            class="secondary-btn"
                             id="emptyAddProductBtn"
-                            class="primary-btn"
                         >
                             <i class="fa-solid fa-plus"></i>
                             Add Product
@@ -730,73 +651,71 @@
 
                     </div>
 
+                </div>
 
-                    <!-- PAGINATION -->
 
-                    <div class="products-pagination">
+                <!-- PAGINATION -->
 
-                        <span id="paginationInfo">
-                            Showing 0 of 0 products
+                <div class="products-pagination">
+
+                    <div
+                        class="pagination-info"
+                        id="paginationInfo"
+                    >
+                        Showing 0 of 0 products
+                    </div>
+
+                    <div class="pagination-buttons">
+
+                        <button
+                            type="button"
+                            class="pagination-btn"
+                            id="prevPageBtn"
+                            disabled
+                        >
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+
+                        <span
+                            class="pagination-current"
+                            id="currentPage"
+                        >
+                            1
                         </span>
 
-                        <div class="pagination-buttons">
-
-                            <button
-                                type="button"
-                                id="previousPageBtn"
-                                class="pagination-btn"
-                                disabled
-                                aria-label="Previous page"
-                            >
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-
-                            <span
-                                id="currentPage"
-                                class="current-page"
-                            >
-                                1
-                            </span>
-
-                            <button
-                                type="button"
-                                id="nextPageBtn"
-                                class="pagination-btn"
-                                disabled
-                                aria-label="Next page"
-                            >
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-
-                        </div>
+                        <button
+                            type="button"
+                            class="pagination-btn"
+                            id="nextPageBtn"
+                            disabled
+                        >
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
 
                     </div>
 
-                </section>
+                </div>
 
             </section>
 
 
-            <!-- =================================================
-                 FOOTER
-            ================================================== -->
+            <!-- FOOTER -->
 
             <footer class="dashboard-footer">
 
                 <span>
-                    © 2026 <strong>STOCKFLOW</strong>
-                    Inventory Management System
+                    © 2026 StockFlow Inventory System
                 </span>
 
                 <span>
-                    Products
+                    Inventory Management
                 </span>
 
             </footer>
 
-        </main>
+        </section>
 
-    </div>
+    </main>
 
 
     <!-- =====================================================
@@ -804,14 +723,19 @@
     ====================================================== -->
 
     <div
-        id="productModal"
         class="modal"
+        id="productModal"
         aria-hidden="true"
     >
 
         <div class="modal-backdrop"></div>
 
-        <div class="modal-dialog">
+        <div
+            class="modal-dialog product-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="productModalTitle"
+        >
 
             <div class="modal-header">
 
@@ -833,9 +757,8 @@
 
                 <button
                     type="button"
-                    id="closeProductModalBtn"
                     class="modal-close"
-                    aria-label="Close"
+                    id="closeProductModal"
                 >
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -845,149 +768,123 @@
 
             <form
                 id="productForm"
-                autocomplete="off"
+                novalidate
             >
 
-                <input
-                    type="hidden"
-                    id="productId"
-                    name="productId"
-                >
+                <div class="modal-body">
+
+                    <div
+                        class="form-message"
+                        id="productFormMessage"
+                    ></div>
 
 
-                <div class="form-grid">
+                    <div class="product-form-grid">
+
+                        <div class="form-group full-width">
+
+                            <label for="productName">
+                                Product Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="productName"
+                                name="product_name"
+                                class="form-control"
+                                placeholder="Enter product name"
+                                required
+                            >
+
+                        </div>
 
 
-                    <div class="form-group full-width">
+                        <div class="form-group">
 
-                        <label for="productName">
-                            Product Name
-                            <span>*</span>
-                        </label>
+                            <label for="productSku">
+                                SKU
+                            </label>
 
-                        <input
-                            type="text"
-                            id="productName"
-                            name="productName"
-                            placeholder="e.g. iPhone 15 Silicone Case"
-                            maxlength="150"
-                            required
-                        >
+                            <input
+                                type="text"
+                                id="productSku"
+                                name="sku"
+                                class="form-control"
+                                placeholder="e.g. SF-0001"
+                                required
+                            >
 
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="productSku">
-                            SKU
-                            <span>*</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="productSku"
-                            name="productSku"
-                            placeholder="e.g. CASE-IP15-BLK"
-                            maxlength="50"
-                            required
-                        >
-
-                    </div>
+                        </div>
 
 
-                    <div class="form-group">
+                        <div class="form-group">
 
-                        <label for="productCategory">
-                            Category
-                            <span>*</span>
-                        </label>
+                            <label for="productCategory">
+                                Category
+                            </label>
 
-                        <select
-                            id="productCategory"
-                            name="productCategory"
-                            required
-                        >
+                            <select
+                                id="productCategory"
+                                name="category"
+                                class="form-control"
+                                required
+                            >
+                                <option value="">
+                                    Select category
+                                </option>
+                            </select>
 
-                            <option value="">
-                                Select category
-                            </option>
-
-                        </select>
-
-                    </div>
+                        </div>
 
 
-                    <div class="form-group">
+                        <div class="form-group">
 
-                        <label for="productBrand">
-                            Brand
-                        </label>
+                            <label for="productBrand">
+                                Brand
+                            </label>
 
-                        <input
-                            type="text"
-                            id="productBrand"
-                            name="productBrand"
-                            placeholder="e.g. Spigen"
-                            maxlength="100"
-                        >
+                            <input
+                                type="text"
+                                id="productBrand"
+                                name="brand"
+                                class="form-control"
+                                placeholder="Enter brand"
+                            >
 
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="productUnit">
-                            Unit
-                            <span>*</span>
-                        </label>
-
-                        <select
-                            id="productUnit"
-                            name="productUnit"
-                            required
-                        >
-
-                            <option value="PCS">
-                                Pieces
-                            </option>
-
-                            <option value="BOX">
-                                Box
-                            </option>
-
-                            <option value="PACK">
-                                Pack
-                            </option>
-
-                            <option value="SET">
-                                Set
-                            </option>
-
-                            <option value="PAIR">
-                                Pair
-                            </option>
-
-                        </select>
-
-                    </div>
+                        </div>
 
 
-                    <div class="form-group">
+                        <div class="form-group">
 
-                        <label for="productPrice">
-                            Selling Price
-                            <span>*</span>
-                        </label>
+                            <label for="productUnit">
+                                Unit
+                            </label>
 
-                        <div class="input-prefix">
+                            <select
+                                id="productUnit"
+                                name="unit"
+                                class="form-control"
+                            >
+                                <option value="piece">Piece</option>
+                                <option value="box">Box</option>
+                                <option value="pack">Pack</option>
+                                <option value="set">Set</option>
+                            </select>
 
-                            <span>₱</span>
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="productSellingPrice">
+                                Selling Price
+                            </label>
 
                             <input
                                 type="number"
-                                id="productPrice"
-                                name="productPrice"
+                                id="productSellingPrice"
+                                name="selling_price"
+                                class="form-control"
                                 placeholder="0.00"
                                 min="0"
                                 step="0.01"
@@ -996,23 +893,18 @@
 
                         </div>
 
-                    </div>
 
+                        <div class="form-group">
 
-                    <div class="form-group">
-
-                        <label for="productCost">
-                            Cost Price
-                        </label>
-
-                        <div class="input-prefix">
-
-                            <span>₱</span>
+                            <label for="productCostPrice">
+                                Cost Price
+                            </label>
 
                             <input
                                 type="number"
-                                id="productCost"
-                                name="productCost"
+                                id="productCostPrice"
+                                name="cost_price"
+                                class="form-control"
                                 placeholder="0.00"
                                 min="0"
                                 step="0.01"
@@ -1020,133 +912,106 @@
 
                         </div>
 
-                    </div>
+
+                        <div class="form-group">
+
+                            <label for="productInitialStock">
+                                Initial Stock
+                            </label>
+
+                            <input
+                                type="number"
+                                id="productInitialStock"
+                                name="initial_stock"
+                                class="form-control"
+                                placeholder="0"
+                                min="0"
+                                step="1"
+                            >
+
+                        </div>
 
 
-                    <div class="form-group">
+                        <div class="form-group">
 
-                        <label for="productStock">
-                            Initial Stock
-                        </label>
+                            <label for="productReorderLevel">
+                                Reorder Level
+                            </label>
 
-                        <input
-                            type="number"
-                            id="productStock"
-                            name="productStock"
-                            placeholder="0"
-                            min="0"
-                            step="1"
-                        >
+                            <input
+                                type="number"
+                                id="productReorderLevel"
+                                name="reorder_level"
+                                class="form-control"
+                                placeholder="0"
+                                min="0"
+                                step="1"
+                            >
 
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="productReorder">
-                            Reorder Level
-                        </label>
-
-                        <input
-                            type="number"
-                            id="productReorder"
-                            name="productReorder"
-                            placeholder="10"
-                            min="0"
-                            step="1"
-                            value="10"
-                        >
-
-                    </div>
+                        </div>
 
 
-                    <div class="form-group">
+                        <div class="form-group">
 
-                        <label for="productStatus">
-                            Status
-                        </label>
+                            <label for="productStatus">
+                                Status
+                            </label>
 
-                        <select
-                            id="productStatus"
-                            name="productStatus"
-                        >
+                            <select
+                                id="productStatus"
+                                name="status"
+                                class="form-control"
+                            >
+                                <option value="active">
+                                    Active
+                                </option>
 
-                            <option value="ACTIVE">
-                                Active
-                            </option>
+                                <option value="inactive">
+                                    Inactive
+                                </option>
+                            </select>
 
-                            <option value="INACTIVE">
-                                Inactive
-                            </option>
-
-                        </select>
-
-                    </div>
+                        </div>
 
 
-                    <div class="form-group full-width">
+                        <div class="form-group full-width">
 
-                        <label for="productDescription">
-                            Description
-                        </label>
+                            <label for="productDescription">
+                                Description
+                            </label>
 
-                        <textarea
-                            id="productDescription"
-                            name="productDescription"
-                            rows="4"
-                            maxlength="500"
-                            placeholder="Enter product description..."
-                        ></textarea>
+                            <textarea
+                                id="productDescription"
+                                name="description"
+                                class="form-control"
+                                rows="4"
+                                placeholder="Enter product description..."
+                            ></textarea>
+
+                        </div>
 
                     </div>
 
                 </div>
 
-
-                <!-- FORM MESSAGES -->
-
-                <div
-                    id="productFormError"
-                    class="form-message error-message hidden"
-                >
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <span></span>
-                </div>
-
-
-                <div
-                    id="productFormSuccess"
-                    class="form-message success-message hidden"
-                >
-                    <i class="fa-solid fa-circle-check"></i>
-                    <span></span>
-                </div>
-
-
-                <!-- MODAL FOOTER -->
 
                 <div class="modal-footer">
 
                     <button
                         type="button"
-                        id="cancelProductBtn"
                         class="secondary-btn"
+                        id="cancelProductBtn"
                     >
                         Cancel
                     </button>
 
                     <button
                         type="submit"
-                        id="saveProductBtn"
                         class="primary-btn"
+                        id="saveProductBtn"
                     >
-
-                        <i class="fa-solid fa-floppy-disk"></i>
-
-                        <span id="saveProductText">
-                            Save Product
-                        </span>
-
+                        <i class="fa-solid fa-check"></i>
+                        <span>Save Product</span>
                     </button>
 
                 </div>
@@ -1159,35 +1024,32 @@
 
 
     <!-- =====================================================
-         DELETE PRODUCT MODAL
+         DELETE MODAL
     ====================================================== -->
 
     <div
-        id="deleteModal"
         class="modal"
+        id="deleteProductModal"
         aria-hidden="true"
     >
 
         <div class="modal-backdrop"></div>
 
-        <div class="confirm-dialog">
+        <div
+            class="modal-dialog confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+        >
 
             <div class="confirm-icon danger">
                 <i class="fa-solid fa-trash"></i>
             </div>
 
-            <h2>
-                Delete Product?
-            </h2>
+            <h2>Delete Product?</h2>
 
             <p>
                 Are you sure you want to delete
-                <strong id="deleteProductName">
-                    this product
-                </strong>?
-            </p>
-
-            <p class="warning-text">
+                <strong id="deleteProductName">this product</strong>?
                 This action cannot be undone.
             </p>
 
@@ -1195,16 +1057,16 @@
 
                 <button
                     type="button"
-                    id="cancelDeleteBtn"
                     class="secondary-btn"
+                    id="cancelDeleteBtn"
                 >
                     Cancel
                 </button>
 
                 <button
                     type="button"
-                    id="confirmDeleteBtn"
                     class="danger-btn"
+                    id="confirmDeleteBtn"
                 >
                     <i class="fa-solid fa-trash"></i>
                     Delete Product
@@ -1222,14 +1084,18 @@
     ====================================================== -->
 
     <div
-        id="viewProductModal"
         class="modal"
+        id="viewProductModal"
         aria-hidden="true"
     >
 
         <div class="modal-backdrop"></div>
 
-        <div class="modal-dialog view-dialog">
+        <div
+            class="modal-dialog view-product-dialog"
+            role="dialog"
+            aria-modal="true"
+        >
 
             <div class="modal-header">
 
@@ -1240,20 +1106,15 @@
                     </span>
 
                     <h2 id="viewProductName">
-                        Product
+                        Product Details
                     </h2>
-
-                    <p id="viewProductSku">
-                        SKU
-                    </p>
 
                 </div>
 
                 <button
                     type="button"
-                    id="closeViewProductBtn"
                     class="modal-close"
-                    aria-label="Close"
+                    id="closeViewProductModal"
                 >
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -1261,53 +1122,61 @@
             </div>
 
 
-            <div class="product-details-grid">
+            <div class="modal-body">
 
-                <div class="detail-item">
-                    <span>Category</span>
-                    <strong id="viewProductCategory">—</strong>
+                <div class="product-details-grid">
+
+                    <div class="detail-item">
+                        <span>SKU</span>
+                        <strong id="viewProductSku">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Category</span>
+                        <strong id="viewProductCategory">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Brand</span>
+                        <strong id="viewProductBrand">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Unit</span>
+                        <strong id="viewProductUnit">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Selling Price</span>
+                        <strong id="viewProductSellingPrice">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Cost Price</span>
+                        <strong id="viewProductCostPrice">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Current Stock</span>
+                        <strong id="viewProductStock">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Reorder Level</span>
+                        <strong id="viewProductReorderLevel">—</strong>
+                    </div>
+
+                    <div class="detail-item">
+                        <span>Status</span>
+                        <strong id="viewProductStatus">—</strong>
+                    </div>
+
                 </div>
 
-                <div class="detail-item">
-                    <span>Brand</span>
-                    <strong id="viewProductBrand">—</strong>
-                </div>
 
-                <div class="detail-item">
-                    <span>Selling Price</span>
-                    <strong id="viewProductPrice">₱0.00</strong>
-                </div>
+                <div class="detail-description">
 
-                <div class="detail-item">
-                    <span>Cost Price</span>
-                    <strong id="viewProductCost">₱0.00</strong>
-                </div>
-
-                <div class="detail-item">
-                    <span>Current Stock</span>
-                    <strong id="viewProductStock">0</strong>
-                </div>
-
-                <div class="detail-item">
-                    <span>Reorder Level</span>
-                    <strong id="viewProductReorder">0</strong>
-                </div>
-
-                <div class="detail-item">
-                    <span>Unit</span>
-                    <strong id="viewProductUnit">PCS</strong>
-                </div>
-
-                <div class="detail-item">
-                    <span>Status</span>
-                    <strong id="viewProductStatus">ACTIVE</strong>
-                </div>
-
-                <div class="detail-item full-width">
-
-                    <span>
-                        Description
-                    </span>
+                    <span>Description</span>
 
                     <p id="viewProductDescription">
                         No description available.
@@ -1322,8 +1191,16 @@
 
                 <button
                     type="button"
-                    id="viewEditProductBtn"
+                    class="secondary-btn"
+                    id="closeViewProductBtn"
+                >
+                    Close
+                </button>
+
+                <button
+                    type="button"
                     class="primary-btn"
+                    id="editFromViewBtn"
                 >
                     <i class="fa-solid fa-pen"></i>
                     Edit Product
@@ -1341,19 +1218,19 @@
     ====================================================== -->
 
     <div
-        id="toastContainer"
         class="toast-container"
-        aria-live="polite"
+        id="toastContainer"
     ></div>
 
 
     <!-- =====================================================
-         GLOBAL LOADING
+         LOADING
     ====================================================== -->
 
     <div
+        class="global-loading"
         id="globalLoading"
-        class="global-loading hidden"
+        hidden
     >
 
         <div class="loading-card">
@@ -1361,7 +1238,7 @@
             <div class="loading-spinner"></div>
 
             <strong>
-                Processing...
+                Loading...
             </strong>
 
             <span>
@@ -1374,13 +1251,15 @@
 
 
     <!-- =====================================================
-         STOCKFLOW JAVASCRIPT
+         JAVASCRIPT
     ====================================================== -->
 
+    <script src="./config.js"></script>
+    <script src="./api.js"></script>
+    <script src="./auth.js"></script>
     <script src="./main.js"></script>
     <script src="./products.js"></script>
     <script src="./products-ui.js"></script>
 
 </body>
-
 </html>
