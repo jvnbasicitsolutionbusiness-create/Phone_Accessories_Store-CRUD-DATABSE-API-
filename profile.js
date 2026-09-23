@@ -1,863 +1,655 @@
 /* =========================================================
-   STOCKFLOW — PROFILE MODULE
-   Current authenticated user information
+   STOCKFLOW — PROFILE CONTROLLER
 
-   PROFILE PAGE ONLY
+   Purpose:
+   - Load the currently logged-in user
+   - Display account information
+   - Keep sidebar user information synchronized
+   - Load fresh user information from the API when available
+   - Handle mobile navigation
+   - Handle logout
 
-   Data flow:
-   Stored Session User
-          ↓
-   StockFlowAPI.getUser()
-          ↓
-   Google Apps Script
-          ↓
-   Google Sheet
-          ↓
-   Profile Information
-========================================================= */
+   IMPORTANT:
+   - Does NOT generate OTP
+   - Does NOT modify login
+   - Does NOT modify registration
+   - Does NOT modify authentication flow
+   ========================================================= */
 
-(() => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     "use strict";
 
 
     /* =====================================================
-       HELPERS
+       ELEMENTS
     ===================================================== */
 
-    const $ = (selector) => {
-        return document.querySelector(selector);
-    };
+    const sidebar =
+        document.querySelector(".sf-side");
+
+    const menuButton =
+        document.querySelector("[data-menu]");
+
+    const logoutButton =
+        document.querySelector("#logoutBtn, [data-logout]");
 
 
-    const getElement = (...selectors) => {
+    /* =====================================================
+       HELPER — SAFE TEXT
+    ===================================================== */
 
-        for (const selector of selectors) {
+    function setText(selector, value) {
 
-            const element =
-                document.querySelector(selector);
+        const elements =
+            document.querySelectorAll(selector);
 
-            if (element) {
-                return element;
-            }
-
+        if (!elements.length) {
+            return;
         }
 
-        return null;
-    };
+        const text =
+            value === null ||
+            value === undefined ||
+            String(value).trim() === ""
+                ? "—"
+                : String(value);
+
+        elements.forEach(element => {
+            element.textContent = text;
+        });
+    }
 
 
-    const getValue = (
-        user,
-        ...keys
-    ) => {
+    /* =====================================================
+       HELPER — FIRST AVAILABLE VALUE
+    ===================================================== */
 
-        if (!user) {
-            return "—";
+    function firstValue(object, keys) {
+
+        if (!object || typeof object !== "object") {
+            return "";
         }
-
 
         for (const key of keys) {
 
-            const value =
-                user?.[key];
-
+            const value = object[key];
 
             if (
                 value !== undefined &&
                 value !== null &&
                 String(value).trim() !== ""
             ) {
-
-                return String(
-                    value
-                ).trim();
-
+                return value;
             }
-
         }
 
-
-        return "—";
-    };
+        return "";
+    }
 
 
     /* =====================================================
-       NORMALIZE USER RESPONSE
+       HELPER — NORMALIZE USER OBJECT
     ===================================================== */
 
-    const normalizeUserResponse = (
-        response
-    ) => {
+    function normalizeUser(rawUser) {
 
-        if (!response) {
+        if (!rawUser || typeof rawUser !== "object") {
             return null;
         }
 
-
         /*
-         * API responses may be returned as:
-         *
-         * {
-         *     success: true,
-         *     user: {...}
-         * }
-         *
-         * or:
-         *
-         * {
-         *     success: true,
-         *     data: {...}
-         * }
-         *
-         * or simply:
-         *
-         * {...user data...}
+         * Some API responses may be wrapped.
+         * Handle common response structures without
+         * changing the backend.
          */
 
+        let user = rawUser;
 
         if (
-            response.user &&
-            typeof response.user ===
-                "object"
+            rawUser.user &&
+            typeof rawUser.user === "object"
         ) {
-
-            return response.user;
-
+            user = rawUser.user;
         }
 
-
         if (
-            response.data &&
-            typeof response.data ===
-                "object"
+            rawUser.data &&
+            typeof rawUser.data === "object"
         ) {
 
             if (
-                response.data.user &&
-                typeof response.data.user ===
-                    "object"
+                rawUser.data.user &&
+                typeof rawUser.data.user === "object"
             ) {
-
-                return response.data.user;
-
+                user = rawUser.data.user;
+            } else {
+                user = rawUser.data;
             }
-
-
-            return response.data;
-
-        }
-
-
-        if (
-            response.result &&
-            typeof response.result ===
-                "object"
-        ) {
-
-            if (
-                response.result.user &&
-                typeof response.result.user ===
-                    "object"
-            ) {
-
-                return response.result.user;
-
-            }
-
-
-            return response.result;
-
-        }
-
-
-        return response;
-
-    };
-
-
-    /* =====================================================
-       BUILD USER IDENTITY
-    ===================================================== */
-
-    const buildIdentityData = (
-        user
-    ) => {
-
-        if (!user) {
-            return {};
         }
 
 
         return {
 
-            uid:
-                getValue(
-                    user,
-                    "uid",
-                    "UID",
+            id: firstValue(
+                user,
+                [
+                    "id",
+                    "user_id",
                     "userId",
-                    "USER_ID"
-                ) === "—"
-                    ? ""
-                    : getValue(
-                        user,
-                        "uid",
-                        "UID",
-                        "userId",
-                        "USER_ID"
-                    ),
+                    "account_id",
+                    "accountId"
+                ]
+            ),
 
+            fullName: firstValue(
+                user,
+                [
+                    "full_name",
+                    "fullName",
+                    "name",
+                    "display_name",
+                    "displayName"
+                ]
+            ),
 
-            username:
-                getValue(
-                    user,
+            username: firstValue(
+                user,
+                [
                     "username",
-                    "USERNAME",
                     "user_name",
-                    "USER_NAME"
-                ) === "—"
-                    ? ""
-                    : getValue(
-                        user,
-                        "username",
-                        "USERNAME",
-                        "user_name",
-                        "USER_NAME"
-                    ),
+                    "userName"
+                ]
+            ),
 
-
-            email:
-                getValue(
-                    user,
+            email: firstValue(
+                user,
+                [
                     "email",
-                    "EMAIL",
                     "gmail",
-                    "GMAIL"
-                ) === "—"
-                    ? ""
-                    : getValue(
-                        user,
-                        "email",
-                        "EMAIL",
-                        "gmail",
-                        "GMAIL"
-                    ),
+                    "email_address",
+                    "emailAddress"
+                ]
+            ),
 
-
-            gmail:
-                getValue(
-                    user,
-                    "gmail",
-                    "GMAIL",
-                    "email",
-                    "EMAIL"
-                ) === "—"
-                    ? ""
-                    : getValue(
-                        user,
-                        "gmail",
-                        "GMAIL",
-                        "email",
-                        "EMAIL"
-                    ),
-
-
-            phone:
-                getValue(
-                    user,
+            phone: firstValue(
+                user,
+                [
                     "phone",
-                    "PHONE",
+                    "phone_number",
                     "phoneNumber",
-                    "PHONE_NUMBER",
-                    "mobile",
-                    "MOBILE",
-                    "phone_no",
-                    "PHONE_NO"
-                ) === "—"
-                    ? ""
-                    : getValue(
-                        user,
-                        "phone",
-                        "PHONE",
-                        "phoneNumber",
-                        "PHONE_NUMBER",
-                        "mobile",
-                        "MOBILE",
-                        "phone_no",
-                        "PHONE_NO"
-                    )
+                    "contact_number",
+                    "contactNumber"
+                ]
+            ),
 
+            age: firstValue(
+                user,
+                [
+                    "age"
+                ]
+            ),
+
+            role: firstValue(
+                user,
+                [
+                    "role",
+                    "user_role",
+                    "userRole",
+                    "account_role",
+                    "accountRole"
+                ]
+            ),
+
+            status: firstValue(
+                user,
+                [
+                    "account_status",
+                    "accountStatus",
+                    "status"
+                ]
+            )
         };
-
-    };
-
-
-    /* =====================================================
-       FETCH CURRENT USER
-    ===================================================== */
-
-    const fetchCurrentUser = async (
-        storedUser
-    ) => {
-
-        /*
-         * First make sure StockFlowAPI exists.
-         */
-
-        if (
-            !window.StockFlowAPI
-        ) {
-
-            console.warn(
-                "[PROFILE] StockFlowAPI is not available."
-            );
-
-            return storedUser || null;
-
-        }
-
-
-        /* -------------------------------------------------
-           BUILD IDENTITY
-        ------------------------------------------------- */
-
-        const identity =
-            buildIdentityData(
-                storedUser
-            );
-
-
-        /*
-         * If we don't have any useful identity,
-         * don't make an empty getUser request.
-         */
-
-        const hasIdentity =
-            Boolean(
-                identity.uid ||
-                identity.username ||
-                identity.email ||
-                identity.gmail ||
-                identity.phone
-            );
-
-
-        if (!hasIdentity) {
-
-            console.warn(
-                "[PROFILE] No stored user identity available."
-            );
-
-            return storedUser || null;
-
-        }
-
-
-        /* -------------------------------------------------
-           REQUEST FULL USER RECORD
-        ------------------------------------------------- */
-
-        try {
-
-            console.log(
-                "[PROFILE] Fetching current user..."
-            );
-
-
-            const response =
-                await window.StockFlowAPI.getUser(
-                    identity
-                );
-
-
-            console.log(
-                "[PROFILE] getUser response:",
-                response
-            );
-
-
-            const remoteUser =
-                normalizeUserResponse(
-                    response
-                );
-
-
-            /*
-             * Make sure the response actually
-             * contains user information.
-             */
-
-            if (
-                remoteUser &&
-                typeof remoteUser ===
-                    "object"
-            ) {
-
-                /*
-                 * Combine stored identity and
-                 * remote Google Sheet data.
-                 *
-                 * Remote data gets priority.
-                 */
-
-                return {
-                    ...storedUser,
-                    ...remoteUser
-                };
-
-            }
-
-
-        } catch (error) {
-
-            console.warn(
-                "[PROFILE] Unable to fetch user from API:",
-                error
-            );
-
-        }
-
-
-        /*
-         * If the API request fails,
-         * use the authenticated stored user.
-         */
-
-        return storedUser || null;
-
-    };
+    }
 
 
     /* =====================================================
-       POPULATE PROFILE
+       HELPER — INITIALS
     ===================================================== */
 
-    const populateProfile = (
-        user
-    ) => {
+    function getInitials(name) {
+
+        if (!name) {
+            return "SF";
+        }
+
+        const parts =
+            String(name)
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+        if (!parts.length) {
+            return "SF";
+        }
+
+        if (parts.length === 1) {
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+        }
+
+        return (
+            parts[0].charAt(0) +
+            parts[parts.length - 1].charAt(0)
+        ).toUpperCase();
+    }
+
+
+    /* =====================================================
+       DISPLAY USER
+    ===================================================== */
+
+    function displayUser(user) {
 
         if (!user) {
-
-            console.warn(
-                "[PROFILE] No user data available."
-            );
-
             return;
-
         }
 
 
-        console.log(
-            "[PROFILE] Populating profile:",
-            user
+        /* -----------------------------------------------
+           FULL NAME
+        ------------------------------------------------ */
+
+        const fullName =
+            user.fullName || "STOCKFLOW USER";
+
+        setText(
+            "[data-user-name]",
+            fullName
         );
 
 
-        /* -------------------------------------------------
-           FULL NAME
-        ------------------------------------------------- */
+        /* -----------------------------------------------
+           USERNAME
+        ------------------------------------------------ */
 
-        const name =
-            getValue(
-                user,
-
-                "name",
-                "fullName",
-                "full_name",
-
-                "NAME",
-                "FULL_NAME",
-
-                "displayName",
-                "DISPLAY_NAME",
-
-                "username",
-                "USERNAME"
-            );
+        setText(
+            "[data-user-username]",
+            user.username || "—"
+        );
 
 
-        /* -------------------------------------------------
+        /* -----------------------------------------------
            ROLE
-        ------------------------------------------------- */
+        ------------------------------------------------ */
 
         const role =
-            getValue(
-                user,
+            user.role || "Employee";
 
-                "role",
-                "ROLE",
-
-                "position",
-                "POSITION",
-
-                "designation",
-                "DESIGNATION",
-
-                "accountRole",
-                "ACCOUNT_ROLE"
-            );
-
-
-        /* -------------------------------------------------
-           EMAIL
-        ------------------------------------------------- */
-
-        const email =
-            getValue(
-                user,
-
-                "email",
-                "EMAIL",
-
-                "gmail",
-                "GMAIL"
-            );
-
-
-        /* -------------------------------------------------
-           PHONE
-        ------------------------------------------------- */
-
-        const phone =
-            getValue(
-                user,
-
-                "phone",
-                "PHONE",
-
-                "phoneNumber",
-                "PHONE_NUMBER",
-
-                "phone_no",
-                "PHONE_NO",
-
-                "mobile",
-                "MOBILE",
-
-                "contactNumber",
-                "CONTACT_NUMBER"
-            );
-
-
-        console.log(
-            "[PROFILE] Display values:",
-            {
-                name,
-                role,
-                email,
-                phone
-            }
+        setText(
+            "[data-user-role]",
+            role
         );
 
 
-        /* -------------------------------------------------
-           ELEMENTS
-        ------------------------------------------------- */
+        /* -----------------------------------------------
+           EMAIL
+        ------------------------------------------------ */
 
-        const nameElement =
-            getElement(
-                "[data-user-name]"
+        setText(
+            "[data-user-email]",
+            user.email || "—"
+        );
+
+
+        /* -----------------------------------------------
+           PHONE
+        ------------------------------------------------ */
+
+        setText(
+            "[data-user-phone]",
+            user.phone || "—"
+        );
+
+
+        /* -----------------------------------------------
+           AGE
+        ------------------------------------------------ */
+
+        setText(
+            "[data-user-age]",
+            user.age || "—"
+        );
+
+
+        /* -----------------------------------------------
+           ACCOUNT STATUS
+        ------------------------------------------------ */
+
+        const status =
+            user.status || "Active";
+
+        setText(
+            "[data-user-status]",
+            status
+        );
+
+
+        /* -----------------------------------------------
+           AVATAR
+        ------------------------------------------------ */
+
+        const avatar =
+            document.querySelector(
+                "[data-user-avatar]"
             );
 
+        if (avatar) {
 
-        const roleElement =
-            getElement(
-                "[data-user-role]"
-            );
-
-
-        const emailElement =
-            getElement(
-                "[data-user-email]"
-            );
-
-
-        const phoneElement =
-            getElement(
-                "[data-user-phone]"
-            );
-
-
-        /* -------------------------------------------------
-           DISPLAY
-        ------------------------------------------------- */
-
-        if (nameElement) {
-
-            nameElement.textContent =
-                name;
-
+            avatar.textContent =
+                getInitials(fullName);
         }
 
 
-        if (roleElement) {
+        /* -----------------------------------------------
+           STATUS CARD
+        ------------------------------------------------ */
 
-            roleElement.textContent =
-                role;
-
-        }
-
-
-        if (emailElement) {
-
-            emailElement.textContent =
-                email;
-
-        }
-
-
-        if (phoneElement) {
-
-            phoneElement.textContent =
-                phone;
-
-        }
-
-    };
+        updateStatusCard(status);
+    }
 
 
     /* =====================================================
-       AUTHENTICATED USER
+       STATUS CARD
     ===================================================== */
 
-    const initializeAuthentication = async () => {
+    function updateStatusCard(status) {
+
+        const title =
+            document.querySelector(
+                "[data-status-title]"
+            );
+
+        const message =
+            document.querySelector(
+                "[data-status-message]"
+            );
+
+        const indicator =
+            document.querySelector(
+                "[data-status-indicator]"
+            );
+
+
+        const normalized =
+            String(status || "Active")
+                .trim()
+                .toLowerCase();
+
+
+        const activeStatuses = [
+            "active",
+            "enabled",
+            "verified",
+            "approved"
+        ];
+
+
+        const isActive =
+            activeStatuses.includes(normalized);
+
+
+        if (isActive) {
+
+            if (title) {
+                title.textContent =
+                    "Account Active";
+            }
+
+            if (message) {
+                message.textContent =
+                    "Your STOCKFLOW account is currently active.";
+            }
+
+            if (indicator) {
+                indicator.textContent = "✓";
+
+                indicator.style.background =
+                    "#e8f8ef";
+
+                indicator.style.color =
+                    "#16a05a";
+            }
+
+        } else {
+
+            if (title) {
+                title.textContent =
+                    "Account " +
+                    String(status || "Inactive");
+            }
+
+            if (message) {
+                message.textContent =
+                    "Please check your account status.";
+            }
+
+            if (indicator) {
+                indicator.textContent = "!";
+
+                indicator.style.background =
+                    "#fff4e5";
+
+                indicator.style.color =
+                    "#c77700";
+            }
+        }
+    }
+
+
+    /* =====================================================
+       LOAD LOGGED-IN USER
+    ===================================================== */
+
+    async function loadCurrentUser() {
 
         /*
-         * We intentionally DO NOT use:
+         * Make sure the current session exists.
          *
-         * StockFlowAuth.requireAuth()
-         *
-         * because the current auth.js you provided
-         * exposes StockFlowAuthUI instead.
-         *
-         * The Profile page will use the existing
-         * StockFlowAPI session/storage system.
+         * IMPORTANT:
+         * This uses the actual API object exposed
+         * by api.js.
          */
 
-
         if (
-            !window.StockFlowAPI
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.requireSession !== "function"
         ) {
 
             console.error(
-                "[PROFILE] StockFlowAPI is not available."
+                "StockFlowAPI.requireSession() is not available."
             );
 
-            return null;
+            showProfileError(
+                "Authentication service is unavailable."
+            );
 
+            return;
         }
-
-
-        /* -------------------------------------------------
-           GET STORED USER
-        ------------------------------------------------- */
-
-        let storedUser = null;
 
 
         try {
 
+            /*
+             * 1. Verify that a valid session exists.
+             */
+
+            await window.StockFlowAPI.requireSession();
+
+
+            /*
+             * 2. Immediately use the locally stored user.
+             *
+             * This makes the profile load quickly even
+             * before the server request finishes.
+             */
+
+            let storedUser = null;
+
             if (
-                typeof
-                window.StockFlowAPI.getStoredUser ===
-                    "function"
+                typeof window.StockFlowAPI.getStoredUser ===
+                "function"
             ) {
 
                 storedUser =
                     window.StockFlowAPI.getStoredUser();
-
             }
 
-        } catch (error) {
 
-            console.warn(
-                "[PROFILE] Unable to read stored user:",
-                error
-            );
+            if (storedUser) {
 
-        }
+                const normalizedStored =
+                    normalizeUser(storedUser);
 
-
-        console.log(
-            "[PROFILE] Stored user:",
-            storedUser
-        );
-
-
-        /* -------------------------------------------------
-           VERIFY SESSION
-        ------------------------------------------------- */
-
-        try {
-
-            if (
-                typeof
-                window.StockFlowAPI.session ===
-                    "function"
-            ) {
-
-                const session =
-                    await window.StockFlowAPI.session();
-
-
-                console.log(
-                    "[PROFILE] Session response:",
-                    session
+                displayUser(
+                    normalizedStored
                 );
-
-
-                /*
-                 * If the session contains a user,
-                 * merge it with the stored user.
-                 */
-
-                const sessionUser =
-                    normalizeUserResponse(
-                        session
-                    );
-
-
-                if (
-                    sessionUser &&
-                    typeof sessionUser ===
-                        "object"
-                ) {
-
-                    storedUser = {
-
-                        ...(storedUser || {}),
-
-                        ...sessionUser
-
-                    };
-
-                }
-
             }
 
-        } catch (error) {
-
-            console.warn(
-                "[PROFILE] Session verification failed:",
-                error
-            );
 
             /*
-             * Do NOT immediately redirect.
+             * 3. Request the latest user information
+             *    from the backend.
              *
-             * We still try the stored user.
+             * This makes sure Profile is not permanently
+             * dependent on stale session information.
              */
 
-        }
+            if (
+                typeof window.StockFlowAPI.getUser ===
+                "function"
+            ) {
+
+                try {
+
+                    const response =
+                        await window.StockFlowAPI.getUser();
 
 
-        /* -------------------------------------------------
-           IF NO USER
-        ------------------------------------------------- */
+                    const serverUser =
+                        normalizeUser(response);
 
-        if (!storedUser) {
 
-            console.warn(
-                "[PROFILE] No authenticated user found."
+                    if (serverUser) {
+
+                        displayUser(
+                            serverUser
+                        );
+                    }
+
+                } catch (serverError) {
+
+                    /*
+                     * If the server request fails but a stored
+                     * user already exists, keep displaying it.
+                     *
+                     * Do not destroy the working session.
+                     */
+
+                    console.warn(
+                        "Could not refresh profile from server:",
+                        serverError
+                    );
+                }
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Profile session error:",
+                error
             );
 
-            return null;
 
+            /*
+             * requireSession() normally handles redirecting
+             * unauthenticated users.
+             *
+             * We only show an error if the API did not
+             * handle the situation itself.
+             */
+
+            if (
+                !window.location.pathname.endsWith(
+                    "login.html"
+                )
+            ) {
+
+                showProfileError(
+                    "Unable to load your account information."
+                );
+            }
         }
-
-
-        /* -------------------------------------------------
-           GET FULL USER RECORD
-        ------------------------------------------------- */
-
-        const fullUser =
-            await fetchCurrentUser(
-                storedUser
-            );
-
-
-        return fullUser || storedUser;
-
-    };
+    }
 
 
     /* =====================================================
-       MOBILE SIDEBAR
+       PROFILE ERROR
     ===================================================== */
 
-    const setupMobileMenu = () => {
+    function showProfileError(message) {
 
-        const menuButton =
+        const profileContent =
             document.querySelector(
-                "[data-menu]"
+                ".profile-content"
             );
 
-
-        const sidebar =
-            document.querySelector(
-                ".sf-side"
-            );
-
-
-        if (
-            !menuButton ||
-            !sidebar
-        ) {
-
+        if (!profileContent) {
             return;
-
         }
 
 
-        let overlay =
+        let existing =
             document.querySelector(
-                ".profile-sidebar-overlay"
+                ".profile-load-error"
             );
 
 
-        if (!overlay) {
+        if (!existing) {
 
-            overlay =
-                document.createElement(
-                    "div"
-                );
+            existing =
+                document.createElement("div");
 
+            existing.className =
+                "profile-load-error";
 
-            overlay.className =
-                "profile-sidebar-overlay";
+            existing.style.cssText = `
+                margin-bottom: 16px;
+                padding: 12px 14px;
+                border: 1px solid #fecaca;
+                border-radius: 10px;
+                background: #fff5f5;
+                color: #b42318;
+                font-size: 12px;
+                font-weight: 600;
+            `;
 
-
-            document.body.appendChild(
-                overlay
-            );
-
+            profileContent.prepend(existing);
         }
 
 
-        const closeMenu = () => {
-
-            sidebar.classList.remove(
-                "open"
-            );
+        existing.textContent =
+            message;
+    }
 
 
-            overlay.classList.remove(
-                "show"
-            );
+    /* =====================================================
+       MOBILE MENU
+    ===================================================== */
 
-
-            menuButton.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-
-
-            document.body.style.overflow =
-                "";
-
-        };
-
+    if (menuButton && sidebar) {
 
         menuButton.addEventListener(
             "click",
@@ -869,300 +661,129 @@
                     );
 
 
-                overlay.classList.toggle(
-                    "show",
-                    isOpen
-                );
-
-
                 menuButton.setAttribute(
                     "aria-expanded",
                     String(isOpen)
                 );
-
-
-                document.body.style.overflow =
-                    isOpen
-                        ? "hidden"
-                        : "";
-
             }
         );
-
-
-        overlay.addEventListener(
-            "click",
-            closeMenu
-        );
-
-
-        sidebar
-            .querySelectorAll("a")
-            .forEach(
-                link => {
-
-                    link.addEventListener(
-                        "click",
-                        closeMenu
-                    );
-
-                }
-            );
-
-
-        document.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key ===
-                    "Escape"
-                ) {
-
-                    closeMenu();
-
-                }
-
-            }
-        );
-
-    };
+    }
 
 
     /* =====================================================
-       PROFILE SIDEBAR MOBILE STYLES
+       CLOSE MOBILE MENU WHEN LINK IS CLICKED
     ===================================================== */
 
-    const injectMobileStyles = () => {
+    if (sidebar) {
 
-        if (
-            document.getElementById(
-                "profileMobileStyles"
-            )
-        ) {
+        sidebar
+            .querySelectorAll(".sf-nav-link")
+            .forEach(link => {
 
-            return;
+                link.addEventListener(
+                    "click",
+                    () => {
 
-        }
-
-
-        const style =
-            document.createElement(
-                "style"
-            );
-
-
-        style.id =
-            "profileMobileStyles";
-
-
-        style.textContent = `
-
-            @media (max-width: 850px) {
-
-                .sf-side {
-                    position: fixed !important;
-                    top: 0;
-                    left: 0;
-
-                    width: 280px !important;
-                    height: 100vh !important;
-
-                    z-index: 2000;
-
-                    transform:
-                        translateX(-100%);
-
-                    transition:
-                        transform 0.22s ease;
-
-                    overflow-y: auto;
-                }
-
-                .sf-side.open {
-                    transform:
-                        translateX(0);
-                }
-
-                .sf-side .sf-nav {
-                    display: flex;
-                }
-
-                .profile-sidebar-overlay {
-                    position: fixed;
-
-                    inset: 0;
-
-                    z-index: 1900;
-
-                    background:
-                        rgba(
-                            4,
-                            13,
-                            27,
-                            0.55
+                        sidebar.classList.remove(
+                            "open"
                         );
 
-                    opacity: 0;
+                        if (menuButton) {
 
-                    visibility: hidden;
-
-                    transition:
-                        opacity 0.22s ease,
-                        visibility 0.22s ease;
-                }
-
-                .profile-sidebar-overlay.show {
-                    opacity: 1;
-
-                    visibility: visible;
-                }
-
-            }
-
-        `;
-
-
-        document.head.appendChild(
-            style
-        );
-
-    };
+                            menuButton.setAttribute(
+                                "aria-expanded",
+                                "false"
+                            );
+                        }
+                    }
+                );
+            });
+    }
 
 
     /* =====================================================
        LOGOUT
     ===================================================== */
 
-    const setupLogout = () => {
-
-        const logoutButton =
-            document.getElementById(
-                "logoutBtn"
-            );
-
-
-        if (!logoutButton) {
-
-            return;
-
-        }
-
+    if (logoutButton) {
 
         logoutButton.addEventListener(
             "click",
-            async event => {
+            async () => {
 
-                event.preventDefault();
+                logoutButton.disabled = true;
+
+                const originalHTML =
+                    logoutButton.innerHTML;
+
+                logoutButton.innerHTML =
+                    `
+                        <span>...</span>
+                        <span>Logging out...</span>
+                    `;
 
 
                 try {
+
+                    /*
+                     * Use the existing API logout.
+                     * Do not manually generate/delete OTP data.
+                     */
 
                     if (
                         window.StockFlowAPI &&
-                        typeof
-                        window.StockFlowAPI.logout ===
-                            "function"
+                        typeof window.StockFlowAPI.logout ===
+                        "function"
                     ) {
 
-                        await
-                            window.StockFlowAPI.logout();
+                        await window.StockFlowAPI.logout();
 
-                        window.location.href =
-                            "auth.html";
+                    } else {
 
-                        return;
+                        /*
+                         * Fallback only if API logout is unavailable.
+                         */
 
+                        sessionStorage.removeItem(
+                            "STOCKFLOW_USER"
+                        );
+
+                        localStorage.removeItem(
+                            "STOCKFLOW_USER"
+                        );
                     }
+
+
+                    window.location.href =
+                        "./login.html";
+
 
                 } catch (error) {
 
-                    console.warn(
-                        "[PROFILE] Logout API failed:",
+                    console.error(
+                        "Logout failed:",
                         error
                     );
 
+
+                    /*
+                     * Restore button if logout failed.
+                     */
+
+                    logoutButton.disabled = false;
+
+                    logoutButton.innerHTML =
+                        originalHTML;
                 }
-
-
-                /*
-                 * Fallback only for Profile page.
-                 */
-
-                try {
-
-                    sessionStorage.clear();
-
-                } catch (_) {}
-
-
-                window.location.href =
-                    "auth.html";
-
             }
         );
-
-    };
-
-
-    /* =====================================================
-       INITIALIZE
-    ===================================================== */
-
-    const initialize = async () => {
-
-        console.log(
-            "[PROFILE] Initializing Profile..."
-        );
-
-
-        injectMobileStyles();
-
-        setupMobileMenu();
-
-        setupLogout();
-
-
-        const user =
-            await initializeAuthentication();
-
-
-        if (!user) {
-
-            console.warn(
-                "[PROFILE] Profile user could not be loaded."
-            );
-
-            return;
-
-        }
-
-
-        populateProfile(
-            user
-        );
-
-    };
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    if (
-        document.readyState ===
-        "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initialize
-        );
-
-    } else {
-
-        initialize();
-
     }
 
-})();
+
+    /* =====================================================
+       LOAD PROFILE
+    ===================================================== */
+
+    await loadCurrentUser();
+
+});
