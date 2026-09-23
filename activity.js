@@ -1,62 +1,127 @@
 /* =========================================================
-   STOCKFLOW — ACTIVITY LOG MODULE
-   Loads and displays system activity records
+   STOCKFLOW — ACTIVITY LOG
 ========================================================= */
 
 (() => {
+
     "use strict";
 
 
     /* =====================================================
-       STATE
+       DOM
     ===================================================== */
 
-    const state = {
-        activities: [],
-        loading: false
-    };
+    const rows = document.getElementById("rows");
+    const refreshButton = document.getElementById("refresh");
+    const activityCount = document.getElementById("activityCount");
+
+    const sidebar = document.getElementById("sidebar");
+    const menuButton = document.getElementById("menuButton");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    const logoutButton = document.getElementById("logoutButton");
+
+    const notificationButton =
+        document.getElementById("notificationButton");
+
+    const notificationPanel =
+        document.getElementById("notificationPanel");
+
+    const closeNotifications =
+        document.getElementById("closeNotifications");
+
+    const notificationBody =
+        document.getElementById("notificationBody");
 
 
     /* =====================================================
        HELPERS
     ===================================================== */
 
-    const $ = (id) => document.getElementById(id);
+    function escapeHTML(value) {
 
-
-    const escapeHTML = (value) => {
         return String(value ?? "")
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-    };
+
+    }
 
 
-    const getValue = (item, ...keys) => {
+    function getInitials(name) {
 
-        for (const key of keys) {
+        const value = String(name || "StockFlow User")
+            .trim();
 
-            if (
-                item &&
-                item[key] !== undefined &&
-                item[key] !== null &&
-                item[key] !== ""
-            ) {
-                return item[key];
-            }
+        if (!value) {
+            return "SF";
+        }
+
+        const parts = value
+            .split(/\s+/)
+            .filter(Boolean);
+
+        if (parts.length === 1) {
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+        }
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        ).toUpperCase();
+
+    }
+
+
+    function normalizeAction(action) {
+
+        return String(action || "")
+            .trim()
+            .toLowerCase();
+
+    }
+
+
+    function actionClass(action) {
+
+        const value = normalizeAction(action);
+
+        if (
+            value.includes("delete") ||
+            value.includes("remove") ||
+            value.includes("cancel")
+        ) {
+            return "is-danger";
+        }
+
+        if (
+            value.includes("warning") ||
+            value.includes("update") ||
+            value.includes("edit")
+        ) {
+            return "is-warning";
+        }
+
+        if (
+            value.includes("add") ||
+            value.includes("create") ||
+            value.includes("stock in") ||
+            value.includes("login") ||
+            value.includes("complete")
+        ) {
+            return "is-success";
         }
 
         return "";
-    };
+
+    }
 
 
-    /* =====================================================
-       DATE FORMAT
-    ===================================================== */
-
-    const formatDate = (value) => {
+    function formatDate(value) {
 
         if (!value) {
             return "—";
@@ -65,790 +130,729 @@
         const date = new Date(value);
 
         if (Number.isNaN(date.getTime())) {
-            return escapeHTML(String(value));
+            return escapeHTML(value);
         }
 
-        return date.toLocaleDateString(
-            "en-PH",
+        return date.toLocaleString(
+            undefined,
             {
+                year: "numeric",
                 month: "short",
                 day: "2-digit",
-                year: "numeric"
-            }
-        );
-    };
-
-
-    const formatTime = (value) => {
-
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
-
-        if (Number.isNaN(date.getTime())) {
-            return "";
-        }
-
-        return date.toLocaleTimeString(
-            "en-PH",
-            {
                 hour: "2-digit",
                 minute: "2-digit"
             }
         );
-    };
+
+    }
 
 
     /* =====================================================
-       EXTRACT API DATA
+       USER DISPLAY
     ===================================================== */
 
-    const extractActivities = (response) => {
+    function populateUser() {
 
-        if (!response) {
-            return [];
-        }
-
-        if (Array.isArray(response)) {
-            return response;
-        }
-
-        if (Array.isArray(response.activities)) {
-            return response.activities;
-        }
-
-        if (Array.isArray(response.activity)) {
-            return response.activity;
-        }
-
-        if (Array.isArray(response.data)) {
-            return response.data;
-        }
-
-        if (Array.isArray(response.rows)) {
-            return response.rows;
-        }
-
-        return [];
-    };
-
-
-    /* =====================================================
-       GET ACTIVITY FIELDS
-    ===================================================== */
-
-    const getActivityDate = (activity) => {
-
-        return getValue(
-            activity,
-            "DATE",
-            "date",
-            "CREATED_AT",
-            "createdAt",
-            "created"
-        );
-    };
-
-
-    const getActivityAction = (activity) => {
-
-        return getValue(
-            activity,
-            "ACTION",
-            "action",
-            "TYPE",
-            "type"
-        ) || "SYSTEM ACTION";
-    };
-
-
-    const getActivityModule = (activity) => {
-
-        return getValue(
-            activity,
-            "MODULE",
-            "module"
-        ) || "SYSTEM";
-    };
-
-
-    const getActivityReference = (activity) => {
-
-        return getValue(
-            activity,
-            "REFERENCE",
-            "reference",
-            "REF",
-            "ref"
-        ) || "—";
-    };
-
-
-    const getActivityUser = (activity) => {
-
-        return getValue(
-            activity,
-            "USER",
-            "user",
-            "USERNAME",
-            "username",
-            "EMAIL",
-            "email"
-        ) || "System";
-    };
-
-
-    const getActivityDetails = (activity) => {
-
-        return getValue(
-            activity,
-            "DETAILS",
-            "details",
-            "DESCRIPTION",
-            "description"
-        ) || "—";
-    };
-
-
-    /* =====================================================
-       USER INITIALS
-    ===================================================== */
-
-    const getInitials = (name) => {
-
-        const value =
-            String(name || "System").trim();
-
-        const parts =
-            value
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2);
-
-        const initials =
-            parts
-                .map(
-                    part =>
-                        part.charAt(0).toUpperCase()
-                )
-                .join("");
-
-        return initials || "S";
-    };
-
-
-    /* =====================================================
-       LOADING STATE
-    ===================================================== */
-
-    const showLoading = () => {
-
-        const body = $("rows");
-
-        if (!body) {
-            return;
-        }
-
-        body.innerHTML = `
-            <tr>
-                <td
-                    colspan="6"
-                    class="sf-empty"
-                >
-                    <span class="activity-loading">
-                        <span class="activity-spinner"></span>
-                        Loading activity records...
-                    </span>
-                </td>
-            </tr>
-        `;
-    };
-
-
-    /* =====================================================
-       EMPTY STATE
-    ===================================================== */
-
-    const showEmpty = () => {
-
-        const body = $("rows");
-
-        if (!body) {
-            return;
-        }
-
-        body.innerHTML = `
-            <tr>
-                <td
-                    colspan="6"
-                    class="sf-empty"
-                >
-                    No activity records found.
-                </td>
-            </tr>
-        `;
-    };
-
-
-    /* =====================================================
-       ERROR STATE
-    ===================================================== */
-
-    const showError = (message) => {
-
-        const body = $("rows");
-
-        if (!body) {
-            return;
-        }
-
-        body.innerHTML = `
-            <tr>
-                <td
-                    colspan="6"
-                    class="sf-empty activity-error"
-                >
-                    ${escapeHTML(
-                        message ||
-                        "Unable to load activity records."
-                    )}
-                </td>
-            </tr>
-        `;
-    };
-
-
-    /* =====================================================
-       RENDER ACTIVITY
-    ===================================================== */
-
-    const renderActivities = () => {
-
-        const body = $("rows");
-
-        if (!body) {
-            return;
-        }
-
-        if (!state.activities.length) {
-            showEmpty();
-            return;
-        }
-
-        body.innerHTML =
-            state.activities
-                .map(renderActivityRow)
-                .join("");
-    };
-
-
-    const renderActivityRow = (activity) => {
-
-        const date =
-            getActivityDate(activity);
-
-        const action =
-            getActivityAction(activity);
-
-        const module =
-            getActivityModule(activity);
-
-        const reference =
-            getActivityReference(activity);
-
-        const user =
-            getActivityUser(activity);
-
-        const details =
-            getActivityDetails(activity);
-
-        return `
-            <tr>
-
-                <td>
-                    <div class="activity-date">
-
-                        <strong>
-                            ${formatDate(date)}
-                        </strong>
-
-                        <span>
-                            ${escapeHTML(
-                                formatTime(date)
-                            )}
-                        </span>
-
-                    </div>
-                </td>
-
-
-                <td>
-                    <span class="activity-action">
-                        ${escapeHTML(action)}
-                    </span>
-                </td>
-
-
-                <td>
-                    <span class="activity-module">
-                        ${escapeHTML(module)}
-                    </span>
-                </td>
-
-
-                <td>
-                    <span class="activity-reference">
-                        ${escapeHTML(reference)}
-                    </span>
-                </td>
-
-
-                <td>
-                    <div class="activity-user">
-
-                        <div class="activity-user-avatar">
-                            ${escapeHTML(
-                                getInitials(user)
-                            )}
-                        </div>
-
-                        <span class="activity-user-name">
-                            ${escapeHTML(user)}
-                        </span>
-
-                    </div>
-                </td>
-
-
-                <td>
-                    <div class="activity-details">
-                        ${escapeHTML(details)}
-                    </div>
-                </td>
-
-            </tr>
-        `;
-    };
-
-
-    /* =====================================================
-       LOAD ACTIVITY
-    ===================================================== */
-
-    const loadActivity = async () => {
-
-        if (state.loading) {
-            return;
-        }
-
-        state.loading = true;
-
-        showLoading();
+        let user = null;
 
         try {
 
             if (
-                !window.StockFlowAPI
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getUser === "function"
             ) {
-                throw new Error(
-                    "StockFlow API is not available."
-                );
+                user = window.StockFlowAuth.getUser();
             }
-
-
-            /*
-             * Expected API method:
-             * StockFlowAPI.listActivity()
-             */
-
-            if (
-                typeof window.StockFlowAPI.listActivity !==
-                "function"
-            ) {
-                throw new Error(
-                    "Activity Log API is not available."
-                );
-            }
-
-
-            const response =
-                await window.StockFlowAPI.listActivity();
-
-
-            if (
-                response &&
-                response.success === false
-            ) {
-                throw new Error(
-                    response.message ||
-                    "Unable to load activity records."
-                );
-            }
-
-
-            state.activities =
-                extractActivities(response);
-
-
-            renderActivities();
 
         } catch (error) {
-
-            console.error(
-                "STOCKFLOW Activity Log error:",
+            console.warn(
+                "STOCKFLOW user data could not be loaded.",
                 error
             );
-
-            state.activities = [];
-
-            showError(
-                error.message ||
-                "Unable to load activity records."
-            );
-
-        } finally {
-
-            state.loading = false;
-        }
-    };
-
-
-    /* =====================================================
-       REFRESH
-    ===================================================== */
-
-    const setupRefresh = () => {
-
-        const button = $("refresh");
-
-        if (!button) {
-            return;
         }
 
-        button.addEventListener(
-            "click",
-            async () => {
 
-                if (state.loading) {
-                    return;
+        if (!user) {
+
+            try {
+
+                const stored =
+                    sessionStorage.getItem("stockflow_user");
+
+                if (stored) {
+                    user = JSON.parse(stored);
                 }
 
-                const originalText =
-                    button.innerHTML;
-
-                button.disabled = true;
-
-                button.innerHTML =
-                    "↻ Refreshing...";
-
-                try {
-
-                    await loadActivity();
-
-                    showToast(
-                        "Activity log refreshed.",
-                        "success"
-                    );
-
-                } finally {
-
-                    button.disabled = false;
-
-                    button.innerHTML =
-                        originalText;
-                }
+            } catch (error) {
+                console.warn(error);
             }
-        );
-    };
 
-
-    /* =====================================================
-       TOAST
-    ===================================================== */
-
-    const showToast = (
-        message,
-        type = "success"
-    ) => {
-
-        let container =
-            document.querySelector(
-                ".activity-toast-container"
-            );
-
-        if (!container) {
-
-            container =
-                document.createElement("div");
-
-            container.className =
-                "activity-toast-container";
-
-            document.body.appendChild(
-                container
-            );
         }
 
 
-        const toast =
-            document.createElement("div");
-
-        toast.className =
-            "activity-toast";
-
-        toast.textContent =
-            message || "";
+        const name =
+            user?.name ||
+            user?.fullName ||
+            user?.full_name ||
+            user?.displayName ||
+            "StockFlow User";
 
 
-        if (type === "error") {
-
-            toast.style.color =
-                "#b42318";
-
-            toast.style.background =
-                "#fff8f7";
-
-            toast.style.borderColor =
-                "#f1c7c2";
-        }
+        const role =
+            user?.role ||
+            user?.position ||
+            user?.designation ||
+            "Employee";
 
 
-        container.appendChild(toast);
+        document
+            .querySelectorAll("[data-user-name]")
+            .forEach(element => {
+                element.textContent = name;
+            });
 
 
-        window.setTimeout(() => {
+        document
+            .querySelectorAll("[data-user-role]")
+            .forEach(element => {
+                element.textContent =
+                    String(role).toLowerCase() === "admin"
+                        ? "Administrator"
+                        : "Employee";
+            });
 
-            toast.style.opacity = "0";
 
-            toast.style.transform =
-                "translateY(8px)";
+        const initials =
+            getInitials(name);
 
-            window.setTimeout(() => {
-                toast.remove();
-            }, 180);
 
-        }, 2600);
-    };
+        document
+            .querySelectorAll("[data-user-initials]")
+            .forEach(element => {
+                element.textContent = initials;
+            });
+
+    }
 
 
     /* =====================================================
        SIDEBAR
     ===================================================== */
 
-    const setupSidebar = () => {
+    function openSidebar() {
 
-        const sidebar =
-            $("sidebar");
-
-        const menuButton =
-            $("menuButton");
-
-        if (
-            !sidebar ||
-            !menuButton
-        ) {
+        if (!sidebar) {
             return;
         }
 
+        sidebar.classList.add("open");
 
-        let overlay =
-            document.querySelector(
-                ".activity-sidebar-overlay"
-            );
+        sidebarOverlay?.classList.add("open");
+
+        menuButton?.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
 
 
-        if (!overlay) {
+    function closeSidebar() {
 
-            overlay =
-                document.createElement("div");
-
-            overlay.className =
-                "activity-sidebar-overlay";
-
-            Object.assign(
-                overlay.style,
-                {
-                    position: "fixed",
-                    inset: "0",
-                    background:
-                        "rgba(8, 26, 51, 0.28)",
-                    zIndex: "999",
-                    display: "none"
-                }
-            );
-
-            document.body.appendChild(
-                overlay
-            );
+        if (!sidebar) {
+            return;
         }
 
+        sidebar.classList.remove("open");
 
-        const closeSidebar = () => {
+        sidebarOverlay?.classList.remove("open");
 
-            sidebar.classList.remove(
-                "is-open"
-            );
+        menuButton?.setAttribute(
+            "aria-expanded",
+            "false"
+        );
 
-            document.body.classList.remove(
-                "activity-sidebar-open"
-            );
-
-            menuButton.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-
-            overlay.style.display =
-                "none";
-        };
+    }
 
 
-        const openSidebar = () => {
+    menuButton?.addEventListener(
+        "click",
+        () => {
 
-            sidebar.classList.add(
-                "is-open"
-            );
-
-            document.body.classList.add(
-                "activity-sidebar-open"
-            );
-
-            menuButton.setAttribute(
-                "aria-expanded",
-                "true"
-            );
-
-            overlay.style.display =
-                "block";
-        };
-
-
-        menuButton.addEventListener(
-            "click",
-            () => {
-
-                const isOpen =
-                    sidebar.classList.contains(
-                        "is-open"
-                    );
-
-                if (isOpen) {
-                    closeSidebar();
-                } else {
-                    openSidebar();
-                }
+            if (sidebar?.classList.contains("open")) {
+                closeSidebar();
+            } else {
+                openSidebar();
             }
-        );
+
+        }
+    );
 
 
-        overlay.addEventListener(
-            "click",
-            closeSidebar
-        );
+    sidebarOverlay?.addEventListener(
+        "click",
+        closeSidebar
+    );
 
 
-        sidebar
-            .querySelectorAll("a")
-            .forEach(link => {
+    document
+        .querySelectorAll(".sf-nav a")
+        .forEach(link => {
 
-                link.addEventListener(
-                    "click",
-                    closeSidebar
-                );
-            });
+            link.addEventListener(
+                "click",
+                () => {
 
+                    if (
+                        window.innerWidth <= 800
+                    ) {
+                        closeSidebar();
+                    }
 
-        window.addEventListener(
-            "resize",
-            () => {
-
-                if (
-                    window.innerWidth > 850
-                ) {
-                    closeSidebar();
                 }
-            }
-        );
-    };
+            );
+
+        });
 
 
     /* =====================================================
-       AUTHENTICATION
+       LOGOUT
     ===================================================== */
 
-    const initializeAuthentication =
-        async () => {
+    logoutButton?.addEventListener(
+        "click",
+        () => {
 
-            if (
-                !window.StockFlowAuth ||
-                typeof window.StockFlowAuth.requireAuth !==
-                "function"
-            ) {
-                return true;
+            const confirmed =
+                window.confirm(
+                    "Are you sure you want to logout from STOCKFLOW?"
+                );
+
+            if (!confirmed) {
+                return;
             }
+
 
             try {
 
-                const user =
-                    await window.StockFlowAuth.requireAuth();
+                if (
+                    window.StockFlowAuth &&
+                    typeof window.StockFlowAuth.logout === "function"
+                ) {
 
-                return Boolean(user);
+                    window.StockFlowAuth.logout();
+
+                    return;
+                }
+
+
+                sessionStorage.removeItem(
+                    "stockflow_token"
+                );
+
+                sessionStorage.removeItem(
+                    "stockflow_user"
+                );
+
+                window.location.href =
+                    "./auth.html";
 
             } catch (error) {
 
                 console.error(
-                    "Activity authentication error:",
+                    "STOCKFLOW logout failed:",
                     error
                 );
 
-                return false;
+                window.location.href =
+                    "./auth.html";
+
             }
-        };
+
+        }
+    );
+
+
+    /* =====================================================
+       NOTIFICATIONS
+    ===================================================== */
+
+    function openNotifications() {
+
+        if (!notificationPanel) {
+            return;
+        }
+
+        notificationPanel.hidden = false;
+
+        notificationButton?.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+
+    function closeNotificationPanel() {
+
+        if (!notificationPanel) {
+            return;
+        }
+
+        notificationPanel.hidden = true;
+
+        notificationButton?.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+
+    notificationButton?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            if (notificationPanel.hidden) {
+                openNotifications();
+            } else {
+                closeNotificationPanel();
+            }
+
+        }
+    );
+
+
+    closeNotifications?.addEventListener(
+        "click",
+        closeNotificationPanel
+    );
+
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            if (
+                !notificationPanel ||
+                notificationPanel.hidden
+            ) {
+                return;
+            }
+
+            if (
+                !event.target.closest(
+                    ".sf-notification"
+                )
+            ) {
+                closeNotificationPanel();
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       NOTIFICATION CONTENT
+    ===================================================== */
+
+    function updateNotifications(activity) {
+
+        if (!notificationBody) {
+            return;
+        }
+
+        const records =
+            Array.isArray(activity)
+                ? activity
+                : [];
+
+
+        if (!records.length) {
+
+            notificationBody.innerHTML = `
+                <div class="sf-notification-empty">
+                    No recent activity notifications.
+                </div>
+            `;
+
+            return;
+        }
+
+
+        const recent =
+            records.slice(0, 5);
+
+
+        notificationBody.innerHTML =
+            recent
+                .map(item => {
+
+                    const action =
+                        escapeHTML(
+                            item.action ||
+                            item.ACTION ||
+                            "Activity"
+                        );
+
+                    const module =
+                        escapeHTML(
+                            item.module ||
+                            item.MODULE ||
+                            "System"
+                        );
+
+                    const date =
+                        formatDate(
+                            item.date ||
+                            item.DATE ||
+                            item.createdAt
+                        );
+
+                    return `
+                        <div
+                            style="
+                                padding:12px 16px;
+                                border-bottom:1px solid #edf1f5;
+                            "
+                        >
+                            <strong
+                                style="
+                                    display:block;
+                                    color:#1b2b43;
+                                    font-size:11px;
+                                "
+                            >
+                                ${action}
+                            </strong>
+
+                            <span
+                                style="
+                                    display:block;
+                                    margin-top:3px;
+                                    color:#7b8ba1;
+                                    font-size:10px;
+                                "
+                            >
+                                ${module} · ${date}
+                            </span>
+                        </div>
+                    `;
+
+                })
+                .join("");
+
+    }
+
+
+    /* =====================================================
+       ACTIVITY DATA
+    ===================================================== */
+
+    function normalizeActivityResponse(response) {
+
+        if (Array.isArray(response)) {
+            return response;
+        }
+
+        if (
+            response &&
+            Array.isArray(response.data)
+        ) {
+            return response.data;
+        }
+
+        if (
+            response &&
+            Array.isArray(response.activities)
+        ) {
+            return response.activities;
+        }
+
+        if (
+            response &&
+            Array.isArray(response.records)
+        ) {
+            return response.records;
+        }
+
+        return [];
+
+    }
+
+
+    async function loadActivity() {
+
+        if (!rows) {
+            return;
+        }
+
+
+        rows.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="sf-empty"
+                >
+                    <div class="activity-loading">
+                        <span class="activity-spinner"></span>
+                        <span>
+                            Loading activity records...
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+
+        if (activityCount) {
+            activityCount.textContent =
+                "Loading records...";
+        }
+
+
+        try {
+
+            if (
+                !window.StockFlowAPI ||
+                typeof window.StockFlowAPI.getActivity !== "function"
+            ) {
+
+                throw new Error(
+                    "StockFlowAPI.getActivity() is not available."
+                );
+
+            }
+
+
+            const response =
+                await window.StockFlowAPI.getActivity();
+
+
+            const activities =
+                normalizeActivityResponse(response);
+
+
+            renderActivity(activities);
+
+
+            updateNotifications(
+                activities
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW activity loading error:",
+                error
+            );
+
+
+            rows.innerHTML = `
+                <tr>
+                    <td
+                        colspan="6"
+                        class="sf-empty"
+                    >
+                        Unable to load activity records.
+                    </td>
+                </tr>
+            `;
+
+
+            if (activityCount) {
+                activityCount.textContent =
+                    "Activity records unavailable";
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RENDER ACTIVITY
+    ===================================================== */
+
+    function renderActivity(activities) {
+
+        if (!rows) {
+            return;
+        }
+
+
+        if (!activities.length) {
+
+            rows.innerHTML = `
+                <tr>
+                    <td
+                        colspan="6"
+                        class="sf-empty"
+                    >
+                        No activity records found.
+                    </td>
+                </tr>
+            `;
+
+
+            if (activityCount) {
+                activityCount.textContent =
+                    "0 activity records";
+            }
+
+            return;
+        }
+
+
+        rows.innerHTML =
+            activities
+                .map(item => {
+
+                    const date =
+                        formatDate(
+                            item.date ||
+                            item.DATE ||
+                            item.createdAt ||
+                            item.created_at
+                        );
+
+
+                    const action =
+                        item.action ||
+                        item.ACTION ||
+                        "—";
+
+
+                    const module =
+                        item.module ||
+                        item.MODULE ||
+                        "—";
+
+
+                    const reference =
+                        item.reference ||
+                        item.REFERENCE ||
+                        "—";
+
+
+                    const user =
+                        item.user ||
+                        item.USER ||
+                        "—";
+
+
+                    const details =
+                        item.details ||
+                        item.DETAILS ||
+                        "—";
+
+
+                    const actionStyle =
+                        actionClass(action);
+
+
+                    return `
+                        <tr>
+
+                            <td>
+                                ${date}
+                            </td>
+
+                            <td>
+                                <span
+                                    class="activity-action ${actionStyle}"
+                                >
+                                    ${escapeHTML(action)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-module">
+                                    ${escapeHTML(module)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-reference">
+                                    ${escapeHTML(reference)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-user">
+                                    ${escapeHTML(user)}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="activity-details">
+                                    ${escapeHTML(details)}
+                                </span>
+                            </td>
+
+                        </tr>
+                    `;
+
+                })
+                .join("");
+
+
+        if (activityCount) {
+
+            activityCount.textContent =
+                `${activities.length} ${
+                    activities.length === 1
+                        ? "activity record"
+                        : "activity records"
+                }`;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       REFRESH
+    ===================================================== */
+
+    refreshButton?.addEventListener(
+        "click",
+        async () => {
+
+            refreshButton.disabled = true;
+
+            refreshButton.innerHTML = `
+                <span>↻</span>
+                Refreshing...
+            `;
+
+
+            try {
+                await loadActivity();
+            } finally {
+
+                refreshButton.disabled = false;
+
+                refreshButton.innerHTML = `
+                    <span>↻</span>
+                    Refresh
+                `;
+
+            }
+
+        }
+    );
 
 
     /* =====================================================
        INITIALIZE
     ===================================================== */
 
-    const initialize = async () => {
+    populateUser();
 
-        setupSidebar();
-
-        setupRefresh();
-
-
-        const authenticated =
-            await initializeAuthentication();
-
-
-        if (!authenticated) {
-            return;
-        }
-
-
-        await loadActivity();
-    };
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    if (
-        document.readyState ===
-        "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initialize
-        );
-
-    } else {
-
-        initialize();
-    }
+    loadActivity();
 
 })();
