@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -10,93 +9,64 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Products | StockFlow</title>
+    <meta
+        name="description"
+        content="STOCKFLOW Phone Accessories Inventory Management System"
+    >
 
+    <meta
+        name="theme-color"
+        content="#0b1730"
+    >
 
-    <!-- =====================================================
-         STOCKFLOW PRODUCTS
-         ===================================================== -->
-    <!--Styling-->!
+    <title>Products | STOCKFLOW</title>
 
+    <!-- STOCKFLOW -->
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
     <link rel="stylesheet" href="./products.css">
 
-
-    <!-- GOOGLE FONT -->
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-
     <!-- FONT AWESOME -->
-
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-
     <!-- CONFIG -->
-
-    <script src="./config.js?v=20260921"></script>
-
+    <script src="./config.js"></script>
 
     <!-- API -->
-
-    <script src="./api.js?v=20260921"></script>
-
+    <script src="./api.js"></script>
 
     <!-- AUTH -->
-
-    <script src="./auth.js?v=20260921"></script>
-
-
-    <!-- PRODUCTS JS -->
-
-    <script
-        src="./products.js?v=20260921"
-        defer
-    ></script>
+    <script src="./auth.js"></script>
 
 </head>
 
 
-<body class="dashboard-page products-page">
+<body class="products-page">
 
 
     <!-- =====================================================
          MOBILE OVERLAY
-         ===================================================== -->
+    ====================================================== -->
 
     <div
         id="sidebarOverlay"
         class="sidebar-overlay"
+        aria-hidden="true"
     ></div>
 
 
     <!-- =====================================================
          SIDEBAR
-         ===================================================== -->
+    ====================================================== -->
 
     <aside
         id="sidebar"
         class="sidebar"
+        aria-label="Main navigation"
     >
-
 
         <!-- BRAND -->
 
@@ -108,12 +78,10 @@
 
             <div class="brand-text">
 
-                <strong>
-                    StockFlow
-                </strong>
+                <strong>STOCKFLOW</strong>
 
                 <span>
-                    Inventory System
+                    INVENTORY SYSTEM
                 </span>
 
             </div>
@@ -134,11 +102,11 @@
 
 
             <a
-                href="dashboard.html"
+                href="./dashboard.html"
                 class="sidebar-link"
             >
 
-                <i class="fa-solid fa-chart-line"></i>
+                <i class="fa-solid fa-chart-pie"></i>
 
                 <span>
                     Dashboard
@@ -155,11 +123,12 @@
 
 
             <a
-                href="products.html"
+                href="./products.html"
                 class="sidebar-link active"
+                aria-current="page"
             >
 
-                <i class="fa-solid fa-boxes-stacked"></i>
+                <i class="fa-solid fa-box"></i>
 
                 <span>
                     Products
@@ -169,7 +138,7 @@
 
 
             <a
-                href="inventory.html"
+                href="./inventory.html"
                 class="sidebar-link"
             >
 
@@ -183,7 +152,7 @@
 
 
             <a
-                href="stock-in.html"
+                href="./stock-in.html"
                 class="sidebar-link"
             >
 
@@ -197,7 +166,7 @@
 
 
             <a
-                href="stock-out.html"
+                href="./stock-out.html"
                 class="sidebar-link"
             >
 
@@ -218,35 +187,7 @@
 
 
             <a
-                href="categories.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-layer-group"></i>
-
-                <span>
-                    Categories
-                </span>
-
-            </a>
-
-
-            <a
-                href="suppliers.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-truck-field"></i>
-
-                <span>
-                    Suppliers
-                </span>
-
-            </a>
-
-
-            <a
-                href="transactions.html"
+                href="./transactions.html"
                 class="sidebar-link"
             >
 
@@ -260,42 +201,70 @@
 
 
             <a
-                href="activity.html"
+                href="./suppliers.html"
+                class="sidebar-link"
+            >
+
+                <i class="fa-solid fa-truck"></i>
+
+                <span>
+                    Suppliers
+                </span>
+
+            </a>
+
+
+            <a
+                href="./categories.html"
+                class="sidebar-link"
+            >
+
+                <i class="fa-solid fa-layer-group"></i>
+
+                <span>
+                    Categories
+                </span>
+
+            </a>
+
+
+            <a
+                href="./activity.html"
                 class="sidebar-link"
             >
 
                 <i class="fa-solid fa-clock-rotate-left"></i>
 
                 <span>
-                    Activity Logs
+                    Activity Log
                 </span>
 
             </a>
 
 
-            <!-- ACCOUNT -->
+            <!-- SYSTEM -->
 
             <div class="sidebar-section-title">
-                Account
+                System
             </div>
 
 
             <a
-                href="profile.html"
+                href="./profile.html"
                 class="sidebar-link"
             >
 
                 <i class="fa-solid fa-user"></i>
 
                 <span>
-                    My Profile
+                    Profile
                 </span>
 
             </a>
 
 
             <a
-                href="settings.html"
+                href="./settings.html"
                 class="sidebar-link"
             >
 
@@ -310,10 +279,9 @@
         </nav>
 
 
-        <!-- SIDEBAR USER -->
+        <!-- SIDEBAR BOTTOM -->
 
         <div class="sidebar-bottom">
-
 
             <div class="mini-user">
 
@@ -326,20 +294,20 @@
                 </div>
 
 
-                <div>
+                <div class="mini-user-info">
 
-                    <b
+                    <strong
                         id="sidebarUserName"
                         data-user-name
                     >
                         StockFlow User
-                    </b>
+                    </strong>
 
                     <small
                         id="sidebarUserRole"
                         data-user-role
                     >
-                        Administrator
+                        Employee
                     </small>
 
                 </div>
@@ -368,28 +336,31 @@
 
     <!-- =====================================================
          MAIN
-         ===================================================== -->
+    ====================================================== -->
 
     <main class="dashboard-main">
 
 
         <!-- =================================================
              HEADER
-             ================================================= -->
+        ================================================== -->
 
         <header class="dash-header">
 
 
             <div class="dash-header-left">
 
-
                 <div class="mobile-header-row">
+
+
+                    <!-- MOBILE MENU -->
 
                     <button
                         type="button"
                         id="mobileMenuBtn"
                         class="mobile-menu-btn"
-                        aria-label="Open menu"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
                     >
 
                         <i class="fa-solid fa-bars"></i>
@@ -399,22 +370,24 @@
 
                     <div>
 
+                        <!-- BREADCRUMB -->
+
                         <div class="breadcrumb">
 
                             <span>
-                                StockFlow
+                                STOCKFLOW
                             </span>
 
                             <i class="fa-solid fa-chevron-right"></i>
 
                             <span>
-                                Inventory
+                                INVENTORY
                             </span>
 
                             <i class="fa-solid fa-chevron-right"></i>
 
                             <strong>
-                                Products
+                                PRODUCTS
                             </strong>
 
                         </div>
@@ -439,23 +412,7 @@
             <div class="dash-header-right">
 
 
-                <!-- CONNECTION -->
-
-                <div
-                    id="connectionBadge"
-                    class="connection-badge"
-                >
-
-                    <span class="connection-dot"></span>
-
-                    <span>
-                        System Online
-                    </span>
-
-                </div>
-
-
-                <!-- NOTIFICATIONS -->
+                <!-- NOTIFICATION -->
 
                 <div class="notification-wrapper">
 
@@ -464,24 +421,79 @@
                         id="notificationBtn"
                         class="header-icon-btn"
                         aria-label="Notifications"
+                        aria-expanded="false"
                     >
 
                         <i class="fa-regular fa-bell"></i>
 
-                        <span class="notification-dot"></span>
+                        <span
+                            id="notificationDot"
+                            class="notification-dot"
+                        ></span>
 
                     </button>
+
+
+                    <!-- NOTIFICATION PANEL -->
+
+                    <div
+                        id="notificationPanel"
+                        class="notification-panel"
+                        hidden
+                    >
+
+                        <div class="notification-panel-header">
+
+                            <div>
+
+                                <strong>
+                                    Notifications
+                                </strong>
+
+                                <span>
+                                    STOCKFLOW system alerts
+                                </span>
+
+                            </div>
+
+                            <i class="fa-regular fa-bell"></i>
+
+                        </div>
+
+
+                        <div
+                            id="notificationContent"
+                            class="notification-content"
+                        >
+
+                            <div class="notification-empty">
+
+                                <i class="fa-regular fa-circle-check"></i>
+
+                                <span>
+                                    No new notifications
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
 
                 <!-- USER -->
 
-                <div class="topbar-user">
+                <div
+                    class="topbar-user"
+                    id="topbarUser"
+                >
 
                     <div
                         id="userAvatar"
                         class="user-avatar"
+                        data-user-initials
                     >
                         SF
                     </div>
@@ -489,15 +501,24 @@
 
                     <div class="user-info">
 
-                        <strong id="userName">
+                        <strong
+                            id="userName"
+                            data-user-name
+                        >
                             StockFlow User
                         </strong>
 
-                        <small id="userRole">
+                        <small
+                            id="userRole"
+                            data-user-role
+                        >
                             Employee
                         </small>
 
                     </div>
+
+
+                    <i class="fa-solid fa-chevron-down user-chevron"></i>
 
                 </div>
 
@@ -508,7 +529,7 @@
 
         <!-- =================================================
              CONTENT
-             ================================================= -->
+        ================================================== -->
 
         <section class="products-content">
 
@@ -528,7 +549,8 @@
                     </h2>
 
                     <p>
-                        Add, update, monitor and manage your phone accessory products.
+                        Add, update, monitor and manage your phone accessory
+                        products.
                     </p>
 
                 </div>
@@ -552,27 +574,24 @@
 
 
             <!-- =================================================
-                 STAT CARDS
-                 ================================================= -->
+                 STATISTICS
+            ================================================== -->
 
             <div class="product-stats-grid">
 
 
-                <!-- TOTAL -->
+                <article class="product-stat-card stat-blue">
 
-                <article class="product-stat-card">
-
-                    <div class="product-stat-icon blue">
+                    <div class="product-stat-icon">
 
                         <i class="fa-solid fa-boxes-stacked"></i>
 
                     </div>
 
-
                     <div class="product-stat-content">
 
                         <span>
-                            Total Products
+                            Products
                         </span>
 
                         <strong id="totalProducts">
@@ -580,7 +599,7 @@
                         </strong>
 
                         <small>
-                            Products in catalog
+                            Total registered products
                         </small>
 
                     </div>
@@ -588,16 +607,13 @@
                 </article>
 
 
-                <!-- ACTIVE -->
+                <article class="product-stat-card stat-green">
 
-                <article class="product-stat-card">
-
-                    <div class="product-stat-icon green">
+                    <div class="product-stat-icon">
 
                         <i class="fa-solid fa-circle-check"></i>
 
                     </div>
-
 
                     <div class="product-stat-content">
 
@@ -618,16 +634,13 @@
                 </article>
 
 
-                <!-- LOW STOCK -->
+                <article class="product-stat-card stat-orange">
 
-                <article class="product-stat-card">
-
-                    <div class="product-stat-icon orange">
+                    <div class="product-stat-icon">
 
                         <i class="fa-solid fa-triangle-exclamation"></i>
 
                     </div>
-
 
                     <div class="product-stat-content">
 
@@ -640,7 +653,7 @@
                         </strong>
 
                         <small>
-                            Need replenishment
+                            Products needing attention
                         </small>
 
                     </div>
@@ -648,16 +661,13 @@
                 </article>
 
 
-                <!-- OUT OF STOCK -->
+                <article class="product-stat-card stat-red">
 
-                <article class="product-stat-card">
-
-                    <div class="product-stat-icon red">
+                    <div class="product-stat-icon">
 
                         <i class="fa-solid fa-circle-xmark"></i>
 
                     </div>
-
 
                     <div class="product-stat-content">
 
@@ -670,7 +680,7 @@
                         </strong>
 
                         <small>
-                            No available stock
+                            Products unavailable
                         </small>
 
                     </div>
@@ -682,15 +692,12 @@
 
             <!-- =================================================
                  PRODUCT PANEL
-                 ================================================= -->
+            ================================================== -->
 
             <section class="products-panel">
 
 
-                <!-- PANEL HEADER -->
-
                 <div class="products-panel-header">
-
 
                     <div class="products-panel-title">
 
@@ -702,6 +709,10 @@
 
 
                         <div>
+
+                            <span class="section-eyebrow">
+                                INVENTORY
+                            </span>
 
                             <h3>
                                 All Products
@@ -716,12 +727,8 @@
                     </div>
 
 
-                    <!-- FILTERS -->
-
                     <div class="product-filters">
 
-
-                        <!-- SEARCH -->
 
                         <div class="product-search">
 
@@ -737,8 +744,6 @@
                         </div>
 
 
-                        <!-- CATEGORY -->
-
                         <select
                             id="categoryFilter"
                             class="product-filter-select"
@@ -750,8 +755,6 @@
 
                         </select>
 
-
-                        <!-- STATUS -->
 
                         <select
                             id="statusFilter"
@@ -777,9 +780,7 @@
                 </div>
 
 
-                <!-- =================================================
-                     TABLE
-                     ================================================= -->
+                <!-- TABLE -->
 
                 <div class="products-table-container">
 
@@ -851,9 +852,7 @@
                 </div>
 
 
-                <!-- =================================================
-                     EMPTY STATE
-                     ================================================= -->
+                <!-- EMPTY STATE -->
 
                 <div
                     id="emptyProducts"
@@ -866,16 +865,13 @@
 
                     </div>
 
-
                     <h3>
                         No products found
                     </h3>
 
-
                     <p>
                         There are no products matching your search or filter.
                     </p>
-
 
                     <button
                         type="button"
@@ -892,12 +888,9 @@
                 </div>
 
 
-                <!-- =================================================
-                     PAGINATION
-                     ================================================= -->
+                <!-- PAGINATION -->
 
                 <div class="products-pagination">
-
 
                     <span id="paginationInfo">
                         Showing 0 of 0 products
@@ -905,7 +898,6 @@
 
 
                     <div class="pagination-buttons">
-
 
                         <button
                             type="button"
@@ -946,17 +938,16 @@
 
             </section>
 
+
         </section>
 
 
-        <!-- =================================================
-             FOOTER
-             ================================================= -->
+        <!-- FOOTER -->
 
         <footer class="dashboard-footer">
 
             <span>
-                © 2026 <strong>StockFlow</strong>
+                © 2026 <strong>STOCKFLOW</strong>
                 Inventory Management System
             </span>
 
@@ -971,7 +962,7 @@
 
     <!-- =====================================================
          ADD / EDIT PRODUCT MODAL
-         ===================================================== -->
+    ====================================================== -->
 
     <div
         id="productModal"
@@ -984,8 +975,6 @@
 
         <div class="modal-dialog">
 
-
-            <!-- MODAL HEADER -->
 
             <div class="modal-header">
 
@@ -1020,13 +1009,10 @@
             </div>
 
 
-            <!-- FORM -->
-
             <form
                 id="productForm"
                 autocomplete="off"
             >
-
 
                 <input
                     type="hidden"
@@ -1037,8 +1023,6 @@
 
                 <div class="form-grid">
 
-
-                    <!-- NAME -->
 
                     <div class="form-group full-width">
 
@@ -1059,8 +1043,6 @@
                     </div>
 
 
-                    <!-- SKU -->
-
                     <div class="form-group">
 
                         <label for="productSku">
@@ -1079,8 +1061,6 @@
 
                     </div>
 
-
-                    <!-- CATEGORY -->
 
                     <div class="form-group">
 
@@ -1104,8 +1084,6 @@
                     </div>
 
 
-                    <!-- BRAND -->
-
                     <div class="form-group">
 
                         <label for="productBrand">
@@ -1122,8 +1100,6 @@
 
                     </div>
 
-
-                    <!-- UNIT -->
 
                     <div class="form-group">
 
@@ -1163,8 +1139,6 @@
                     </div>
 
 
-                    <!-- SELLING PRICE -->
-
                     <div class="form-group">
 
                         <label for="productPrice">
@@ -1191,8 +1165,6 @@
                     </div>
 
 
-                    <!-- COST -->
-
                     <div class="form-group">
 
                         <label for="productCost">
@@ -1217,8 +1189,6 @@
                     </div>
 
 
-                    <!-- STOCK -->
-
                     <div class="form-group">
 
                         <label for="productStock">
@@ -1236,8 +1206,6 @@
 
                     </div>
 
-
-                    <!-- REORDER -->
 
                     <div class="form-group">
 
@@ -1257,8 +1225,6 @@
 
                     </div>
 
-
-                    <!-- STATUS -->
 
                     <div class="form-group">
 
@@ -1284,8 +1250,6 @@
                     </div>
 
 
-                    <!-- DESCRIPTION -->
-
                     <div class="form-group full-width">
 
                         <label for="productDescription">
@@ -1305,8 +1269,6 @@
                 </div>
 
 
-                <!-- ERROR -->
-
                 <div
                     id="productFormError"
                     class="form-message error-message hidden"
@@ -1319,8 +1281,6 @@
                 </div>
 
 
-                <!-- SUCCESS -->
-
                 <div
                     id="productFormSuccess"
                     class="form-message success-message hidden"
@@ -1332,8 +1292,6 @@
 
                 </div>
 
-
-                <!-- FOOTER -->
 
                 <div class="modal-footer">
 
@@ -1371,7 +1329,7 @@
 
     <!-- =====================================================
          DELETE MODAL
-         ===================================================== -->
+    ====================================================== -->
 
     <div
         id="deleteModal"
@@ -1383,7 +1341,6 @@
 
 
         <div class="confirm-dialog">
-
 
             <div class="confirm-icon danger">
 
@@ -1398,13 +1355,10 @@
 
 
             <p>
-
                 Are you sure you want to delete
-
                 <strong id="deleteProductName">
                     this product
                 </strong>?
-
             </p>
 
 
@@ -1445,7 +1399,7 @@
 
     <!-- =====================================================
          VIEW PRODUCT MODAL
-         ===================================================== -->
+    ====================================================== -->
 
     <div
         id="viewProductModal"
@@ -1496,106 +1450,50 @@
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Category
-                    </span>
-
-                    <strong id="viewProductCategory">
-                        —
-                    </strong>
-
+                    <span>Category</span>
+                    <strong id="viewProductCategory">—</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Brand
-                    </span>
-
-                    <strong id="viewProductBrand">
-                        —
-                    </strong>
-
+                    <span>Brand</span>
+                    <strong id="viewProductBrand">—</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Selling Price
-                    </span>
-
-                    <strong id="viewProductPrice">
-                        ₱0.00
-                    </strong>
-
+                    <span>Selling Price</span>
+                    <strong id="viewProductPrice">₱0.00</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Cost Price
-                    </span>
-
-                    <strong id="viewProductCost">
-                        ₱0.00
-                    </strong>
-
+                    <span>Cost Price</span>
+                    <strong id="viewProductCost">₱0.00</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Current Stock
-                    </span>
-
-                    <strong id="viewProductStock">
-                        0
-                    </strong>
-
+                    <span>Current Stock</span>
+                    <strong id="viewProductStock">0</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Reorder Level
-                    </span>
-
-                    <strong id="viewProductReorder">
-                        0
-                    </strong>
-
+                    <span>Reorder Level</span>
+                    <strong id="viewProductReorder">0</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Unit
-                    </span>
-
-                    <strong id="viewProductUnit">
-                        PCS
-                    </strong>
-
+                    <span>Unit</span>
+                    <strong id="viewProductUnit">PCS</strong>
                 </div>
 
 
                 <div class="detail-item">
-
-                    <span>
-                        Status
-                    </span>
-
-                    <strong id="viewProductStatus">
-                        ACTIVE
-                    </strong>
-
+                    <span>Status</span>
+                    <strong id="viewProductStatus">ACTIVE</strong>
                 </div>
 
 
@@ -1635,9 +1533,7 @@
     </div>
 
 
-    <!-- =====================================================
-         TOAST
-         ===================================================== -->
+    <!-- TOAST -->
 
     <div
         id="toastContainer"
@@ -1646,9 +1542,7 @@
     ></div>
 
 
-    <!-- =====================================================
-         GLOBAL LOADING
-         ===================================================== -->
+    <!-- GLOBAL LOADING -->
 
     <div
         id="globalLoading"
@@ -1671,15 +1565,14 @@
 
     </div>
 
+
     <!-- =====================================================
-     SCRIPTS
-    ===================================================== -->
+         SCRIPTS
+    ====================================================== -->
 
-    <script src="./config.js"></script>
-    <script src="./api.js"></script>
-    <script src="./auth.js"></script>
-    <script src="./products.js" defer></script>
-
+    <script src="./main.js"></script>
+    <script src="./products.js"></script>
+    <script src="./products-ui.js"></script>
 
 </body>
 
