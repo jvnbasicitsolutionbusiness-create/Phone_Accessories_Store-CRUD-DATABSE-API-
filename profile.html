@@ -3,113 +3,233 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>StockFlow | My Profile</title>
+    <meta
+        name="description"
+        content="STOCKFLOW — My Profile"
+    >
 
-    <!-- StockFlow CSS -->
+    <title>STOCKFLOW | My Profile</title>
+
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
     <link rel="stylesheet" href="./profile.css">
-    
 </head>
 
 <body class="profile-page">
 
     <div class="sf-layout">
 
-        <!-- =========================
+        <!-- =====================================================
              SIDEBAR
-        ========================== -->
+        ====================================================== -->
         <aside class="sf-side">
 
+            <!-- BRAND -->
             <div class="sf-brand">
-                STOCKFLOW
+
+                <div class="sf-brand-mark">
+                    SF
+                </div>
+
+                <div class="sf-brand-text">
+                    <strong>STOCKFLOW</strong>
+                    <span>INVENTORY SYSTEM</span>
+                </div>
+
             </div>
 
+
+            <!-- NAVIGATION -->
             <nav class="sf-nav">
 
-                <a href="./dashboard.html">
-                    Dashboard
+                <!-- OVERVIEW -->
+                <div class="sf-nav-section">
+                    OVERVIEW
+                </div>
+
+                <a
+                    href="./dashboard.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">◈</span>
+                    <span>Dashboard</span>
                 </a>
 
-                <a href="./inventory-dashboard.html">
-                    Inventory Dashboard
+
+                <!-- INVENTORY -->
+                <div class="sf-nav-section">
+                    INVENTORY
+                </div>
+
+                <a
+                    href="./products.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">▣</span>
+                    <span>Products</span>
                 </a>
 
-                <a href="./products.html">
-                    Products
+                <a
+                    href="./inventory.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">▤</span>
+                    <span>Inventory</span>
                 </a>
 
-                <a href="./inventory.html">
-                    Inventory
+                <a
+                    href="./stock-in.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">↓</span>
+                    <span>Stock In</span>
                 </a>
 
-                <a href="./categories.html">
-                    Categories
+                <a
+                    href="./stock-out.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">↑</span>
+                    <span>Stock Out</span>
                 </a>
 
-                <a href="./suppliers.html">
-                    Suppliers
+
+                <!-- MANAGEMENT -->
+                <div class="sf-nav-section">
+                    MANAGEMENT
+                </div>
+
+                <a
+                    href="./transactions.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">⇄</span>
+                    <span>Transactions</span>
                 </a>
 
-                <a href="./stock-in.html">
-                    Stock In
+                <a
+                    href="./suppliers.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">▰</span>
+                    <span>Suppliers</span>
                 </a>
 
-                <a href="./stock-out.html">
-                    Stock Out
+                <a
+                    href="./categories.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">▱</span>
+                    <span>Categories</span>
                 </a>
 
-                <a href="./transactions.html">
-                    Transactions
+                <a
+                    href="./activity.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">◔</span>
+                    <span>Activity Log</span>
                 </a>
 
-                <a href="./activity.html">
-                    Activity Log
-                </a>
 
-                <!-- Current Page -->
+                <!-- SYSTEM -->
+                <div class="sf-nav-section">
+                    SYSTEM
+                </div>
+
                 <a
                     href="./profile.html"
-                    class="active"
+                    class="sf-nav-link active"
                     aria-current="page"
                 >
-                    Profile
+                    <span class="sf-nav-icon">♟</span>
+                    <span>Profile</span>
                 </a>
 
-                <a href="./settings.html">
-                    Settings
+                <a
+                    href="./settings.html"
+                    class="sf-nav-link"
+                >
+                    <span class="sf-nav-icon">⚙</span>
+                    <span>Settings</span>
                 </a>
 
             </nav>
 
-        </aside>
 
+            <!-- SIDEBAR FOOTER -->
+            <div class="sf-side-footer">
 
-        <!-- =========================
-             MAIN CONTENT
-        ========================== -->
-        <main class="sf-main">
+                <div class="sf-user-mini">
 
-            <!-- Header -->
-            <header class="sf-top">
-
-                <div>
-                    <div class="sf-title">
-                        My Profile
+                    <div class="sf-user-avatar">
+                        SF
                     </div>
 
-                    <div class="sf-muted">
-                        View your active STOCKFLOW account.
+                    <div class="sf-user-info">
+
+                        <strong data-user-name>
+                            STOCKFLOW USER
+                        </strong>
+
+                        <span data-user-role>
+                            Employee
+                        </span>
+
                     </div>
+
                 </div>
 
                 <button
-                    class="sf-btn secondary"
+                    type="button"
+                    class="sf-logout"
+                    data-logout
+                >
+                    <span>↪</span>
+                    <span>Logout</span>
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =====================================================
+             MAIN CONTENT
+        ====================================================== -->
+        <main class="sf-main">
+
+            <!-- TOPBAR -->
+            <header class="sf-top">
+
+                <div class="sf-page-heading">
+
+                    <div class="sf-breadcrumb">
+                        STOCKFLOW
+                        <span>›</span>
+                        PROFILE
+                    </div>
+
+                    <h1 class="sf-title">
+                        My Profile
+                    </h1>
+
+                    <p class="sf-muted">
+                        View your active STOCKFLOW account.
+                    </p>
+
+                </div>
+
+
+                <!-- MOBILE MENU -->
+                <button
+                    class="sf-menu-btn"
                     data-menu
                     type="button"
                     aria-label="Open navigation menu"
@@ -121,87 +241,169 @@
             </header>
 
 
-            <!-- =========================
-                 PROFILE CARD
-            ========================== -->
-            <section class="sf-card">
+            <!-- =================================================
+                 PROFILE CONTENT
+            ================================================== -->
+            <div class="profile-content">
 
-                <div class="sf-card-head">
+                <!-- ACCOUNT CARD -->
+                <section class="sf-card profile-card">
 
-                    <div>
-                        <h3>
-                            Account Information
-                        </h3>
+                    <div class="sf-card-head">
 
-                        <p class="sf-muted">
-                            Your current STOCKFLOW account details.
-                        </p>
-                    </div>
+                        <div>
 
-                </div>
+                            <div class="profile-card-kicker">
+                                ACCOUNT
+                            </div>
 
+                            <h2>
+                                Account Information
+                            </h2>
 
-                <div class="profile-grid">
+                            <p class="sf-muted">
+                                Your current STOCKFLOW account details.
+                            </p>
 
-                    <!-- Full Name -->
-                    <div class="profile-item">
-                        <small>
-                            FULL NAME
-                        </small>
+                        </div>
 
-                        <h3 data-user-name>
-                            —
-                        </h3>
-                    </div>
+                        <div class="profile-card-icon">
+                            ♟
+                        </div>
 
-
-                    <!-- Role -->
-                    <div class="profile-item">
-                        <small>
-                            ROLE
-                        </small>
-
-                        <h3 data-user-role>
-                            —
-                        </h3>
                     </div>
 
 
-                    <!-- Email -->
-                    <div class="profile-item">
-                        <small>
-                            EMAIL
-                        </small>
+                    <!-- PROFILE INFORMATION -->
+                    <div class="profile-grid">
 
-                        <h3 data-user-email>
-                            —
-                        </h3>
+                        <!-- FULL NAME -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                ◉
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    FULL NAME
+                                </small>
+
+                                <h3 data-user-name>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ROLE -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                ◆
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    ROLE
+                                </small>
+
+                                <h3 data-user-role>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                @
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    EMAIL ADDRESS
+                                </small>
+
+                                <h3 data-user-email>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PHONE -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                #
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    PHONE NUMBER
+                                </small>
+
+                                <h3 data-user-phone>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
                     </div>
 
+                </section>
 
-                    <!-- Phone -->
-                    <div class="profile-item">
-                        <small>
-                            PHONE
-                        </small>
 
-                        <h3 data-user-phone>
-                            —
-                        </h3>
+                <!-- ACCOUNT STATUS -->
+                <section class="sf-card profile-status-card">
+
+                    <div class="profile-status">
+
+                        <div class="profile-status-indicator">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Account Active
+                            </strong>
+
+                            <p>
+                                Your STOCKFLOW session is currently active.
+                            </p>
+
+                        </div>
+
                     </div>
 
-                </div>
+                </section>
 
-            </section>
+            </div>
 
         </main>
 
     </div>
 
 
-    <!-- =========================
-         STOCKFLOW JAVASCRIPT
-    ========================== -->
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
     <script src="./config.js"></script>
     <script src="./api.js"></script>
     <script src="./auth.js"></script>
@@ -209,4 +411,5 @@
     <script src="./profile.js"></script>
 
 </body>
+
 </html>
