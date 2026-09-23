@@ -1,28 +1,17 @@
 /* =========================================================
    STOCKFLOW — SHARED NAVIGATION
-   CANONICAL SIDEBAR SYSTEM
+   Authoritative Sidebar Layout
    ========================================================= */
 
 
 /* =========================================================
-   GLOBAL NAVIGATION FOUNDATION
+   GLOBAL NAVIGATION BOX SIZING
    ========================================================= */
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-    min-height: 100%;
-}
-
-body {
-    min-height: 100vh;
-    overflow-x: hidden;
-}
-
-*,
-*::before,
-*::after {
+.sidebar,
+.sidebar *,
+.sidebar *::before,
+.sidebar *::after {
     box-sizing: border-box;
 }
 
@@ -32,26 +21,8 @@ body {
    ========================================================= */
 
 .app-shell {
-    min-height: 100vh;
     width: 100%;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-   ========================================================= */
-
-.main-content {
-    position: relative;
-
     min-height: 100vh;
-
-    margin-left: 272px;
-
-    background: #f3f5f9;
-
-    transition:
-        margin-left 0.22s ease;
 }
 
 
@@ -67,21 +38,17 @@ body {
     bottom: 0;
 
     width: 272px;
-
     height: 100vh;
 
     display: flex;
     flex-direction: column;
 
-    background: #111827;
-
-    color: #ffffff;
-
-    z-index: 1100;
-
     overflow: hidden;
 
-    border-right: 1px solid rgba(255, 255, 255, 0.035);
+    background: #111827;
+    color: #ffffff;
+
+    z-index: 1000;
 }
 
 
@@ -90,7 +57,6 @@ body {
    ========================================================= */
 
 .sidebar-brand {
-    width: 100%;
     height: 76px;
 
     flex: 0 0 76px;
@@ -103,10 +69,6 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-
-/* =========================================================
-   BRAND LOGO
-   ========================================================= */
 
 .brand-logo {
     width: 38px;
@@ -124,22 +86,20 @@ body {
 
     color: #ffffff;
 
-    font-size: 12px;
-    font-weight: 800;
-
-    line-height: 1;
+    font-size: 11px;
+    font-weight: 900;
 
     letter-spacing: -0.03em;
+
+    box-shadow:
+        0 5px 14px rgba(37, 99, 235, 0.25);
 }
+
 
 .brand-logo span {
-    display: block;
+    line-height: 1;
 }
 
-
-/* =========================================================
-   BRAND TEXT
-   ========================================================= */
 
 .brand-text {
     min-width: 0;
@@ -150,101 +110,93 @@ body {
     margin-left: 11px;
 }
 
+
 .brand-text strong {
-    display: block;
-
-    overflow: hidden;
-
     color: #ffffff;
 
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.2;
 
     font-weight: 800;
 
     letter-spacing: -0.02em;
-
-    white-space: nowrap;
 }
 
-.brand-text small {
-    display: block;
 
+.brand-text small {
     margin-top: 3px;
 
-    color: #8d98aa;
+    color: #8994a8;
 
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1.2;
 
     font-weight: 600;
 
     letter-spacing: 0.02em;
-
-    white-space: nowrap;
 }
 
 
 /* =========================================================
-   SIDEBAR NAVIGATION AREA
+   SIDEBAR NAVIGATION
    ========================================================= */
 
 .sidebar-nav {
-    width: 100%;
-
     flex: 1 1 auto;
 
     min-height: 0;
 
-    overflow-x: hidden;
     overflow-y: auto;
+    overflow-x: hidden;
 
-    padding: 18px 12px 14px;
+    padding: 19px 14px 14px;
 
     scrollbar-width: thin;
-    scrollbar-color: #2c3545 transparent;
+    scrollbar-color:
+        rgba(255, 255, 255, 0.12)
+        transparent;
 }
+
 
 .sidebar-nav::-webkit-scrollbar {
     width: 5px;
 }
 
+
 .sidebar-nav::-webkit-scrollbar-track {
     background: transparent;
 }
 
+
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: #2c3545;
+    background: rgba(255, 255, 255, 0.12);
 
     border-radius: 10px;
 }
 
 
 /* =========================================================
-   NAV SECTION LABEL
+   NAV SECTION TITLES
    ========================================================= */
 
 .nav-section-title {
-    width: 100%;
+    margin: 15px 10px 8px;
 
-    margin: 14px 11px 7px;
+    color: #68758b;
 
-    color: #687487;
-
-    font-size: 9px;
+    font-size: 8px;
     line-height: 1.2;
 
     font-weight: 800;
 
-    letter-spacing: 0.11em;
+    letter-spacing: 0.12em;
 
     text-transform: uppercase;
-
-    user-select: none;
 }
 
+
 .nav-section-title:first-child {
-    margin-top: 2px;
+    margin-top: 0;
 }
 
 
@@ -253,37 +205,23 @@ body {
    ========================================================= */
 
 .nav-item {
-    position: relative;
-
     width: 100%;
     height: 43px;
 
     display: flex;
     align-items: center;
 
-    margin: 2px 0;
+    margin-bottom: 3px;
+    padding: 0 11px;
 
-    padding: 0 12px;
-
-    border: 0;
     border-radius: 7px;
 
-    background: transparent;
-
-    color: #aeb7c6;
-
-    font-family: inherit;
-
-    font-size: 11px;
-    font-weight: 600;
-
-    line-height: 1;
+    color: #aab4c4;
 
     text-decoration: none;
 
-    white-space: nowrap;
-
-    cursor: pointer;
+    font-size: 10px;
+    font-weight: 650;
 
     transition:
         background 0.15s ease,
@@ -291,22 +229,14 @@ body {
 }
 
 
-/* =========================================================
-   NAV ICON
-   ========================================================= */
-
 .nav-item i {
     width: 20px;
 
     flex: 0 0 20px;
 
-    margin-right: 10px;
+    color: #7e8a9e;
 
-    color: #7f8a9d;
-
-    font-size: 13px;
-
-    line-height: 1;
+    font-size: 12px;
 
     text-align: center;
 
@@ -314,20 +244,18 @@ body {
         color 0.15s ease;
 }
 
+
 .nav-item span {
     min-width: 0;
 
+    margin-left: 10px;
+
     overflow: hidden;
 
-    line-height: 1;
-
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-
-/* =========================================================
-   NAV HOVER
-   ========================================================= */
 
 .nav-item:hover {
     background: rgba(255, 255, 255, 0.055);
@@ -335,8 +263,9 @@ body {
     color: #ffffff;
 }
 
+
 .nav-item:hover i {
-    color: #cbd5e1;
+    color: #ffffff;
 }
 
 
@@ -350,33 +279,12 @@ body {
     color: #ffffff;
 
     box-shadow:
-        0 4px 10px rgba(37, 99, 235, 0.18);
+        0 4px 12px rgba(37, 99, 235, 0.18);
 }
+
 
 .nav-item.active i {
     color: #ffffff;
-}
-
-
-/* =========================================================
-   ACTIVE INDICATOR
-   ========================================================= */
-
-.nav-item.active::before {
-    content: "";
-
-    position: absolute;
-
-    left: -12px;
-
-    top: 7px;
-    bottom: 7px;
-
-    width: 3px;
-
-    border-radius: 0 3px 3px 0;
-
-    background: #60a5fa;
 }
 
 
@@ -385,177 +293,140 @@ body {
    ========================================================= */
 
 .sidebar-footer {
-    width: 100%;
-
     flex: 0 0 auto;
 
-    padding: 12px;
-
-    background: #111827;
+    padding: 12px 14px 16px;
 
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    background: #111827;
 }
 
 
 /* =========================================================
-   SIDEBAR USER
+   LOGOUT
    ========================================================= */
 
-.sidebar-user {
+.logout-btn {
     width: 100%;
-    min-height: 54px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 7px 9px;
-
-    margin-bottom: 7px;
-
-    border-radius: 8px;
-
-    background: rgba(255, 255, 255, 0.045);
-}
-
-
-/* =========================================================
-   SIDEBAR AVATAR
-   ========================================================= */
-
-.sidebar-avatar {
-    width: 34px;
-    height: 34px;
-
-    flex: 0 0 34px;
+    height: 42px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 8px;
+    gap: 9px;
 
-    background: #2563eb;
+    padding: 0 12px;
 
-    color: #ffffff;
-
-    font-size: 11px;
-    font-weight: 800;
-
-    line-height: 1;
-}
-
-
-/* =========================================================
-   SIDEBAR USER INFORMATION
-   ========================================================= */
-
-.sidebar-user-info {
-    min-width: 0;
-
-    display: flex;
-    flex-direction: column;
-
-    margin-left: 9px;
-}
-
-.sidebar-user-info strong {
-    display: block;
-
-    max-width: 175px;
-
-    overflow: hidden;
-
-    color: #f3f4f6;
-
-    font-size: 10px;
-    line-height: 1.3;
-
-    font-weight: 700;
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sidebar-user-info span {
-    display: block;
-
-    margin-top: 2px;
-
-    color: #7f8a9d;
-
-    font-size: 9px;
-    line-height: 1.2;
-
-    font-weight: 600;
-}
-
-
-/* =========================================================
-   LOGOUT BUTTON
-   ========================================================= */
-
-.logout-btn {
-    width: 100%;
-    height: 39px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 0 10px;
-
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 7px;
 
-    background: transparent;
+    background: rgba(255, 255, 255, 0.035);
 
-    color: #9da7b7;
+    color: #aab4c4;
 
     font-family: inherit;
 
     font-size: 10px;
     font-weight: 700;
 
-    line-height: 1;
-
     cursor: pointer;
 
     transition:
         background 0.15s ease,
-        color 0.15s ease,
-        border-color 0.15s ease;
-}
-
-.logout-btn i {
-    width: 20px;
-
-    flex: 0 0 20px;
-
-    margin-right: 9px;
-
-    color: #7f8a9d;
-
-    font-size: 12px;
-
-    text-align: center;
-
-    transition:
+        border-color 0.15s ease,
         color 0.15s ease;
 }
 
-.logout-btn span {
-    line-height: 1;
+
+.logout-btn i {
+    font-size: 11px;
 }
 
-.logout-btn:hover {
-    background: rgba(239, 68, 68, 0.08);
 
-    border-color: rgba(239, 68, 68, 0.14);
+.logout-btn:hover {
+    background: rgba(220, 38, 38, 0.10);
+
+    border-color: rgba(248, 113, 113, 0.20);
 
     color: #fca5a5;
 }
 
-.logout-btn:hover i {
-    color: #f87171;
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.main-content {
+    min-height: 100vh;
+
+    margin-left: 272px;
+
+    background: #f3f5f9;
+}
+
+
+/* =========================================================
+   TOPBAR
+   ========================================================= */
+
+.topbar {
+    position: sticky;
+
+    top: 0;
+
+    min-height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 30px;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    border-bottom: 1px solid #e4e9f0;
+
+    z-index: 800;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+
+/* =========================================================
+   MOBILE MENU
+   ========================================================= */
+
+.mobile-menu-btn {
+    display: none;
+
+    width: 36px;
+    height: 36px;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 12px;
+
+    padding: 0;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 7px;
+
+    background: #ffffff;
+
+    color: #64748b;
+
+    cursor: pointer;
+}
+
+
+.mobile-menu-btn:hover {
+    border-color: #cbd5e1;
+
+    color: #2563eb;
 }
 
 
@@ -564,115 +435,15 @@ body {
    ========================================================= */
 
 .sidebar-overlay {
-    display: none;
-
     position: fixed;
 
     inset: 0;
 
-    background: rgba(15, 23, 42, 0.48);
-
-    z-index: 1050;
-}
-
-.sidebar-overlay.active {
-    display: block;
-}
-
-
-/* =========================================================
-   MOBILE MENU BUTTON
-   ========================================================= */
-
-.mobile-menu-btn {
-    width: 36px;
-    height: 36px;
-
     display: none;
 
-    align-items: center;
-    justify-content: center;
+    background: rgba(15, 23, 42, 0.42);
 
-    flex: 0 0 36px;
-
-    margin-right: 11px;
-
-    padding: 0;
-
-    border: 1px solid #e1e6ee;
-    border-radius: 8px;
-
-    background: #ffffff;
-
-    color: #5f6b7d;
-
-    font-family: inherit;
-
-    cursor: pointer;
-
-    transition:
-        background 0.15s ease,
-        color 0.15s ease,
-        border-color 0.15s ease;
-}
-
-.mobile-menu-btn:hover {
-    background: #f7f9fc;
-
-    color: #2563eb;
-
-    border-color: #d6deea;
-}
-
-.mobile-menu-btn i {
-    font-size: 14px;
-}
-
-
-/* =========================================================
-   ACCESSIBILITY
-   ========================================================= */
-
-.nav-item:focus-visible,
-.logout-btn:focus-visible,
-.mobile-menu-btn:focus-visible {
-    outline: 2px solid #60a5fa;
-
-    outline-offset: 2px;
-}
-
-
-/* =========================================================
-   LARGE TABLET / MOBILE
-   ========================================================= */
-
-@media (max-width: 1100px) {
-
-    .main-content {
-        margin-left: 0;
-    }
-
-    .sidebar {
-        transform: translateX(-100%);
-
-        box-shadow:
-            10px 0 35px rgba(15, 23, 42, 0.15);
-
-        transition:
-            transform 0.22s ease;
-    }
-
-    body.sidebar-open .sidebar {
-        transform: translateX(0);
-    }
-
-    body.sidebar-open .sidebar-overlay {
-        display: block;
-    }
-
-    .mobile-menu-btn {
-        display: inline-flex;
-    }
+    z-index: 999;
 }
 
 
@@ -680,31 +451,50 @@ body {
    MOBILE
    ========================================================= */
 
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
 
     .sidebar {
-        width: 270px;
+        transform: translateX(-100%);
+
+        transition:
+            transform 0.22s ease;
     }
 
-    .sidebar-brand {
-        height: 70px;
 
-        flex-basis: 70px;
-
-        padding: 0 18px;
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
     }
 
-    .sidebar-nav {
-        padding: 15px 10px 10px;
+
+    body.sidebar-open .sidebar-overlay {
+        display: block;
     }
 
-    .sidebar-footer {
-        padding: 10px;
+
+    .main-content {
+        margin-left: 0;
     }
 
-    .nav-item {
-        height: 42px;
+
+    .mobile-menu-btn {
+        display: inline-flex;
     }
+
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+    .topbar {
+        min-height: 68px;
+
+        padding: 0 16px;
+    }
+
 }
 
 
@@ -714,32 +504,8 @@ body {
 
 @media (max-width: 480px) {
 
-    .sidebar {
-        width: 260px;
+    .topbar {
+        padding: 0 12px;
     }
 
-    .mobile-menu-btn {
-        width: 34px;
-        height: 34px;
-
-        flex-basis: 34px;
-
-        margin-right: 8px;
-    }
-}
-
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-    .sidebar,
-    .main-content,
-    .nav-item,
-    .logout-btn,
-    .mobile-menu-btn {
-        transition: none !important;
-    }
 }
