@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -15,9 +17,7 @@
 
     <title>Categories | StockFlow</title>
 
-    <!-- =====================================================
-         GOOGLE FONTS
-    ====================================================== -->
+    <!-- FONT -->
     <link
         rel="preconnect"
         href="https://fonts.googleapis.com"
@@ -34,24 +34,29 @@
         rel="stylesheet"
     >
 
-    <!-- =====================================================
-         FONT AWESOME
-    ====================================================== -->
+    <!-- FONT AWESOME -->
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- =====================================================
-         STOCKFLOW CSS
-    ====================================================== -->
+    <!-- GLOBAL -->
     <link
         rel="stylesheet"
-        href="categories.css"
+        href="./style.css"
     >
+
+    <!-- MODULE -->
+    <link
+        rel="stylesheet"
+        href="./categories.css"
+    >
+
 </head>
 
-<body>
+
+<body class="categories-page">
+
 
 <!-- =========================================================
      MOBILE OVERLAY
@@ -72,11 +77,13 @@
     id="sidebar"
 >
 
+
     <!-- BRAND -->
+
     <div class="sidebar-brand">
 
         <div class="brand-logo">
-            SF
+            <span>SF</span>
         </div>
 
         <div class="brand-text">
@@ -85,9 +92,9 @@
                 StockFlow
             </strong>
 
-            <span>
+            <small>
                 Inventory System
-            </span>
+            </small>
 
         </div>
 
@@ -95,15 +102,19 @@
 
 
     <!-- NAVIGATION -->
+
     <nav class="sidebar-nav">
 
+
+        <!-- OVERVIEW -->
+
         <div class="nav-section-title">
-            MAIN
+            OVERVIEW
         </div>
 
 
         <a
-            href="dashboard.html"
+            href="./dashboard.html"
             class="nav-item"
         >
 
@@ -116,13 +127,15 @@
         </a>
 
 
+        <!-- INVENTORY -->
+
         <div class="nav-section-title">
             INVENTORY
         </div>
 
 
         <a
-            href="products.html"
+            href="./products.html"
             class="nav-item"
         >
 
@@ -136,21 +149,21 @@
 
 
         <a
-            href="categories.html"
-            class="nav-item active"
+            href="./inventory.html"
+            class="nav-item"
         >
 
-            <i class="fa-solid fa-layer-group"></i>
+            <i class="fa-solid fa-warehouse"></i>
 
             <span>
-                Categories
+                Inventory
             </span>
 
         </a>
 
 
         <a
-            href="stock-in.html"
+            href="./stock-in.html"
             class="nav-item"
         >
 
@@ -164,7 +177,7 @@
 
 
         <a
-            href="stock-out.html"
+            href="./stock-out.html"
             class="nav-item"
         >
 
@@ -177,19 +190,7 @@
         </a>
 
 
-        <a
-            href="inventory.html"
-            class="nav-item"
-        >
-
-            <i class="fa-solid fa-warehouse"></i>
-
-            <span>
-                Inventory
-            </span>
-
-        </a>
-
+        <!-- MANAGEMENT -->
 
         <div class="nav-section-title">
             MANAGEMENT
@@ -197,7 +198,21 @@
 
 
         <a
-            href="suppliers.html"
+            href="./transactions.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-receipt"></i>
+
+            <span>
+                Transactions
+            </span>
+
+        </a>
+
+
+        <a
+            href="./suppliers.html"
             class="nav-item"
         >
 
@@ -211,18 +226,35 @@
 
 
         <a
-            href="reports.html"
-            class="nav-item"
+            href="./categories.html"
+            class="nav-item active"
+            aria-current="page"
         >
 
-            <i class="fa-solid fa-chart-column"></i>
+            <i class="fa-solid fa-layer-group"></i>
 
             <span>
-                Reports
+                Categories
             </span>
 
         </a>
 
+
+        <a
+            href="./activity.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-clock-rotate-left"></i>
+
+            <span>
+                Activity Log
+            </span>
+
+        </a>
+
+
+        <!-- SYSTEM -->
 
         <div class="nav-section-title">
             SYSTEM
@@ -230,7 +262,21 @@
 
 
         <a
-            href="settings.html"
+            href="./profile.html"
+            class="nav-item"
+        >
+
+            <i class="fa-solid fa-user"></i>
+
+            <span>
+                Profile
+            </span>
+
+        </a>
+
+
+        <a
+            href="./settings.html"
             class="nav-item"
         >
 
@@ -245,13 +291,17 @@
     </nav>
 
 
-    <!-- SIDEBAR FOOTER -->
-    <div class="sidebar-footer">
+    <!-- SIDEBAR BOTTOM -->
+
+    <div class="sidebar-bottom">
+
+
+        <!-- USER -->
 
         <div class="sidebar-user">
 
             <div
-                class="sidebar-user-avatar"
+                class="sidebar-avatar"
                 id="sidebarUserAvatar"
             >
                 U
@@ -260,7 +310,7 @@
             <div class="sidebar-user-info">
 
                 <strong id="sidebarUserName">
-                    User
+                    StockFlow User
                 </strong>
 
                 <span id="sidebarUserRole">
@@ -272,9 +322,11 @@
         </div>
 
 
+        <!-- LOGOUT -->
+
         <button
             type="button"
-            class="sidebar-logout"
+            class="logout-btn"
             id="logoutBtn"
         >
 
@@ -292,25 +344,27 @@
 
 
 <!-- =========================================================
-     MAIN CONTENT
+     MAIN
 ========================================================== -->
 
 <main class="main-content">
 
 
-    <!-- =====================================================
-         TOPBAR
-    ====================================================== -->
+    <!-- TOPBAR -->
 
     <header class="topbar">
 
+
         <div class="topbar-left">
+
 
             <button
                 type="button"
                 class="mobile-menu-btn"
                 id="mobileMenuBtn"
                 aria-label="Open navigation"
+                aria-controls="sidebar"
+                aria-expanded="false"
             >
 
                 <i class="fa-solid fa-bars"></i>
@@ -318,19 +372,25 @@
             </button>
 
 
-            <div class="page-heading">
+            <div class="topbar-heading">
 
-                <span class="page-kicker">
-                    INVENTORY MANAGEMENT
-                </span>
+                <div class="breadcrumb">
+
+                    <span>
+                        Management
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                    <strong>
+                        Categories
+                    </strong>
+
+                </div>
 
                 <h1>
                     Categories
                 </h1>
-
-                <p>
-                    Organize your products into manageable categories.
-                </p>
 
             </div>
 
@@ -339,7 +399,9 @@
 
         <div class="topbar-right">
 
-            <!-- CONNECTION STATUS -->
+
+            <!-- CONNECTION -->
+
             <div
                 class="connection-badge"
                 id="connectionBadge"
@@ -354,7 +416,82 @@
             </div>
 
 
+            <!-- NOTIFICATION -->
+
+            <div class="notification-wrapper">
+
+                <button
+                    type="button"
+                    class="header-icon-btn"
+                    id="notificationBtn"
+                    aria-label="Notifications"
+                    aria-expanded="false"
+                >
+
+                    <i class="fa-regular fa-bell"></i>
+
+                    <span
+                        class="notification-dot"
+                        id="notificationDot"
+                    ></span>
+
+                </button>
+
+
+                <div
+                    class="notification-panel"
+                    id="notificationPanel"
+                    hidden
+                >
+
+                    <div class="notification-panel-header">
+
+                        <strong>
+                            Notifications
+                        </strong>
+
+                        <button
+                            type="button"
+                            id="closeNotificationBtn"
+                            aria-label="Close notifications"
+                        >
+
+                            <i class="fa-solid fa-xmark"></i>
+
+                        </button>
+
+                    </div>
+
+
+                    <div class="notification-item">
+
+                        <div class="notification-icon">
+
+                            <i class="fa-solid fa-layer-group"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Categories
+                            </strong>
+
+                            <p>
+                                Category management is ready.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
             <!-- USER -->
+
             <div class="topbar-user">
 
                 <div
@@ -370,9 +507,9 @@
                         StockFlow User
                     </strong>
 
-                    <span id="topbarUserRole">
+                    <small id="topbarUserRole">
                         Employee
-                    </span>
+                    </small>
 
                 </div>
 
@@ -384,15 +521,43 @@
 
 
     <!-- =====================================================
-         PAGE BODY
+         CONTENT
     ====================================================== -->
 
     <section class="page-content">
 
 
-        <!-- =================================================
-             CONNECTION MESSAGE
-        ================================================== -->
+        <!-- PAGE INTRO -->
+
+        <div class="page-heading">
+
+            <div>
+
+                <span class="page-eyebrow">
+                    MANAGEMENT
+                </span>
+
+                <h2>
+                    Category Management
+                </h2>
+
+                <p>
+                    Organize your phone accessory products into manageable categories.
+                </p>
+
+            </div>
+
+
+            <div class="page-heading-icon">
+
+                <i class="fa-solid fa-layer-group"></i>
+
+            </div>
+
+        </div>
+
+
+        <!-- CONNECTION MESSAGE -->
 
         <div
             class="connection-message"
@@ -407,8 +572,6 @@
 
         <div class="stats-grid">
 
-
-            <!-- TOTAL CATEGORIES -->
 
             <article class="stat-card">
 
@@ -433,8 +596,6 @@
             </article>
 
 
-            <!-- ACTIVE -->
-
             <article class="stat-card">
 
                 <div class="stat-icon">
@@ -458,8 +619,6 @@
             </article>
 
 
-            <!-- PRODUCTS -->
-
             <article class="stat-card">
 
                 <div class="stat-icon">
@@ -482,8 +641,6 @@
 
             </article>
 
-
-            <!-- EMPTY -->
 
             <article class="stat-card">
 
@@ -511,13 +668,11 @@
 
 
         <!-- =================================================
-             CATEGORY MANAGEMENT CARD
+             CATEGORY MANAGEMENT
         ================================================== -->
 
         <section class="content-card">
 
-
-            <!-- CARD HEADER -->
 
             <div class="content-card-header">
 
@@ -528,11 +683,11 @@
                     </span>
 
                     <h2>
-                        Category Management
+                        Categories
                     </h2>
 
                     <p>
-                        Create, update, search and manage product categories.
+                        Create, update, search and manage your product categories.
                     </p>
 
                 </div>
@@ -553,14 +708,10 @@
             </div>
 
 
-            <!-- =================================================
-                 TOOLBAR
-            ================================================== -->
+            <!-- TOOLBAR -->
 
             <div class="table-toolbar">
 
-
-                <!-- SEARCH -->
 
                 <div class="search-box">
 
@@ -576,19 +727,11 @@
                 </div>
 
 
-                <!-- STATUS FILTER -->
-
                 <div class="filter-group">
-
-                    <label
-                        for="categoryStatusFilter"
-                        class="sr-only"
-                    >
-                        Filter by status
-                    </label>
 
                     <select
                         id="categoryStatusFilter"
+                        aria-label="Filter categories by status"
                     >
 
                         <option value="ALL">
@@ -608,16 +751,13 @@
                 </div>
 
 
-                <!-- REFRESH -->
-
                 <button
                     type="button"
                     class="secondary-btn"
                     id="refreshCategoriesBtn"
-                    title="Refresh categories"
                 >
 
-                    <i class="fa-solid fa-rotate"></i>
+                    <i class="fa-solid fa-arrows-rotate"></i>
 
                     <span>
                         Refresh
@@ -628,9 +768,7 @@
             </div>
 
 
-            <!-- =================================================
-                 TABLE
-            ================================================== -->
+            <!-- TABLE -->
 
             <div class="table-wrapper">
 
@@ -644,27 +782,27 @@
                         <tr>
 
                             <th>
-                                CATEGORY
+                                Category
                             </th>
 
                             <th>
-                                DESCRIPTION
+                                Description
                             </th>
 
                             <th>
-                                PRODUCTS
+                                Products
                             </th>
 
                             <th>
-                                STATUS
+                                Status
                             </th>
 
                             <th>
-                                CREATED
+                                Created
                             </th>
 
                             <th class="action-column">
-                                ACTIONS
+                                Actions
                             </th>
 
                         </tr>
@@ -673,17 +811,12 @@
 
 
                     <tbody id="categoriesTableBody">
-
-                        <!-- Filled by categories.js -->
-
                     </tbody>
 
                 </table>
 
 
-                <!-- =================================================
-                     LOADING STATE
-                ================================================== -->
+                <!-- LOADING -->
 
                 <div
                     class="table-state"
@@ -703,9 +836,7 @@
                 </div>
 
 
-                <!-- =================================================
-                     EMPTY STATE
-                ================================================== -->
+                <!-- EMPTY -->
 
                 <div
                     class="table-state"
@@ -742,9 +873,7 @@
                 </div>
 
 
-                <!-- =================================================
-                     ERROR STATE
-                ================================================== -->
+                <!-- ERROR -->
 
                 <div
                     class="table-state error-state"
@@ -783,9 +912,7 @@
             </div>
 
 
-            <!-- =================================================
-                 TABLE FOOTER
-            ================================================== -->
+            <!-- TABLE FOOTER -->
 
             <div class="table-footer">
 
@@ -796,20 +923,14 @@
                 <div
                     class="pagination"
                     id="categoryPagination"
-                >
-
-                    <!-- Generated by categories.js -->
-
-                </div>
+                ></div>
 
             </div>
 
         </section>
 
 
-        <!-- =================================================
-             INFORMATION PANEL
-        ================================================== -->
+        <!-- INFO -->
 
         <section class="info-panel">
 
@@ -857,9 +978,6 @@
         aria-labelledby="categoryModalTitle"
     >
 
-
-        <!-- MODAL HEADER -->
-
         <div class="modal-header">
 
             <div>
@@ -889,8 +1007,6 @@
         </div>
 
 
-        <!-- MODAL FORM -->
-
         <form
             id="categoryForm"
             novalidate
@@ -902,8 +1018,6 @@
                 name="categoryId"
             >
 
-
-            <!-- CATEGORY NAME -->
 
             <div class="form-group">
 
@@ -934,8 +1048,6 @@
             </div>
 
 
-            <!-- DESCRIPTION -->
-
             <div class="form-group">
 
                 <label for="categoryDescription">
@@ -956,8 +1068,6 @@
 
             </div>
 
-
-            <!-- STATUS -->
 
             <div class="form-group">
 
@@ -983,16 +1093,12 @@
             </div>
 
 
-            <!-- FORM MESSAGE -->
-
             <div
                 class="form-message"
                 id="categoryFormMessage"
                 hidden
             ></div>
 
-
-            <!-- MODAL ACTIONS -->
 
             <div class="modal-actions">
 
@@ -1001,9 +1107,7 @@
                     class="secondary-btn"
                     id="cancelCategoryBtn"
                 >
-
                     Cancel
-
                 </button>
 
 
@@ -1039,9 +1143,7 @@
 </div>
 
 
-<!-- =========================================================
-     DELETE CONFIRMATION MODAL
-========================================================== -->
+<!-- DELETE MODAL -->
 
 <div
     class="modal-backdrop"
@@ -1053,7 +1155,6 @@
         class="modal modal-small"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="deleteCategoryTitle"
     >
 
         <div class="confirm-icon">
@@ -1120,9 +1221,7 @@
 </div>
 
 
-<!-- =========================================================
-     TOAST CONTAINER
-========================================================== -->
+<!-- TOAST -->
 
 <div
     class="toast-container"
@@ -1132,21 +1231,17 @@
 ></div>
 
 
-<!-- =========================================================
-     JAVASCRIPT
-========================================================== -->
+<!-- SCRIPTS -->
 
-<!-- Shared configuration -->
-<script src="config.js"></script>
+<script src="./config.js"></script>
+<script src="./api.js"></script>
+<script src="./auth.js"></script>
 
-<!-- Shared API -->
-<script src="api.js"></script>
+<!-- YOUR EXISTING CRUD LOGIC -->
+<script src="./categories.js"></script>
 
-<!-- Authentication -->
-<script src="auth.js"></script>
-
-<!-- Categories module -->
-<script src="categories.js"></script>
+<!-- NAV/UI LOGIC -->
+<script src="./categories-ui.js"></script>
 
 </body>
 </html>
