@@ -1,13 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1"
+        content="width=device-width, initial-scale=1.0"
     >
 
     <meta
@@ -15,12 +14,16 @@
         content="STOCKFLOW Activity Log"
     >
 
+    <meta
+        name="theme-color"
+        content="#071426"
+    >
+
     <title>Activity Log | STOCKFLOW</title>
 
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
     <link rel="stylesheet" href="./activity.css">
-
 </head>
 
 
@@ -30,94 +33,159 @@
 
         <!-- =====================================================
              SIDEBAR
-             ===================================================== -->
+        ====================================================== -->
 
         <aside
             class="sf-side"
             id="sidebar"
         >
 
+            <!-- BRAND -->
+
             <div class="sf-brand">
-                STOCKFLOW
+
+                <div class="sf-brand-mark">
+                    SF
+                </div>
+
+                <div class="sf-brand-text">
+
+                    <strong>
+                        STOCKFLOW
+                    </strong>
+
+                    <span>
+                        INVENTORY SYSTEM
+                    </span>
+
+                </div>
+
             </div>
 
+
+            <!-- NAVIGATION -->
 
             <nav
                 class="sf-nav"
                 aria-label="Main navigation"
             >
 
-                <a href="dashboard.html">
-                    Dashboard
+                <!-- OVERVIEW -->
+
+                <div class="sf-nav-section">
+                    <span>OVERVIEW</span>
+                </div>
+
+
+                <a href="./dashboard.html">
+                    <span class="sf-nav-icon">◈</span>
+                    <span>Dashboard</span>
                 </a>
 
-                <a href="products.html">
-                    Products
+
+                <!-- INVENTORY -->
+
+                <div class="sf-nav-section">
+                    <span>INVENTORY</span>
+                </div>
+
+
+                <a href="./products.html">
+                    <span class="sf-nav-icon">▣</span>
+                    <span>Products</span>
                 </a>
 
-                <a href="inventory.html">
-                    Inventory
+                <a href="./inventory.html">
+                    <span class="sf-nav-icon">▤</span>
+                    <span>Inventory</span>
                 </a>
 
-                <a href="categories.html">
-                    Categories
+                <a href="./stock-in.html">
+                    <span class="sf-nav-icon">↓</span>
+                    <span>Stock In</span>
                 </a>
 
-                <a href="suppliers.html">
-                    Suppliers
+                <a href="./stock-out.html">
+                    <span class="sf-nav-icon">↑</span>
+                    <span>Stock Out</span>
                 </a>
 
-                <a href="stock-in.html">
-                    Stock In
+
+                <!-- MANAGEMENT -->
+
+                <div class="sf-nav-section">
+                    <span>MANAGEMENT</span>
+                </div>
+
+
+                <a href="./transactions.html">
+                    <span class="sf-nav-icon">⇄</span>
+                    <span>Transactions</span>
                 </a>
 
-                <a href="stock-out.html">
-                    Stock Out
+                <a href="./suppliers.html">
+                    <span class="sf-nav-icon">▰</span>
+                    <span>Suppliers</span>
                 </a>
 
-                <a href="transactions.html">
-                    Transactions
+                <a href="./categories.html">
+                    <span class="sf-nav-icon">▱</span>
+                    <span>Categories</span>
                 </a>
 
                 <a
-                    href="activity.html"
+                    href="./activity.html"
                     class="active"
                     aria-current="page"
                 >
-                    Activity Log
+                    <span class="sf-nav-icon">◷</span>
+                    <span>Activity Log</span>
                 </a>
 
-                <a href="profile.html">
-                    Profile
+
+                <!-- SYSTEM -->
+
+                <div class="sf-nav-section">
+                    <span>SYSTEM</span>
+                </div>
+
+
+                <a href="./profile.html">
+                    <span class="sf-nav-icon">♙</span>
+                    <span>Profile</span>
                 </a>
 
-                <a href="settings.html">
-                    Settings
+                <a href="./settings.html">
+                    <span class="sf-nav-icon">⚙</span>
+                    <span>Settings</span>
                 </a>
 
             </nav>
 
-        </aside>
 
+            <!-- SIDEBAR FOOTER -->
 
-        <!-- =====================================================
-             MAIN CONTENT
-             ===================================================== -->
+            <div class="sf-side-footer">
 
-        <main class="sf-main">
+                <div class="sf-user-card">
 
-            <!-- TOP BAR -->
-
-            <header class="sf-top">
-
-                <div>
-
-                    <div class="sf-title">
-                        Activity Log
+                    <div
+                        class="sf-user-avatar"
+                        data-user-initials
+                    >
+                        SF
                     </div>
 
-                    <div class="sf-muted">
-                        Audit trail for inventory changes.
+                    <div class="sf-user-details">
+
+                        <strong data-user-name>
+                            StockFlow User
+                        </strong>
+
+                        <span data-user-role>
+                            Employee
+                        </span>
+
                     </div>
 
                 </div>
@@ -125,111 +193,344 @@
 
                 <button
                     type="button"
-                    class="sf-btn secondary activity-menu-btn"
-                    id="menuButton"
-                    data-menu
-                    aria-label="Open navigation menu"
-                    aria-expanded="false"
+                    class="sf-logout"
+                    id="logoutButton"
                 >
-                    ☰
+
+                    <span class="sf-logout-icon">
+                        ↪
+                    </span>
+
+                    <span>
+                        Logout
+                    </span>
+
                 </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MOBILE OVERLAY -->
+
+        <div
+            class="sf-sidebar-overlay"
+            id="sidebarOverlay"
+            aria-hidden="true"
+        ></div>
+
+
+        <!-- =====================================================
+             MAIN
+        ====================================================== -->
+
+        <main class="sf-main">
+
+
+            <!-- =================================================
+                 TOP HEADER
+            ================================================== -->
+
+            <header class="sf-top">
+
+                <div class="sf-page-heading">
+
+                    <div class="sf-breadcrumb">
+                        STOCKFLOW
+                        <span>›</span>
+                        MANAGEMENT
+                    </div>
+
+                    <h1 class="sf-title">
+                        Activity Log
+                    </h1>
+
+                    <p class="sf-muted">
+                        Monitor recent actions and changes across STOCKFLOW.
+                    </p>
+
+                </div>
+
+
+                <!-- TOP RIGHT -->
+
+                <div class="sf-top-actions">
+
+                    <!-- NOTIFICATION -->
+
+                    <div class="sf-notification">
+
+                        <button
+                            type="button"
+                            class="sf-icon-btn"
+                            id="notificationButton"
+                            aria-label="Notifications"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                        >
+
+                            <span class="sf-bell-icon">
+                                ♧
+                            </span>
+
+                            <span
+                                class="sf-notification-dot"
+                                id="notificationDot"
+                                hidden
+                            ></span>
+
+                        </button>
+
+
+                        <div
+                            class="sf-notification-panel"
+                            id="notificationPanel"
+                            hidden
+                        >
+
+                            <div class="sf-notification-head">
+
+                                <strong>
+                                    Notifications
+                                </strong>
+
+                                <button
+                                    type="button"
+                                    id="closeNotifications"
+                                >
+                                    ×
+                                </button>
+
+                            </div>
+
+                            <div
+                                class="sf-notification-body"
+                                id="notificationBody"
+                            >
+                                <div class="sf-notification-empty">
+                                    No new notifications.
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- MOBILE MENU -->
+
+                    <button
+                        type="button"
+                        class="sf-mobile-menu"
+                        id="menuButton"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
+                    >
+                        ☰
+                    </button>
+
+
+                    <!-- USER -->
+
+                    <a
+                        href="./profile.html"
+                        class="sf-top-user"
+                    >
+
+                        <div
+                            class="sf-top-avatar"
+                            data-user-initials
+                        >
+                            SF
+                        </div>
+
+                        <div class="sf-top-user-info">
+
+                            <strong data-user-name>
+                                StockFlow User
+                            </strong>
+
+                            <span data-user-role>
+                                Employee
+                            </span>
+
+                        </div>
+
+                        <span class="sf-top-user-arrow">
+                            ⌄
+                        </span>
+
+                    </a>
+
+                </div>
 
             </header>
 
 
             <!-- =================================================
-                 TOOLBAR
-                 ================================================= -->
+                 PAGE CONTENT
+            ================================================== -->
 
-            <section class="sf-card activity-toolbar">
-
-                <div class="activity-toolbar-info">
-
-                    <strong>
-                        System Activity
-                    </strong>
-
-                    <span class="sf-muted">
-                        Recent inventory and account actions
-                    </span>
-
-                </div>
+            <div class="activity-content">
 
 
-                <button
-                    type="button"
-                    class="sf-btn secondary"
-                    id="refresh"
-                >
-                    ↻ Refresh
-                </button>
+                <!-- STATUS -->
 
-            </section>
+                <section class="activity-status">
 
+                    <div class="activity-status-left">
 
-            <!-- =================================================
-                 ACTIVITY TABLE
-                 ================================================= -->
+                        <div class="activity-status-icon">
+                            ✓
+                        </div>
 
-            <section class="sf-card activity-table-card">
+                        <div>
 
-                <div class="sf-table-header">
+                            <strong>
+                                Activity monitoring active
+                            </strong>
 
-                    <div>
+                            <span>
+                                STOCKFLOW records system and inventory actions.
+                            </span>
 
-                        <h2>
-                            Activity Records
-                        </h2>
-
-                        <p class="sf-muted">
-                            Track actions performed within STOCKFLOW.
-                        </p>
+                        </div>
 
                     </div>
 
-                </div>
+
+                    <span class="activity-status-badge">
+                        LIVE
+                    </span>
+
+                </section>
 
 
-                <div class="sf-table-wrapper">
+                <!-- =================================================
+                     ACTIVITY CARD
+                ================================================== -->
 
-                    <table class="sf-table">
+                <section class="sf-card activity-card">
 
-                        <thead>
+                    <!-- CARD HEADER -->
 
-                            <tr>
+                    <div class="activity-card-header">
 
-                                <th>Date</th>
-                                <th>Action</th>
-                                <th>Module</th>
-                                <th>Reference</th>
-                                <th>User</th>
-                                <th>Details</th>
+                        <div>
 
-                            </tr>
+                            <div class="activity-kicker">
+                                MANAGEMENT
+                            </div>
 
-                        </thead>
+                            <h2>
+                                Activity Records
+                            </h2>
+
+                            <p class="sf-muted">
+                                Review actions performed within the inventory
+                                management system.
+                            </p>
+
+                        </div>
 
 
-                        <tbody id="rows">
+                        <button
+                            type="button"
+                            class="sf-btn secondary activity-refresh"
+                            id="refresh"
+                        >
+                            <span>↻</span>
+                            Refresh
+                        </button>
 
-                            <tr>
+                    </div>
 
-                                <td
-                                    colspan="6"
-                                    class="sf-empty"
-                                >
-                                    Loading activity...
-                                </td>
 
-                            </tr>
+                    <!-- TABLE -->
 
-                        </tbody>
+                    <div class="sf-table-wrapper">
 
-                    </table>
+                        <table class="sf-table activity-table">
 
-                </div>
+                            <thead>
 
-            </section>
+                                <tr>
+
+                                    <th>
+                                        DATE
+                                    </th>
+
+                                    <th>
+                                        ACTION
+                                    </th>
+
+                                    <th>
+                                        MODULE
+                                    </th>
+
+                                    <th>
+                                        REFERENCE
+                                    </th>
+
+                                    <th>
+                                        USER
+                                    </th>
+
+                                    <th>
+                                        DETAILS
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="rows">
+
+                                <tr>
+
+                                    <td
+                                        colspan="6"
+                                        class="sf-empty"
+                                    >
+                                        <div class="activity-loading">
+
+                                            <span class="activity-spinner"></span>
+
+                                            <span>
+                                                Loading activity records...
+                                            </span>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- CARD FOOTER -->
+
+                    <div class="activity-card-footer">
+
+                        <span id="activityCount">
+                            Loading records...
+                        </span>
+
+                        <span>
+                            STOCKFLOW Activity Log
+                        </span>
+
+                    </div>
+
+                </section>
+
+            </div>
 
         </main>
 
@@ -238,7 +539,7 @@
 
     <!-- =========================================================
          JAVASCRIPT
-         ========================================================= -->
+    ========================================================== -->
 
     <script src="./config.js"></script>
     <script src="./api.js"></script>
