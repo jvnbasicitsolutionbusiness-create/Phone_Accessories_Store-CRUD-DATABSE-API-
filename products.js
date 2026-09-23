@@ -1,6 +1,7 @@
 /* =========================================================
    STOCKFLOW — PRODUCTS UI CONTROLLER
-   Sidebar / Notifications / User UI / Product Modal
+   Sidebar / Notifications / User Profile / Product Modal
+   Logout / Keyboard Controls
 ========================================================= */
 
 (() => {
@@ -15,6 +16,7 @@
 
         initSidebar();
         initNotifications();
+        initProfileNavigation();
         initProductModal();
         initLogout();
         initEscapeKey();
@@ -48,8 +50,10 @@
             sidebar.classList.add("open");
 
             if (overlay) {
+
                 overlay.classList.add("show");
                 overlay.classList.add("active");
+
             }
 
             if (mobileMenuBtn) {
@@ -73,8 +77,10 @@
             sidebar.classList.remove("open");
 
             if (overlay) {
+
                 overlay.classList.remove("show");
                 overlay.classList.remove("active");
+
             }
 
             if (mobileMenuBtn) {
@@ -93,16 +99,21 @@
         }
 
 
+        /* -------------------------------------------------
+           MOBILE MENU
+        ------------------------------------------------- */
+
         if (mobileMenuBtn) {
 
             mobileMenuBtn.addEventListener(
                 "click",
-                () => {
+                event => {
+
+                    event.preventDefault();
+                    event.stopPropagation();
 
                     if (
-                        sidebar.classList.contains(
-                            "open"
-                        )
+                        sidebar.classList.contains("open")
                     ) {
 
                         closeSidebar();
@@ -119,6 +130,10 @@
         }
 
 
+        /* -------------------------------------------------
+           OVERLAY
+        ------------------------------------------------- */
+
         if (overlay) {
 
             overlay.addEventListener(
@@ -129,11 +144,9 @@
         }
 
 
-        /*
-         * IMPORTANT:
-         * Your new HTML uses .nav-item,
-         * not .sidebar-link.
-         */
+        /* -------------------------------------------------
+           SIDEBAR NAVIGATION
+        ------------------------------------------------- */
 
         document
             .querySelectorAll(".nav-item")
@@ -157,6 +170,10 @@
             });
 
 
+        /* -------------------------------------------------
+           RESIZE
+        ------------------------------------------------- */
+
         window.addEventListener(
             "resize",
             () => {
@@ -171,6 +188,267 @@
 
             }
         );
+
+    }
+
+
+    /* =====================================================
+       USER PROFILE NAVIGATION
+    ===================================================== */
+
+    function initProfileNavigation() {
+
+        /*
+         * Any element with:
+         *
+         * data-profile-link
+         *
+         * will open the user's Profile page.
+         *
+         * Example:
+         *
+         * <div
+         *     class="topbar-user"
+         *     data-profile-link="./profile.html"
+         * >
+         *
+         * This keeps the profile navigation independent
+         * from authentication logic.
+         */
+
+
+        const profileElements =
+            document.querySelectorAll(
+                "[data-profile-link]"
+            );
+
+
+        profileElements.forEach(element => {
+
+            const profileUrl =
+                element.getAttribute(
+                    "data-profile-link"
+                ) || "./profile.html";
+
+
+            /* ---------------------------------------------
+               ACCESSIBILITY
+            --------------------------------------------- */
+
+            element.setAttribute(
+                "role",
+                "link"
+            );
+
+            element.setAttribute(
+                "tabindex",
+                "0"
+            );
+
+            element.setAttribute(
+                "aria-label",
+                "Open your profile"
+            );
+
+
+            /* ---------------------------------------------
+               CLICK
+            --------------------------------------------- */
+
+            element.addEventListener(
+                "click",
+                event => {
+
+                    /*
+                     * Do not allow clicks from an actual
+                     * button/link inside the profile block
+                     * to trigger profile navigation.
+                     */
+
+                    if (
+                        event.target.closest(
+                            "button, a"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    event.preventDefault();
+
+                    window.location.href =
+                        profileUrl;
+
+                }
+            );
+
+
+            /* ---------------------------------------------
+               KEYBOARD
+            --------------------------------------------- */
+
+            element.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key === "Enter" ||
+                        event.key === " "
+                    ) {
+
+                        /*
+                         * Ignore if the actual focused
+                         * element is a button/link.
+                         */
+
+                        if (
+                            event.target.closest(
+                                "button, a"
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        event.preventDefault();
+
+                        window.location.href =
+                            profileUrl;
+
+                    }
+
+                }
+            );
+
+        });
+
+
+        /*
+         * BACKWARD-COMPATIBILITY FALLBACK
+         *
+         * If the HTML does not yet have
+         * data-profile-link, detect the common
+         * StockFlow user containers automatically.
+         */
+
+        if (
+            profileElements.length === 0
+        ) {
+
+            const possibleUserElements =
+                document.querySelectorAll(
+                    [
+                        ".topbar-user",
+                        ".topbar-profile",
+                        ".user-profile",
+                        ".user-account",
+                        ".profile-trigger",
+                        ".sidebar-user",
+                        ".sf-user-mini"
+                    ].join(",")
+                );
+
+
+            possibleUserElements.forEach(
+                element => {
+
+                    /*
+                     * Do not convert a container into
+                     * a profile button if it contains
+                     * the logout button.
+                     */
+
+                    if (
+                        element.querySelector(
+                            "#logoutButton, [data-logout]"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    element.style.cursor =
+                        "pointer";
+
+
+                    element.setAttribute(
+                        "role",
+                        "link"
+                    );
+
+                    element.setAttribute(
+                        "tabindex",
+                        "0"
+                    );
+
+                    element.setAttribute(
+                        "aria-label",
+                        "Open your profile"
+                    );
+
+
+                    element.addEventListener(
+                        "click",
+                        event => {
+
+                            if (
+                                event.target.closest(
+                                    "button, a"
+                                )
+                            ) {
+
+                                return;
+
+                            }
+
+                            event.preventDefault();
+
+                            window.location.href =
+                                "./profile.html";
+
+                        }
+                    );
+
+
+                    element.addEventListener(
+                        "keydown",
+                        event => {
+
+                            if (
+                                event.key === "Enter" ||
+                                event.key === " "
+                            ) {
+
+                                if (
+                                    event.target.closest(
+                                        "button, a"
+                                    )
+                                ) {
+
+                                    return;
+
+                                }
+
+                                event.preventDefault();
+
+                                window.location.href =
+                                    "./profile.html";
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+        }
 
     }
 
@@ -197,18 +475,20 @@
             );
 
 
-        if (!notificationBtn) {
+        if (
+            !notificationBtn ||
+            !notificationPanel
+        ) {
+
             return;
+
         }
 
 
         function closeNotifications() {
 
-            if (!notificationPanel) {
-                return;
-            }
-
-            notificationPanel.hidden = true;
+            notificationPanel.hidden =
+                true;
 
             notificationBtn.setAttribute(
                 "aria-expanded",
@@ -218,28 +498,18 @@
         }
 
 
-        function toggleNotifications() {
-
-            if (!notificationPanel) {
-                return;
-            }
-
-            const willOpen =
-                notificationPanel.hidden;
+        function openNotifications() {
 
             notificationPanel.hidden =
-                !willOpen;
+                false;
 
             notificationBtn.setAttribute(
                 "aria-expanded",
-                String(willOpen)
+                "true"
             );
 
 
-            if (
-                willOpen &&
-                notificationDot
-            ) {
+            if (notificationDot) {
 
                 notificationDot.classList.add(
                     "hidden"
@@ -250,10 +520,28 @@
         }
 
 
+        function toggleNotifications() {
+
+            if (
+                notificationPanel.hidden
+            ) {
+
+                openNotifications();
+
+            } else {
+
+                closeNotifications();
+
+            }
+
+        }
+
+
         notificationBtn.addEventListener(
             "click",
             event => {
 
+                event.preventDefault();
                 event.stopPropagation();
 
                 toggleNotifications();
@@ -262,18 +550,14 @@
         );
 
 
-        if (notificationPanel) {
+        notificationPanel.addEventListener(
+            "click",
+            event => {
 
-            notificationPanel.addEventListener(
-                "click",
-                event => {
+                event.stopPropagation();
 
-                    event.stopPropagation();
-
-                }
-            );
-
-        }
+            }
+        );
 
 
         document.addEventListener(
@@ -331,27 +615,95 @@
 
 
         /* -------------------------------------------------
-           OPEN MODAL
+           RESET FORM
+        ------------------------------------------------- */
+
+        function resetProductForm() {
+
+            if (!productForm) {
+                return;
+            }
+
+
+            productForm.reset();
+
+
+            const status =
+                document.getElementById(
+                    "productStatus"
+                );
+
+            if (status) {
+
+                status.value =
+                    "active";
+
+            }
+
+
+            const unit =
+                document.getElementById(
+                    "productUnit"
+                );
+
+            if (unit) {
+
+                unit.value =
+                    "piece";
+
+            }
+
+
+            productForm
+                .querySelectorAll(
+                    ".invalid, .is-invalid"
+                )
+                .forEach(element => {
+
+                    element.classList.remove(
+                        "invalid",
+                        "is-invalid"
+                    );
+
+                });
+
+
+            const message =
+                document.getElementById(
+                    "productFormMessage"
+                );
+
+            if (message) {
+
+                message.textContent =
+                    "";
+
+                message.className =
+                    "form-message";
+
+            }
+
+        }
+
+
+        /* -------------------------------------------------
+           OPEN PRODUCT MODAL
         ------------------------------------------------- */
 
         function openProductModal() {
+
+            resetProductForm();
+
 
             productModal.setAttribute(
                 "aria-hidden",
                 "false"
             );
 
+
             document.body.classList.add(
                 "modal-open"
             );
-
-
-            /*
-             * Only reset when creating a new product.
-             * products.js can still handle editing separately.
-             */
-
-            resetProductForm();
 
 
             const title =
@@ -382,10 +734,6 @@
             }
 
 
-            /*
-             * Focus first field
-             */
-
             setTimeout(() => {
 
                 const firstInput =
@@ -394,7 +742,9 @@
                     );
 
                 if (firstInput) {
+
                     firstInput.focus();
+
                 }
 
             }, 100);
@@ -403,7 +753,7 @@
 
 
         /* -------------------------------------------------
-           CLOSE MODAL
+           CLOSE PRODUCT MODAL
         ------------------------------------------------- */
 
         function closeProductModalWindow() {
@@ -413,6 +763,7 @@
                 "true"
             );
 
+
             document.body.classList.remove(
                 "modal-open"
             );
@@ -421,86 +772,7 @@
 
 
         /* -------------------------------------------------
-           RESET FORM
-        ------------------------------------------------- */
-
-        function resetProductForm() {
-
-            if (!productForm) {
-                return;
-            }
-
-
-            productForm.reset();
-
-
-            /*
-             * Restore default values
-             */
-
-            const status =
-                document.getElementById(
-                    "productStatus"
-                );
-
-            if (status) {
-
-                status.value =
-                    "active";
-
-            }
-
-
-            const unit =
-                document.getElementById(
-                    "productUnit"
-                );
-
-            if (unit) {
-
-                unit.value =
-                    "piece";
-
-            }
-
-
-            /*
-             * Remove previous validation states
-             */
-
-            productForm
-                .querySelectorAll(
-                    ".invalid, .is-invalid"
-                )
-                .forEach(element => {
-
-                    element.classList.remove(
-                        "invalid",
-                        "is-invalid"
-                    );
-
-                });
-
-
-            const message =
-                document.getElementById(
-                    "productFormMessage"
-                );
-
-            if (message) {
-
-                message.textContent = "";
-
-                message.className =
-                    "form-message";
-
-            }
-
-        }
-
-
-        /* -------------------------------------------------
-           ADD PRODUCT BUTTON
+           ADD PRODUCT
         ------------------------------------------------- */
 
         if (addProductBtn) {
@@ -520,7 +792,7 @@
 
 
         /* -------------------------------------------------
-           EMPTY STATE ADD BUTTON
+           EMPTY STATE ADD PRODUCT
         ------------------------------------------------- */
 
         if (emptyAddProductBtn) {
@@ -580,7 +852,7 @@
 
 
         /* -------------------------------------------------
-           CLICK BACKDROP TO CLOSE
+           BACKDROP
         ------------------------------------------------- */
 
         const backdrop =
@@ -588,15 +860,12 @@
                 ".modal-backdrop"
             );
 
+
         if (backdrop) {
 
             backdrop.addEventListener(
                 "click",
-                () => {
-
-                    closeProductModalWindow();
-
-                }
+                closeProductModalWindow
             );
 
         }
@@ -605,15 +874,10 @@
         /*
          * IMPORTANT:
          *
-         * We DO NOT add another submit handler here.
+         * There is intentionally NO submit listener here.
          *
-         * Your products.js should handle:
-         *
-         * productForm.addEventListener("submit", ...)
-         *
-         * and send the product to your API/database.
-         *
-         * This prevents duplicate database inserts.
+         * products.js owns product creation/editing
+         * and database/API operations.
          */
 
     }
@@ -624,11 +888,6 @@
     ===================================================== */
 
     function initLogout() {
-
-        /*
-         * Your NEW HTML uses:
-         * #logoutButton
-         */
 
         const logoutBtn =
             document.getElementById(
@@ -646,6 +905,7 @@
             async event => {
 
                 event.preventDefault();
+                event.stopPropagation();
 
 
                 const originalHTML =
@@ -654,7 +914,9 @@
 
                 try {
 
-                    logoutBtn.disabled = true;
+                    logoutBtn.disabled =
+                        true;
+
 
                     logoutBtn.innerHTML = `
                         <i class="fa-solid fa-spinner fa-spin"></i>
@@ -662,9 +924,9 @@
                     `;
 
 
-                    /*
-                     * STOCKFLOW AUTH
-                     */
+                    /* -----------------------------------------
+                       PRIMARY STOCKFLOW AUTH
+                    ----------------------------------------- */
 
                     if (
                         window.StockFlowAuth &&
@@ -681,13 +943,33 @@
                     }
 
 
-                    /*
-                     * FALLBACK AUTH
-                     */
+                    /* -----------------------------------------
+                       STOCKFLOW API FALLBACK
+                    ----------------------------------------- */
+
+                    if (
+                        window.StockFlowAPI &&
+                        typeof
+                        window.StockFlowAPI.logout ===
+                            "function"
+                    ) {
+
+                        await
+                            window.StockFlowAPI.logout();
+
+                        return;
+
+                    }
+
+
+                    /* -----------------------------------------
+                       GENERIC AUTH FALLBACK
+                    ----------------------------------------- */
 
                     if (
                         window.Auth &&
-                        typeof window.Auth.logout ===
+                        typeof
+                        window.Auth.logout ===
                             "function"
                     ) {
 
@@ -698,24 +980,28 @@
                     }
 
 
-                    /*
-                     * FALLBACK SESSION CLEAR
-                     */
+                    /* -----------------------------------------
+                       MANUAL SESSION CLEAR
+                    ----------------------------------------- */
 
                     sessionStorage.clear();
+
                     localStorage.removeItem(
                         "stockflow_user"
+                    );
+
+                    localStorage.removeItem(
+                        "STOCKFLOW_USER"
                     );
 
 
                     window.location.href =
                         "./auth.html";
 
-
                 } catch (error) {
 
                     console.error(
-                        "Logout failed:",
+                        "StockFlow logout failed:",
                         error
                     );
 
@@ -725,6 +1011,7 @@
 
                     logoutBtn.innerHTML =
                         originalHTML;
+
 
                     alert(
                         "Unable to logout. Please try again."
@@ -749,8 +1036,7 @@
             event => {
 
                 if (
-                    event.key !==
-                    "Escape"
+                    event.key !== "Escape"
                 ) {
 
                     return;
@@ -758,14 +1044,15 @@
                 }
 
 
-                /*
-                 * Close product modal
-                 */
+                /* -----------------------------------------
+                   PRODUCT MODAL
+                ----------------------------------------- */
 
                 const productModal =
                     document.getElementById(
                         "productModal"
                     );
+
 
                 if (
                     productModal &&
@@ -788,14 +1075,15 @@
                 }
 
 
-                /*
-                 * Close delete modal
-                 */
+                /* -----------------------------------------
+                   DELETE MODAL
+                ----------------------------------------- */
 
                 const deleteModal =
                     document.getElementById(
                         "deleteProductModal"
                     );
+
 
                 if (
                     deleteModal &&
@@ -814,14 +1102,15 @@
                 }
 
 
-                /*
-                 * Close view modal
-                 */
+                /* -----------------------------------------
+                   VIEW MODAL
+                ----------------------------------------- */
 
                 const viewModal =
                     document.getElementById(
                         "viewProductModal"
                     );
+
 
                 if (
                     viewModal &&
@@ -840,14 +1129,21 @@
                 }
 
 
-                /*
-                 * Close notification
-                 */
+                /* -----------------------------------------
+                   NOTIFICATIONS
+                ----------------------------------------- */
 
                 const notificationPanel =
                     document.getElementById(
                         "notificationPanel"
                     );
+
+
+                const notificationButton =
+                    document.getElementById(
+                        "notificationButton"
+                    );
+
 
                 if (notificationPanel) {
 
@@ -857,9 +1153,19 @@
                 }
 
 
-                /*
-                 * Close sidebar
-                 */
+                if (notificationButton) {
+
+                    notificationButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                }
+
+
+                /* -----------------------------------------
+                   SIDEBAR
+                ----------------------------------------- */
 
                 const sidebar =
                     document.getElementById(
@@ -871,6 +1177,7 @@
                         "sidebarOverlay"
                     );
 
+
                 if (sidebar) {
 
                     sidebar.classList.remove(
@@ -878,6 +1185,7 @@
                     );
 
                 }
+
 
                 if (overlay) {
 
@@ -887,6 +1195,11 @@
                     );
 
                 }
+
+
+                document.body.classList.remove(
+                    "sidebar-open"
+                );
 
             }
         );
