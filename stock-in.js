@@ -1,188 +1,1185 @@
 /* =========================================================
    STOCKFLOW — STOCK IN
-   stock-in.js
-   ========================================================= */
+   Functional + UI Controller
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+(() => {
     "use strict";
 
-    /* =====================================================
-       ELEMENTS
-    ===================================================== */
+    const $ = (id) => document.getElementById(id);
 
-    const form = document.getElementById("stockInForm");
-
-    if (!form) {
-        return;
-    }
-
-    const productSelect =
-        document.getElementById("productSelect");
-
-    const quantityInput =
-        document.getElementById("quantity");
-
-    const unitCostInput =
-        document.getElementById("unitCost");
-
-    const supplierSelect =
-        document.getElementById("supplierSelect");
-
-    const referenceInput =
-        document.getElementById("referenceNumber");
-
-    const dateInput =
-        document.getElementById("stockInDate");
-
-    const notesInput =
-        document.getElementById("notes");
-
-    const clearButton =
-        document.getElementById("clearStockInBtn");
-
-    const saveButton =
-        document.getElementById("saveStockInBtn");
-
-    const refreshButton =
-        document.getElementById("refreshStockInBtn");
-
-    const tableBody =
-        document.getElementById("stockInTableBody");
-
-    const connectionBadge =
-        document.getElementById("connectionBadge");
-
-    const connectionMessage =
-        document.getElementById("connectionMessage");
-
-    const loadingOverlay =
-        document.getElementById("stockInLoading");
-
-    const modal =
-        document.getElementById("stockInModal");
-
-    const modalIcon =
-        document.getElementById("stockInModalIcon");
-
-    const modalTitle =
-        document.getElementById("stockInModalTitle");
-
-    const modalMessage =
-        document.getElementById("stockInModalMessage");
-
-    const modalClose =
-        document.getElementById("closeStockInModal");
-
-    const modalOk =
-        document.getElementById("stockInModalOk");
-
-    const mobileMenuBtn =
-        document.getElementById("mobileMenuBtn");
-
-    const sidebar =
-        document.getElementById("sidebar");
-
-    const sidebarOverlay =
-        document.getElementById("sidebarOverlay");
-
-    const logoutBtn =
-        document.getElementById("logoutBtn");
-
-
-    /* =====================================================
-       PREVIEW ELEMENTS
-    ===================================================== */
-
-    const previewProduct =
-        document.getElementById("previewProduct");
-
-    const previewSupplier =
-        document.getElementById("previewSupplier");
-
-    const previewQuantity =
-        document.getElementById("previewQuantity");
-
-    const previewUnitCost =
-        document.getElementById("previewUnitCost");
-
-    const previewTotal =
-        document.getElementById("previewTotal");
-
-    const previewReference =
-        document.getElementById("previewReference");
-
-    const previewDate =
-        document.getElementById("previewDate");
-
-
-    /* =====================================================
-       STATE
-    ===================================================== */
-
-    let products = [];
-    let suppliers = [];
-    let transactions = [];
-
-    let saving = false;
-
+    const state = {
+        products: [],
+        suppliers: [],
+        currentUser: null
+    };
 
     /* =====================================================
        HELPERS
     ===================================================== */
 
-    function escapeHTML(value) {
+    const esc = (value) =>
+        String(value ?? "")
+            .replace(/[&<>"']/g, (char) => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            }[char]));
 
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+    const money = (value) =>
+        `₱${Number(value || 0).toLocaleString("en-PH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
 
+    const getProductName = (p) =>
+        p?.NAME ??
+        p?.name ??
+        "Unnamed Product";
 
-    function pick(object, keys, fallback = "") {
+    const getProductId = (p) =>
+        p?.ID ??
+        p?.id ??
+        "";
 
-        if (!object) {
-            return fallback;
+    const getProductStock = (p) =>
+        Number(p?.STOCK ?? p?.stock ?? 0);
+
+    const getSupplierName = (s) =>
+        s?.NAME ??
+        s?.name ??
+        "Unnamed Supplier";
+
+    const getSupplierId = (s) =>
+        s?.ID ??
+        s?.id ??
+        "";
+
+    const show = (element) => {
+        if (element) element.hidden = false;
+    };
+
+    const hide = (element) => {
+        if (element) element.hidden = true;
+    };
+
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
+    async function initializeAuthentication() {
+
+        if (
+            !window.StockFlowAuth ||
+            typeof window.StockFlowAuth.requireAuth !== "function"
+        ) {
+            return true;
         }
 
-        for (const key of keys) {
+        const user =
+            await window.StockFlowAuth.requireAuth();
 
-            if (
-                object[key] !== undefined &&
-                object[key] !== null &&
-                object[key] !== ""
-            ) {
-                return object[key];
+        if (!user) {
+            return false;
+        }
+
+        state.currentUser = user;
+
+        updateUserDisplay(user);
+
+        return true;
+    }
+
+    /* =====================================================
+       USER DISPLAY
+    ===================================================== */
+
+    function updateUserDisplay(user) {
+
+        const name =
+            user?.name ||
+            user?.fullname ||
+            user?.username ||
+            "StockFlow User";
+
+        const role =
+            user?.role ||
+            user?.ROLE ||
+            "Employee";
+
+        const initials =
+            name
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(part => part.charAt(0).toUpperCase())
+                .join("") || "SF";
+
+        if ($("topbarUserName")) {
+            $("topbarUserName").textContent = name;
+        }
+
+        if ($("topbarUserRole")) {
+            $("topbarUserRole").textContent = role;
+        }
+
+        if ($("topbarAvatar")) {
+            $("topbarAvatar").textContent = initials;
+        }
+
+        /*
+         * If old sidebar-user markup still exists,
+         * hide it rather than creating a second user display.
+         */
+
+        if ($("sidebarUserName")) {
+            $("sidebarUserName").textContent = name;
+        }
+
+        if ($("sidebarUserRole")) {
+            $("sidebarUserRole").textContent = role;
+        }
+
+        if ($("sidebarAvatar")) {
+            $("sidebarAvatar").textContent = initials;
+        }
+    }
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+
+    function setupSidebar() {
+
+        const sidebar = $("sidebar");
+        const overlay = $("sidebarOverlay");
+        const menuBtn = $("mobileMenuBtn");
+
+        if (!sidebar || !menuBtn) {
+            return;
+        }
+
+        const closeMenu = () => {
+
+            sidebar.classList.remove("open");
+
+            if (overlay) {
+                overlay.classList.remove("show");
             }
-        }
 
-        return fallback;
-    }
+            menuBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        };
 
+        const openMenu = () => {
 
-    function number(value) {
+            sidebar.classList.add("open");
 
-        const parsed = Number(value);
+            if (overlay) {
+                overlay.classList.add("show");
+            }
 
-        return Number.isFinite(parsed)
-            ? parsed
-            : 0;
-    }
+            menuBtn.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+        };
 
+        menuBtn.addEventListener("click", () => {
 
-    function peso(value) {
+            if (sidebar.classList.contains("open")) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
 
-        return "₱" + number(value).toLocaleString(
-            "en-PH",
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+        });
+
+        overlay?.addEventListener(
+            "click",
+            closeMenu
+        );
+
+        document
+            .querySelectorAll(".nav-item")
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+
+            });
+
+        window.addEventListener(
+            "resize",
+            () => {
+
+                if (window.innerWidth > 980) {
+                    closeMenu();
+                }
+
             }
         );
     }
 
+    /* =====================================================
+       NOTIFICATION
+    ===================================================== */
+
+    function setupNotifications() {
+
+        const topbarRight =
+            document.querySelector(".topbar-right");
+
+        if (!topbarRight) {
+            return;
+        }
+
+        /*
+         * Do not create another notification button
+         * if one already exists.
+         */
+
+        if ($("notificationBtn")) {
+            return;
+        }
+
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.className =
+            "notification-wrapper";
+
+        wrapper.innerHTML = `
+            <button
+                type="button"
+                class="notification-btn"
+                id="notificationBtn"
+                aria-label="Notifications"
+                aria-expanded="false"
+            >
+                <i class="fa-regular fa-bell"></i>
+                <span
+                    class="notification-dot"
+                    id="notificationDot"
+                ></span>
+            </button>
+
+            <div
+                class="stockflow-notification-panel"
+                id="notificationPanel"
+                hidden
+            >
+                <div class="notification-panel-head">
+                    <strong>Notifications</strong>
+                    <button
+                        type="button"
+                        id="closeNotificationBtn"
+                        aria-label="Close notifications"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="notification-panel-item">
+                    <div class="notification-panel-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+
+                    <div>
+                        <strong>StockFlow is online</strong>
+                        <span>
+                            Inventory services are available.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        /*
+         * Notification should appear BEFORE user.
+         */
+
+        const user =
+            topbarRight.querySelector(".topbar-user");
+
+        topbarRight.insertBefore(
+            wrapper,
+            user || null
+        );
+
+        const btn = $("notificationBtn");
+        const panel = $("notificationPanel");
+
+        const close = () => {
+
+            hide(panel);
+
+            btn?.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        };
+
+        btn?.addEventListener(
+            "click",
+            (event) => {
+
+                event.stopPropagation();
+
+                if (panel.hidden) {
+
+                    show(panel);
+
+                    btn.setAttribute(
+                        "aria-expanded",
+                        "true"
+                    );
+
+                } else {
+
+                    close();
+                }
+            }
+        );
+
+        $("closeNotificationBtn")
+            ?.addEventListener(
+                "click",
+                close
+            );
+
+        document.addEventListener(
+            "click",
+            (event) => {
+
+                if (
+                    !wrapper.contains(event.target)
+                ) {
+                    close();
+                }
+
+            }
+        );
+    }
+
+    /* =====================================================
+       CONNECTION MESSAGE
+    ===================================================== */
+
+    function showConnectionMessage(
+        message = "System Connected — StockFlow services are ready."
+    ) {
+
+        const box =
+            $("connectionMessage");
+
+        if (!box) {
+            return;
+        }
+
+        box.innerHTML = `
+            <i
+                class="fa-solid fa-circle-check"
+                style="
+                    margin-right:10px;
+                    color:#16a05d;
+                "
+            ></i>
+
+            ${esc(message)}
+        `;
+
+        show(box);
+    }
+
+    function showConnectionError(message) {
+
+        const box =
+            $("connectionMessage");
+
+        if (!box) {
+            return;
+        }
+
+        box.innerHTML = `
+            <i
+                class="fa-solid fa-triangle-exclamation"
+                style="
+                    margin-right:10px;
+                    color:#dc3030;
+                "
+            ></i>
+
+            ${esc(message)}
+        `;
+
+        box.style.borderColor = "#f0cccc";
+        box.style.background = "#fff4f4";
+        box.style.color = "#9f3030";
+
+        show(box);
+    }
+
+    /* =====================================================
+       LOAD PRODUCTS
+    ===================================================== */
+
+    async function loadProducts() {
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.listProducts !== "function"
+        ) {
+            throw new Error(
+                "Product API is not available."
+            );
+        }
+
+        const response =
+            await window.StockFlowAPI.listProducts();
+
+        if (
+            response &&
+            response.success === false
+        ) {
+            throw new Error(
+                response.message ||
+                "Unable to load products."
+            );
+        }
+
+        state.products =
+            Array.isArray(response?.products)
+                ? response.products
+                : Array.isArray(response)
+                    ? response
+                    : [];
+
+        populateProductSelect();
+
+        updateAvailableStock();
+
+        updatePreview();
+    }
+
+    /* =====================================================
+       LOAD SUPPLIERS
+    ===================================================== */
+
+    async function loadSuppliers() {
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.listSuppliers !== "function"
+        ) {
+            return;
+        }
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.listSuppliers();
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                return;
+            }
+
+            state.suppliers =
+                Array.isArray(response?.suppliers)
+                    ? response.suppliers
+                    : [];
+
+            populateSupplierSelect();
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to load suppliers:",
+                error
+            );
+        }
+    }
+
+    /* =====================================================
+       PRODUCT SELECT
+    ===================================================== */
+
+    function populateProductSelect() {
+
+        const select =
+            $("productSelect");
+
+        if (!select) {
+            return;
+        }
+
+        const activeProducts =
+            state.products.filter(product =>
+                String(
+                    product.STATUS ??
+                    product.status ??
+                    "ACTIVE"
+                ).toUpperCase() === "ACTIVE"
+            );
+
+        select.innerHTML =
+            `
+                <option value="">
+                    Select a product
+                </option>
+            ` +
+            activeProducts
+                .map(product => {
+
+                    const id =
+                        getProductId(product);
+
+                    const sku =
+                        product.SKU ??
+                        product.sku ??
+                        "";
+
+                    const name =
+                        getProductName(product);
+
+                    const stock =
+                        getProductStock(product);
+
+                    return `
+                        <option
+                            value="${esc(id)}"
+                        >
+                            ${esc(sku)} — ${esc(name)}
+                            (stock: ${stock})
+                        </option>
+                    `;
+                })
+                .join("");
+    }
+
+    /* =====================================================
+       SUPPLIER SELECT
+    ===================================================== */
+
+    function populateSupplierSelect() {
+
+        const select =
+            $("supplierSelect");
+
+        if (!select) {
+            return;
+        }
+
+        select.innerHTML =
+            `
+                <option value="">
+                    Select supplier
+                </option>
+            ` +
+            state.suppliers
+                .filter(supplier =>
+                    String(
+                        supplier.STATUS ??
+                        supplier.status ??
+                        "ACTIVE"
+                    ).toUpperCase() === "ACTIVE"
+                )
+                .map(supplier => `
+                    <option
+                        value="${esc(getSupplierName(supplier))}"
+                    >
+                        ${esc(getSupplierName(supplier))}
+                    </option>
+                `)
+                .join("");
+    }
+
+    /* =====================================================
+       FIND SELECTED PRODUCT
+    ===================================================== */
+
+    function selectedProduct() {
+
+        const id =
+            $("productSelect")?.value;
+
+        return state.products.find(
+            product =>
+                String(getProductId(product)) ===
+                String(id)
+        );
+    }
+
+    /* =====================================================
+       AVAILABLE STOCK
+    ===================================================== */
+
+    function updateAvailableStock() {
+
+        const product =
+            selectedProduct();
+
+        const stock =
+            product
+                ? getProductStock(product)
+                : 0;
+
+        if ($("availableStock")) {
+            $("availableStock").textContent =
+                stock.toLocaleString();
+        }
+
+        if ($("stockAvailabilityHelp")) {
+
+            $("stockAvailabilityHelp").textContent =
+                product
+                    ? `Current available stock: ${stock.toLocaleString()} units.`
+                    : "Select a product to view available stock.";
+        }
+    }
+
+    /* =====================================================
+       PREVIEW
+    ===================================================== */
+
+    function updatePreview() {
+
+        const product =
+            selectedProduct();
+
+        const supplier =
+            $("supplierSelect")?.value || "";
+
+        const quantity =
+            Math.max(
+                0,
+                Number($("quantity")?.value || 0)
+            );
+
+        const unitCost =
+            Math.max(
+                0,
+                Number($("unitCost")?.value || 0)
+            );
+
+        const reference =
+            $("referenceNumber")?.value.trim() ||
+            "—";
+
+        const date =
+            $("stockInDate")?.value ||
+            "—";
+
+        const stock =
+            product
+                ? getProductStock(product)
+                : 0;
+
+        const productName =
+            product
+                ? getProductName(product)
+                : "No product selected";
+
+        const total =
+            quantity * unitCost;
+
+        if ($("previewProduct")) {
+            $("previewProduct").textContent =
+                productName;
+        }
+
+        if ($("previewSupplier")) {
+            $("previewSupplier").textContent =
+                supplier ||
+                "No supplier selected";
+        }
+
+        if ($("previewQuantity")) {
+            $("previewQuantity").textContent =
+                quantity.toLocaleString();
+        }
+
+        if ($("previewUnitCost")) {
+            $("previewUnitCost").textContent =
+                money(unitCost);
+        }
+
+        if ($("previewTotal")) {
+            $("previewTotal").textContent =
+                money(total);
+        }
+
+        if ($("previewReference")) {
+            $("previewReference").textContent =
+                reference;
+        }
+
+        if ($("previewDate")) {
+            $("previewDate").textContent =
+                date;
+        }
+
+        if ($("quantity")) {
+
+            if (product) {
+                $("quantity").max =
+                    String(stock);
+            } else {
+                $("quantity").removeAttribute("max");
+            }
+        }
+    }
+
+    /* =====================================================
+       MODAL
+    ===================================================== */
+
+    function openResultModal(
+        success,
+        title,
+        message
+    ) {
+
+        const modal =
+            $("stockInModal");
+
+        if (!modal) {
+            return;
+        }
+
+        const icon =
+            $("stockInModalIcon");
+
+        if (icon) {
+
+            icon.innerHTML = success
+                ? `<i class="fa-solid fa-check"></i>`
+                : `<i class="fa-solid fa-xmark"></i>`;
+
+            icon.style.background =
+                success
+                    ? "#eaf8f0"
+                    : "#fff0f0";
+
+            icon.style.color =
+                success
+                    ? "#16a05d"
+                    : "#dc3030";
+        }
+
+        if ($("stockInModalTitle")) {
+            $("stockInModalTitle").textContent =
+                title;
+        }
+
+        if ($("stockInModalMessage")) {
+            $("stockInModalMessage").textContent =
+                message;
+        }
+
+        show(modal);
+    }
+
+    function closeResultModal() {
+        hide($("stockInModal"));
+    }
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    function setLoading(loading) {
+
+        const overlay =
+            $("stockInLoading");
+
+        const button =
+            $("saveStockInBtn");
+
+        if (loading) {
+
+            show(overlay);
+
+            if (button) {
+                button.disabled = true;
+
+                button.innerHTML = `
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span>Saving Stock...</span>
+                `;
+            }
+
+        } else {
+
+            hide(overlay);
+
+            if (button) {
+
+                button.disabled = false;
+
+                button.innerHTML = `
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    <span>Add Stock</span>
+                `;
+            }
+        }
+    }
+
+    /* =====================================================
+       CLEAR FORM
+    ===================================================== */
+
+    function clearForm() {
+
+        const form =
+            $("stockInForm");
+
+        form?.reset();
+
+        if ($("stockInDate")) {
+            $("stockInDate").value =
+                new Date()
+                    .toISOString()
+                    .split("T")[0];
+        }
+
+        updateAvailableStock();
+        updatePreview();
+    }
+
+    /* =====================================================
+       SAVE STOCK IN
+    ===================================================== */
+
+    async function saveStockIn(event) {
+
+        event.preventDefault();
+
+        const product =
+            selectedProduct();
+
+        if (!product) {
+
+            openResultModal(
+                false,
+                "Product Required",
+                "Please select a product before adding stock."
+            );
+
+            return;
+        }
+
+        const quantity =
+            Number($("quantity")?.value || 0);
+
+        const stock =
+            getProductStock(product);
+
+        if (
+            !Number.isInteger(quantity) ||
+            quantity <= 0
+        ) {
+
+            openResultModal(
+                false,
+                "Invalid Quantity",
+                "Quantity must be a positive whole number."
+            );
+
+            return;
+        }
+
+        const unitCost =
+            Math.max(
+                0,
+                Number($("unitCost")?.value || 0)
+            );
+
+        const supplier =
+            $("supplierSelect")?.value.trim() ||
+            "";
+
+        const reference =
+            $("referenceNumber")?.value.trim() ||
+            "";
+
+        const note =
+            $("notes")?.value.trim() ||
+            "";
+
+        const date =
+            $("stockInDate")?.value ||
+            "";
+
+        if (!date) {
+
+            openResultModal(
+                false,
+                "Date Required",
+                "Please select the stock-in date."
+            );
+
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.stockIn({
+
+                    productId:
+                        getProductId(product),
+
+                    quantity,
+
+                    unitCost,
+
+                    reference,
+
+                    supplier,
+
+                    note,
+
+                    date
+                });
+
+            if (
+                !response ||
+                response.success === false
+            ) {
+
+                throw new Error(
+                    response?.message ||
+                    "Unable to record stock-in transaction."
+                );
+            }
+
+            openResultModal(
+                true,
+                "Stock Added Successfully",
+                response.message ||
+                "The inventory has been updated successfully."
+            );
+
+            showConnectionMessage(
+                "System Connected — StockFlow services are ready."
+            );
+
+            clearForm();
+
+            await Promise.all([
+                loadProducts(),
+                loadRecentTransactions()
+            ]);
+
+        } catch (error) {
+
+            console.error(
+                "Stock In error:",
+                error
+            );
+
+            openResultModal(
+                false,
+                "Unable to Add Stock",
+                error.message ||
+                "Something went wrong while saving the transaction."
+            );
+
+            showConnectionError(
+                error.message ||
+                "Unable to connect to StockFlow services."
+            );
+
+        } finally {
+
+            setLoading(false);
+        }
+    }
+
+    /* =====================================================
+       RECENT TRANSACTIONS
+    ===================================================== */
+
+    async function loadRecentTransactions() {
+
+        const tbody =
+            $("stockInTableBody");
+
+        if (!tbody) {
+            return;
+        }
+
+        tbody.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="table-loading"
+                >
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading stock transactions...
+                </td>
+            </tr>
+        `;
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.listTransactions !== "function"
+        ) {
+            return;
+        }
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.listTransactions({
+                    type: "STOCK_IN"
+                });
+
+            if (
+                response &&
+                response.success === false
+            ) {
+                throw new Error(
+                    response.message ||
+                    "Unable to load transactions."
+                );
+            }
+
+            const transactions =
+                Array.isArray(response?.transactions)
+                    ? response.transactions
+                    : [];
+
+            if (!transactions.length) {
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td
+                            colspan="6"
+                            style="
+                                text-align:center;
+                                padding:35px;
+                                color:#8794a8;
+                            "
+                        >
+                            No stock-in transactions yet.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+            }
+
+            tbody.innerHTML =
+                transactions
+                    .slice(0, 10)
+                    .map(transaction => {
+
+                        const date =
+                            transaction.DATE ||
+                            transaction.date ||
+                            "—";
+
+                        const product =
+                            transaction.PRODUCT_NAME ||
+                            transaction.productName ||
+                            "—";
+
+                        const quantity =
+                            transaction.QUANTITY ??
+                            transaction.quantity ??
+                            0;
+
+                        const supplier =
+                            transaction.SUPPLIER ||
+                            transaction.supplier ||
+                            "—";
+
+                        const reference =
+                            transaction.REFERENCE ||
+                            transaction.reference ||
+                            "—";
+
+                        const user =
+                            transaction.USER ||
+                            transaction.user ||
+                            "—";
+
+                        return `
+                            <tr>
+
+                                <td>
+                                    ${esc(formatDate(date))}
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        ${esc(product)}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <strong>
+                                        +${Number(quantity).toLocaleString()}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    ${esc(supplier)}
+                                </td>
+
+                                <td>
+                                    ${esc(reference)}
+                                </td>
+
+                                <td>
+                                    ${esc(user)}
+                                </td>
+
+                            </tr>
+                        `;
+                    })
+                    .join("");
+
+        } catch (error) {
+
+            console.error(
+                "Transaction loading error:",
+                error
+            );
+
+            tbody.innerHTML = `
+                <tr>
+                    <td
+                        colspan="6"
+                        style="
+                            text-align:center;
+                            padding:35px;
+                            color:#c53b3b;
+                        "
+                    >
+                        Unable to load recent transactions.
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    /* =====================================================
+       DATE FORMAT
+    ===================================================== */
 
     function formatDate(value) {
 
@@ -190,7 +1187,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return "—";
         }
 
-        const date = new Date(value);
+        const date =
+            new Date(value);
 
         if (Number.isNaN(date.getTime())) {
             return String(value);
@@ -206,1923 +1204,252 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
-
-    function todayISO() {
-
-        const now = new Date();
-
-        const year =
-            now.getFullYear();
-
-        const month =
-            String(now.getMonth() + 1)
-                .padStart(2, "0");
-
-        const day =
-            String(now.getDate())
-                .padStart(2, "0");
-
-        return `${year}-${month}-${day}`;
-    }
-
-
-    function showConnectionMessage(
-        message,
-        type = "success"
-    ) {
-
-        if (!connectionMessage) {
-            return;
-        }
-
-        connectionMessage.textContent = message;
-
-        connectionMessage.className =
-            `connection-message ${type}`;
-
-        connectionMessage.hidden = false;
-    }
-
-
-    function hideConnectionMessage() {
-
-        if (!connectionMessage) {
-            return;
-        }
-
-        connectionMessage.hidden = true;
-        connectionMessage.textContent = "";
-        connectionMessage.className =
-            "connection-message";
-    }
-
-
-    /* =====================================================
-       CONNECTION
-    ===================================================== */
-
-    function setOnline() {
-
-        if (!connectionBadge) {
-            return;
-        }
-
-        connectionBadge.classList.remove("offline");
-
-        const text =
-            connectionBadge.querySelector(
-                "span:last-child"
-            );
-
-        if (text) {
-            text.textContent = "ONLINE";
-        }
-    }
-
-
-    function setOffline() {
-
-        if (!connectionBadge) {
-            return;
-        }
-
-        connectionBadge.classList.add("offline");
-
-        const text =
-            connectionBadge.querySelector(
-                "span:last-child"
-            );
-
-        if (text) {
-            text.textContent = "OFFLINE";
-        }
-    }
-
-
-    /* =====================================================
-       LOADING
-    ===================================================== */
-
-    function showLoading() {
-
-        if (loadingOverlay) {
-            loadingOverlay.hidden = false;
-        }
-
-        if (saveButton) {
-            saveButton.disabled = true;
-        }
-    }
-
-
-    function hideLoading() {
-
-        if (loadingOverlay) {
-            loadingOverlay.hidden = true;
-        }
-
-        if (!saving && saveButton) {
-            saveButton.disabled = false;
-        }
-    }
-
-
-    /* =====================================================
-       API ADAPTER
-    ===================================================== */
-
-    async function callAPI(
-        action,
-        payload = {}
-    ) {
-
-        const api =
-            window.StockFlowAPI ||
-            window.stockFlowAPI ||
-            window.StockFlowApi ||
-            window.API;
-
-        if (!api) {
-
-            throw new Error(
-                "StockFlow API is not available."
-            );
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * NESTED PRODUCTS API
-         * -------------------------------------------------
-         */
-
-        if (
-            action === "listProducts" &&
-            api.products &&
-            typeof api.products.list === "function"
-        ) {
-            return await api.products.list(payload);
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * NESTED SUPPLIERS API
-         * -------------------------------------------------
-         */
-
-        if (
-            action === "listSuppliers" &&
-            api.suppliers &&
-            typeof api.suppliers.list === "function"
-        ) {
-            return await api.suppliers.list(payload);
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * NESTED STOCK API
-         * -------------------------------------------------
-         */
-
-        if (
-            action === "stockIn" &&
-            api.stockIn &&
-            typeof api.stockIn === "function"
-        ) {
-            return await api.stockIn(payload);
-        }
-
-
-        if (
-            action === "listTransactions" &&
-            api.stockIn &&
-            typeof api.stockIn.list === "function"
-        ) {
-            return await api.stockIn.list(payload);
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * DIRECT METHODS
-         * -------------------------------------------------
-         */
-
-        const directMethodMap = {
-
-            listProducts: [
-                "listProducts",
-                "getProducts"
-            ],
-
-            listSuppliers: [
-                "listSuppliers",
-                "getSuppliers"
-            ],
-
-            stockIn: [
-                "stockIn",
-                "addStockIn",
-                "createStockIn"
-            ],
-
-            listTransactions: [
-                "listTransactions",
-                "getTransactions",
-                "listStockIn"
-            ]
-        };
-
-
-        const methods =
-            directMethodMap[action] || [];
-
-
-        for (const methodName of methods) {
-
-            if (
-                typeof api[methodName] ===
-                "function"
-            ) {
-
-                return await api[methodName](
-                    payload
-                );
-            }
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * GENERIC REQUEST METHOD
-         * -------------------------------------------------
-         */
-
-        if (typeof api.request === "function") {
-
-            try {
-
-                return await api.request({
-                    action,
-                    ...payload
-                });
-
-            } catch (firstError) {
-
-                return await api.request(
-                    action,
-                    payload
-                );
-            }
-        }
-
-
-        if (typeof api.post === "function") {
-
-            return await api.post(
-                action,
-                payload
-            );
-        }
-
-
-        if (typeof api.call === "function") {
-
-            return await api.call(
-                action,
-                payload
-            );
-        }
-
-
-        /*
-         * -------------------------------------------------
-         * GLOBAL API FUNCTIONS
-         * -------------------------------------------------
-         */
-
-        if (
-            typeof window.apiRequest ===
-            "function"
-        ) {
-
-            return await window.apiRequest({
-                action,
-                ...payload
-            });
-        }
-
-
-        throw new Error(
-            `API method for "${action}" was not found.`
-        );
-    }
-
-
-    /* =====================================================
-       NORMALIZE API RESPONSE
-    ===================================================== */
-
-    function normalizeResponse(response) {
-
-        if (!response) {
-            return {
-                success: true,
-                data: []
-            };
-        }
-
-
-        if (
-            response.success === false ||
-            response.ok === false
-        ) {
-
-            throw new Error(
-                response.message ||
-                response.error ||
-                "The server rejected the request."
-            );
-        }
-
-
-        return response;
-    }
-
-
-    function extractArray(
-        response,
-        possibleKeys = []
-    ) {
-
-        const data =
-            response?.data ??
-            response?.result ??
-            response;
-
-
-        if (Array.isArray(data)) {
-            return data;
-        }
-
-
-        for (const key of possibleKeys) {
-
-            if (
-                Array.isArray(
-                    data?.[key]
-                )
-            ) {
-                return data[key];
-            }
-
-            if (
-                Array.isArray(
-                    response?.[key]
-                )
-            ) {
-                return response[key];
-            }
-        }
-
-
-        return [];
-    }
-
-
-    /* =====================================================
-       PRODUCT HELPERS
-    ===================================================== */
-
-    function productId(product) {
-
-        return pick(
-            product,
-            [
-                "product_id",
-                "productId",
-                "id",
-                "ID"
-            ]
-        );
-    }
-
-
-    function productName(product) {
-
-        return pick(
-            product,
-            [
-                "product_name",
-                "productName",
-                "name",
-                "Name"
-            ],
-            "Unnamed Product"
-        );
-    }
-
-
-    function supplierId(supplier) {
-
-        return pick(
-            supplier,
-            [
-                "supplier_id",
-                "supplierId",
-                "id",
-                "ID"
-            ]
-        );
-    }
-
-
-    function supplierName(supplier) {
-
-        return pick(
-            supplier,
-            [
-                "supplier_name",
-                "supplierName",
-                "name",
-                "Name"
-            ],
-            "Unnamed Supplier"
-        );
-    }
-
-
-    /* =====================================================
-       LOAD PRODUCTS
-    ===================================================== */
-
-    async function loadProducts() {
-
-        try {
-
-            const response =
-                normalizeResponse(
-                    await callAPI(
-                        "listProducts"
-                    )
-                );
-
-
-            products =
-                extractArray(
-                    response,
-                    [
-                        "products",
-                        "items",
-                        "rows"
-                    ]
-                );
-
-
-            populateProducts();
-
-            setOnline();
-
-        } catch (error) {
-
-            console.error(
-                "Stock In products:",
-                error
-            );
-
-            productSelect.innerHTML = `
-                <option value="">
-                    Unable to load products
-                </option>
-            `;
-
-            setOffline();
-
-            showConnectionMessage(
-                error.message ||
-                "Unable to load products.",
-                "error"
-            );
-        }
-    }
-
-
-    /* =====================================================
-       POPULATE PRODUCT SELECT
-    ===================================================== */
-
-    function populateProducts() {
-
-        if (!productSelect) {
-            return;
-        }
-
-
-        const currentValue =
-            productSelect.value;
-
-
-        productSelect.innerHTML = `
-            <option value="">
-                Select a product
-            </option>
-        `;
-
-
-        products.forEach(product => {
-
-            const id =
-                productId(product);
-
-            const name =
-                productName(product);
-
-            if (!id) {
-                return;
-            }
-
-
-            const sku =
-                pick(
-                    product,
-                    [
-                        "sku",
-                        "SKU",
-                        "product_sku"
-                    ]
-                );
-
-
-            const stock =
-                pick(
-                    product,
-                    [
-                        "stock",
-                        "quantity",
-                        "current_stock"
-                    ],
-                    ""
-                );
-
-
-            const option =
-                document.createElement(
-                    "option"
-                );
-
-
-            option.value = id;
-
-            option.textContent =
-                sku
-                    ? `${name} — ${sku}`
-                    : `${name}${stock !== "" ? ` — Stock: ${stock}` : ""}`;
-
-
-            option.dataset.name =
-                name;
-
-            option.dataset.stock =
-                stock;
-
-
-            productSelect.appendChild(
-                option
-            );
-        });
-
-
-        if (currentValue) {
-
-            productSelect.value =
-                currentValue;
-        }
-    }
-
-
-    /* =====================================================
-       LOAD SUPPLIERS
-    ===================================================== */
-
-    async function loadSuppliers() {
-
-        if (!supplierSelect) {
-            return;
-        }
-
-
-        try {
-
-            const response =
-                normalizeResponse(
-                    await callAPI(
-                        "listSuppliers"
-                    )
-                );
-
-
-            suppliers =
-                extractArray(
-                    response,
-                    [
-                        "suppliers",
-                        "items",
-                        "rows"
-                    ]
-                );
-
-
-            populateSuppliers();
-
-        } catch (error) {
-
-            console.error(
-                "Stock In suppliers:",
-                error
-            );
-
-
-            supplierSelect.innerHTML = `
-                <option value="">
-                    Supplier unavailable
-                </option>
-            `;
-        }
-    }
-
-
-    /* =====================================================
-       POPULATE SUPPLIERS
-    ===================================================== */
-
-    function populateSuppliers() {
-
-        const currentValue =
-            supplierSelect.value;
-
-
-        supplierSelect.innerHTML = `
-            <option value="">
-                Select supplier
-            </option>
-        `;
-
-
-        suppliers.forEach(supplier => {
-
-            const id =
-                supplierId(supplier);
-
-            const name =
-                supplierName(supplier);
-
-
-            if (!id) {
-                return;
-            }
-
-
-            const option =
-                document.createElement(
-                    "option"
-                );
-
-
-            option.value = id;
-
-            option.textContent =
-                name;
-
-            option.dataset.name =
-                name;
-
-
-            supplierSelect.appendChild(
-                option
-            );
-        });
-
-
-        if (currentValue) {
-
-            supplierSelect.value =
-                currentValue;
-        }
-    }
-
-
-    /* =====================================================
-       PREVIEW
-    ===================================================== */
-
-    function updatePreview() {
-
-        const selectedProduct =
-            productSelect?.selectedOptions?.[0];
-
-
-        const selectedSupplier =
-            supplierSelect?.selectedOptions?.[0];
-
-
-        const quantity =
-            Math.max(
-                0,
-                number(quantityInput?.value)
-            );
-
-
-        const unitCost =
-            Math.max(
-                0,
-                number(unitCostInput?.value)
-            );
-
-
-        const total =
-            quantity * unitCost;
-
-
-        if (previewProduct) {
-
-            previewProduct.textContent =
-                selectedProduct &&
-                selectedProduct.value
-                    ? selectedProduct.dataset.name ||
-                      selectedProduct.textContent
-                    : "No product selected";
-        }
-
-
-        if (previewSupplier) {
-
-            previewSupplier.textContent =
-                selectedSupplier &&
-                selectedSupplier.value
-                    ? selectedSupplier.dataset.name ||
-                      selectedSupplier.textContent
-                    : "No supplier selected";
-        }
-
-
-        if (previewQuantity) {
-
-            previewQuantity.textContent =
-                quantity.toLocaleString(
-                    "en-PH"
-                );
-        }
-
-
-        if (previewUnitCost) {
-
-            previewUnitCost.textContent =
-                peso(unitCost);
-        }
-
-
-        if (previewTotal) {
-
-            previewTotal.textContent =
-                peso(total);
-        }
-
-
-        if (previewReference) {
-
-            previewReference.textContent =
-                referenceInput?.value.trim() ||
-                "—";
-        }
-
-
-        if (previewDate) {
-
-            previewDate.textContent =
-                dateInput?.value
-                    ? formatDate(
-                        dateInput.value
-                    )
-                    : "—";
-        }
-    }
-
-
-    /* =====================================================
-       VALIDATION
-    ===================================================== */
-
-    function validateForm() {
-
-        const product =
-            productSelect?.value;
-
-        const quantity =
-            number(
-                quantityInput?.value
-            );
-
-        const date =
-            dateInput?.value;
-
-
-        if (!product) {
-
-            showConnectionMessage(
-                "Please select a product.",
-                "error"
-            );
-
-            productSelect.focus();
-
-            return false;
-        }
-
-
-        if (
-            !Number.isInteger(quantity) ||
-            quantity < 1
-        ) {
-
-            showConnectionMessage(
-                "Quantity must be at least 1.",
-                "error"
-            );
-
-            quantityInput.focus();
-
-            return false;
-        }
-
-
-        if (!date) {
-
-            showConnectionMessage(
-                "Please select the stock-in date.",
-                "error"
-            );
-
-            dateInput.focus();
-
-            return false;
-        }
-
-
-        return true;
-    }
-
-
-    /* =====================================================
-       SUBMIT STOCK IN
-    ===================================================== */
-
-    async function submitStockIn() {
-
-        if (saving) {
-            return;
-        }
-
-
-        hideConnectionMessage();
-
-
-        if (!validateForm()) {
-            return;
-        }
-
-
-        const selectedProduct =
-            productSelect.selectedOptions[0];
-
-
-        const selectedSupplier =
-            supplierSelect.selectedOptions[0];
-
-
-        const productIdValue =
-            productSelect.value;
-
-
-        const supplierIdValue =
-            supplierSelect.value;
-
-
-        const quantity =
-            number(
-                quantityInput.value
-            );
-
-
-        const unitCost =
-            Math.max(
-                0,
-                number(
-                    unitCostInput.value
-                )
-            );
-
-
-        const referenceNumber =
-            referenceInput.value.trim();
-
-
-        const stockInDate =
-            dateInput.value;
-
-
-        const notes =
-            notesInput.value.trim();
-
-
-        /*
-         * Send several common field names.
-         * This makes the module compatible
-         * with the existing API wrapper.
-         */
-
-        const payload = {
-
-            productId:
-                productIdValue,
-
-            product_id:
-                productIdValue,
-
-            product:
-                productIdValue,
-
-            productName:
-                selectedProduct?.dataset?.name ||
-                selectedProduct?.textContent ||
-                "",
-
-            quantity,
-
-            unitCost,
-
-            unit_cost:
-                unitCost,
-
-            supplierId:
-                supplierIdValue || "",
-
-            supplier_id:
-                supplierIdValue || "",
-
-            supplier:
-                supplierIdValue || "",
-
-            supplierName:
-                selectedSupplier?.dataset?.name ||
-                "",
-
-            referenceNumber,
-
-            reference_number:
-                referenceNumber,
-
-            date:
-                stockInDate,
-
-            stockInDate,
-
-            stock_in_date:
-                stockInDate,
-
-            notes
-        };
-
-
-        saving = true;
-
-        showLoading();
-
-
-        try {
-
-            const response =
-                normalizeResponse(
-                    await callAPI(
-                        "stockIn",
-                        payload
-                    )
-                );
-
-
-            console.log(
-                "Stock In saved:",
-                response
-            );
-
-
-            setOnline();
-
-            hideLoading();
-
-            showResultModal(
-                true,
-                "Stock Added Successfully",
-                "The inventory has been updated successfully."
-            );
-
-
-            /*
-             * Reset after successful save.
-             */
-
-            resetForm();
-
-
-            /*
-             * Refresh recent transactions.
-             */
-
-            await loadTransactions();
-
-
-        } catch (error) {
-
-            console.error(
-                "Stock In save error:",
-                error
-            );
-
-
-            hideLoading();
-
-            setOffline();
-
-
-            showResultModal(
-                false,
-                "Unable to Add Stock",
-                error.message ||
-                "Something went wrong while saving the stock transaction."
-            );
-
-        } finally {
-
-            saving = false;
-
-            if (saveButton) {
-                saveButton.disabled = false;
-            }
-        }
-    }
-
-
-    /* =====================================================
-       LOAD RECENT TRANSACTIONS
-    ===================================================== */
-
-    async function loadTransactions() {
-
-        if (!tableBody) {
-            return;
-        }
-
-
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="table-loading">
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    Loading stock transactions...
-                </td>
-            </tr>
-        `;
-
-
-        try {
-
-            const response =
-                normalizeResponse(
-                    await callAPI(
-                        "listTransactions",
-                        {
-                            type: "stock_in",
-                            limit: 20
-                        }
-                    )
-                );
-
-
-            transactions =
-                extractArray(
-                    response,
-                    [
-                        "transactions",
-                        "stockIn",
-                        "stock_ins",
-                        "items",
-                        "rows"
-                    ]
-                );
-
-
-            renderTransactions();
-
-            setOnline();
-
-        } catch (error) {
-
-            console.error(
-                "Stock In transactions:",
-                error
-            );
-
-
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="table-loading">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        Unable to load stock transactions.
-                    </td>
-                </tr>
-            `;
-
-            setOffline();
-        }
-    }
-
-
-    /* =====================================================
-       RENDER TRANSACTIONS
-    ===================================================== */
-
-    function renderTransactions() {
-
-        if (!tableBody) {
-            return;
-        }
-
-
-        if (!transactions.length) {
-
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="table-loading">
-                        <i class="fa-solid fa-inbox"></i>
-                        No stock-in transactions found.
-                    </td>
-                </tr>
-            `;
-
-            return;
-        }
-
-
-        /*
-         * Show newest transactions first.
-         */
-
-        const rows =
-            [...transactions]
-                .slice(0, 20);
-
-
-        tableBody.innerHTML =
-            rows.map(transaction => {
-
-                const date =
-                    pick(
-                        transaction,
-                        [
-                            "stock_in_date",
-                            "stockInDate",
-                            "date",
-                            "transaction_date",
-                            "created_at",
-                            "createdAt"
-                        ]
-                    );
-
-
-                const product =
-                    pick(
-                        transaction,
-                        [
-                            "product_name",
-                            "productName",
-                            "product"
-                        ],
-                        "Unknown Product"
-                    );
-
-
-                const quantity =
-                    number(
-                        pick(
-                            transaction,
-                            [
-                                "quantity",
-                                "qty",
-                                "stock_in"
-                            ],
-                            0
-                        )
-                    );
-
-
-                const supplier =
-                    pick(
-                        transaction,
-                        [
-                            "supplier_name",
-                            "supplierName",
-                            "supplier"
-                        ],
-                        "—"
-                    );
-
-
-                const reference =
-                    pick(
-                        transaction,
-                        [
-                            "reference_number",
-                            "referenceNumber",
-                            "reference",
-                            "ref_no"
-                        ],
-                        "—"
-                    );
-
-
-                const user =
-                    pick(
-                        transaction,
-                        [
-                            "username",
-                            "user_name",
-                            "userName",
-                            "created_by",
-                            "employee_name",
-                            "employee"
-                        ],
-                        "StockFlow User"
-                    );
-
-
-                return `
-                    <tr>
-
-                        <td>
-                            ${escapeHTML(
-                                formatDate(date)
-                            )}
-                        </td>
-
-                        <td>
-
-                            <div class="transaction-product">
-
-                                <div class="transaction-product-icon">
-                                    <i class="fa-solid fa-box"></i>
-                                </div>
-
-                                <span class="transaction-product-name">
-                                    ${escapeHTML(product)}
-                                </span>
-
-                            </div>
-
-                        </td>
-
-                        <td>
-                            <span class="quantity-badge">
-                                +${quantity.toLocaleString("en-PH")}
-                            </span>
-                        </td>
-
-                        <td>
-                            ${escapeHTML(supplier)}
-                        </td>
-
-                        <td>
-                            <span class="reference-text">
-                                ${escapeHTML(reference)}
-                            </span>
-                        </td>
-
-                        <td>
-                            <span class="user-text">
-                                ${escapeHTML(user)}
-                            </span>
-                        </td>
-
-                    </tr>
-                `;
-
-            }).join("");
-    }
-
-
-    /* =====================================================
-       RESET FORM
-    ===================================================== */
-
-    function resetForm() {
-
-        form.reset();
-
-
-        /*
-         * Always restore today's date.
-         */
-
-        if (dateInput) {
-            dateInput.value =
-                todayISO();
-        }
-
-
-        updatePreview();
-
-        hideConnectionMessage();
-    }
-
-
-    /* =====================================================
-       MODAL
-    ===================================================== */
-
-    function showResultModal(
-        success,
-        title,
-        message
-    ) {
-
-        if (!modal) {
-            return;
-        }
-
-
-        modal.hidden = false;
-
-
-        if (modalIcon) {
-
-            modalIcon.classList.toggle(
-                "error",
-                !success
-            );
-
-
-            modalIcon.innerHTML = success
-                ? `<i class="fa-solid fa-check"></i>`
-                : `<i class="fa-solid fa-xmark"></i>`;
-        }
-
-
-        if (modalTitle) {
-            modalTitle.textContent =
-                title;
-        }
-
-
-        if (modalMessage) {
-            modalMessage.textContent =
-                message;
-        }
-
-
-        if (modalOk) {
-
-            modalOk.textContent =
-                success
-                    ? "Continue"
-                    : "Close";
-        }
-    }
-
-
-    function closeModal() {
-
-        if (modal) {
-            modal.hidden = true;
-        }
-    }
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
-
-    function openSidebar() {
-
-        if (sidebar) {
-            sidebar.classList.add("open");
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.add("show");
-        }
-    }
-
-
-    function closeSidebar() {
-
-        if (sidebar) {
-            sidebar.classList.remove("open");
-        }
-
-        if (sidebarOverlay) {
-            sidebarOverlay.classList.remove("show");
-        }
-    }
-
-
-    /* =====================================================
-       USER INFORMATION
-    ===================================================== */
-
-    function getCurrentUser() {
-
-        const possibleAuth =
-            window.StockFlowAuth ||
-            window.StockFlowAuthUI;
-
-
-        if (
-            possibleAuth &&
-            typeof possibleAuth.getCurrentUser ===
-            "function"
-        ) {
-
-            try {
-
-                const user =
-                    possibleAuth.getCurrentUser();
-
-                if (user) {
-                    return user;
-                }
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not get current user:",
-                    error
-                );
-            }
-        }
-
-
-        /*
-         * Fallback localStorage lookup.
-         */
-
-        const keys = [
-            "stockflowUser",
-            "currentUser",
-            "user",
-            "loggedInUser"
-        ];
-
-
-        for (const key of keys) {
-
-            try {
-
-                const raw =
-                    localStorage.getItem(key);
-
-                if (!raw) {
-                    continue;
-                }
-
-
-                const parsed =
-                    JSON.parse(raw);
-
-                if (parsed) {
-                    return parsed;
-                }
-
-            } catch (error) {
-                /*
-                 * Ignore invalid localStorage data.
-                 */
-            }
-        }
-
-
-        return null;
-    }
-
-
-    function updateUserUI() {
-
-        const user =
-            getCurrentUser();
-
-
-        if (!user) {
-            return;
-        }
-
-
-        const name =
-            pick(
-                user,
-                [
-                    "fullName",
-                    "full_name",
-                    "name",
-                    "username",
-                    "email"
-                ],
-                "StockFlow User"
-            );
-
-
-        const role =
-            pick(
-                user,
-                [
-                    "role",
-                    "accountRole",
-                    "account_role",
-                    "position"
-                ],
-                "Employee"
-            );
-
-
-        const avatar =
-            String(name)
-                .trim()
-                .charAt(0)
-                .toUpperCase() || "SF";
-
-
-        const sidebarName =
-            document.getElementById(
-                "sidebarUserName"
-            );
-
-        const sidebarRole =
-            document.getElementById(
-                "sidebarUserRole"
-            );
-
-        const sidebarAvatar =
-            document.getElementById(
-                "sidebarAvatar"
-            );
-
-        const topbarName =
-            document.getElementById(
-                "topbarUserName"
-            );
-
-        const topbarRole =
-            document.getElementById(
-                "topbarUserRole"
-            );
-
-        const topbarAvatar =
-            document.getElementById(
-                "topbarAvatar"
-            );
-
-
-        if (sidebarName) {
-            sidebarName.textContent = name;
-        }
-
-        if (sidebarRole) {
-            sidebarRole.textContent = role;
-        }
-
-        if (sidebarAvatar) {
-            sidebarAvatar.textContent = avatar;
-        }
-
-        if (topbarName) {
-            topbarName.textContent = name;
-        }
-
-        if (topbarRole) {
-            topbarRole.textContent = role;
-        }
-
-        if (topbarAvatar) {
-            topbarAvatar.textContent = avatar;
-        }
-    }
-
-
     /* =====================================================
        LOGOUT
     ===================================================== */
 
-    async function logout() {
+    function setupLogout() {
 
-        try {
+        $("logoutBtn")
+            ?.addEventListener(
+                "click",
+                async () => {
 
-            if (
-                window.StockFlowAuth &&
-                typeof window.StockFlowAuth.logout ===
-                "function"
-            ) {
+                    const button =
+                        $("logoutBtn");
 
-                await window.StockFlowAuth.logout();
+                    if (button) {
+                        button.disabled = true;
+                    }
 
-                return;
-            }
+                    try {
 
+                        if (
+                            window.StockFlowAuth &&
+                            typeof window.StockFlowAuth.logout === "function"
+                        ) {
+                            await window.StockFlowAuth.logout();
+                        } else {
 
-            if (
-                window.StockFlowAuthUI &&
-                typeof window.StockFlowAuthUI.logout ===
-                "function"
-            ) {
+                            sessionStorage.clear();
 
-                await window.StockFlowAuthUI.logout();
+                            location.href =
+                                "auth.html";
+                        }
 
-                return;
-            }
+                    } catch (error) {
 
+                        sessionStorage.clear();
 
-            /*
-             * Fallback only.
-             */
+                        location.href =
+                            "auth.html";
+                    }
 
-            localStorage.removeItem(
-                "stockflowUser"
+                }
             );
-
-            localStorage.removeItem(
-                "currentUser"
-            );
-
-            localStorage.removeItem(
-                "user"
-            );
-
-            window.location.href =
-                "login.html";
-
-        } catch (error) {
-
-            console.error(
-                "Logout error:",
-                error
-            );
-
-            window.location.href =
-                "login.html";
-        }
     }
 
-
     /* =====================================================
-       EVENTS — PREVIEW
+       EVENTS
     ===================================================== */
 
-    productSelect?.addEventListener(
-        "change",
-        updatePreview
-    );
+    function setupEvents() {
 
+        $("stockInForm")
+            ?.addEventListener(
+                "submit",
+                saveStockIn
+            );
 
-    supplierSelect?.addEventListener(
-        "change",
-        updatePreview
-    );
-
-
-    quantityInput?.addEventListener(
-        "input",
-        updatePreview
-    );
-
-
-    unitCostInput?.addEventListener(
-        "input",
-        updatePreview
-    );
-
-
-    referenceInput?.addEventListener(
-        "input",
-        updatePreview
-    );
-
-
-    dateInput?.addEventListener(
-        "change",
-        updatePreview
-    );
-
-
-    /* =====================================================
-       EVENTS — FORM
-    ===================================================== */
-
-    form.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-            submitStockIn();
-        }
-    );
-
-
-    clearButton?.addEventListener(
-        "click",
-        event => {
-
-            event.preventDefault();
-
-            resetForm();
-        }
-    );
-
-
-    refreshButton?.addEventListener(
-        "click",
-        async event => {
-
-            event.preventDefault();
-
-            const icon =
-                refreshButton.querySelector(
-                    "i"
-                );
-
-
-            if (icon) {
-                icon.classList.add(
-                    "fa-spin"
-                );
-            }
-
-
-            try {
-
-                await Promise.all([
-                    loadProducts(),
-                    loadSuppliers(),
-                    loadTransactions()
-                ]);
-
-            } finally {
-
-                if (icon) {
-                    icon.classList.remove(
-                        "fa-spin"
-                    );
-                }
-            }
-        }
-    );
-
-
-    /* =====================================================
-       EVENTS — MODAL
-    ===================================================== */
-
-    modalClose?.addEventListener(
-        "click",
-        closeModal
-    );
-
-
-    modalOk?.addEventListener(
-        "click",
-        closeModal
-    );
-
-
-    modal?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target === modal
-            ) {
-                closeModal();
-            }
-        }
-    );
-
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Escape" &&
-                modal &&
-                !modal.hidden
-            ) {
-                closeModal();
-            }
-        }
-    );
-
-
-    /* =====================================================
-       EVENTS — MOBILE SIDEBAR
-    ===================================================== */
-
-    mobileMenuBtn?.addEventListener(
-        "click",
-        openSidebar
-    );
-
-
-    sidebarOverlay?.addEventListener(
-        "click",
-        closeSidebar
-    );
-
-
-    document
-        .querySelectorAll(
-            ".sidebar .nav-item"
-        )
-        .forEach(link => {
-
-            link.addEventListener(
-                "click",
+        $("productSelect")
+            ?.addEventListener(
+                "change",
                 () => {
 
-                    if (
-                        window.innerWidth <=
-                        760
-                    ) {
-                        closeSidebar();
-                    }
+                    updateAvailableStock();
+                    updatePreview();
+
                 }
+            );
+
+        [
+            "quantity",
+            "unitCost",
+            "referenceNumber",
+            "stockInDate"
+        ].forEach(id => {
+
+            $(id)?.addEventListener(
+                "input",
+                updatePreview
+            );
+
+            $(id)?.addEventListener(
+                "change",
+                updatePreview
             );
         });
 
+        $("supplierSelect")
+            ?.addEventListener(
+                "change",
+                updatePreview
+            );
+
+        $("clearStockInBtn")
+            ?.addEventListener(
+                "click",
+                clearForm
+            );
+
+        $("refreshStockInBtn")
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    const button =
+                        $("refreshStockInBtn");
+
+                    if (button) {
+                        button.disabled = true;
+                    }
+
+                    try {
+
+                        await Promise.all([
+                            loadProducts(),
+                            loadSuppliers(),
+                            loadRecentTransactions()
+                        ]);
+
+                        showConnectionMessage(
+                            "System Connected — StockFlow services are ready."
+                        );
+
+                    } catch (error) {
+
+                        showConnectionError(
+                            error.message ||
+                            "Unable to refresh StockFlow."
+                        );
+
+                    } finally {
+
+                        if (button) {
+                            button.disabled = false;
+                        }
+                    }
+                }
+            );
+
+        $("closeStockInModal")
+            ?.addEventListener(
+                "click",
+                closeResultModal
+            );
+
+        $("stockInModalOk")
+            ?.addEventListener(
+                "click",
+                closeResultModal
+            );
+
+        $("stockInModal")
+            ?.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        $("stockInModal")
+                    ) {
+                        closeResultModal();
+                    }
+                }
+            );
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape"
+                ) {
+                    closeResultModal();
+                }
+
+            }
+        );
+    }
 
     /* =====================================================
-       EVENTS — LOGOUT
+       DEFAULT DATE
     ===================================================== */
 
-    logoutBtn?.addEventListener(
-        "click",
-        event => {
+    function setDefaultDate() {
 
-            event.preventDefault();
+        const date =
+            $("stockInDate");
 
-            logout();
+        if (
+            date &&
+            !date.value
+        ) {
+            date.value =
+                new Date()
+                    .toISOString()
+                    .split("T")[0];
         }
-    );
-
+    }
 
     /* =====================================================
-       INITIALIZATION
+       INITIALIZE
     ===================================================== */
 
     async function initialize() {
 
-        /*
-         * IMPORTANT:
-         * Do NOT show the large loading overlay
-         * during normal page initialization.
-         *
-         * This prevents the white flash.
-         */
+        setupSidebar();
+        setupNotifications();
+        setupLogout();
+        setupEvents();
+        setDefaultDate();
 
-        updateUserUI();
+        try {
 
+            const authenticated =
+                await initializeAuthentication();
 
-        if (dateInput) {
-            dateInput.value =
-                todayISO();
+            if (!authenticated) {
+                return;
+            }
+
+            await Promise.all([
+                loadProducts(),
+                loadSuppliers(),
+                loadRecentTransactions()
+            ]);
+
+            showConnectionMessage(
+                "System Connected — StockFlow services are ready."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Stock In initialization error:",
+                error
+            );
+
+            showConnectionError(
+                error.message ||
+                "Unable to connect to StockFlow services."
+            );
         }
-
-
-        updatePreview();
-
-
-        /*
-         * Load everything independently.
-         * If one endpoint fails, the others
-         * can still work.
-         */
-
-        await Promise.allSettled([
-            loadProducts(),
-            loadSuppliers(),
-            loadTransactions()
-        ]);
-
-
-        setOnline();
     }
 
+    document.addEventListener(
+        "DOMContentLoaded",
+        initialize
+    );
 
-    initialize();
-
-});
+})();
