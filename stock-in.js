@@ -1,12 +1,30 @@
 /* =========================================================
-   STOCKFLOW — STOCK IN UI
-   Sidebar + notifications + user display + logout
+   STOCKFLOW — STOCK IN UI CONTROLLER
+
+   Handles:
+   - Mobile sidebar
+   - Navigation
+   - Notifications
+   - User display
+   - Logout
+   - API connection status
+   - Default stock-in date
+   - Live stock-in preview
+
+   NOTE:
+   This file handles UI only.
+   Actual Stock In database/API submission
+   should remain inside stock-in.js.
 ========================================================= */
 
 (() => {
 
     "use strict";
 
+
+    /* =====================================================
+       HELPER
+    ===================================================== */
 
     const $ = (id) => {
         return document.getElementById(id);
@@ -19,83 +37,175 @@
 
     const setupSidebar = () => {
 
-        const sidebar = $("sidebar");
-        const overlay = $("sidebarOverlay");
-        const menuButton = $("mobileMenuBtn");
+        const sidebar =
+            $("sidebar");
 
-        if (!sidebar || !overlay || !menuButton) {
+        const overlay =
+            $("sidebarOverlay");
+
+        const menuButton =
+            $("mobileMenuBtn");
+
+
+        if (
+            !sidebar ||
+            !menuButton
+        ) {
             return;
         }
 
 
-        const closeSidebar = () => {
-
-            sidebar.classList.remove("open");
-            overlay.classList.remove("show");
-
-            menuButton.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-
-            document.body.style.overflow = "";
-        };
-
+        /* -------------------------------------------------
+           OPEN SIDEBAR
+        ------------------------------------------------- */
 
         const openSidebar = () => {
 
             sidebar.classList.add("open");
-            overlay.classList.add("show");
+
+            if (overlay) {
+
+                overlay.classList.add("show");
+                overlay.classList.add("active");
+
+            }
+
 
             menuButton.setAttribute(
                 "aria-expanded",
                 "true"
             );
 
-            document.body.style.overflow = "hidden";
+
+            document.body.classList.add(
+                "sidebar-open"
+            );
+
         };
 
+
+        /* -------------------------------------------------
+           CLOSE SIDEBAR
+        ------------------------------------------------- */
+
+        const closeSidebar = () => {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+
+            if (overlay) {
+
+                overlay.classList.remove(
+                    "show"
+                );
+
+                overlay.classList.remove(
+                    "active"
+                );
+
+            }
+
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            document.body.classList.remove(
+                "sidebar-open"
+            );
+
+        };
+
+
+        /* -------------------------------------------------
+           MENU BUTTON
+        ------------------------------------------------- */
 
         menuButton.addEventListener(
             "click",
             () => {
 
                 if (
-                    sidebar.classList.contains("open")
+                    sidebar.classList.contains(
+                        "open"
+                    )
                 ) {
+
                     closeSidebar();
+
                 } else {
+
                     openSidebar();
+
                 }
 
             }
         );
 
 
-        overlay.addEventListener(
-            "click",
-            closeSidebar
-        );
+        /* -------------------------------------------------
+           OVERLAY
+        ------------------------------------------------- */
 
+        if (overlay) {
+
+            overlay.addEventListener(
+                "click",
+                closeSidebar
+            );
+
+        }
+
+
+        /* -------------------------------------------------
+           NAVIGATION LINKS
+        -------------------------------------------------
+
+        New StockFlow HTML uses .nav-item.
+        ------------------------------------------------- */
 
         sidebar
-            .querySelectorAll("a")
+            .querySelectorAll(
+                ".nav-item, a"
+            )
             .forEach(link => {
 
                 link.addEventListener(
                     "click",
-                    closeSidebar
+                    () => {
+
+                        if (
+                            window.innerWidth <= 900
+                        ) {
+
+                            closeSidebar();
+
+                        }
+
+                    }
                 );
 
             });
 
 
+        /* -------------------------------------------------
+           WINDOW RESIZE
+        ------------------------------------------------- */
+
         window.addEventListener(
             "resize",
             () => {
 
-                if (window.innerWidth > 1100) {
+                if (
+                    window.innerWidth > 900
+                ) {
+
                     closeSidebar();
+
                 }
 
             }
@@ -110,14 +220,47 @@
 
     const setupNotifications = () => {
 
-        const button = $("notificationBtn");
-        const panel = $("notificationPanel");
-        const closeButton = $("closeNotificationBtn");
+        /*
+         * New HTML:
+         * notificationButton
+         *
+         * Old HTML:
+         * notificationBtn
+         */
 
-        if (!button || !panel) {
+        const button =
+            $("notificationButton") ||
+            $("notificationBtn");
+
+
+        const panel =
+            $("notificationPanel");
+
+
+        /*
+         * New HTML:
+         * closeNotification
+         *
+         * Old HTML:
+         * closeNotificationBtn
+         */
+
+        const closeButton =
+            $("closeNotification") ||
+            $("closeNotificationBtn");
+
+
+        if (
+            !button ||
+            !panel
+        ) {
             return;
         }
 
+
+        /* -------------------------------------------------
+           CLOSE
+        ------------------------------------------------- */
 
         const closePanel = () => {
 
@@ -131,38 +274,97 @@
         };
 
 
+        /* -------------------------------------------------
+           TOGGLE
+        ------------------------------------------------- */
+
+        const togglePanel = () => {
+
+            const willOpen =
+                panel.hidden;
+
+
+            panel.hidden =
+                !willOpen;
+
+
+            button.setAttribute(
+                "aria-expanded",
+                String(willOpen)
+            );
+
+        };
+
+
+        /* -------------------------------------------------
+           BUTTON
+        ------------------------------------------------- */
+
         button.addEventListener(
             "click",
-            (event) => {
+            event => {
 
                 event.stopPropagation();
 
-                panel.hidden = !panel.hidden;
-
-                button.setAttribute(
-                    "aria-expanded",
-                    String(!panel.hidden)
-                );
+                togglePanel();
 
             }
         );
 
 
-        closeButton?.addEventListener(
+        /* -------------------------------------------------
+           CLOSE BUTTON
+        ------------------------------------------------- */
+
+        if (closeButton) {
+
+            closeButton.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    closePanel();
+
+                }
+            );
+
+        }
+
+
+        /* -------------------------------------------------
+           PREVENT PANEL CLICK FROM CLOSING
+        ------------------------------------------------- */
+
+        panel.addEventListener(
             "click",
-            closePanel
+            event => {
+
+                event.stopPropagation();
+
+            }
         );
 
 
+        /* -------------------------------------------------
+           CLICK OUTSIDE
+        ------------------------------------------------- */
+
         document.addEventListener(
             "click",
-            (event) => {
+            event => {
 
                 if (
-                    !panel.contains(event.target) &&
-                    !button.contains(event.target)
+                    !panel.contains(
+                        event.target
+                    ) &&
+                    !button.contains(
+                        event.target
+                    )
                 ) {
+
                     closePanel();
+
                 }
 
             }
@@ -180,11 +382,17 @@
         let user = null;
 
 
+        /* -------------------------------------------------
+           GET USER FROM STOCKFLOW AUTH
+        ------------------------------------------------- */
+
         try {
 
             if (
                 window.StockFlowAuth &&
-                typeof window.StockFlowAuth.getUser === "function"
+                typeof
+                window.StockFlowAuth.getUser ===
+                    "function"
             ) {
 
                 user =
@@ -202,20 +410,35 @@
         }
 
 
+        /*
+         * If no authenticated user is available,
+         * keep the default HTML values.
+         */
+
         if (!user) {
             return;
         }
 
 
+        /* -------------------------------------------------
+           USER NAME
+        ------------------------------------------------- */
+
         const name =
             user.name ||
             user.fullName ||
             user.full_name ||
+            user.username ||
+            user.USERNAME ||
             user.NAME ||
             user.email ||
             user.EMAIL ||
             "StockFlow User";
 
+
+        /* -------------------------------------------------
+           USER ROLE
+        ------------------------------------------------- */
 
         const role =
             user.role ||
@@ -225,8 +448,13 @@
             "Employee";
 
 
+        /* -------------------------------------------------
+           INITIALS
+        ------------------------------------------------- */
+
         const initials =
-            name
+            String(name)
+                .trim()
                 .split(/\s+/)
                 .filter(Boolean)
                 .slice(0, 2)
@@ -237,31 +465,110 @@
                             .toUpperCase()
                 )
                 .join("") ||
-            "U";
+            "SF";
 
 
-        if ($("sidebarUserName")) {
-            $("sidebarUserName").textContent = name;
+        /* -------------------------------------------------
+           SIDEBAR NAME
+        ------------------------------------------------- */
+
+        const sidebarName =
+            $("sidebarUserName");
+
+        if (sidebarName) {
+
+            sidebarName.textContent =
+                name;
+
         }
 
-        if ($("sidebarUserRole")) {
-            $("sidebarUserRole").textContent = role;
+
+        /* -------------------------------------------------
+           SIDEBAR ROLE
+        ------------------------------------------------- */
+
+        const sidebarRole =
+            $("sidebarUserRole");
+
+        if (sidebarRole) {
+
+            sidebarRole.textContent =
+                role;
+
         }
 
-        if ($("sidebarAvatar")) {
-            $("sidebarAvatar").textContent = initials;
+
+        /* -------------------------------------------------
+           SIDEBAR AVATAR
+        -------------------------------------------------
+
+        New HTML:
+        .sidebar-user-avatar
+
+        We support both ID and class.
+        ------------------------------------------------- */
+
+        const sidebarAvatar =
+            $("sidebarAvatar") ||
+            document.querySelector(
+                ".sidebar-user-avatar"
+            );
+
+
+        if (sidebarAvatar) {
+
+            sidebarAvatar.textContent =
+                initials;
+
         }
 
-        if ($("topbarUserName")) {
-            $("topbarUserName").textContent = name;
+
+        /* -------------------------------------------------
+           TOPBAR NAME
+        ------------------------------------------------- */
+
+        const topbarName =
+            $("topbarUserName");
+
+        if (topbarName) {
+
+            topbarName.textContent =
+                name;
+
         }
 
-        if ($("topbarUserRole")) {
-            $("topbarUserRole").textContent = role;
+
+        /* -------------------------------------------------
+           TOPBAR ROLE
+        ------------------------------------------------- */
+
+        const topbarRole =
+            $("topbarUserRole");
+
+        if (topbarRole) {
+
+            topbarRole.textContent =
+                role;
+
         }
 
-        if ($("topbarAvatar")) {
-            $("topbarAvatar").textContent = initials;
+
+        /* -------------------------------------------------
+           TOPBAR AVATAR
+        ------------------------------------------------- */
+
+        const topbarAvatar =
+            $("topbarAvatar") ||
+            document.querySelector(
+                ".topbar .user-avatar"
+            );
+
+
+        if (topbarAvatar) {
+
+            topbarAvatar.textContent =
+                initials;
+
         }
 
     };
@@ -273,7 +580,18 @@
 
     const setupLogout = () => {
 
-        const button = $("logoutBtn");
+        /*
+         * New HTML:
+         * logoutButton
+         *
+         * Old HTML:
+         * logoutBtn
+         */
+
+        const button =
+            $("logoutButton") ||
+            $("logoutBtn");
+
 
         if (!button) {
             return;
@@ -282,42 +600,106 @@
 
         button.addEventListener(
             "click",
-            async () => {
+            async event => {
+
+                event.preventDefault();
+
+
+                const originalHTML =
+                    button.innerHTML;
+
 
                 button.disabled = true;
 
 
+                button.innerHTML = `
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span>Logging out...</span>
+                `;
+
+
                 try {
+
+                    /* -------------------------------------
+                       STOCKFLOW AUTH
+                    ------------------------------------- */
 
                     if (
                         window.StockFlowAuth &&
-                        typeof window.StockFlowAuth.logout === "function"
+                        typeof
+                        window.StockFlowAuth.logout ===
+                            "function"
                     ) {
 
-                        await window.StockFlowAuth.logout();
+                        await
+                            window.StockFlowAuth.logout();
 
                         return;
+
                     }
+
+
+                    /* -------------------------------------
+                       FALLBACK AUTH
+                    ------------------------------------- */
+
+                    if (
+                        window.Auth &&
+                        typeof
+                        window.Auth.logout ===
+                            "function"
+                    ) {
+
+                        await
+                            window.Auth.logout();
+
+                        return;
+
+                    }
+
+
+                    /* -------------------------------------
+                       FALLBACK SESSION CLEAR
+                    ------------------------------------- */
+
+                    try {
+
+                        sessionStorage.clear();
+
+                    } catch (error) {
+
+                        console.warn(
+                            "Session clear failed:",
+                            error
+                        );
+
+                    }
+
+
+                    window.location.href =
+                        "./auth.html";
 
                 } catch (error) {
 
-                    console.warn(
-                        "Logout API failed:",
+                    console.error(
+                        "Logout failed:",
                         error
                     );
 
+
+                    button.disabled =
+                        false;
+
+
+                    button.innerHTML =
+                        originalHTML;
+
+
+                    alert(
+                        "Unable to logout. Please try again."
+                    );
+
                 }
-
-
-                try {
-                    sessionStorage.clear();
-                } catch (error) {
-                    console.warn(error);
-                }
-
-
-                window.location.href =
-                    "./auth.html";
 
             }
         );
@@ -326,42 +708,96 @@
 
 
     /* =====================================================
-       CONNECTION
+       API CONNECTION STATUS
     ===================================================== */
 
     const setupConnection = () => {
 
-        const badge = $("connectionBadge");
+        const badge =
+            $("connectionBadge");
+
 
         if (!badge) {
             return;
         }
 
 
+        /*
+         * If StockFlowAPI.health() exists,
+         * test the backend.
+         */
+
         if (
             window.StockFlowAPI &&
-            typeof window.StockFlowAPI.health === "function"
+            typeof
+            window.StockFlowAPI.health ===
+                "function"
         ) {
 
             window.StockFlowAPI
                 .health()
+
                 .then(() => {
 
-                    badge.classList.remove("offline");
+                    badge.classList.remove(
+                        "offline"
+                    );
 
-                })
-                .catch(() => {
 
-                    badge.classList.add("offline");
+                    badge.classList.add(
+                        "online"
+                    );
+
+
+                    /*
+                     * Try several possible
+                     * text elements.
+                     */
 
                     const text =
                         badge.querySelector(
                             "span:last-child"
                         );
 
+
                     if (text) {
+
+                        text.textContent =
+                            "System Connected";
+
+                    }
+
+                })
+
+                .catch(error => {
+
+                    console.warn(
+                        "StockFlow API is offline:",
+                        error
+                    );
+
+
+                    badge.classList.add(
+                        "offline"
+                    );
+
+
+                    badge.classList.remove(
+                        "online"
+                    );
+
+
+                    const text =
+                        badge.querySelector(
+                            "span:last-child"
+                        );
+
+
+                    if (text) {
+
                         text.textContent =
                             "System Offline";
+
                     }
 
                 });
@@ -372,47 +808,74 @@
 
 
     /* =====================================================
-       DEFAULT DATE
+       DEFAULT STOCK-IN DATE
     ===================================================== */
 
     const setupDefaultDate = () => {
 
-        const dateInput = $("stockInDate");
+        const dateInput =
+            $("stockInDate");
+
 
         if (
             !dateInput ||
             dateInput.value
         ) {
+
             return;
+
         }
 
 
-        const now = new Date();
+        const now =
+            new Date();
+
 
         const year =
             now.getFullYear();
 
+
         const month =
             String(
                 now.getMonth() + 1
-            ).padStart(2, "0");
+            ).padStart(
+                2,
+                "0"
+            );
+
 
         const day =
             String(
                 now.getDate()
-            ).padStart(2, "0");
+            ).padStart(
+                2,
+                "0"
+            );
 
 
         dateInput.value =
             `${year}-${month}-${day}`;
 
+
+        /*
+         * Trigger change so the preview
+         * updates immediately.
+         */
+
+        dateInput.dispatchEvent(
+            new Event(
+                "change",
+                {
+                    bubbles: true
+                }
+            )
+        );
+
     };
 
 
     /* =====================================================
-       LIVE PREVIEW
-       This only updates UI and does not replace
-       stock-in.js backend logic.
+       LIVE STOCK-IN PREVIEW
     ===================================================== */
 
     const setupPreview = () => {
@@ -420,121 +883,266 @@
         const product =
             $("productSelect");
 
+
         const supplier =
             $("supplierSelect");
+
 
         const quantity =
             $("quantity");
 
+
         const unitCost =
             $("unitCost");
 
+
         const reference =
             $("referenceNumber");
+
 
         const date =
             $("stockInDate");
 
 
+        /*
+         * If none of the preview inputs exist,
+         * there is nothing to initialize.
+         */
+
+        if (
+            !product &&
+            !supplier &&
+            !quantity &&
+            !unitCost &&
+            !reference &&
+            !date
+        ) {
+
+            return;
+
+        }
+
+
+        /* -------------------------------------------------
+           FORMAT CURRENCY
+        ------------------------------------------------- */
+
+        const formatCurrency =
+            (value) => {
+
+                const number =
+                    Number(value || 0);
+
+
+                return `₱${number.toLocaleString(
+                    "en-PH",
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }
+                )}`;
+
+            };
+
+
+        /* -------------------------------------------------
+           UPDATE PREVIEW
+        ------------------------------------------------- */
+
         const update = () => {
 
-            if ($("previewProduct")) {
+            /* ---------------------------------------------
+               PRODUCT
+            --------------------------------------------- */
+
+            const previewProduct =
+                $("previewProduct");
+
+
+            if (previewProduct) {
+
+                const selectedOption =
+                    product?.selectedOptions?.[0];
+
 
                 const productText =
-                    product?.selectedOptions?.[0]?.text ||
+                    selectedOption?.text ||
                     "No product selected";
 
-                $("previewProduct").textContent =
+
+                previewProduct.textContent =
                     product?.value
                         ? productText
                         : "No product selected";
+
             }
 
 
-            if ($("previewSupplier")) {
+            /* ---------------------------------------------
+               SUPPLIER
+            --------------------------------------------- */
+
+            const previewSupplier =
+                $("previewSupplier");
+
+
+            if (previewSupplier) {
+
+                const selectedOption =
+                    supplier?.selectedOptions?.[0];
+
 
                 const supplierText =
-                    supplier?.selectedOptions?.[0]?.text ||
+                    selectedOption?.text ||
                     "No supplier selected";
 
-                $("previewSupplier").textContent =
+
+                previewSupplier.textContent =
                     supplier?.value
                         ? supplierText
                         : "No supplier selected";
+
             }
 
 
+            /* ---------------------------------------------
+               QUANTITY
+            --------------------------------------------- */
+
             const qty =
-                Number(quantity?.value || 0);
+                Number(
+                    quantity?.value || 0
+                );
+
+
+            const previewQuantity =
+                $("previewQuantity");
+
+
+            if (previewQuantity) {
+
+                previewQuantity.textContent =
+                    qty.toLocaleString(
+                        "en-PH"
+                    );
+
+            }
+
+
+            /* ---------------------------------------------
+               UNIT COST
+            --------------------------------------------- */
 
             const cost =
-                Number(unitCost?.value || 0);
+                Number(
+                    unitCost?.value || 0
+                );
+
+
+            const previewUnitCost =
+                $("previewUnitCost");
+
+
+            if (previewUnitCost) {
+
+                previewUnitCost.textContent =
+                    formatCurrency(
+                        cost
+                    );
+
+            }
+
+
+            /* ---------------------------------------------
+               TOTAL
+            --------------------------------------------- */
 
             const total =
                 qty * cost;
 
 
-            if ($("previewQuantity")) {
-                $("previewQuantity").textContent =
-                    qty.toLocaleString("en-PH");
+            const previewTotal =
+                $("previewTotal");
+
+
+            if (previewTotal) {
+
+                previewTotal.textContent =
+                    formatCurrency(
+                        total
+                    );
+
             }
 
 
-            if ($("previewUnitCost")) {
-                $("previewUnitCost").textContent =
-                    `₱${cost.toLocaleString(
-                        "en-PH",
-                        {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        }
-                    )}`;
-            }
+            /* ---------------------------------------------
+               REFERENCE
+            --------------------------------------------- */
+
+            const previewReference =
+                $("previewReference");
 
 
-            if ($("previewTotal")) {
-                $("previewTotal").textContent =
-                    `₱${total.toLocaleString(
-                        "en-PH",
-                        {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        }
-                    )}`;
-            }
+            if (previewReference) {
 
-
-            if ($("previewReference")) {
-
-                $("previewReference").textContent =
-                    reference?.value.trim() ||
+                const referenceValue =
+                    reference?.value
+                        ?.trim() ||
                     "—";
 
+
+                previewReference.textContent =
+                    referenceValue;
+
             }
 
 
-            if ($("previewDate")) {
+            /* ---------------------------------------------
+               DATE
+            --------------------------------------------- */
 
-                if (date?.value) {
+            const previewDate =
+                $("previewDate");
+
+
+            if (previewDate) {
+
+                if (
+                    date?.value
+                ) {
 
                     const parsed =
                         new Date(
                             `${date.value}T00:00:00`
                         );
 
-                    $("previewDate").textContent =
-                        parsed.toLocaleDateString(
-                            "en-PH",
-                            {
-                                month: "short",
-                                day: "2-digit",
-                                year: "numeric"
-                            }
-                        );
+
+                    if (
+                        !Number.isNaN(
+                            parsed.getTime()
+                        )
+                    ) {
+
+                        previewDate.textContent =
+                            parsed.toLocaleDateString(
+                                "en-PH",
+                                {
+                                    month: "short",
+                                    day: "2-digit",
+                                    year: "numeric"
+                                }
+                            );
+
+                    } else {
+
+                        previewDate.textContent =
+                            "—";
+
+                    }
 
                 } else {
 
-                    $("previewDate").textContent =
+                    previewDate.textContent =
                         "—";
 
                 }
@@ -544,6 +1152,10 @@
         };
 
 
+        /* -------------------------------------------------
+           LISTEN FOR INPUT CHANGES
+        ------------------------------------------------- */
+
         [
             product,
             supplier,
@@ -551,22 +1163,30 @@
             unitCost,
             reference,
             date
+
         ]
             .filter(Boolean)
-            .forEach(element => {
+            .forEach(
+                element => {
 
-                element.addEventListener(
-                    "input",
-                    update
-                );
+                    element.addEventListener(
+                        "input",
+                        update
+                    );
 
-                element.addEventListener(
-                    "change",
-                    update
-                );
 
-            });
+                    element.addEventListener(
+                        "change",
+                        update
+                    );
 
+                }
+            );
+
+
+        /*
+         * Initial preview
+         */
 
         update();
 
@@ -574,7 +1194,7 @@
 
 
     /* =====================================================
-       INIT
+       INITIALIZATION
     ===================================================== */
 
     document.addEventListener(
@@ -582,14 +1202,21 @@
         () => {
 
             setupSidebar();
+
             setupNotifications();
+
             setupUserDisplay();
+
             setupLogout();
+
             setupConnection();
+
             setupDefaultDate();
+
             setupPreview();
 
         }
     );
+
 
 })();
