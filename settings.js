@@ -12,8 +12,17 @@
        STORAGE
     ===================================================== */
 
-    const STORAGE_KEY =
-        "stockflow_settings";
+    const STORAGE_KEY = "stockflow_settings";
+
+
+    /* =====================================================
+       DEFAULT SETTINGS
+    ===================================================== */
+
+    const DEFAULT_SETTINGS = {
+        reorder: 5,
+        theme: "system"
+    };
 
 
     /* =====================================================
@@ -25,13 +34,14 @@
 
 
     /* =====================================================
-       DEFAULT SETTINGS
+       VALID THEMES
     ===================================================== */
 
-    const DEFAULT_SETTINGS = {
-        reorder: 5,
-        theme: "system"
-    };
+    const VALID_THEMES = [
+        "system",
+        "light",
+        "dark"
+    ];
 
 
     /* =====================================================
@@ -66,8 +76,9 @@
 
 
             const theme =
-                ["system", "light", "dark"]
-                    .includes(parsed?.theme)
+                VALID_THEMES.includes(
+                    parsed?.theme
+                )
                     ? parsed.theme
                     : "system";
 
@@ -78,7 +89,7 @@
                     Number.isFinite(reorder) &&
                     reorder >= 0
                         ? Math.floor(reorder)
-                        : 5,
+                        : DEFAULT_SETTINGS.reorder,
 
                 theme
 
@@ -105,94 +116,181 @@
        SAVE SETTINGS
     ===================================================== */
 
-    const saveSettingsToStorage =
-        settings => {
+    const saveSettingsToStorage = settings => {
 
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(settings)
-            );
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(settings)
+        );
 
-        };
+    };
 
 
     /* =====================================================
-       THEME
+       SYSTEM THEME
     ===================================================== */
 
-    const applyTheme =
-        theme => {
+    const getSystemTheme = () => {
 
-            const validThemes = [
-                "system",
-                "light",
-                "dark"
-            ];
+        return window.matchMedia &&
+            window.matchMedia(
+                "(prefers-color-scheme: dark)"
+            ).matches
+                ? "dark"
+                : "light";
+
+    };
+
+
+    /* =====================================================
+       APPLY THEME
+    ===================================================== */
+
+    const applyTheme = theme => {
+
+        if (
+            !VALID_THEMES.includes(theme)
+        ) {
+
+            theme = "system";
+
+        }
+
+
+        /*
+         * Store the selected preference
+         * on the root element.
+         */
+
+        document.documentElement.setAttribute(
+            "data-theme",
+            theme
+        );
+
+
+        /*
+         * Also apply to body.
+         */
+
+        document.body.setAttribute(
+            "data-theme",
+            theme
+        );
+
+
+        /*
+         * For "system", expose the actual
+         * resolved theme as a second attribute.
+         */
+
+        const resolvedTheme =
+            theme === "system"
+                ? getSystemTheme()
+                : theme;
+
+
+        document.documentElement.setAttribute(
+            "data-resolved-theme",
+            resolvedTheme
+        );
+
+
+        document.body.setAttribute(
+            "data-resolved-theme",
+            resolvedTheme
+        );
+
+    };
+
+
+    /* =====================================================
+       SYSTEM THEME LISTENER
+    ===================================================== */
+
+    const setupSystemThemeListener = () => {
+
+        if (
+            !window.matchMedia
+        ) {
+
+            return;
+
+        }
+
+
+        const mediaQuery =
+            window.matchMedia(
+                "(prefers-color-scheme: dark)"
+            );
+
+
+        const updateSystemTheme = () => {
+
+            const settings =
+                getSettings();
 
 
             if (
-                !validThemes.includes(theme)
+                settings.theme === "system"
             ) {
 
-                theme =
-                    "system";
+                applyTheme("system");
 
             }
 
-
-            /*
-             * Apply to the root element.
-             *
-             * CSS handles:
-             *
-             * system = operating system preference
-             * light  = forced light
-             * dark   = forced dark
-             */
-
-            document.documentElement
-                .setAttribute(
-                    "data-theme",
-                    theme
-                );
-
-
-            document.body
-                .setAttribute(
-                    "data-theme",
-                    theme
-                );
-
         };
+
+
+        if (
+            typeof mediaQuery.addEventListener ===
+            "function"
+        ) {
+
+            mediaQuery.addEventListener(
+                "change",
+                updateSystemTheme
+            );
+
+        } else if (
+            typeof mediaQuery.addListener ===
+            "function"
+        ) {
+
+            mediaQuery.addListener(
+                updateSystemTheme
+            );
+
+        }
+
+    };
 
 
     /* =====================================================
        MESSAGE
     ===================================================== */
 
-    const showMessage =
-        (
-            message,
-            type = "success"
-        ) => {
+    const showMessage = (
+        message,
+        type = "success"
+    ) => {
 
-            const element =
-                $("msg");
-
-
-            if (!element) {
-                return;
-            }
+        const element =
+            $("msg");
 
 
-            element.textContent =
-                message || "";
+        if (!element) {
+            return;
+        }
 
 
-            element.className =
-                `settings-message ${type}`;
+        element.textContent =
+            message || "";
 
-        };
+
+        element.className =
+            `settings-message ${type}`;
+
+    };
 
 
     const clearMessage = () => {
@@ -229,6 +327,7 @@
         const reorder =
             $("reorder");
 
+
         const theme =
             $("theme");
 
@@ -260,173 +359,160 @@
        SAVE SETTINGS
     ===================================================== */
 
-    const saveSettings =
-        event => {
+    const saveSettings = event => {
 
-            event.preventDefault();
-
-
-            const form =
-                $("settings");
+        event.preventDefault();
 
 
-            const saveButton =
-                form?.querySelector(
-                    'button[type="submit"]'
-                );
+        const form =
+            $("settings");
 
 
-            const reorder =
-                $("reorder");
+        const saveButton =
+            form?.querySelector(
+                'button[type="submit"]'
+            );
 
 
-            const theme =
-                $("theme");
+        const reorder =
+            $("reorder");
 
 
-            if (
-                !reorder ||
-                !theme
-            ) {
-
-                return;
-
-            }
+        const theme =
+            $("theme");
 
 
-            const reorderValue =
-                Number(
-                    reorder.value
-                );
+        if (
+            !reorder ||
+            !theme
+        ) {
+
+            return;
+
+        }
 
 
-            /* ---------------------------------------------
-               VALIDATE REORDER LEVEL
-            --------------------------------------------- */
-
-            if (
-                !Number.isFinite(
-                    reorderValue
-                ) ||
-                reorderValue < 0
-            ) {
-
-                showMessage(
-                    "Please enter a valid reorder level.",
-                    "error"
-                );
+        const reorderValue =
+            Number(
+                reorder.value
+            );
 
 
-                reorder.focus();
+        /* ---------------------------------------------
+           VALIDATION
+        --------------------------------------------- */
+
+        if (
+            !Number.isFinite(
+                reorderValue
+            ) ||
+            reorderValue < 0
+        ) {
+
+            showMessage(
+                "Please enter a valid reorder level.",
+                "error"
+            );
 
 
-                return;
+            reorder.focus();
 
-            }
+            return;
+
+        }
 
 
-            /* ---------------------------------------------
-               LOADING STATE
-            --------------------------------------------- */
+        const selectedTheme =
+            VALID_THEMES.includes(
+                theme.value
+            )
+                ? theme.value
+                : "system";
+
+
+        /* ---------------------------------------------
+           LOADING
+        --------------------------------------------- */
+
+        if (saveButton) {
+
+            saveButton.disabled =
+                true;
+
+
+            saveButton.dataset.originalText =
+                saveButton.textContent;
+
+
+            saveButton.textContent =
+                "Saving...";
+
+        }
+
+
+        clearMessage();
+
+
+        try {
+
+            const settings = {
+
+                reorder:
+                    Math.floor(
+                        reorderValue
+                    ),
+
+                theme:
+                    selectedTheme
+
+            };
+
+
+            saveSettingsToStorage(
+                settings
+            );
+
+
+            applyTheme(
+                settings.theme
+            );
+
+
+            showMessage(
+                "Settings saved successfully.",
+                "success"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "STOCKFLOW settings save error:",
+                error
+            );
+
+
+            showMessage(
+                "Unable to save settings.",
+                "error"
+            );
+
+        } finally {
 
             if (saveButton) {
 
                 saveButton.disabled =
-                    true;
-
-
-                saveButton.dataset.originalText =
-                    saveButton.textContent;
+                    false;
 
 
                 saveButton.textContent =
-                    "Saving...";
+                    saveButton.dataset.originalText ||
+                    "Save Settings";
 
             }
 
+        }
 
-            clearMessage();
-
-
-            try {
-
-                const selectedTheme =
-                    [
-                        "system",
-                        "light",
-                        "dark"
-                    ].includes(
-                        theme.value
-                    )
-                        ? theme.value
-                        : "system";
-
-
-                const settings = {
-
-                    reorder:
-                        Math.floor(
-                            reorderValue
-                        ),
-
-                    theme:
-                        selectedTheme
-
-                };
-
-
-                /* Save */
-
-                saveSettingsToStorage(
-                    settings
-                );
-
-
-                /* Apply immediately */
-
-                applyTheme(
-                    settings.theme
-                );
-
-
-                showMessage(
-                    "Settings saved successfully.",
-                    "success"
-                );
-
-
-            } catch (error) {
-
-                console.error(
-                    "STOCKFLOW settings save error:",
-                    error
-                );
-
-
-                showMessage(
-                    "Unable to save settings.",
-                    "error"
-                );
-
-
-            } finally {
-
-                if (saveButton) {
-
-                    saveButton.disabled =
-                        false;
-
-
-                    saveButton.textContent =
-                        saveButton.dataset
-                            .originalText ||
-                        "Save Settings";
-
-                }
-
-            }
-
-        };
+    };
 
 
     /* =====================================================
@@ -448,8 +534,22 @@
             "change",
             () => {
 
+                const selectedTheme =
+                    VALID_THEMES.includes(
+                        theme.value
+                    )
+                        ? theme.value
+                        : "system";
+
+
+                /*
+                 * Preview immediately.
+                 * It is permanently stored only
+                 * when Save Settings is clicked.
+                 */
+
                 applyTheme(
-                    theme.value
+                    selectedTheme
                 );
 
             }
@@ -465,6 +565,9 @@
     const setupMobileMenu = () => {
 
         const sidebar =
+            document.getElementById(
+                "stockflowSidebar"
+            ) ||
             document.querySelector(
                 ".sf-side"
             );
@@ -481,15 +584,17 @@
             !menuButton
         ) {
 
+            console.warn(
+                "STOCKFLOW: sidebar or hamburger button not found."
+            );
+
             return;
 
         }
 
 
         /*
-         * Give the sidebar an ID so the
-         * hamburger aria-controls points
-         * to a real element.
+         * Make sure the sidebar has an ID.
          */
 
         if (!sidebar.id) {
@@ -499,6 +604,10 @@
 
         }
 
+
+        /* ---------------------------------------------
+           OVERLAY
+        --------------------------------------------- */
 
         let overlay =
             document.querySelector(
@@ -592,16 +701,15 @@
             event => {
 
                 event.preventDefault();
+
                 event.stopPropagation();
 
 
-                const isOpen =
+                if (
                     sidebar.classList.contains(
                         "open"
-                    );
-
-
-                if (isOpen) {
+                    )
+                ) {
 
                     closeMenu();
 
@@ -626,32 +734,29 @@
 
 
         /* ---------------------------------------------
-           NAV LINKS
+           NAVIGATION LINKS
         --------------------------------------------- */
 
         sidebar
             .querySelectorAll("a")
-            .forEach(
-                link => {
+            .forEach(link => {
 
-                    link.addEventListener(
-                        "click",
-                        () => {
+                link.addEventListener(
+                    "click",
+                    () => {
 
-                            if (
-                                window.innerWidth <=
-                                900
-                            ) {
+                        if (
+                            window.innerWidth <= 900
+                        ) {
 
-                                closeMenu();
-
-                            }
+                            closeMenu();
 
                         }
-                    );
 
-                }
-            );
+                    }
+                );
+
+            });
 
 
         /* ---------------------------------------------
@@ -725,140 +830,171 @@
         }
 
 
+        const performLogout = async clickedButton => {
+
+            if (
+                buttons.some(
+                    button =>
+                        button.disabled
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const confirmed =
+                window.confirm(
+                    "Are you sure you want to logout from STOCKFLOW?"
+                );
+
+
+            if (!confirmed) {
+
+                return;
+
+            }
+
+
+            buttons.forEach(
+                button => {
+
+                    button.disabled =
+                        true;
+
+                }
+            );
+
+
+            const originalText =
+                clickedButton.textContent;
+
+
+            clickedButton.textContent =
+                "Logging out...";
+
+
+            try {
+
+                /*
+                 * Try the existing authentication
+                 * controller first.
+                 */
+
+                if (
+                    window.StockFlowAuth &&
+                    typeof
+                    window.StockFlowAuth.logout ===
+                        "function"
+                ) {
+
+                    await window.StockFlowAuth.logout();
+
+                }
+
+                /*
+                 * If the auth controller does not
+                 * exist, try the API logout.
+                 */
+
+                else if (
+                    window.StockFlowAPI &&
+                    typeof
+                    window.StockFlowAPI.logout ===
+                        "function"
+                ) {
+
+                    await window.StockFlowAPI.logout();
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "STOCKFLOW logout request error:",
+                    error
+                );
+
+            } finally {
+
+                /*
+                 * ALWAYS clear local session state.
+                 */
+
+                try {
+
+                    sessionStorage.clear();
+
+                } catch (error) {
+
+                    console.warn(
+                        "Unable to clear sessionStorage:",
+                        error
+                    );
+
+                }
+
+
+                /*
+                 * Remove common STOCKFLOW
+                 * user/session keys.
+                 */
+
+                const localKeys = [
+                    "stockflow_user",
+                    "STOCKFLOW_USER",
+                    "stockflow_token",
+                    "STOCKFLOW_TOKEN",
+                    "stockflow_session",
+                    "STOCKFLOW_SESSION"
+                ];
+
+
+                localKeys.forEach(
+                    key => {
+
+                        localStorage.removeItem(
+                            key
+                        );
+
+                    }
+                );
+
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * Do NOT return to dashboard.
+                 *
+                 * Always send the user to
+                 * the authentication page.
+                 */
+
+                window.location.replace(
+                    "./auth.html"
+                );
+
+            }
+
+        };
+
+
         buttons.forEach(
             button => {
 
                 button.addEventListener(
                     "click",
-                    async () => {
+                    event => {
 
-                        if (
-                            button.disabled
-                        ) {
+                        event.preventDefault();
 
-                            return;
-
-                        }
+                        event.stopPropagation();
 
 
-                        const confirmed =
-                            window.confirm(
-                                "Are you sure you want to logout from STOCKFLOW?"
-                            );
-
-
-                        if (!confirmed) {
-
-                            return;
-
-                        }
-
-
-                        buttons.forEach(
-                            item => {
-
-                                item.disabled =
-                                    true;
-
-                            }
+                        performLogout(
+                            button
                         );
-
-
-                        const originalText =
-                            button.textContent;
-
-
-                        button.textContent =
-                            "Logging out...";
-
-
-                        try {
-
-                            /* ---------------------------------
-                               STOCKFLOW AUTH
-                            --------------------------------- */
-
-                            if (
-                                window.StockFlowAuth &&
-                                typeof
-                                window.StockFlowAuth.logout ===
-                                    "function"
-                            ) {
-
-                                await
-                                    window.StockFlowAuth.logout();
-
-                                return;
-
-                            }
-
-
-                            /* ---------------------------------
-                               STOCKFLOW API
-                            --------------------------------- */
-
-                            if (
-                                window.StockFlowAPI &&
-                                typeof
-                                window.StockFlowAPI.logout ===
-                                    "function"
-                            ) {
-
-                                await
-                                    window.StockFlowAPI.logout();
-
-                                return;
-
-                            }
-
-
-                            /* ---------------------------------
-                               FALLBACK
-                            --------------------------------- */
-
-                            sessionStorage.clear();
-
-
-                            localStorage.removeItem(
-                                "stockflow_user"
-                            );
-
-
-                            localStorage.removeItem(
-                                "STOCKFLOW_USER"
-                            );
-
-
-                            window.location.replace(
-                                "./auth.html"
-                            );
-
-                        } catch (error) {
-
-                            console.error(
-                                "STOCKFLOW logout error:",
-                                error
-                            );
-
-
-                            sessionStorage.clear();
-
-
-                            localStorage.removeItem(
-                                "stockflow_user"
-                            );
-
-
-                            localStorage.removeItem(
-                                "STOCKFLOW_USER"
-                            );
-
-
-                            window.location.replace(
-                                "./auth.html"
-                            );
-
-                        }
 
                     }
                 );
@@ -877,8 +1013,8 @@
         async () => {
 
             /*
-             * Keep your existing authentication
-             * mechanism untouched.
+             * Keep compatibility with the
+             * existing authentication system.
              */
 
             if (
@@ -923,44 +1059,45 @@
        INITIALIZE
     ===================================================== */
 
-    const initialize =
-        async () => {
+    const initialize = async () => {
 
-            const authenticated =
-                await
-                initializeAuthentication();
-
-
-            if (!authenticated) {
-
-                return;
-
-            }
+        const authenticated =
+            await
+            initializeAuthentication();
 
 
-            loadSettings();
+        if (!authenticated) {
 
-            setupThemePreview();
+            return;
 
-            setupMobileMenu();
-
-            setupLogout();
+        }
 
 
-            const form =
-                $("settings");
+        loadSettings();
+
+        setupThemePreview();
+
+        setupMobileMenu();
+
+        setupLogout();
+
+        setupSystemThemeListener();
 
 
-            if (form) {
+        const form =
+            $("settings");
 
-                form.addEventListener(
-                    "submit",
-                    saveSettings
-                );
 
-            }
+        if (form) {
 
-        };
+            form.addEventListener(
+                "submit",
+                saveSettings
+            );
+
+        }
+
+    };
 
 
     /* =====================================================
