@@ -32,7 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector("[data-menu]");
 
     const logoutButton =
-        document.querySelector("#logoutBtn, [data-logout]");
+        document.querySelector(
+            "#logoutBtn, [data-logout]"
+        );
 
 
     /* =====================================================
@@ -67,13 +69,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function firstValue(object, keys) {
 
-        if (!object || typeof object !== "object") {
+        if (
+            !object ||
+            typeof object !== "object"
+        ) {
             return "";
         }
 
         for (const key of keys) {
 
-            const value = object[key];
+            const value =
+                object[key];
 
             if (
                 value !== undefined &&
@@ -94,24 +100,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function normalizeUser(rawUser) {
 
-        if (!rawUser || typeof rawUser !== "object") {
+        if (
+            !rawUser ||
+            typeof rawUser !== "object"
+        ) {
             return null;
         }
 
+
         /*
-         * Some API responses may be wrapped.
-         * Handle common response structures without
-         * changing the backend.
+         * Handle common API response wrappers.
          */
 
-        let user = rawUser;
+        let user =
+            rawUser;
+
 
         if (
             rawUser.user &&
             typeof rawUser.user === "object"
         ) {
-            user = rawUser.user;
+
+            user =
+                rawUser.user;
         }
+
 
         if (
             rawUser.data &&
@@ -122,94 +135,165 @@ document.addEventListener("DOMContentLoaded", async () => {
                 rawUser.data.user &&
                 typeof rawUser.data.user === "object"
             ) {
-                user = rawUser.data.user;
+
+                user =
+                    rawUser.data.user;
+
             } else {
-                user = rawUser.data;
+
+                user =
+                    rawUser.data;
             }
         }
 
 
+        /*
+         * Backend userToResponse() returns:
+         *
+         * uid
+         * name
+         * username
+         * age
+         * accountStatus
+         * gmail
+         * email
+         * phone
+         * role
+         * verified
+         */
+
         return {
 
-            id: firstValue(
-                user,
-                [
-                    "id",
-                    "user_id",
-                    "userId",
-                    "account_id",
-                    "accountId"
-                ]
-            ),
+            uid:
+                firstValue(
+                    user,
+                    [
+                        "uid",
+                        "UID",
+                        "id",
+                        "user_id",
+                        "userId",
+                        "account_id",
+                        "accountId"
+                    ]
+                ),
 
-            fullName: firstValue(
-                user,
-                [
-                    "full_name",
-                    "fullName",
-                    "name",
-                    "display_name",
-                    "displayName"
-                ]
-            ),
+            fullName:
+                firstValue(
+                    user,
+                    [
+                        "name",
+                        "full_name",
+                        "fullName",
+                        "display_name",
+                        "displayName"
+                    ]
+                ),
 
-            username: firstValue(
-                user,
-                [
-                    "username",
-                    "user_name",
-                    "userName"
-                ]
-            ),
+            username:
+                firstValue(
+                    user,
+                    [
+                        "username",
+                        "USERNAME",
+                        "user_name",
+                        "userName"
+                    ]
+                ),
 
-            email: firstValue(
-                user,
-                [
-                    "email",
-                    "gmail",
-                    "email_address",
-                    "emailAddress"
-                ]
-            ),
+            email:
+                firstValue(
+                    user,
+                    [
+                        "email",
+                        "gmail",
+                        "GMAIL",
+                        "email_address",
+                        "emailAddress"
+                    ]
+                ),
 
-            phone: firstValue(
-                user,
-                [
-                    "phone",
-                    "phone_number",
-                    "phoneNumber",
-                    "contact_number",
-                    "contactNumber"
-                ]
-            ),
+            phone:
+                firstValue(
+                    user,
+                    [
+                        "phone",
+                        "phone_number",
+                        "phoneNumber",
+                        "contact_number",
+                        "contactNumber",
+                        "PHONE NO."
+                    ]
+                ),
 
-            age: firstValue(
-                user,
-                [
-                    "age"
-                ]
-            ),
+            age:
+                firstValue(
+                    user,
+                    [
+                        "age",
+                        "AGE"
+                    ]
+                ),
 
-            role: firstValue(
-                user,
-                [
-                    "role",
-                    "user_role",
-                    "userRole",
-                    "account_role",
-                    "accountRole"
-                ]
-            ),
+            role:
+                firstValue(
+                    user,
+                    [
+                        "role",
+                        "ROLE",
+                        "user_role",
+                        "userRole",
+                        "account_role",
+                        "accountRole"
+                    ]
+                ),
 
-            status: firstValue(
-                user,
-                [
-                    "account_status",
-                    "accountStatus",
-                    "status"
-                ]
-            )
+            status:
+                firstValue(
+                    user,
+                    [
+                        "accountStatus",
+                        "account_status",
+                        "ACCOUNT_S",
+                        "status"
+                    ]
+                ),
+
+            verified:
+                firstValue(
+                    user,
+                    [
+                        "verified",
+                        "VERIFIED"
+                    ]
+                )
         };
+    }
+
+
+    /* =====================================================
+       HELPER — GET USER IDENTITY
+    ===================================================== */
+
+    function getUserIdentity(user) {
+
+        if (!user) {
+            return "";
+        }
+
+
+        /*
+         * Prefer UID because it is the most reliable
+         * identifier returned by the backend.
+         */
+
+        return (
+            user.uid ||
+            user.username ||
+            user.email ||
+            user.phone ||
+            ""
+        );
     }
 
 
@@ -229,15 +313,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .split(/\s+/)
                 .filter(Boolean);
 
+
         if (!parts.length) {
             return "SF";
         }
 
+
         if (parts.length === 1) {
+
             return parts[0]
                 .substring(0, 2)
                 .toUpperCase();
         }
+
 
         return (
             parts[0].charAt(0) +
@@ -262,7 +350,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ------------------------------------------------ */
 
         const fullName =
-            user.fullName || "STOCKFLOW USER";
+            user.fullName ||
+            "STOCKFLOW USER";
 
         setText(
             "[data-user-name]",
@@ -276,7 +365,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-username]",
-            user.username || "—"
+            user.username ||
+            "—"
         );
 
 
@@ -285,7 +375,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ------------------------------------------------ */
 
         const role =
-            user.role || "Employee";
+            user.role ||
+            "Employee";
 
         setText(
             "[data-user-role]",
@@ -299,7 +390,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-email]",
-            user.email || "—"
+            user.email ||
+            "—"
         );
 
 
@@ -309,7 +401,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-phone]",
-            user.phone || "—"
+            user.phone ||
+            "—"
         );
 
 
@@ -319,7 +412,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-age]",
-            user.age || "—"
+            user.age ||
+            "—"
         );
 
 
@@ -328,7 +422,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ------------------------------------------------ */
 
         const status =
-            user.status || "Active";
+            user.status ||
+            "Active";
 
         setText(
             "[data-user-status]",
@@ -356,7 +451,9 @@ document.addEventListener("DOMContentLoaded", async () => {
            STATUS CARD
         ------------------------------------------------ */
 
-        updateStatusCard(status);
+        updateStatusCard(
+            status
+        );
     }
 
 
@@ -383,7 +480,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const normalized =
-            String(status || "Active")
+            String(
+                status ||
+                "Active"
+            )
                 .trim()
                 .toLowerCase();
 
@@ -397,23 +497,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const isActive =
-            activeStatuses.includes(normalized);
+            activeStatuses.includes(
+                normalized
+            );
 
 
         if (isActive) {
 
             if (title) {
+
                 title.textContent =
                     "Account Active";
             }
 
+
             if (message) {
+
                 message.textContent =
                     "Your STOCKFLOW account is currently active.";
             }
 
+
             if (indicator) {
-                indicator.textContent = "✓";
+
+                indicator.textContent =
+                    "✓";
 
                 indicator.style.background =
                     "#e8f8ef";
@@ -425,18 +533,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
 
             if (title) {
+
                 title.textContent =
                     "Account " +
-                    String(status || "Inactive");
+                    String(
+                        status ||
+                        "Inactive"
+                    );
             }
 
+
             if (message) {
+
                 message.textContent =
                     "Please check your account status.";
             }
 
+
             if (indicator) {
-                indicator.textContent = "!";
+
+                indicator.textContent =
+                    "!";
 
                 indicator.style.background =
                     "#fff4e5";
@@ -454,17 +571,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadCurrentUser() {
 
-        /*
-         * Make sure the current session exists.
-         *
-         * IMPORTANT:
-         * This uses the actual API object exposed
-         * by api.js.
-         */
-
         if (
             !window.StockFlowAPI ||
-            typeof window.StockFlowAPI.requireSession !== "function"
+            typeof window.StockFlowAPI.requireSession !==
+                "function"
         ) {
 
             console.error(
@@ -481,21 +591,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
 
+            /* ---------------------------------------------
+               1. VERIFY CURRENT SESSION
+            --------------------------------------------- */
+
+            const sessionResponse =
+                await window.StockFlowAPI.requireSession();
+
+
             /*
-             * 1. Verify that a valid session exists.
+             * If the API returns the user directly through
+             * the session response, use it immediately.
              */
 
-            await window.StockFlowAPI.requireSession();
+            let currentUser =
+                normalizeUser(
+                    sessionResponse
+                );
 
 
-            /*
-             * 2. Immediately use the locally stored user.
-             *
-             * This makes the profile load quickly even
-             * before the server request finishes.
-             */
+            /* ---------------------------------------------
+               2. GET STORED LOGIN USER
+            --------------------------------------------- */
 
-            let storedUser = null;
+            let storedUser =
+                null;
+
 
             if (
                 typeof window.StockFlowAPI.getStoredUser ===
@@ -507,63 +628,147 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
-            if (storedUser) {
+            const normalizedStoredUser =
+                normalizeUser(
+                    storedUser
+                );
 
-                const normalizedStored =
-                    normalizeUser(storedUser);
+
+            /*
+             * Prefer the session response if it contains
+             * actual user data.
+             *
+             * Otherwise use the locally stored login user.
+             */
+
+            if (
+                !currentUser ||
+                (
+                    !currentUser.fullName &&
+                    !currentUser.username &&
+                    !currentUser.email &&
+                    !currentUser.uid
+                )
+            ) {
+
+                currentUser =
+                    normalizedStoredUser;
+            }
+
+
+            /* ---------------------------------------------
+               3. DISPLAY LOCAL/SESSION DATA IMMEDIATELY
+            --------------------------------------------- */
+
+            if (currentUser) {
 
                 displayUser(
-                    normalizedStored
+                    currentUser
                 );
             }
 
 
-            /*
-             * 3. Request the latest user information
-             *    from the backend.
-             *
-             * This makes sure Profile is not permanently
-             * dependent on stale session information.
-             */
+            /* ---------------------------------------------
+               4. REFRESH FROM BACKEND
+            --------------------------------------------- */
 
             if (
                 typeof window.StockFlowAPI.getUser ===
                 "function"
             ) {
 
-                try {
-
-                    const response =
-                        await window.StockFlowAPI.getUser();
-
-
-                    const serverUser =
-                        normalizeUser(response);
+                const identityUser =
+                    currentUser ||
+                    normalizedStoredUser;
 
 
-                    if (serverUser) {
-
-                        displayUser(
-                            serverUser
-                        );
-                    }
-
-                } catch (serverError) {
-
-                    /*
-                     * If the server request fails but a stored
-                     * user already exists, keep displaying it.
-                     *
-                     * Do not destroy the working session.
-                     */
-
-                    console.warn(
-                        "Could not refresh profile from server:",
-                        serverError
+                const identity =
+                    getUserIdentity(
+                        identityUser
                     );
+
+
+                /*
+                 * Only call getUser() if we actually have
+                 * an identity to send.
+                 */
+
+                if (identity) {
+
+                    try {
+
+                        const response =
+                            await window.StockFlowAPI.getUser(
+                                identity
+                            );
+
+
+                        const serverUser =
+                            normalizeUser(
+                                response
+                            );
+
+
+                        if (serverUser) {
+
+                            displayUser(
+                                serverUser
+                            );
+
+                            /*
+                             * Remove an old error if one
+                             * was previously displayed.
+                             */
+
+                            const errorBox =
+                                document.querySelector(
+                                    ".profile-load-error"
+                                );
+
+                            if (errorBox) {
+
+                                errorBox.remove();
+                            }
+                        }
+
+                    } catch (serverError) {
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * A refresh failure should NOT
+                         * erase the already loaded user.
+                         */
+
+                        console.warn(
+                            "Could not refresh profile from server:",
+                            serverError
+                        );
+
+                    }
                 }
             }
 
+
+            /*
+             * If we successfully displayed local/session
+             * information, do not show an error merely
+             * because the optional refresh failed.
+             */
+
+            if (currentUser) {
+
+                return;
+            }
+
+
+            /*
+             * Nothing was available at all.
+             */
+
+            showProfileError(
+                "Unable to load your account information."
+            );
 
         } catch (error) {
 
@@ -574,11 +779,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             /*
-             * requireSession() normally handles redirecting
-             * unauthenticated users.
-             *
-             * We only show an error if the API did not
-             * handle the situation itself.
+             * If requireSession fails, there is no reliable
+             * authenticated user to display.
              */
 
             if (
@@ -620,7 +822,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!existing) {
 
             existing =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
             existing.className =
                 "profile-load-error";
@@ -636,7 +840,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 font-weight: 600;
             `;
 
-            profileContent.prepend(existing);
+            profileContent.prepend(
+                existing
+            );
         }
 
 
@@ -649,7 +855,10 @@ document.addEventListener("DOMContentLoaded", async () => {
        MOBILE MENU
     ===================================================== */
 
-    if (menuButton && sidebar) {
+    if (
+        menuButton &&
+        sidebar
+    ) {
 
         menuButton.addEventListener(
             "click",
@@ -677,27 +886,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sidebar) {
 
         sidebar
-            .querySelectorAll(".sf-nav-link")
-            .forEach(link => {
+            .querySelectorAll(
+                ".sf-nav-link"
+            )
+            .forEach(
+                link => {
 
-                link.addEventListener(
-                    "click",
-                    () => {
+                    link.addEventListener(
+                        "click",
+                        () => {
 
-                        sidebar.classList.remove(
-                            "open"
-                        );
-
-                        if (menuButton) {
-
-                            menuButton.setAttribute(
-                                "aria-expanded",
-                                "false"
+                            sidebar.classList.remove(
+                                "open"
                             );
+
+
+                            if (menuButton) {
+
+                                menuButton.setAttribute(
+                                    "aria-expanded",
+                                    "false"
+                                );
+                            }
                         }
-                    }
-                );
-            });
+                    );
+                }
+            );
     }
 
 
@@ -711,10 +925,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             "click",
             async () => {
 
-                logoutButton.disabled = true;
+                logoutButton.disabled =
+                    true;
+
 
                 const originalHTML =
                     logoutButton.innerHTML;
+
 
                 logoutButton.innerHTML =
                     `
@@ -725,24 +942,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 try {
 
-                    /*
-                     * Use the existing API logout.
-                     * Do not manually generate/delete OTP data.
-                     */
-
                     if (
                         window.StockFlowAPI &&
                         typeof window.StockFlowAPI.logout ===
-                        "function"
+                            "function"
                     ) {
 
                         await window.StockFlowAPI.logout();
 
                     } else {
-
-                        /*
-                         * Fallback only if API logout is unavailable.
-                         */
 
                         sessionStorage.removeItem(
                             "STOCKFLOW_USER"
@@ -757,7 +965,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     window.location.href =
                         "./login.html";
 
-
                 } catch (error) {
 
                     console.error(
@@ -766,11 +973,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
 
 
-                    /*
-                     * Restore button if logout failed.
-                     */
-
-                    logoutButton.disabled = false;
+                    logoutButton.disabled =
+                        false;
 
                     logoutButton.innerHTML =
                         originalHTML;
