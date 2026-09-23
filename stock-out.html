@@ -11,7 +11,6 @@
 
     <title>Stock Out | StockFlow</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
 
     <link
@@ -19,27 +18,20 @@
         rel="stylesheet"
     >
 
-    <!-- Font Awesome -->
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- StockFlow Styles -->
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./stock-out.css">
 </head>
 
-
 <body class="stock-out-page">
 
-    <!-- =====================================================
-         SIDEBAR
-    ====================================================== -->
+    <!-- SIDEBAR -->
 
     <aside class="sidebar" id="sidebar">
-
-        <!-- BRAND -->
 
         <div class="sidebar-brand">
 
@@ -55,15 +47,13 @@
         </div>
 
 
-        <!-- USER -->
-
         <div class="sidebar-user">
 
             <div
                 class="sidebar-avatar"
                 id="sidebarAvatar"
             >
-                SF
+                U
             </div>
 
             <div class="sidebar-user-info">
@@ -81,14 +71,10 @@
         </div>
 
 
-        <!-- NAVIGATION -->
-
         <nav class="sidebar-nav">
 
-            <!-- OVERVIEW -->
-
             <div class="nav-section-title">
-                OVERVIEW
+                MAIN
             </div>
 
             <a
@@ -99,8 +85,6 @@
                 <span>Dashboard</span>
             </a>
 
-
-            <!-- INVENTORY -->
 
             <div class="nav-section-title">
                 INVENTORY
@@ -140,8 +124,6 @@
             </a>
 
 
-            <!-- MANAGEMENT -->
-
             <div class="nav-section-title">
                 MANAGEMENT
             </div>
@@ -179,8 +161,6 @@
             </a>
 
 
-            <!-- SYSTEM -->
-
             <div class="nav-section-title">
                 SYSTEM
             </div>
@@ -204,33 +184,7 @@
         </nav>
 
 
-        <!-- SIDEBAR BOTTOM -->
-
-        <div class="sidebar-bottom">
-
-            <div class="sidebar-user-mini">
-
-                <div
-                    class="sidebar-avatar mini"
-                    id="sidebarBottomAvatar"
-                >
-                    U
-                </div>
-
-                <div class="sidebar-mini-info">
-
-                    <strong id="sidebarBottomName">
-                        StockFlow User
-                    </strong>
-
-                    <span id="sidebarBottomRole">
-                        Employee
-                    </span>
-
-                </div>
-
-            </div>
-
+        <div class="sidebar-footer">
 
             <button
                 type="button"
@@ -246,26 +200,19 @@
     </aside>
 
 
-    <!-- MOBILE OVERLAY -->
-
     <div
         class="sidebar-overlay"
         id="sidebarOverlay"
     ></div>
 
 
-    <!-- =====================================================
-         MAIN CONTENT
-    ====================================================== -->
+    <!-- MAIN -->
 
-    <main class="dashboard-main">
+    <main class="main-content">
 
+        <header class="topbar">
 
-        <!-- TOP HEADER -->
-
-        <header class="dash-header">
-
-            <div class="header-left">
+            <div class="topbar-left">
 
                 <button
                     type="button"
@@ -279,7 +226,7 @@
                 </button>
 
 
-                <div class="header-title-group">
+                <div>
 
                     <div class="breadcrumb">
 
@@ -291,107 +238,23 @@
 
                     </div>
 
-                    <h1>
-                        Stock Out
-                    </h1>
+                    <h1>Stock Out</h1>
 
                 </div>
 
             </div>
 
 
-            <div class="header-right">
-
-                <!-- CONNECTION -->
+            <div class="topbar-right">
 
                 <div
                     class="connection-badge"
                     id="connectionBadge"
                 >
                     <span class="connection-dot"></span>
-                    <span>ONLINE</span>
+                    <span>System Online</span>
                 </div>
 
-
-                <!-- NOTIFICATIONS -->
-
-                <div class="notification-wrapper">
-
-                    <button
-                        type="button"
-                        class="notification-btn"
-                        id="notificationBtn"
-                        aria-label="Notifications"
-                        aria-expanded="false"
-                    >
-
-                        <i class="fa-regular fa-bell"></i>
-
-                        <span
-                            class="notification-dot"
-                            id="notificationDot"
-                        ></span>
-
-                    </button>
-
-
-                    <div
-                        class="notification-panel"
-                        id="notificationPanel"
-                        hidden
-                    >
-
-                        <div class="notification-panel-header">
-
-                            <div>
-                                <strong>Notifications</strong>
-                                <span>StockFlow updates</span>
-                            </div>
-
-                            <button
-                                type="button"
-                                id="closeNotificationBtn"
-                                aria-label="Close notifications"
-                            >
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-
-                        </div>
-
-
-                        <div
-                            class="notification-list"
-                            id="notificationList"
-                        >
-
-                            <div class="notification-item">
-
-                                <div class="notification-item-icon">
-                                    <i class="fa-solid fa-box"></i>
-                                </div>
-
-                                <div>
-
-                                    <strong>
-                                        Inventory monitoring active
-                                    </strong>
-
-                                    <p>
-                                        Stock releases are recorded in the transaction history.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- USER -->
 
                 <div class="topbar-user">
 
@@ -421,14 +284,9 @@
         </header>
 
 
-        <!-- =================================================
-             PAGE CONTENT
-        ================================================== -->
+        <!-- PAGE -->
 
         <section class="page-content">
-
-
-            <!-- PAGE INTRO -->
 
             <div class="page-heading">
 
@@ -448,17 +306,12 @@
 
                 </div>
 
-
                 <div class="page-heading-icon">
-
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
-
                 </div>
 
             </div>
 
-
-            <!-- CONNECTION MESSAGE -->
 
             <div
                 class="connection-message"
@@ -467,16 +320,9 @@
             ></div>
 
 
-            <!-- =================================================
-                 STOCK OUT WORKSPACE
-            ================================================== -->
+            <!-- STOCK OUT -->
 
             <div class="stock-out-layout">
-
-
-                <!-- =================================================
-                     FORM CARD
-                ================================================== -->
 
                 <section class="content-card stock-out-form-card">
 
@@ -495,9 +341,7 @@
                         </div>
 
                         <div class="card-header-icon">
-
-                            <i class="fa-solid fa-box-open"></i>
-
+                            <i class="fa-solid fa-box"></i>
                         </div>
 
                     </div>
@@ -508,17 +352,11 @@
                         autocomplete="off"
                     >
 
-
-                        <!-- PRODUCT -->
-
                         <div class="form-group">
 
                             <label for="productSelect">
-
                                 Product
-
                                 <span class="required">*</span>
-
                             </label>
 
                             <div class="input-wrapper">
@@ -530,11 +368,9 @@
                                     name="product"
                                     required
                                 >
-
                                     <option value="">
                                         Select a product
                                     </option>
-
                                 </select>
 
                             </div>
@@ -549,17 +385,13 @@
                         </div>
 
 
-                        <!-- AVAILABLE STOCK -->
-
                         <div
                             class="available-stock"
                             id="availableStockBox"
                         >
 
                             <div class="available-stock-icon">
-
                                 <i class="fa-solid fa-cubes"></i>
-
                             </div>
 
                             <div class="available-stock-content">
@@ -574,23 +406,14 @@
 
                             </div>
 
-                            <div class="available-stock-status">
-                                <span>Units</span>
-                            </div>
-
                         </div>
 
-
-                        <!-- QUANTITY -->
 
                         <div class="form-group">
 
                             <label for="quantity">
-
                                 Quantity
-
                                 <span class="required">*</span>
-
                             </label>
 
                             <div class="input-wrapper">
@@ -619,16 +442,11 @@
                         </div>
 
 
-                        <!-- REASON -->
-
                         <div class="form-group">
 
                             <label for="stockOutReason">
-
                                 Reason
-
                                 <span class="required">*</span>
-
                             </label>
 
                             <div class="input-wrapper">
@@ -640,7 +458,6 @@
                                     name="reason"
                                     required
                                 >
-
                                     <option value="">
                                         Select reason
                                     </option>
@@ -684,8 +501,6 @@
                         </div>
 
 
-                        <!-- REFERENCE -->
-
                         <div class="form-group">
 
                             <label for="referenceNumber">
@@ -713,8 +528,6 @@
                         </div>
 
 
-                        <!-- RECIPIENT -->
-
                         <div class="form-group">
 
                             <label for="recipient">
@@ -738,16 +551,11 @@
                         </div>
 
 
-                        <!-- DATE -->
-
                         <div class="form-group">
 
                             <label for="stockOutDate">
-
                                 Stock Out Date
-
                                 <span class="required">*</span>
-
                             </label>
 
                             <div class="input-wrapper">
@@ -766,8 +574,6 @@
                         </div>
 
 
-                        <!-- NOTES -->
-
                         <div class="form-group">
 
                             <label for="notes">
@@ -785,8 +591,6 @@
                         </div>
 
 
-                        <!-- ACTIONS -->
-
                         <div class="form-actions">
 
                             <button
@@ -794,26 +598,20 @@
                                 class="btn btn-secondary"
                                 id="clearStockOutBtn"
                             >
-
                                 <i class="fa-solid fa-rotate-left"></i>
-
                                 Clear
-
                             </button>
-
 
                             <button
                                 type="submit"
                                 class="btn btn-primary"
                                 id="saveStockOutBtn"
                             >
-
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
 
                                 <span>
                                     Release Stock
                                 </span>
-
                             </button>
 
                         </div>
@@ -823,9 +621,7 @@
                 </section>
 
 
-                <!-- =================================================
-                     TRANSACTION PREVIEW
-                ================================================== -->
+                <!-- PREVIEW -->
 
                 <aside class="content-card stock-preview-card">
 
@@ -844,9 +640,7 @@
                         </div>
 
                         <div class="card-header-icon">
-
                             <i class="fa-solid fa-eye"></i>
-
                         </div>
 
                     </div>
@@ -854,15 +648,10 @@
 
                     <div class="preview-body">
 
-
-                        <!-- PRODUCT -->
-
                         <div class="preview-product">
 
                             <div class="preview-product-icon">
-
                                 <i class="fa-solid fa-box"></i>
-
                             </div>
 
                             <div>
@@ -880,13 +669,9 @@
                         </div>
 
 
-                        <!-- QUANTITY -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Quantity
-                            </span>
+                            <span>Quantity</span>
 
                             <strong id="previewQuantity">
                                 0
@@ -895,13 +680,9 @@
                         </div>
 
 
-                        <!-- REMAINING -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Remaining Stock
-                            </span>
+                            <span>Remaining Stock</span>
 
                             <strong id="previewRemaining">
                                 0
@@ -910,13 +691,9 @@
                         </div>
 
 
-                        <!-- REASON -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Reason
-                            </span>
+                            <span>Reason</span>
 
                             <strong id="previewReason">
                                 —
@@ -925,13 +702,9 @@
                         </div>
 
 
-                        <!-- RECIPIENT -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Recipient
-                            </span>
+                            <span>Recipient</span>
 
                             <strong id="previewRecipient">
                                 —
@@ -940,13 +713,9 @@
                         </div>
 
 
-                        <!-- REFERENCE -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Reference
-                            </span>
+                            <span>Reference</span>
 
                             <strong id="previewReference">
                                 —
@@ -955,13 +724,9 @@
                         </div>
 
 
-                        <!-- DATE -->
-
                         <div class="preview-item">
 
-                            <span>
-                                Date
-                            </span>
+                            <span>Date</span>
 
                             <strong id="previewDate">
                                 —
@@ -971,8 +736,6 @@
 
                     </div>
 
-
-                    <!-- WARNING -->
 
                     <div class="preview-warning">
 
@@ -990,9 +753,7 @@
             </div>
 
 
-            <!-- =================================================
-                 RECENT STOCK OUT
-            ================================================== -->
+            <!-- RECENT TRANSACTIONS -->
 
             <section class="content-card recent-stock-card">
 
@@ -1010,17 +771,13 @@
 
                     </div>
 
-
                     <button
                         type="button"
                         class="btn btn-secondary btn-small"
                         id="refreshStockOutBtn"
                     >
-
                         <i class="fa-solid fa-arrows-rotate"></i>
-
                         Refresh
-
                     </button>
 
                 </div>
@@ -1033,25 +790,16 @@
                         <thead>
 
                             <tr>
-
                                 <th>Date</th>
-
                                 <th>Product</th>
-
                                 <th>Quantity</th>
-
                                 <th>Reason</th>
-
                                 <th>Reference</th>
-
                                 <th>Recipient</th>
-
                                 <th>User</th>
-
                             </tr>
 
                         </thead>
-
 
                         <tbody id="stockOutTableBody">
 
@@ -1061,11 +809,8 @@
                                     colspan="7"
                                     class="table-loading"
                                 >
-
                                     <i class="fa-solid fa-spinner fa-spin"></i>
-
                                     Loading stock transactions...
-
                                 </td>
 
                             </tr>
@@ -1083,9 +828,7 @@
     </main>
 
 
-    <!-- =====================================================
-         SUCCESS / ERROR MODAL
-    ====================================================== -->
+    <!-- RESULT MODAL -->
 
     <div
         class="modal-backdrop"
@@ -1106,31 +849,23 @@
                 id="closeStockOutModal"
                 aria-label="Close"
             >
-
                 <i class="fa-solid fa-xmark"></i>
-
             </button>
-
 
             <div
                 class="modal-icon"
                 id="stockOutModalIcon"
             >
-
                 <i class="fa-solid fa-check"></i>
-
             </div>
-
 
             <h3 id="stockOutModalTitle">
                 Stock Released Successfully
             </h3>
 
-
             <p id="stockOutModalMessage">
                 The inventory has been updated successfully.
             </p>
-
 
             <button
                 type="button"
@@ -1145,9 +880,7 @@
     </div>
 
 
-    <!-- =====================================================
-         LOADING
-    ====================================================== -->
+    <!-- LOADING -->
 
     <div
         class="loading-overlay"
@@ -1172,15 +905,10 @@
     </div>
 
 
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
-
     <script src="./config.js"></script>
     <script src="./api.js"></script>
     <script src="./auth.js"></script>
     <script src="./stock-out.js"></script>
 
 </body>
-
 </html>
