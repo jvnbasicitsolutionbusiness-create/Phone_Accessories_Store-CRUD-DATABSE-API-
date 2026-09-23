@@ -5,7 +5,8 @@
    - Load the currently logged-in user
    - Display account information
    - Keep sidebar user information synchronized
-   - Load fresh user information from the API when available
+   - Use stored login information immediately
+   - Refresh user information from the backend when available
    - Handle mobile navigation
    - Handle logout
 
@@ -50,12 +51,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+
         const text =
             value === null ||
             value === undefined ||
             String(value).trim() === ""
                 ? "—"
                 : String(value);
+
 
         elements.forEach(element => {
             element.textContent = text;
@@ -76,10 +79,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             return "";
         }
 
+
         for (const key of keys) {
 
             const value =
                 object[key];
+
 
             if (
                 value !== undefined &&
@@ -90,12 +95,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
+
         return "";
     }
 
 
     /* =====================================================
-       HELPER — NORMALIZE USER OBJECT
+       HELPER — NORMALIZE USER
     ===================================================== */
 
     function normalizeUser(rawUser) {
@@ -108,13 +114,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        /*
-         * Handle common API response wrappers.
-         */
-
         let user =
             rawUser;
 
+
+        /*
+         * Handle:
+         *
+         * {
+         *     user: {...}
+         * }
+         */
 
         if (
             rawUser.user &&
@@ -125,6 +135,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 rawUser.user;
         }
 
+
+        /*
+         * Handle:
+         *
+         * {
+         *     data: {...}
+         * }
+         */
 
         if (
             rawUser.data &&
@@ -148,21 +166,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * Backend userToResponse() returns:
-         *
-         * uid
-         * name
-         * username
-         * age
-         * accountStatus
-         * gmail
-         * email
-         * phone
-         * role
-         * verified
+         * Make sure we actually have a usable object.
          */
 
-        return {
+        if (
+            !user ||
+            typeof user !== "object" ||
+            Array.isArray(user)
+        ) {
+            return null;
+        }
+
+
+        /*
+         * Normalize backend/user storage fields.
+         */
+
+        const normalized = {
 
             uid:
                 firstValue(
@@ -178,6 +198,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 ),
 
+
             fullName:
                 firstValue(
                     user,
@@ -190,6 +211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 ),
 
+
             username:
                 firstValue(
                     user,
@@ -200,6 +222,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "userName"
                     ]
                 ),
+
 
             email:
                 firstValue(
@@ -212,6 +235,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "emailAddress"
                     ]
                 ),
+
 
             phone:
                 firstValue(
@@ -226,6 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 ),
 
+
             age:
                 firstValue(
                     user,
@@ -234,6 +259,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "AGE"
                     ]
                 ),
+
 
             role:
                 firstValue(
@@ -248,6 +274,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 ),
 
+
             status:
                 firstValue(
                     user,
@@ -259,6 +286,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 ),
 
+
             verified:
                 firstValue(
                     user,
@@ -268,11 +296,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ]
                 )
         };
+
+
+        /*
+         * Do not consider a completely empty object
+         * to be a valid user.
+         */
+
+        const hasData =
+            Boolean(
+                normalized.uid ||
+                normalized.fullName ||
+                normalized.username ||
+                normalized.email ||
+                normalized.phone
+            );
+
+
+        return hasData
+            ? normalized
+            : null;
     }
 
 
     /* =====================================================
-       HELPER — GET USER IDENTITY
+       HELPER — USER IDENTITY
     ===================================================== */
 
     function getUserIdentity(user) {
@@ -283,15 +331,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * Prefer UID because it is the most reliable
-         * identifier returned by the backend.
+         * Prefer UID.
+         * Then fall back to the identifiers supported
+         * by the API.
          */
 
         return (
-            user.uid ||
-            user.username ||
-            user.email ||
-            user.phone ||
+            String(user.uid || "").trim() ||
+            String(user.username || "").trim() ||
+            String(user.email || "").trim() ||
+            String(user.phone || "").trim() ||
             ""
         );
     }
@@ -306,6 +355,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!name) {
             return "SF";
         }
+
 
         const parts =
             String(name)
@@ -353,6 +403,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             user.fullName ||
             "STOCKFLOW USER";
 
+
         setText(
             "[data-user-name]",
             fullName
@@ -365,8 +416,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-username]",
-            user.username ||
-            "—"
+            user.username
         );
 
 
@@ -374,13 +424,10 @@ document.addEventListener("DOMContentLoaded", async () => {
            ROLE
         ------------------------------------------------ */
 
-        const role =
-            user.role ||
-            "Employee";
-
         setText(
             "[data-user-role]",
-            role
+            user.role ||
+            "Employee"
         );
 
 
@@ -390,8 +437,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-email]",
-            user.email ||
-            "—"
+            user.email
         );
 
 
@@ -401,8 +447,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-phone]",
-            user.phone ||
-            "—"
+            user.phone
         );
 
 
@@ -412,8 +457,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         setText(
             "[data-user-age]",
-            user.age ||
-            "—"
+            user.age
         );
 
 
@@ -424,6 +468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const status =
             user.status ||
             "Active";
+
 
         setText(
             "[data-user-status]",
@@ -440,10 +485,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "[data-user-avatar]"
             );
 
+
         if (avatar) {
 
             avatar.textContent =
-                getInitials(fullName);
+                getInitials(
+                    fullName
+                );
         }
 
 
@@ -530,541 +578,61 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "#16a05a";
             }
 
-        } else {
-
-            if (title) {
-
-                title.textContent =
-                    "Account " +
-                    String(
-                        status ||
-                        "Inactive"
-                    );
-            }
-
-
-            if (message) {
-
-                message.textContent =
-                    "Please check your account status.";
-            }
-
-
-            if (indicator) {
-
-                indicator.textContent =
-                    "!";
-
-                indicator.style.background =
-                    "#fff4e5";
-
-                indicator.style.color =
-                    "#c77700";
-            }
+            return;
         }
-    }
 
-
-    /* =====================================================
-       LOAD LOGGED-IN USER
-    ===================================================== */
-
-   async function loadCurrentUser() {
-
-    console.log(
-        "STOCKFLOW PROFILE: loading current user..."
-    );
-
-
-    /* =====================================================
-       CHECK API
-       ===================================================== */
-
-    if (
-        !window.StockFlowAPI
-    ) {
-
-        console.error(
-            "STOCKFLOW PROFILE: StockFlowAPI is unavailable."
-        );
-
-        showProfileError(
-            "Authentication service is unavailable."
-        );
-
-        return;
-    }
-
-
-    /* =====================================================
-       1. LOAD STORED USER FIRST
-       ===================================================== */
-
-    let storedUser = null;
-
-    if (
-        typeof window.StockFlowAPI.getStoredUser ===
-        "function"
-    ) {
-
-        try {
-
-            storedUser =
-                window.StockFlowAPI.getStoredUser();
-
-            console.log(
-                "STOCKFLOW PROFILE: stored user:",
-                storedUser
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "STOCKFLOW PROFILE: could not read stored user:",
-                error
-            );
-        }
-    }
-
-
-    let currentUser =
-        normalizeUser(
-            storedUser
-        );
-
-
-    /* =====================================================
-       2. DISPLAY STORED USER IMMEDIATELY
-       ===================================================== */
-
-    if (currentUser) {
-
-        console.log(
-            "STOCKFLOW PROFILE: displaying stored user:",
-            currentUser
-        );
-
-        displayUser(
-            currentUser
-        );
-    }
-
-
-    /* =====================================================
-       3. VALIDATE SESSION USING session()
-       ===================================================== */
-
-    if (
-        typeof window.StockFlowAPI.session ===
-        "function"
-    ) {
-
-        try {
-
-            const sessionResponse =
-                await window.StockFlowAPI.session();
-
-
-            console.log(
-                "STOCKFLOW PROFILE: session response:",
-                sessionResponse
-            );
-
-
-            const sessionUser =
-                normalizeUser(
-                    sessionResponse
-                );
-
-
-            /*
-             * If the session endpoint returned actual
-             * user information, use it.
-             */
-
-            if (sessionUser) {
-
-                const hasUsefulData =
-                    Boolean(
-                        sessionUser.uid ||
-                        sessionUser.fullName ||
-                        sessionUser.username ||
-                        sessionUser.email ||
-                        sessionUser.phone
-                    );
-
-
-                if (hasUsefulData) {
-
-                    currentUser =
-                        sessionUser;
-
-
-                    displayUser(
-                        currentUser
-                    );
-
-
-                    console.log(
-                        "STOCKFLOW PROFILE: using session user."
-                    );
-                }
-            }
-
-        } catch (sessionError) {
-
-            /*
-             * IMPORTANT:
-             *
-             * Session refresh failure does NOT destroy
-             * the already loaded stored user.
-             */
-
-            console.warn(
-                "STOCKFLOW PROFILE: session refresh failed:",
-                sessionError
-            );
-        }
-    }
-
-
-    /* =====================================================
-       4. REFRESH USER FROM getUser()
-       ===================================================== */
-
-    if (
-        currentUser &&
-        typeof window.StockFlowAPI.getUser ===
-            "function"
-    ) {
-
-        const identity =
-            getUserIdentity(
-                currentUser
-            );
-
-
-        console.log(
-            "STOCKFLOW PROFILE: user identity:",
-            identity
-        );
-
-
-        if (identity) {
-
-            try {
-
-                const response =
-                    await window.StockFlowAPI.getUser(
-                        identity
-                    );
-
-
-                console.log(
-                    "STOCKFLOW PROFILE: getUser response:",
-                    response
-                );
-
-
-                const serverUser =
-                    normalizeUser(
-                        response
-                    );
-
-
-                if (serverUser) {
-
-                    const hasUsefulData =
-                        Boolean(
-                            serverUser.uid ||
-                            serverUser.fullName ||
-                            serverUser.username ||
-                            serverUser.email ||
-                            serverUser.phone
-                        );
-
-
-                    if (hasUsefulData) {
-
-                        currentUser =
-                            serverUser;
-
-
-                        displayUser(
-                            currentUser
-                        );
-
-
-                        console.log(
-                            "STOCKFLOW PROFILE: fresh backend user loaded."
-                        );
-                    }
-                }
-
-            } catch (serverError) {
-
-                /*
-                 * Do NOT show the red account error here.
-                 *
-                 * The stored user is already displayed.
-                 */
-
-                console.warn(
-                    "STOCKFLOW PROFILE: getUser refresh failed:",
-                    serverError
-                );
-            }
-        }
-    }
-
-
-    /* =====================================================
-       5. FINAL CHECK
-       ===================================================== */
-
-    if (currentUser) {
 
         /*
-         * We have valid local/session information.
-         * Profile is considered successfully loaded.
+         * Non-active account.
          */
+
+        if (title) {
+
+            title.textContent =
+                "Account " +
+                String(
+                    status ||
+                    "Inactive"
+                );
+        }
+
+
+        if (message) {
+
+            message.textContent =
+                "Please check your account status.";
+        }
+
+
+        if (indicator) {
+
+            indicator.textContent =
+                "!";
+
+            indicator.style.background =
+                "#fff4e5";
+
+            indicator.style.color =
+                "#c77700";
+        }
+    }
+
+
+    /* =====================================================
+       REMOVE PROFILE ERROR
+    ===================================================== */
+
+    function removeProfileError() {
 
         const errorBox =
             document.querySelector(
                 ".profile-load-error"
             );
 
+
         if (errorBox) {
 
             errorBox.remove();
-        }
-
-
-        console.log(
-            "STOCKFLOW PROFILE: profile loaded successfully.",
-            currentUser
-        );
-
-        return;
-    }
-
-
-    /* =====================================================
-       6. NOTHING WAS FOUND
-       ===================================================== */
-
-    console.error(
-        "STOCKFLOW PROFILE: no stored user and no session user."
-    );
-
-
-    showProfileError(
-        "Unable to load your account information."
-    );
-}
-
-            /* ---------------------------------------------
-               1. VERIFY CURRENT SESSION
-            --------------------------------------------- */
-
-            const sessionResponse =
-                await window.StockFlowAPI.requireSession();
-
-
-            /*
-             * If the API returns the user directly through
-             * the session response, use it immediately.
-             */
-
-            let currentUser =
-                normalizeUser(
-                    sessionResponse
-                );
-
-
-            /* ---------------------------------------------
-               2. GET STORED LOGIN USER
-            --------------------------------------------- */
-
-            let storedUser =
-                null;
-
-
-            if (
-                typeof window.StockFlowAPI.getStoredUser ===
-                "function"
-            ) {
-
-                storedUser =
-                    window.StockFlowAPI.getStoredUser();
-            }
-
-
-            const normalizedStoredUser =
-                normalizeUser(
-                    storedUser
-                );
-
-
-            /*
-             * Prefer the session response if it contains
-             * actual user data.
-             *
-             * Otherwise use the locally stored login user.
-             */
-
-            if (
-                !currentUser ||
-                (
-                    !currentUser.fullName &&
-                    !currentUser.username &&
-                    !currentUser.email &&
-                    !currentUser.uid
-                )
-            ) {
-
-                currentUser =
-                    normalizedStoredUser;
-            }
-
-
-            /* ---------------------------------------------
-               3. DISPLAY LOCAL/SESSION DATA IMMEDIATELY
-            --------------------------------------------- */
-
-            if (currentUser) {
-
-                displayUser(
-                    currentUser
-                );
-            }
-
-
-            /* ---------------------------------------------
-               4. REFRESH FROM BACKEND
-            --------------------------------------------- */
-
-            if (
-                typeof window.StockFlowAPI.getUser ===
-                "function"
-            ) {
-
-                const identityUser =
-                    currentUser ||
-                    normalizedStoredUser;
-
-
-                const identity =
-                    getUserIdentity(
-                        identityUser
-                    );
-
-
-                /*
-                 * Only call getUser() if we actually have
-                 * an identity to send.
-                 */
-
-                if (identity) {
-
-                    try {
-
-                        const response =
-                            await window.StockFlowAPI.getUser(
-                                identity
-                            );
-
-
-                        const serverUser =
-                            normalizeUser(
-                                response
-                            );
-
-
-                        if (serverUser) {
-
-                            displayUser(
-                                serverUser
-                            );
-
-                            /*
-                             * Remove an old error if one
-                             * was previously displayed.
-                             */
-
-                            const errorBox =
-                                document.querySelector(
-                                    ".profile-load-error"
-                                );
-
-                            if (errorBox) {
-
-                                errorBox.remove();
-                            }
-                        }
-
-                    } catch (serverError) {
-
-                        /*
-                         * IMPORTANT:
-                         *
-                         * A refresh failure should NOT
-                         * erase the already loaded user.
-                         */
-
-                        console.warn(
-                            "Could not refresh profile from server:",
-                            serverError
-                        );
-
-                    }
-                }
-            }
-
-
-            /*
-             * If we successfully displayed local/session
-             * information, do not show an error merely
-             * because the optional refresh failed.
-             */
-
-            if (currentUser) {
-
-                return;
-            }
-
-
-            /*
-             * Nothing was available at all.
-             */
-
-            showProfileError(
-                "Unable to load your account information."
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Profile session error:",
-                error
-            );
-
-
-            /*
-             * If requireSession fails, there is no reliable
-             * authenticated user to display.
-             */
-
-            if (
-                !window.location.pathname.endsWith(
-                    "login.html"
-                )
-            ) {
-
-                showProfileError(
-                    "Unable to load your account information."
-                );
-            }
         }
     }
 
@@ -1080,28 +648,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ".profile-content"
             );
 
+
         if (!profileContent) {
             return;
         }
 
 
-        let existing =
+        let errorBox =
             document.querySelector(
                 ".profile-load-error"
             );
 
 
-        if (!existing) {
+        if (!errorBox) {
 
-            existing =
+            errorBox =
                 document.createElement(
                     "div"
                 );
 
-            existing.className =
+
+            errorBox.className =
                 "profile-load-error";
 
-            existing.style.cssText = `
+
+            errorBox.style.cssText = `
                 margin-bottom: 16px;
                 padding: 12px 14px;
                 border: 1px solid #fecaca;
@@ -1112,14 +683,328 @@ document.addEventListener("DOMContentLoaded", async () => {
                 font-weight: 600;
             `;
 
+
             profileContent.prepend(
-                existing
+                errorBox
             );
         }
 
 
-        existing.textContent =
+        errorBox.textContent =
             message;
+    }
+
+
+    /* =====================================================
+       LOAD CURRENT USER
+    ===================================================== */
+
+    async function loadCurrentUser() {
+
+        console.log(
+            "STOCKFLOW PROFILE: loading current user..."
+        );
+
+
+        /* =================================================
+           1. CHECK API
+        ================================================= */
+
+        if (
+            !window.StockFlowAPI
+        ) {
+
+            console.error(
+                "STOCKFLOW PROFILE: StockFlowAPI is unavailable."
+            );
+
+
+            showProfileError(
+                "Authentication service is unavailable."
+            );
+
+
+            return;
+        }
+
+
+        /* =================================================
+           2. LOAD STORED USER FIRST
+        ================================================= */
+
+        let currentUser =
+            null;
+
+
+        if (
+            typeof window.StockFlowAPI.getStoredUser ===
+            "function"
+        ) {
+
+            try {
+
+                const storedUser =
+                    window.StockFlowAPI.getStoredUser();
+
+
+                console.log(
+                    "STOCKFLOW PROFILE: stored user:",
+                    storedUser
+                );
+
+
+                currentUser =
+                    normalizeUser(
+                        storedUser
+                    );
+
+            } catch (error) {
+
+                console.warn(
+                    "STOCKFLOW PROFILE: unable to read stored user:",
+                    error
+                );
+            }
+        }
+
+
+        /* =================================================
+           3. DISPLAY STORED USER IMMEDIATELY
+        ================================================= */
+
+        if (currentUser) {
+
+            console.log(
+                "STOCKFLOW PROFILE: displaying stored user."
+            );
+
+
+            displayUser(
+                currentUser
+            );
+
+
+            removeProfileError();
+        }
+
+
+        /* =================================================
+           4. VALIDATE SESSION
+        ================================================= */
+
+        /*
+         * Only call session() when a token exists.
+         *
+         * api.js already exposes getToken().
+         *
+         * This avoids making a pointless session request
+         * when the browser has no authentication token.
+         */
+
+        let token =
+            "";
+
+
+        if (
+            typeof window.StockFlowAPI.getToken ===
+            "function"
+        ) {
+
+            try {
+
+                token =
+                    window.StockFlowAPI.getToken();
+
+            } catch (error) {
+
+                console.warn(
+                    "STOCKFLOW PROFILE: unable to read session token:",
+                    error
+                );
+            }
+        }
+
+
+        if (
+            token &&
+            typeof window.StockFlowAPI.session ===
+                "function"
+        ) {
+
+            try {
+
+                console.log(
+                    "STOCKFLOW PROFILE: validating session..."
+                );
+
+
+                const sessionResponse =
+                    await window.StockFlowAPI.session();
+
+
+                console.log(
+                    "STOCKFLOW PROFILE: session response:",
+                    sessionResponse
+                );
+
+
+                const sessionUser =
+                    normalizeUser(
+                        sessionResponse
+                    );
+
+
+                /*
+                 * Use session data when the backend
+                 * actually returned a user.
+                 */
+
+                if (sessionUser) {
+
+                    currentUser =
+                        sessionUser;
+
+
+                    displayUser(
+                        currentUser
+                    );
+
+
+                    removeProfileError();
+
+
+                    console.log(
+                        "STOCKFLOW PROFILE: session user loaded."
+                    );
+                }
+
+            } catch (sessionError) {
+
+                /*
+                 * Session failure must NOT erase the
+                 * locally stored user.
+                 */
+
+                console.warn(
+                    "STOCKFLOW PROFILE: session validation failed:",
+                    sessionError
+                );
+            }
+        }
+
+
+        /* =================================================
+           5. REFRESH USER FROM BACKEND
+        ================================================= */
+
+        if (
+            currentUser &&
+            typeof window.StockFlowAPI.getUser ===
+                "function"
+        ) {
+
+            const identity =
+                getUserIdentity(
+                    currentUser
+                );
+
+
+            if (identity) {
+
+                console.log(
+                    "STOCKFLOW PROFILE: refreshing user:",
+                    identity
+                );
+
+
+                try {
+
+                    const response =
+                        await window.StockFlowAPI.getUser(
+                            identity
+                        );
+
+
+                    console.log(
+                        "STOCKFLOW PROFILE: getUser response:",
+                        response
+                    );
+
+
+                    const serverUser =
+                        normalizeUser(
+                            response
+                        );
+
+
+                    if (serverUser) {
+
+                        currentUser =
+                            serverUser;
+
+
+                        displayUser(
+                            currentUser
+                        );
+
+
+                        removeProfileError();
+
+
+                        console.log(
+                            "STOCKFLOW PROFILE: fresh backend user loaded."
+                        );
+                    }
+
+                } catch (serverError) {
+
+                    /*
+                     * Backend refresh is OPTIONAL.
+                     *
+                     * If it fails, keep the already
+                     * displayed stored/session user.
+                     */
+
+                    console.warn(
+                        "STOCKFLOW PROFILE: backend user refresh failed:",
+                        serverError
+                    );
+                }
+            }
+        }
+
+
+        /* =================================================
+           6. FINAL RESULT
+        ================================================= */
+
+        if (currentUser) {
+
+            removeProfileError();
+
+
+            console.log(
+                "STOCKFLOW PROFILE: profile loaded successfully.",
+                currentUser
+            );
+
+
+            return;
+        }
+
+
+        /* =================================================
+           7. NO USER DATA AVAILABLE
+        ================================================= */
+
+        console.error(
+            "STOCKFLOW PROFILE: no authenticated user information is available."
+        );
+
+
+        showProfileError(
+            "Unable to load your account information."
+        );
     }
 
 
@@ -1144,7 +1029,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 menuButton.setAttribute(
                     "aria-expanded",
-                    String(isOpen)
+                    String(
+                        isOpen
+                    )
                 );
             }
         );
@@ -1197,6 +1084,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             "click",
             async () => {
 
+                if (
+                    logoutButton.disabled
+                ) {
+                    return;
+                }
+
+
                 logoutButton.disabled =
                     true;
 
@@ -1220,17 +1114,57 @@ document.addEventListener("DOMContentLoaded", async () => {
                             "function"
                     ) {
 
+                        /*
+                         * api.js handles:
+                         * - server logout
+                         * - token clearing
+                         * - stored-user clearing
+                         */
+
                         await window.StockFlowAPI.logout();
 
                     } else {
 
-                        sessionStorage.removeItem(
-                            "STOCKFLOW_USER"
-                        );
+                        /*
+                         * Fallback only if API is unavailable.
+                         */
 
-                        localStorage.removeItem(
-                            "STOCKFLOW_USER"
-                        );
+                        if (
+                            typeof window.StockFlowAPI?.clearToken ===
+                            "function"
+                        ) {
+
+                            window.StockFlowAPI.clearToken();
+
+                        } else {
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_TOKEN"
+                            );
+
+                            localStorage.removeItem(
+                                "STOCKFLOW_TOKEN"
+                            );
+                        }
+
+
+                        if (
+                            typeof window.StockFlowAPI?.clearStoredUser ===
+                            "function"
+                        ) {
+
+                            window.StockFlowAPI.clearStoredUser();
+
+                        } else {
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+
+                            localStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+                        }
                     }
 
 
@@ -1240,16 +1174,71 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } catch (error) {
 
                     console.error(
-                        "Logout failed:",
+                        "STOCKFLOW PROFILE: logout failed:",
                         error
                     );
 
 
-                    logoutButton.disabled =
-                        false;
+                    /*
+                     * Even if the backend logout request
+                     * fails, clear local authentication data.
+                     */
 
-                    logoutButton.innerHTML =
-                        originalHTML;
+                    try {
+
+                        if (
+                            typeof window.StockFlowAPI?.clearToken ===
+                            "function"
+                        ) {
+
+                            window.StockFlowAPI.clearToken();
+
+                        } else {
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_TOKEN"
+                            );
+
+                            localStorage.removeItem(
+                                "STOCKFLOW_TOKEN"
+                            );
+                        }
+
+
+                        if (
+                            typeof window.StockFlowAPI?.clearStoredUser ===
+                            "function"
+                        ) {
+
+                            window.StockFlowAPI.clearStoredUser();
+
+                        } else {
+
+                            sessionStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+
+                            localStorage.removeItem(
+                                "STOCKFLOW_USER"
+                            );
+                        }
+
+                    } catch (clearError) {
+
+                        console.warn(
+                            "STOCKFLOW PROFILE: local logout cleanup failed:",
+                            clearError
+                        );
+                    }
+
+
+                    /*
+                     * Go back to login even if the
+                     * server-side logout failed.
+                     */
+
+                    window.location.href =
+                        "./login.html";
                 }
             }
         );
