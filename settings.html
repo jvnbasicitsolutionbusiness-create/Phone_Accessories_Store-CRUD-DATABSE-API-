@@ -16,7 +16,6 @@
 
     <title>STOCKFLOW | Settings</title>
 
-    <!-- STOCKFLOW STYLES -->
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
     <link rel="stylesheet" href="./settings.css">
@@ -26,103 +25,195 @@
 
     <div class="sf-layout">
 
-        <!-- =================================================
+        <!-- =====================================================
              SIDEBAR
-        ================================================== -->
+        ====================================================== -->
         <aside class="sf-side">
 
+            <!-- BRAND -->
             <div class="sf-brand">
-                STOCKFLOW
+
+                <div class="sf-brand-mark">
+                    SF
+                </div>
+
+                <div class="sf-brand-text">
+                    <strong>STOCKFLOW</strong>
+                    <span>INVENTORY SYSTEM</span>
+                </div>
+
             </div>
 
-            <nav
-                class="sf-nav"
-                aria-label="Main navigation"
-            >
 
-                <a href="./dashboard.html">
-                    Dashboard
-                </a>
+            <!-- NAVIGATION -->
+            <nav class="sf-nav">
 
-                <a href="./inventory-dashboard.html">
-                    Inventory Dashboard
-                </a>
+                <!-- OVERVIEW -->
+                <div class="sf-nav-section">
+                    <span class="sf-nav-label">
+                        OVERVIEW
+                    </span>
 
-                <a href="./products.html">
-                    Products
-                </a>
+                    <a href="dashboard.html">
+                        <span class="sf-nav-icon">◈</span>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
 
-                <a href="./inventory.html">
-                    Inventory
-                </a>
 
-                <a href="./categories.html">
-                    Categories
-                </a>
+                <!-- INVENTORY -->
+                <div class="sf-nav-section">
 
-                <a href="./suppliers.html">
-                    Suppliers
-                </a>
+                    <span class="sf-nav-label">
+                        INVENTORY
+                    </span>
 
-                <a href="./stock-in.html">
-                    Stock In
-                </a>
+                    <a href="products.html">
+                        <span class="sf-nav-icon">▣</span>
+                        <span>Products</span>
+                    </a>
 
-                <a href="./stock-out.html">
-                    Stock Out
-                </a>
+                    <a href="inventory.html">
+                        <span class="sf-nav-icon">▤</span>
+                        <span>Inventory</span>
+                    </a>
 
-                <a href="./transactions.html">
-                    Transactions
-                </a>
+                    <a href="stock-in.html">
+                        <span class="sf-nav-icon">↓</span>
+                        <span>Stock In</span>
+                    </a>
 
-                <a href="./activity.html">
-                    Activity Log
-                </a>
+                    <a href="stock-out.html">
+                        <span class="sf-nav-icon">↑</span>
+                        <span>Stock Out</span>
+                    </a>
 
-                <a href="./profile.html">
-                    Profile
-                </a>
+                </div>
 
-                <!-- Current Page -->
-                <a
-                    href="./settings.html"
-                    class="active"
-                    aria-current="page"
-                >
-                    Settings
-                </a>
+
+                <!-- MANAGEMENT -->
+                <div class="sf-nav-section">
+
+                    <span class="sf-nav-label">
+                        MANAGEMENT
+                    </span>
+
+                    <a href="transactions.html">
+                        <span class="sf-nav-icon">⇄</span>
+                        <span>Transactions</span>
+                    </a>
+
+                    <a href="suppliers.html">
+                        <span class="sf-nav-icon">▰</span>
+                        <span>Suppliers</span>
+                    </a>
+
+                    <a href="categories.html">
+                        <span class="sf-nav-icon">▱</span>
+                        <span>Categories</span>
+                    </a>
+
+                    <a href="activity.html">
+                        <span class="sf-nav-icon">◴</span>
+                        <span>Activity Log</span>
+                    </a>
+
+                </div>
+
+
+                <!-- SYSTEM -->
+                <div class="sf-nav-section">
+
+                    <span class="sf-nav-label">
+                        SYSTEM
+                    </span>
+
+                    <a href="profile.html">
+                        <span class="sf-nav-icon">♙</span>
+                        <span>Profile</span>
+                    </a>
+
+                    <a
+                        href="settings.html"
+                        class="active"
+                        aria-current="page"
+                    >
+                        <span class="sf-nav-icon">⚙</span>
+                        <span>Settings</span>
+                    </a>
+
+                </div>
 
             </nav>
+
+
+            <!-- USER AREA -->
+            <div class="sf-sidebar-footer">
+
+                <div class="sf-sidebar-user">
+
+                    <div class="sf-sidebar-avatar">
+                        SF
+                    </div>
+
+                    <div class="sf-sidebar-user-info">
+                        <strong data-user-name>
+                            StockFlow User
+                        </strong>
+
+                        <span data-user-role>
+                            Employee
+                        </span>
+                    </div>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="sf-sidebar-logout"
+                    data-sidebar-logout
+                >
+                    <span>↪</span>
+                    <span>Logout</span>
+                </button>
+
+            </div>
 
         </aside>
 
 
-        <!-- =================================================
+        <!-- =====================================================
              MAIN CONTENT
-        ================================================== -->
+        ====================================================== -->
         <main class="sf-main">
 
-            <!-- =================================================
-                 PAGE HEADER
-            ================================================== -->
+            <!-- TOP HEADER -->
             <header class="sf-top">
 
-                <div>
-                    <div class="sf-title">
-                        Settings
+                <div class="sf-heading">
+
+                    <div class="sf-breadcrumb">
+                        <span>STOCKFLOW</span>
+                        <span>›</span>
+                        <span>SYSTEM</span>
                     </div>
 
-                    <div class="sf-muted">
-                        Manage STOCKFLOW preferences and account controls.
-                    </div>
+                    <h1 class="sf-title">
+                        Settings
+                    </h1>
+
+                    <p class="sf-muted">
+                        Manage inventory preferences and account controls.
+                    </p>
+
                 </div>
 
+
                 <button
-                    class="sf-btn secondary settings-menu-btn"
+                    class="sf-menu-btn"
                     data-menu
                     type="button"
-                    aria-label="Open navigation menu"
+                    aria-label="Toggle navigation menu"
                     aria-expanded="false"
                 >
                     ☰
@@ -132,33 +223,33 @@
 
 
             <!-- =================================================
-                 SETTINGS CONTENT
+                 SETTINGS MODULE AREA
             ================================================== -->
             <div class="settings-content">
 
-
-                <!-- =================================================
-                     INVENTORY SETTINGS
-                ================================================== -->
+                <!-- INVENTORY SETTINGS -->
                 <section class="sf-card settings-card">
 
                     <div class="sf-card-head">
 
                         <div>
-                            <h3>
+
+                            <span class="settings-kicker">
+                                CONFIGURATION
+                            </span>
+
+                            <h2>
                                 Inventory Settings
-                            </h3>
+                            </h2>
 
                             <p class="sf-muted">
                                 Configure default values used throughout
-                                the inventory system.
+                                the STOCKFLOW inventory system.
                             </p>
+
                         </div>
 
-                        <div
-                            class="settings-card-icon"
-                            aria-hidden="true"
-                        >
+                        <div class="settings-card-icon">
                             ⚙
                         </div>
 
@@ -167,7 +258,7 @@
 
                     <form
                         id="settings"
-                        class="sf-form settings-form"
+                        class="settings-form"
                         autocomplete="off"
                     >
 
@@ -190,7 +281,7 @@
                                 min="0"
                                 step="1"
                                 value="5"
-                                placeholder="Default reorder level"
+                                placeholder="Enter reorder level"
                             >
 
                         </div>
@@ -225,7 +316,7 @@
                         </div>
 
 
-                        <!-- SAVE -->
+                        <!-- ACTIONS -->
                         <div class="settings-actions">
 
                             <button
@@ -240,7 +331,6 @@
                     </form>
 
 
-                    <!-- SETTINGS MESSAGE -->
                     <p
                         id="msg"
                         class="settings-message"
@@ -251,27 +341,28 @@
                 </section>
 
 
-                <!-- =================================================
-                     SESSION SETTINGS
-                ================================================== -->
+                <!-- SESSION -->
                 <section class="sf-card settings-card session-card">
 
                     <div class="sf-card-head">
 
                         <div>
-                            <h3>
+
+                            <span class="settings-kicker">
+                                ACCOUNT
+                            </span>
+
+                            <h2>
                                 Session
-                            </h3>
+                            </h2>
 
                             <p class="sf-muted">
                                 Manage your current STOCKFLOW session.
                             </p>
+
                         </div>
 
-                        <div
-                            class="settings-card-icon session-icon"
-                            aria-hidden="true"
-                        >
+                        <div class="settings-card-icon session-icon">
                             ↪
                         </div>
 
@@ -288,12 +379,13 @@
 
                             <p>
                                 Signing out will end your current session.
-                                You will need to authenticate again to access
-                                your account.
+                                You will need to authenticate again to
+                                access your account.
                             </p>
 
                         </div>
 
+                        <!-- Keep this ID for settings.js -->
                         <button
                             class="sf-btn danger"
                             id="logout"
@@ -306,7 +398,6 @@
 
                 </section>
 
-
             </div>
 
         </main>
@@ -314,9 +405,9 @@
     </div>
 
 
-    <!-- =================================================
-         STOCKFLOW JAVASCRIPT
-    ================================================== -->
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
     <script src="./config.js"></script>
     <script src="./api.js"></script>
     <script src="./auth.js"></script>
