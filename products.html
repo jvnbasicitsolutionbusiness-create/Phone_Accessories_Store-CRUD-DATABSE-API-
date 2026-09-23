@@ -21,24 +21,30 @@
 
     <title>Products | STOCKFLOW</title>
 
-    <!-- STOCKFLOW -->
+    <!-- =====================================================
+         STOCKFLOW STYLES
+    ====================================================== -->
+
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./modules.css">
+    <link rel="stylesheet" href="./navigation.css">
     <link rel="stylesheet" href="./products.css">
 
-    <!-- FONT AWESOME -->
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- CONFIG -->
+    <!-- =====================================================
+         STOCKFLOW CORE
+    ====================================================== -->
+
     <script src="./config.js"></script>
-
-    <!-- API -->
     <script src="./api.js"></script>
-
-    <!-- AUTH -->
     <script src="./auth.js"></script>
 
 </head>
@@ -46,9 +52,8 @@
 
 <body class="products-page">
 
-
     <!-- =====================================================
-         MOBILE OVERLAY
+         MOBILE SIDEBAR OVERLAY
     ====================================================== -->
 
     <div
@@ -59,297 +64,198 @@
 
 
     <!-- =====================================================
-         SIDEBAR
+         APPLICATION SHELL
     ====================================================== -->
 
-    <aside
-        id="sidebar"
-        class="sidebar"
-        aria-label="Main navigation"
-    >
-
-        <!-- BRAND -->
-
-        <div class="sidebar-brand">
-
-            <div class="brand-logo">
-                <span>SF</span>
-            </div>
-
-            <div class="brand-text">
-
-                <strong>STOCKFLOW</strong>
-
-                <span>
-                    INVENTORY SYSTEM
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- NAVIGATION -->
-
-        <nav class="sidebar-nav">
-
-
-            <!-- OVERVIEW -->
-
-            <div class="sidebar-section-title">
-                Overview
-            </div>
-
-
-            <a
-                href="./dashboard.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-chart-pie"></i>
-
-                <span>
-                    Dashboard
-                </span>
-
-            </a>
-
-
-            <!-- INVENTORY -->
-
-            <div class="sidebar-section-title">
-                Inventory
-            </div>
-
-
-            <a
-                href="./products.html"
-                class="sidebar-link active"
-                aria-current="page"
-            >
-
-                <i class="fa-solid fa-box"></i>
-
-                <span>
-                    Products
-                </span>
-
-            </a>
-
-
-            <a
-                href="./inventory.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-warehouse"></i>
-
-                <span>
-                    Inventory
-                </span>
-
-            </a>
-
-
-            <a
-                href="./stock-in.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-arrow-down"></i>
-
-                <span>
-                    Stock In
-                </span>
-
-            </a>
-
-
-            <a
-                href="./stock-out.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-arrow-up"></i>
-
-                <span>
-                    Stock Out
-                </span>
-
-            </a>
-
-
-            <!-- MANAGEMENT -->
-
-            <div class="sidebar-section-title">
-                Management
-            </div>
-
-
-            <a
-                href="./transactions.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-arrow-right-arrow-left"></i>
-
-                <span>
-                    Transactions
-                </span>
-
-            </a>
-
-
-            <a
-                href="./suppliers.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-truck"></i>
-
-                <span>
-                    Suppliers
-                </span>
-
-            </a>
-
-
-            <a
-                href="./categories.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-layer-group"></i>
-
-                <span>
-                    Categories
-                </span>
-
-            </a>
-
-
-            <a
-                href="./activity.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-clock-rotate-left"></i>
-
-                <span>
-                    Activity Log
-                </span>
-
-            </a>
-
-
-            <!-- SYSTEM -->
-
-            <div class="sidebar-section-title">
-                System
-            </div>
-
-
-            <a
-                href="./profile.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-user"></i>
-
-                <span>
-                    Profile
-                </span>
-
-            </a>
-
-
-            <a
-                href="./settings.html"
-                class="sidebar-link"
-            >
-
-                <i class="fa-solid fa-gear"></i>
-
-                <span>
-                    Settings
-                </span>
-
-            </a>
-
-        </nav>
-
-
-        <!-- SIDEBAR BOTTOM -->
-
-        <div class="sidebar-bottom">
-
-            <div class="mini-user">
-
-                <div
-                    class="avatar"
-                    id="sidebarUserAvatar"
-                    data-user-initials
-                >SF
-                
-                <div class="mini-user-info">
-
-                        <strong
-                            id="sidebarUserName"
-                            data-user-name
-                        >
-                            StockFlow User
-                        </strong>
-    
-                        <small
-                            id="sidebarUserRole"
-                            data-user-role
-                        >
-                            Employee
-                        </small>
-                    </div>
-
-            </div>
-
-
-            <button
-                type="button"
-                id="logoutBtn"
-                class="logout-btn"
-            >
-
-                <i class="fa-solid fa-right-from-bracket"></i>
-
-                <span>
-                    Logout
-                </span>
-
-            </button>
-
-        </div>
-
-    </aside>
-
-
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
-
-    <main class="dashboard-main">
+    <div class="app-shell">
 
 
         <!-- =================================================
-             HEADER
+             SIDEBAR
         ================================================== -->
 
-        <header class="dash-header">
+        <aside
+            id="sidebar"
+            class="sidebar"
+            aria-label="Main navigation"
+        >
+
+            <!-- BRAND -->
+
+            <div class="sidebar-brand">
+
+                <div class="brand-logo">
+                    <span>SF</span>
+                </div>
+
+                <div class="brand-text">
+
+                    <strong>STOCKFLOW</strong>
+
+                    <small>
+                        INVENTORY SYSTEM
+                    </small>
+
+                </div>
+
+            </div>
 
 
-            <div class="dash-header-left">
+            <!-- NAVIGATION -->
 
-                <div class="mobile-header-row">
+            <nav class="sidebar-nav">
+
+                <!-- OVERVIEW -->
+
+                <div class="nav-section-title">
+                    Overview
+                </div>
+
+                <a
+                    href="./dashboard.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
 
 
-                    <!-- MOBILE MENU -->
+                <!-- INVENTORY -->
+
+                <div class="nav-section-title">
+                    Inventory
+                </div>
+
+                <a
+                    href="./products.html"
+                    class="nav-item active"
+                    aria-current="page"
+                >
+                    <i class="fa-solid fa-box"></i>
+                    <span>Products</span>
+                </a>
+
+                <a
+                    href="./inventory.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-warehouse"></i>
+                    <span>Inventory</span>
+                </a>
+
+                <a
+                    href="./stock-in.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-arrow-down"></i>
+                    <span>Stock In</span>
+                </a>
+
+                <a
+                    href="./stock-out.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span>Stock Out</span>
+                </a>
+
+
+                <!-- MANAGEMENT -->
+
+                <div class="nav-section-title">
+                    Management
+                </div>
+
+                <a
+                    href="./transactions.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <span>Transactions</span>
+                </a>
+
+                <a
+                    href="./suppliers.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-truck"></i>
+                    <span>Suppliers</span>
+                </a>
+
+                <a
+                    href="./categories.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Categories</span>
+                </a>
+
+                <a
+                    href="./activity.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Activity Log</span>
+                </a>
+
+
+                <!-- SYSTEM -->
+
+                <div class="nav-section-title">
+                    System
+                </div>
+
+                <a
+                    href="./profile.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-user"></i>
+                    <span>Profile</span>
+                </a>
+
+                <a
+                    href="./settings.html"
+                    class="nav-item"
+                >
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+
+            </nav>
+
+
+            <!-- SIDEBAR FOOTER -->
+
+            <div class="sidebar-footer">
+
+                <button
+                    type="button"
+                    id="logoutBtn"
+                    class="logout-btn"
+                >
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =================================================
+             MAIN CONTENT
+        ================================================== -->
+
+        <main class="main-content">
+
+
+            <!-- =================================================
+                 TOPBAR
+            ================================================== -->
+
+            <header class="topbar">
+
+                <div class="topbar-left">
 
                     <button
                         type="button"
@@ -358,43 +264,31 @@
                         aria-label="Open navigation menu"
                         aria-expanded="false"
                     >
-
                         <i class="fa-solid fa-bars"></i>
-
                     </button>
 
 
-                    <div>
-
-                        <!-- BREADCRUMB -->
+                    <div class="topbar-heading">
 
                         <div class="breadcrumb">
 
-                            <span>
-                                STOCKFLOW
-                            </span>
+                            <span>STOCKFLOW</span>
 
                             <i class="fa-solid fa-chevron-right"></i>
 
-                            <span>
-                                INVENTORY
-                            </span>
+                            <span>INVENTORY</span>
 
                             <i class="fa-solid fa-chevron-right"></i>
 
-                            <strong>
-                                PRODUCTS
-                            </strong>
+                            <strong>PRODUCTS</strong>
 
                         </div>
 
-
-                        <h1 class="dash-title">
+                        <h1>
                             Products
                         </h1>
 
-
-                        <p class="dash-subtitle">
+                        <p>
                             Manage your phone accessories and product catalog.
                         </p>
 
@@ -402,73 +296,77 @@
 
                 </div>
 
-            </div>
+
+                <div class="topbar-right">
 
 
-            <div class="dash-header-right">
+                    <!-- CONNECTION -->
+
+                    <div class="connection-badge">
+                        <span class="connection-dot"></span>
+                        <span>System Connected</span>
+                    </div>
 
 
-                <!-- NOTIFICATION -->
+                    <!-- NOTIFICATIONS -->
 
-                <div class="notification-wrapper">
+                    <div class="notification-wrapper">
 
-                    <button
-                        type="button"
-                        id="notificationBtn"
-                        class="header-icon-btn"
-                        aria-label="Notifications"
-                        aria-expanded="false"
-                    >
-
-                        <i class="fa-regular fa-bell"></i>
-
-                        <span
-                            id="notificationDot"
-                            class="notification-dot"
-                        ></span>
-
-                    </button>
-
-
-                    <!-- NOTIFICATION PANEL -->
-
-                    <div
-                        id="notificationPanel"
-                        class="notification-panel"
-                        hidden
-                    >
-
-                        <div class="notification-panel-header">
-
-                            <div>
-
-                                <strong>
-                                    Notifications
-                                </strong>
-
-                                <span>
-                                    STOCKFLOW system alerts
-                                </span>
-
-                            </div>
-
+                        <button
+                            type="button"
+                            id="notificationBtn"
+                            class="header-icon-btn"
+                            aria-label="Notifications"
+                            aria-expanded="false"
+                        >
                             <i class="fa-regular fa-bell"></i>
 
-                        </div>
+                            <span
+                                id="notificationDot"
+                                class="notification-dot"
+                            ></span>
+                        </button>
 
 
                         <div
-                            id="notificationContent"
-                            class="notification-content"
+                            id="notificationPanel"
+                            class="notification-panel"
+                            hidden
                         >
 
-                            <div class="notification-empty">
+                            <div class="notification-panel-header">
 
-                                <i class="fa-regular fa-circle-check"></i>
+                                <div>
 
-                                <span>
-                                    No new notifications
-                                </span>
+                                    <strong>
+                                        Notifications
+                                    </strong>
+
+                                    <span>
+                                        STOCKFLOW system alerts
+                                    </span>
+
+                                </div>
+
+                                <i class="fa-regular fa-bell"></i>
+
+                            </div>
+
+
+                            <div
+                                id="notificationContent"
+                                class="notification-content"
+                            >
+
+                                <div class="notification-empty">
+
+                                    <i class="fa-regular fa-circle-check"></i>
+
+                                    <span>
+                                        No new notifications
+                                    </span>
+
+                                </div>
 
                             </div>
 
@@ -476,484 +374,429 @@
 
                     </div>
 
-                </div>
 
-
-                <!-- USER -->
-
-                <div
-                    class="topbar-user"
-                    id="topbarUser"
-                >
+                    <!-- USER -->
 
                     <div
-                        id="userAvatar"
-                        class="user-avatar"
-                        data-user-initials
+                        class="topbar-user"
+                        id="topbarUser"
                     >
-                        SF
-                    </div>
 
-
-                    <div class="user-info">
-
-                        <strong
-                            id="userName"
-                            data-user-name
+                        <div
+                            id="userAvatar"
+                            class="user-avatar"
+                            data-user-initials
                         >
-                            StockFlow User
-                        </strong>
-
-                        <small
-                            id="userRole"
-                            data-user-role
-                        >
-                            Employee
-                        </small>
-
-                    </div>
-
-
-                    <i class="fa-solid fa-chevron-down user-chevron"></i>
-
-                </div>
-
-            </div>
-
-        </header>
-
-
-        <!-- =================================================
-             CONTENT
-        ================================================== -->
-
-        <section class="products-content">
-
-
-            <!-- PAGE INTRO -->
-
-            <div class="products-page-intro">
-
-                <div>
-
-                    <span class="section-eyebrow">
-                        PRODUCT MANAGEMENT
-                    </span>
-
-                    <h2>
-                        Product Catalog
-                    </h2>
-
-                    <p>
-                        Add, update, monitor and manage your phone accessory
-                        products.
-                    </p>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    id="addProductBtn"
-                    class="primary-btn"
-                >
-
-                    <i class="fa-solid fa-plus"></i>
-
-                    <span>
-                        Add Product
-                    </span>
-
-                </button>
-
-            </div>
-
-
-            <!-- =================================================
-                 STATISTICS
-            ================================================== -->
-
-            <div class="product-stats-grid">
-
-
-                <article class="product-stat-card stat-blue">
-
-                    <div class="product-stat-icon">
-
-                        <i class="fa-solid fa-boxes-stacked"></i>
-
-                    </div>
-
-                    <div class="product-stat-content">
-
-                        <span>
-                            Products
-                        </span>
-
-                        <strong id="totalProducts">
-                            0
-                        </strong>
-
-                        <small>
-                            Total registered products
-                        </small>
-
-                    </div>
-
-                </article>
-
-
-                <article class="product-stat-card stat-green">
-
-                    <div class="product-stat-icon">
-
-                        <i class="fa-solid fa-circle-check"></i>
-
-                    </div>
-
-                    <div class="product-stat-content">
-
-                        <span>
-                            Active Products
-                        </span>
-
-                        <strong id="activeProducts">
-                            0
-                        </strong>
-
-                        <small>
-                            Currently available
-                        </small>
-
-                    </div>
-
-                </article>
-
-
-                <article class="product-stat-card stat-orange">
-
-                    <div class="product-stat-icon">
-
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-
-                    </div>
-
-                    <div class="product-stat-content">
-
-                        <span>
-                            Low Stock
-                        </span>
-
-                        <strong id="lowStockProducts">
-                            0
-                        </strong>
-
-                        <small>
-                            Products needing attention
-                        </small>
-
-                    </div>
-
-                </article>
-
-
-                <article class="product-stat-card stat-red">
-
-                    <div class="product-stat-icon">
-
-                        <i class="fa-solid fa-circle-xmark"></i>
-
-                    </div>
-
-                    <div class="product-stat-content">
-
-                        <span>
-                            Out of Stock
-                        </span>
-
-                        <strong id="outOfStockProducts">
-                            0
-                        </strong>
-
-                        <small>
-                            Products unavailable
-                        </small>
-
-                    </div>
-
-                </article>
-
-            </div>
-
-
-            <!-- =================================================
-                 PRODUCT PANEL
-            ================================================== -->
-
-            <section class="products-panel">
-
-
-                <div class="products-panel-header">
-
-                    <div class="products-panel-title">
-
-                        <div class="products-panel-icon">
-
-                            <i class="fa-solid fa-box"></i>
-
+                            SF
                         </div>
 
+                        <div class="user-info">
 
-                        <div>
-
-                            <span class="section-eyebrow">
-                                INVENTORY
-                            </span>
-
-                            <h3>
-                                All Products
-                            </h3>
-
-                            <span id="productCountLabel">
-                                0 products
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="product-filters">
-
-
-                        <div class="product-search">
-
-                            <i class="fa-solid fa-magnifying-glass"></i>
-
-                            <input
-                                type="search"
-                                id="productSearch"
-                                placeholder="Search products..."
-                                autocomplete="off"
+                            <strong
+                                id="userName"
+                                data-user-name
                             >
+                                StockFlow User
+                            </strong>
+
+                            <small
+                                id="userRole"
+                                data-user-role
+                            >
+                                Employee
+                            </small>
 
                         </div>
 
-
-                        <select
-                            id="categoryFilter"
-                            class="product-filter-select"
-                        >
-
-                            <option value="">
-                                All Categories
-                            </option>
-
-                        </select>
-
-
-                        <select
-                            id="statusFilter"
-                            class="product-filter-select"
-                        >
-
-                            <option value="">
-                                All Status
-                            </option>
-
-                            <option value="ACTIVE">
-                                Active
-                            </option>
-
-                            <option value="INACTIVE">
-                                Inactive
-                            </option>
-
-                        </select>
+                        <i class="fa-solid fa-chevron-down user-chevron"></i>
 
                     </div>
 
                 </div>
 
-
-                <!-- TABLE -->
-
-                <div class="products-table-container">
-
-                    <table
-                        class="products-table"
-                        id="productsTable"
-                    >
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Product
-                                </th>
-
-                                <th>
-                                    SKU
-                                </th>
-
-                                <th>
-                                    Category
-                                </th>
-
-                                <th>
-                                    Price
-                                </th>
-
-                                <th>
-                                    Stock
-                                </th>
-
-                                <th>
-                                    Status
-                                </th>
-
-                                <th class="actions-column">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
+            </header>
 
 
-                        <tbody id="productsTableBody">
+            <!-- =================================================
+                 PAGE CONTENT
+            ================================================== -->
 
-                            <tr>
-
-                                <td
-                                    colspan="7"
-                                    class="table-loading"
-                                >
-
-                                    <div class="loading-spinner"></div>
-
-                                    <span>
-                                        Loading products...
-                                    </span>
-
-                                </td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
+            <section class="products-content">
 
 
-                <!-- EMPTY STATE -->
+                <!-- PAGE INTRO -->
 
-                <div
-                    id="emptyProducts"
-                    class="empty-state hidden"
-                >
+                <div class="products-page-intro">
 
-                    <div class="empty-icon">
+                    <div>
 
-                        <i class="fa-solid fa-box-open"></i>
+                        <span class="section-eyebrow">
+                            PRODUCT MANAGEMENT
+                        </span>
+
+                        <h2>
+                            Product Catalog
+                        </h2>
+
+                        <p>
+                            Add, update, monitor and manage your phone
+                            accessory products.
+                        </p>
 
                     </div>
 
-                    <h3>
-                        No products found
-                    </h3>
-
-                    <p>
-                        There are no products matching your search or filter.
-                    </p>
 
                     <button
                         type="button"
-                        id="emptyAddProductBtn"
+                        id="addProductBtn"
                         class="primary-btn"
                     >
-
                         <i class="fa-solid fa-plus"></i>
-
-                        Add Product
-
+                        <span>Add Product</span>
                     </button>
 
                 </div>
 
 
-                <!-- PAGINATION -->
+                <!-- =================================================
+                     PRODUCT STATISTICS
+                ================================================== -->
 
-                <div class="products-pagination">
-
-                    <span id="paginationInfo">
-                        Showing 0 of 0 products
-                    </span>
+                <div class="product-stats-grid">
 
 
-                    <div class="pagination-buttons">
+                    <article class="product-stat-card stat-blue">
+
+                        <div class="product-stat-icon">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+
+                        <div class="product-stat-content">
+
+                            <span>Products</span>
+
+                            <strong id="totalProducts">
+                                0
+                            </strong>
+
+                            <small>
+                                Total registered products
+                            </small>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="product-stat-card stat-green">
+
+                        <div class="product-stat-icon">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+
+                        <div class="product-stat-content">
+
+                            <span>Active Products</span>
+
+                            <strong id="activeProducts">
+                                0
+                            </strong>
+
+                            <small>
+                                Currently available
+                            </small>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="product-stat-card stat-orange">
+
+                        <div class="product-stat-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+
+                        <div class="product-stat-content">
+
+                            <span>Low Stock</span>
+
+                            <strong id="lowStockProducts">
+                                0
+                            </strong>
+
+                            <small>
+                                Products needing attention
+                            </small>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="product-stat-card stat-red">
+
+                        <div class="product-stat-icon">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+
+                        <div class="product-stat-content">
+
+                            <span>Out of Stock</span>
+
+                            <strong id="outOfStockProducts">
+                                0
+                            </strong>
+
+                            <small>
+                                Products unavailable
+                            </small>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- =================================================
+                     PRODUCTS PANEL
+                ================================================== -->
+
+                <section class="products-panel">
+
+
+                    <!-- PANEL HEADER -->
+
+                    <div class="products-panel-header">
+
+                        <div class="products-panel-title">
+
+                            <div class="products-panel-icon">
+                                <i class="fa-solid fa-box"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="section-eyebrow">
+                                    INVENTORY
+                                </span>
+
+                                <h3>
+                                    All Products
+                                </h3>
+
+                                <span id="productCountLabel">
+                                    0 products
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- FILTERS -->
+
+                        <div class="product-filters">
+
+                            <div class="product-search">
+
+                                <i class="fa-solid fa-magnifying-glass"></i>
+
+                                <input
+                                    type="search"
+                                    id="productSearch"
+                                    placeholder="Search products..."
+                                    autocomplete="off"
+                                >
+
+                            </div>
+
+
+                            <select
+                                id="categoryFilter"
+                                class="product-filter-select"
+                            >
+                                <option value="">
+                                    All Categories
+                                </option>
+                            </select>
+
+
+                            <select
+                                id="statusFilter"
+                                class="product-filter-select"
+                            >
+                                <option value="">
+                                    All Status
+                                </option>
+
+                                <option value="ACTIVE">
+                                    Active
+                                </option>
+
+                                <option value="INACTIVE">
+                                    Inactive
+                                </option>
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PRODUCT TABLE -->
+
+                    <div class="products-table-container">
+
+                        <table
+                            class="products-table"
+                            id="productsTable"
+                        >
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th class="actions-column">
+                                        Actions
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="productsTableBody">
+
+                                <tr>
+
+                                    <td
+                                        colspan="7"
+                                        class="table-loading"
+                                    >
+
+                                        <div class="loading-spinner"></div>
+
+                                        <span>
+                                            Loading products...
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- EMPTY STATE -->
+
+                    <div
+                        id="emptyProducts"
+                        class="empty-state hidden"
+                    >
+
+                        <div class="empty-icon">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+
+                        <h3>
+                            No products found
+                        </h3>
+
+                        <p>
+                            There are no products matching your search
+                            or filter.
+                        </p>
 
                         <button
                             type="button"
-                            id="previousPageBtn"
-                            class="pagination-btn"
-                            disabled
-                            aria-label="Previous page"
+                            id="emptyAddProductBtn"
+                            class="primary-btn"
                         >
-
-                            <i class="fa-solid fa-chevron-left"></i>
-
-                        </button>
-
-
-                        <span
-                            id="currentPage"
-                            class="current-page"
-                        >
-                            1
-                        </span>
-
-
-                        <button
-                            type="button"
-                            id="nextPageBtn"
-                            class="pagination-btn"
-                            disabled
-                            aria-label="Next page"
-                        >
-
-                            <i class="fa-solid fa-chevron-right"></i>
-
+                            <i class="fa-solid fa-plus"></i>
+                            Add Product
                         </button>
 
                     </div>
 
-                </div>
+
+                    <!-- PAGINATION -->
+
+                    <div class="products-pagination">
+
+                        <span id="paginationInfo">
+                            Showing 0 of 0 products
+                        </span>
+
+                        <div class="pagination-buttons">
+
+                            <button
+                                type="button"
+                                id="previousPageBtn"
+                                class="pagination-btn"
+                                disabled
+                                aria-label="Previous page"
+                            >
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+
+                            <span
+                                id="currentPage"
+                                class="current-page"
+                            >
+                                1
+                            </span>
+
+                            <button
+                                type="button"
+                                id="nextPageBtn"
+                                class="pagination-btn"
+                                disabled
+                                aria-label="Next page"
+                            >
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
 
             </section>
 
 
-        </section>
+            <!-- =================================================
+                 FOOTER
+            ================================================== -->
 
+            <footer class="dashboard-footer">
 
-        <!-- FOOTER -->
+                <span>
+                    © 2026 <strong>STOCKFLOW</strong>
+                    Inventory Management System
+                </span>
 
-        <footer class="dashboard-footer">
+                <span>
+                    Products
+                </span>
 
-            <span>
-                © 2026 <strong>STOCKFLOW</strong>
-                Inventory Management System
-            </span>
+            </footer>
 
-            <span>
-                Products
-            </span>
+        </main>
 
-        </footer>
-
-    </main>
+    </div>
 
 
     <!-- =====================================================
@@ -968,9 +811,7 @@
 
         <div class="modal-backdrop"></div>
 
-
         <div class="modal-dialog">
-
 
             <div class="modal-header">
 
@@ -990,16 +831,13 @@
 
                 </div>
 
-
                 <button
                     type="button"
                     id="closeProductModalBtn"
                     class="modal-close"
                     aria-label="Close"
                 >
-
                     <i class="fa-solid fa-xmark"></i>
-
                 </button>
 
             </div>
@@ -1265,15 +1103,14 @@
                 </div>
 
 
+                <!-- FORM MESSAGES -->
+
                 <div
                     id="productFormError"
                     class="form-message error-message hidden"
                 >
-
                     <i class="fa-solid fa-circle-exclamation"></i>
-
                     <span></span>
-
                 </div>
 
 
@@ -1281,13 +1118,12 @@
                     id="productFormSuccess"
                     class="form-message success-message hidden"
                 >
-
                     <i class="fa-solid fa-circle-check"></i>
-
                     <span></span>
-
                 </div>
 
+
+                <!-- MODAL FOOTER -->
 
                 <div class="modal-footer">
 
@@ -1298,7 +1134,6 @@
                     >
                         Cancel
                     </button>
-
 
                     <button
                         type="submit"
@@ -1324,7 +1159,7 @@
 
 
     <!-- =====================================================
-         DELETE MODAL
+         DELETE PRODUCT MODAL
     ====================================================== -->
 
     <div
@@ -1335,20 +1170,15 @@
 
         <div class="modal-backdrop"></div>
 
-
         <div class="confirm-dialog">
 
             <div class="confirm-icon danger">
-
                 <i class="fa-solid fa-trash"></i>
-
             </div>
-
 
             <h2>
                 Delete Product?
             </h2>
-
 
             <p>
                 Are you sure you want to delete
@@ -1357,11 +1187,9 @@
                 </strong>?
             </p>
 
-
             <p class="warning-text">
                 This action cannot be undone.
             </p>
-
 
             <div class="confirm-actions">
 
@@ -1373,17 +1201,13 @@
                     Cancel
                 </button>
 
-
                 <button
                     type="button"
                     id="confirmDeleteBtn"
                     class="danger-btn"
                 >
-
                     <i class="fa-solid fa-trash"></i>
-
                     Delete Product
-
                 </button>
 
             </div>
@@ -1405,9 +1229,7 @@
 
         <div class="modal-backdrop"></div>
 
-
         <div class="modal-dialog view-dialog">
-
 
             <div class="modal-header">
 
@@ -1427,16 +1249,13 @@
 
                 </div>
 
-
                 <button
                     type="button"
                     id="closeViewProductBtn"
                     class="modal-close"
                     aria-label="Close"
                 >
-
                     <i class="fa-solid fa-xmark"></i>
-
                 </button>
 
             </div>
@@ -1444,54 +1263,45 @@
 
             <div class="product-details-grid">
 
-
                 <div class="detail-item">
                     <span>Category</span>
                     <strong id="viewProductCategory">—</strong>
                 </div>
-
 
                 <div class="detail-item">
                     <span>Brand</span>
                     <strong id="viewProductBrand">—</strong>
                 </div>
 
-
                 <div class="detail-item">
                     <span>Selling Price</span>
                     <strong id="viewProductPrice">₱0.00</strong>
                 </div>
-
 
                 <div class="detail-item">
                     <span>Cost Price</span>
                     <strong id="viewProductCost">₱0.00</strong>
                 </div>
 
-
                 <div class="detail-item">
                     <span>Current Stock</span>
                     <strong id="viewProductStock">0</strong>
                 </div>
-
 
                 <div class="detail-item">
                     <span>Reorder Level</span>
                     <strong id="viewProductReorder">0</strong>
                 </div>
 
-
                 <div class="detail-item">
                     <span>Unit</span>
                     <strong id="viewProductUnit">PCS</strong>
                 </div>
 
-
                 <div class="detail-item">
                     <span>Status</span>
                     <strong id="viewProductStatus">ACTIVE</strong>
                 </div>
-
 
                 <div class="detail-item full-width">
 
@@ -1515,11 +1325,8 @@
                     id="viewEditProductBtn"
                     class="primary-btn"
                 >
-
                     <i class="fa-solid fa-pen"></i>
-
                     Edit Product
-
                 </button>
 
             </div>
@@ -1529,7 +1336,9 @@
     </div>
 
 
-    <!-- TOAST -->
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
 
     <div
         id="toastContainer"
@@ -1538,7 +1347,9 @@
     ></div>
 
 
-    <!-- GLOBAL LOADING -->
+    <!-- =====================================================
+         GLOBAL LOADING
+    ====================================================== -->
 
     <div
         id="globalLoading"
@@ -1563,7 +1374,7 @@
 
 
     <!-- =====================================================
-         SCRIPTS
+         STOCKFLOW JAVASCRIPT
     ====================================================== -->
 
     <script src="./main.js"></script>
@@ -1573,300 +1384,3 @@
 </body>
 
 </html>
-
-
-
-
-
-/* =========================================================
-   STOCKFLOW — PRODUCTS UI
-   Sidebar / Notification / User UI
-========================================================= */
-
-(() => {
-    "use strict";
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
-
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
-    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-
-
-    function openSidebar() {
-
-        if (!sidebar) return;
-
-        sidebar.classList.add("open");
-
-        if (overlay) {
-            overlay.classList.add("show");
-        }
-
-        if (mobileMenuBtn) {
-            mobileMenuBtn.setAttribute(
-                "aria-expanded",
-                "true"
-            );
-        }
-
-    }
-
-
-    function closeSidebar() {
-
-        if (!sidebar) return;
-
-        sidebar.classList.remove("open");
-
-        if (overlay) {
-            overlay.classList.remove("show");
-        }
-
-        if (mobileMenuBtn) {
-            mobileMenuBtn.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-        }
-
-    }
-
-
-    if (mobileMenuBtn) {
-
-        mobileMenuBtn.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    sidebar &&
-                    sidebar.classList.contains("open")
-                ) {
-                    closeSidebar();
-                } else {
-                    openSidebar();
-                }
-
-            }
-        );
-
-    }
-
-
-    if (overlay) {
-
-        overlay.addEventListener(
-            "click",
-            closeSidebar
-        );
-
-    }
-
-
-    document
-        .querySelectorAll(".sidebar-link")
-        .forEach(link => {
-
-            link.addEventListener(
-                "click",
-                () => {
-
-                    if (
-                        window.innerWidth <= 850
-                    ) {
-                        closeSidebar();
-                    }
-
-                }
-            );
-
-        });
-
-
-    window.addEventListener(
-        "resize",
-        () => {
-
-            if (window.innerWidth > 850) {
-                closeSidebar();
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       NOTIFICATIONS
-    ===================================================== */
-
-    const notificationBtn =
-        document.getElementById("notificationBtn");
-
-    const notificationPanel =
-        document.getElementById("notificationPanel");
-
-    const notificationDot =
-        document.getElementById("notificationDot");
-
-
-    function closeNotifications() {
-
-        if (!notificationPanel) return;
-
-        notificationPanel.hidden = true;
-
-        if (notificationBtn) {
-            notificationBtn.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-        }
-
-    }
-
-
-    function toggleNotifications() {
-
-        if (!notificationPanel) return;
-
-        const willOpen =
-            notificationPanel.hidden;
-
-        notificationPanel.hidden = !willOpen;
-
-        if (notificationBtn) {
-            notificationBtn.setAttribute(
-                "aria-expanded",
-                String(willOpen)
-            );
-        }
-
-        if (
-            willOpen &&
-            notificationDot
-        ) {
-            notificationDot.classList.add("hidden");
-        }
-
-    }
-
-
-    if (notificationBtn) {
-
-        notificationBtn.addEventListener(
-            "click",
-            event => {
-
-                event.stopPropagation();
-
-                toggleNotifications();
-
-            }
-        );
-
-    }
-
-
-    if (notificationPanel) {
-
-        notificationPanel.addEventListener(
-            "click",
-            event => {
-                event.stopPropagation();
-            }
-        );
-
-    }
-
-
-    document.addEventListener(
-        "click",
-        () => {
-            closeNotifications();
-        }
-    );
-
-
-    /* =====================================================
-       ESCAPE KEY
-    ===================================================== */
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if (event.key !== "Escape") {
-                return;
-            }
-
-            closeNotifications();
-            closeSidebar();
-
-        }
-    );
-
-
-    /* =====================================================
-       LOGOUT
-       Uses STOCKFLOW auth.js when available
-    ===================================================== */
-
-    const logoutBtn =
-        document.getElementById("logoutBtn");
-
-
-    if (logoutBtn) {
-
-        logoutBtn.addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    if (
-                        window.StockFlowAuth &&
-                        typeof window.StockFlowAuth.logout === "function"
-                    ) {
-
-                        await window.StockFlowAuth.logout();
-
-                        return;
-                    }
-
-
-                    if (
-                        window.Auth &&
-                        typeof window.Auth.logout === "function"
-                    ) {
-
-                        await window.Auth.logout();
-
-                        return;
-                    }
-
-
-                    sessionStorage.clear();
-
-                    window.location.href =
-                        "./auth.html";
-
-                } catch (error) {
-
-                    console.error(
-                        "Logout failed:",
-                        error
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-
-})();
