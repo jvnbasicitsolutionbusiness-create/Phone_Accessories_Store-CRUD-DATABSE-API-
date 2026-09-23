@@ -1,102 +1,290 @@
 /* =========================================================
-   STOCKFLOW — PROFILE MODULE
-   Professional account profile page
+   STOCKFLOW — PROFILE PAGE
+   Premium dashboard-style profile UI
+   Designed to match the STOCKFLOW Picture 2 visual style
 ========================================================= */
+
 
 /* =========================================================
-   PAGE LAYOUT FIX
+   PAGE
 ========================================================= */
 
-body {
-    margin: 0;
+.profile-page {
     min-height: 100vh;
-}
-
-.sf-layout {
-    min-height: 100vh;
-    display: flex;
-    width: 100%;
-    overflow-x: hidden;
+    background: #f4f7fb;
+    color: #10203a;
 }
 
 
 /* =========================================================
-   SIDEBAR
+   STOCKFLOW SIDEBAR
 ========================================================= */
 
-.sf-side {
-    width: 280px;
-    min-width: 280px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+.profile-page .sf-side {
+    width: 250px;
+    min-width: 250px;
 
-    display: flex;
-    flex-direction: column;
+    background:
+        linear-gradient(
+            180deg,
+            #07182d 0%,
+            #081a31 48%,
+            #061426 100%
+        );
 
-    background: #07182d;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid rgba(255, 255, 255, 0.055);
 
-    overflow-y: auto;
-    overflow-x: hidden;
+    box-shadow:
+        12px 0 40px rgba(4, 15, 30, 0.12);
+
+    color: #ffffff;
+
+    position: relative;
+    z-index: 20;
 }
 
-.sf-brand {
-    min-height: 104px;
-    padding: 0 32px;
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.profile-page .sf-brand {
+    height: 124px;
 
     display: flex;
     align-items: center;
 
-    color: #ffffff;
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 0 32px;
 
     box-sizing: border-box;
+
+    color: #ffffff;
+
+    font-size: 26px;
+    font-weight: 800;
+
+    letter-spacing: 0.055em;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    position: relative;
 }
 
-.sf-nav {
-    padding: 22px 16px 30px;
 
+/* blue glow behind brand */
+
+.profile-page .sf-brand::before {
+    content: "";
+
+    position: absolute;
+
+    left: 31px;
+    top: 38px;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 13px;
+
+    background: rgba(47, 111, 255, 0.12);
+
+    filter: blur(14px);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.profile-page .sf-nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+
+    gap: 7px;
+
+    padding: 28px 16px 28px;
 }
 
-.sf-nav a {
+
+/* =========================================================
+   NAV LINKS
+========================================================= */
+
+.profile-page .sf-nav a {
+    position: relative;
+
     display: flex;
     align-items: center;
 
     min-height: 48px;
+
     padding: 0 18px;
 
-    border-radius: 10px;
+    border-radius: 12px;
 
-    color: #aebed4;
+    box-sizing: border-box;
+
+    color: #9aabc4;
+
     text-decoration: none;
 
     font-size: 15px;
     font-weight: 500;
 
+    letter-spacing: 0.01em;
+
     transition:
-        background 0.18s ease,
-        color 0.18s ease;
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.sf-nav a:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #ffffff;
+
+/* =========================================================
+   NAV ICONS
+   Uses the existing HTML without requiring HTML changes
+========================================================= */
+
+.profile-page .sf-nav a::before {
+    width: 28px;
+
+    margin-right: 10px;
+
+    color: #7186a6;
+
+    font-size: 16px;
+
+    text-align: center;
+
+    opacity: 0.95;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
-.sf-nav a.active {
-    background: #2864d7;
+
+/* Individual icons */
+
+.profile-page .sf-nav a:nth-child(1)::before {
+    content: "⌂";
+}
+
+.profile-page .sf-nav a:nth-child(2)::before {
+    content: "▦";
+}
+
+.profile-page .sf-nav a:nth-child(3)::before {
+    content: "□";
+}
+
+.profile-page .sf-nav a:nth-child(4)::before {
+    content: "▥";
+}
+
+.profile-page .sf-nav a:nth-child(5)::before {
+    content: "◆";
+}
+
+.profile-page .sf-nav a:nth-child(6)::before {
+    content: "▰";
+}
+
+.profile-page .sf-nav a:nth-child(7)::before {
+    content: "↑";
+}
+
+.profile-page .sf-nav a:nth-child(8)::before {
+    content: "↓";
+}
+
+.profile-page .sf-nav a:nth-child(9)::before {
+    content: "⇄";
+}
+
+.profile-page .sf-nav a:nth-child(10)::before {
+    content: "↶";
+}
+
+.profile-page .sf-nav a:nth-child(11)::before {
+    content: "●";
+}
+
+.profile-page .sf-nav a:nth-child(12)::before {
+    content: "⚙";
+}
+
+
+/* =========================================================
+   HOVER
+========================================================= */
+
+.profile-page .sf-nav a:hover {
     color: #ffffff;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    transform: translateX(2px);
+}
+
+.profile-page .sf-nav a:hover::before {
+    color: #8aaeff;
+
+    transform: scale(1.05);
+}
+
+
+/* =========================================================
+   ACTIVE PROFILE LINK
+========================================================= */
+
+.profile-page .sf-nav a.active {
+    color: #ffffff;
+
     font-weight: 700;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2d6df6 0%,
+            #2463df 100%
+        );
+
+    box-shadow:
+        0 8px 24px rgba(37, 99, 235, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+
+.profile-page .sf-nav a.active::before {
+    color: #ffffff;
+}
+
+
+/* active left indicator */
+
+.profile-page .sf-nav a.active::after {
+    content: "";
+
+    position: absolute;
+
+    left: -16px;
+    top: 50%;
+
+    width: 3px;
+    height: 26px;
+
+    transform: translateY(-50%);
+
+    border-radius: 0 4px 4px 0;
+
+    background: #5f91ff;
+
+    box-shadow:
+        0 0 12px rgba(95, 145, 255, 0.8);
 }
 
 
@@ -104,52 +292,73 @@ body {
    MAIN CONTENT
 ========================================================= */
 
-.sf-main {
-    flex: 1;
+.profile-page .sf-main {
     min-width: 0;
-    min-height: 100vh;
 
-    padding: 30px 40px 50px;
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(37, 99, 235, 0.055),
+            transparent 30%
+        ),
+        #f4f7fb;
 
-    background: #f4f6f9;
+    padding: 32px 38px 48px;
 
     box-sizing: border-box;
 }
 
 
 /* =========================================================
-   TOP HEADER
+   TOP BAR
 ========================================================= */
 
-.sf-top {
-    min-height: 80px;
+.profile-page .sf-top {
+    min-height: 70px;
+
+    margin-bottom: 26px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    padding-bottom: 24px;
-    margin-bottom: 28px;
+    gap: 24px;
 
-    border-bottom: 1px solid #dce2ea;
+    border-bottom: 1px solid #e2e8f0;
 
-    box-sizing: border-box;
+    padding-bottom: 22px;
 }
 
-.sf-title {
-    color: #10213d;
-    font-size: 34px;
-    line-height: 1.2;
-    font-weight: 700;
+
+/* =========================================================
+   PAGE TITLE
+========================================================= */
+
+.profile-page .sf-title {
+    color: #10203a;
+
+    font-size: 31px;
+    line-height: 1.15;
+
+    font-weight: 800;
+
     letter-spacing: -0.025em;
 }
 
-.sf-muted {
+
+.profile-page .sf-muted {
+    color: #71829d;
+
+    line-height: 1.6;
+}
+
+
+/* subtitle under title */
+
+.profile-page .sf-top .sf-muted {
     margin-top: 7px;
 
-    color: #71839d;
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 13px;
 }
 
 
@@ -157,8 +366,46 @@ body {
    MENU BUTTON
 ========================================================= */
 
-.profile-menu-btn {
-    display: none;
+.profile-page .sf-top .sf-btn {
+    width: 44px;
+    height: 44px;
+
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    border: 1px solid #d8e0eb;
+
+    background: #ffffff;
+
+    color: #40536f;
+
+    font-size: 18px;
+
+    box-shadow: 0 5px 16px rgba(15, 35, 65, 0.06);
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.profile-page .sf-top .sf-btn:hover {
+    color: #2563eb;
+
+    border-color: #b9cdf6;
+
+    background: #f8fbff;
+
+    transform: translateY(-1px);
 }
 
 
@@ -166,10 +413,74 @@ body {
    PROFILE CARD
 ========================================================= */
 
-.profile-page .sf-card,
-body:not(.profile-page) .sf-card {
+.profile-page .sf-card {
+    width: 100%;
+
     box-sizing: border-box;
+
+    border: 1px solid #e1e8f0;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 8px 28px rgba(15, 35, 65, 0.055);
+
+    overflow: hidden;
+
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
+
+
+.profile-page .sf-card:hover {
+    box-shadow:
+        0 14px 38px rgba(15, 35, 65, 0.08);
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.profile-page .sf-card-head {
+    padding: 28px 30px 24px;
+
+    border-bottom: 1px solid #edf1f6;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+
+.profile-page .sf-card-head h3 {
+    margin: 0;
+
+    color: #10203a;
+
+    font-size: 20px;
+
+    font-weight: 750;
+
+    letter-spacing: -0.015em;
+}
+
+
+.profile-page .sf-card-head .sf-muted {
+    margin: 7px 0 0;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   PROFILE GRID
+========================================================= */
 
 .profile-grid {
     display: grid;
@@ -179,252 +490,325 @@ body:not(.profile-page) .sf-card {
 
     gap: 18px;
 
-    padding: 28px 30px 32px;
+    padding: 30px;
 }
 
 
 /* =========================================================
-   PROFILE ITEMS
+   PROFILE ITEM
 ========================================================= */
 
 .profile-item {
-    min-width: 0;
+    min-height: 125px;
 
-    padding: 22px 24px;
-
-    background: #ffffff;
-
-    border: 1px solid #e0e6ee;
-    border-radius: 12px;
+    padding: 22px;
 
     box-sizing: border-box;
 
+    border: 1px solid #e4eaf2;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f8fafc 100%
+        );
+
+    position: relative;
+
+    overflow: hidden;
+
     transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease;
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
 
-.profile-item:hover {
-    border-color: #cbd5e3;
-    box-shadow: 0 8px 24px rgba(20, 40, 70, 0.06);
+
+/* subtle blue accent */
+
+.profile-item::before {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0;
+
+    width: 3px;
+    height: 100%;
+
+    background: #2563eb;
+
+    opacity: 0.75;
 }
+
+
+.profile-item:hover {
+    border-color: #c9d8ef;
+
+    box-shadow:
+        0 8px 22px rgba(37, 99, 235, 0.07);
+
+    transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   PROFILE LABEL
+========================================================= */
 
 .profile-item small {
     display: block;
 
-    margin-bottom: 9px;
+    margin-bottom: 12px;
 
-    color: #71839d;
+    color: #7b8da8;
 
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.09em;
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.13em;
+
+    line-height: 1.4;
 }
+
+
+/* =========================================================
+   PROFILE VALUE
+========================================================= */
 
 .profile-item h3 {
     margin: 0;
 
-    color: #142744;
+    color: #172b4d;
 
     font-size: 17px;
+
     line-height: 1.45;
-    font-weight: 600;
 
-    overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   ACCOUNT INFORMATION HEADER
-========================================================= */
-
-.sf-card-head {
-    padding: 26px 30px;
-
-    border-bottom: 1px solid #e1e6ed;
-}
-
-.sf-card-head h3 {
-    margin: 0;
-
-    color: #142744;
-
-    font-size: 21px;
     font-weight: 700;
-}
 
-.sf-card-head .sf-muted {
-    margin-top: 6px;
+    word-break: break-word;
 }
 
 
 /* =========================================================
-   PROFILE AVATAR / OPTIONAL
+   ROLE SPECIAL STYLE
 ========================================================= */
 
-.profile-avatar {
-    width: 64px;
-    height: 64px;
+.profile-item [data-user-role] {
+    display: inline-flex;
 
-    display: flex;
     align-items: center;
-    justify-content: center;
 
-    margin-bottom: 20px;
+    min-height: 30px;
 
-    border-radius: 14px;
+    padding: 5px 11px;
 
-    background: #2864d7;
-    color: #ffffff;
+    border-radius: 999px;
 
-    font-size: 21px;
-    font-weight: 800;
+    background: #eef4ff;
+
+    color: #2563eb;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    letter-spacing: 0.02em;
 }
 
 
 /* =========================================================
-   LOADING / ERROR
+   EMPTY / LOADING VALUES
 ========================================================= */
 
-.profile-loading {
-    color: #71839d;
-    font-size: 14px;
-}
-
-.profile-error {
-    color: #b42318;
+.profile-item h3:empty::after {
+    content: "—";
 }
 
 
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE — TABLET
 ========================================================= */
 
-@media (max-width: 1100px) {
+@media (max-width: 1000px) {
 
-    .sf-side {
-        width: 240px;
-        min-width: 240px;
+    .profile-page .sf-side {
+        width: 220px;
+        min-width: 220px;
     }
 
-    .sf-main {
-        padding: 28px 28px 45px;
+    .profile-page .sf-brand {
+        padding: 0 24px;
+    }
+
+    .profile-page .sf-nav {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .profile-page .sf-main {
+        padding: 28px;
     }
 
     .profile-grid {
         gap: 14px;
-        padding: 24px;
     }
 
 }
 
 
-@media (max-width: 850px) {
+/* =========================================================
+   RESPONSIVE — MOBILE NAV
+========================================================= */
 
-    .sf-layout {
-        display: block;
-    }
+@media (max-width: 800px) {
 
-    .sf-side {
-        width: 100%;
-        min-width: 0;
-        height: auto;
-
+    .profile-page .sf-layout {
         position: relative;
-
-        overflow: visible;
     }
 
-    .sf-brand {
-        min-height: 76px;
-        padding: 0 22px;
+    .profile-page .sf-side {
+        position: fixed;
+
+        top: 0;
+        left: 0;
+        bottom: 0;
+
+        width: 270px;
+        min-width: 270px;
+
+        transform: translateX(-100%);
+
+        transition:
+            transform 0.25s ease;
+
+        box-shadow:
+            12px 0 40px rgba(0, 0, 0, 0.25);
+
+        z-index: 1000;
     }
 
-    .sf-nav {
-        display: none;
+
+    .profile-page .sf-side.open {
+        transform: translateX(0);
     }
 
-    .sf-main {
+
+    .profile-page .sf-main {
         width: 100%;
-        min-height: calc(100vh - 76px);
 
-        padding: 24px 20px 40px;
+        padding: 22px 20px 36px;
     }
 
-    .sf-top {
-        min-height: 64px;
-        margin-bottom: 22px;
-        padding-bottom: 20px;
+
+    .profile-page .sf-top {
+        min-height: 60px;
+
+        margin-bottom: 20px;
     }
 
-    .sf-title {
-        font-size: 28px;
+
+    .profile-page .sf-title {
+        font-size: 27px;
     }
 
-    .profile-menu-btn {
-        display: flex;
-    }
-
-}
-
-
-@media (max-width: 650px) {
-
-    .sf-main {
-        padding: 20px 16px 35px;
-    }
-
-    .sf-top {
-        align-items: flex-start;
-    }
-
-    .sf-title {
-        font-size: 25px;
-    }
-
-    .sf-muted {
-        font-size: 13px;
-    }
 
     .profile-grid {
         grid-template-columns: 1fr;
-        padding: 18px;
-    }
 
-    .sf-card-head {
-        padding: 21px 18px;
-    }
-
-    .profile-item {
-        padding: 19px 20px;
+        padding: 22px;
     }
 
 }
 
 
-@media (max-width: 430px) {
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+========================================================= */
 
-    .sf-brand {
-        min-height: 68px;
-        padding: 0 18px;
+@media (max-width: 520px) {
 
-        font-size: 21px;
+    .profile-page .sf-main {
+        padding: 18px 14px 30px;
     }
 
-    .sf-main {
-        padding: 18px 12px 30px;
+
+    .profile-page .sf-title {
+        font-size: 24px;
     }
 
-    .sf-title {
-        font-size: 23px;
+
+    .profile-page .sf-top .sf-muted {
+        font-size: 12px;
     }
+
+
+    .profile-page .sf-card {
+        border-radius: 15px;
+    }
+
+
+    .profile-page .sf-card-head {
+        padding: 22px 20px 20px;
+    }
+
+
+    .profile-page .sf-card-head h3 {
+        font-size: 18px;
+    }
+
 
     .profile-grid {
-        padding: 14px;
+        padding: 18px;
+
+        gap: 12px;
     }
+
+
+    .profile-item {
+        min-height: 110px;
+
+        padding: 18px;
+    }
+
 
     .profile-item h3 {
         font-size: 15px;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.profile-page .sf-nav a:focus-visible,
+.profile-page .sf-btn:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.28);
+
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   REDUCE MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .profile-page .sf-nav a,
+    .profile-page .sf-nav a::before,
+    .profile-page .sf-top .sf-btn,
+    .profile-page .sf-card,
+    .profile-item {
+        transition: none;
     }
 
 }
