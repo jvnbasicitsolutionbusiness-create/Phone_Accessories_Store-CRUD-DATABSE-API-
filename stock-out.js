@@ -2842,3 +2842,205 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+
+            /* ============================================
+               MOBILE SIDEBAR
+            ============================================ */
+
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("sidebarOverlay");
+            const menuBtn = document.getElementById("mobileMenuBtn");
+
+            function openSidebar() {
+                if (!sidebar) return;
+
+                sidebar.classList.add("open");
+
+                if (overlay) {
+                    overlay.classList.add("show");
+                }
+
+                if (menuBtn) {
+                    menuBtn.setAttribute("aria-expanded", "true");
+                }
+
+                document.body.classList.add("sidebar-open");
+            }
+
+            function closeSidebar() {
+                if (!sidebar) return;
+
+                sidebar.classList.remove("open");
+
+                if (overlay) {
+                    overlay.classList.remove("show");
+                }
+
+                if (menuBtn) {
+                    menuBtn.setAttribute("aria-expanded", "false");
+                }
+
+                document.body.classList.remove("sidebar-open");
+            }
+
+            if (menuBtn) {
+                menuBtn.addEventListener("click", () => {
+
+                    if (sidebar.classList.contains("open")) {
+                        closeSidebar();
+                    } else {
+                        openSidebar();
+                    }
+
+                });
+            }
+
+            if (overlay) {
+                overlay.addEventListener("click", closeSidebar);
+            }
+
+
+            /* ============================================
+               CLOSE MOBILE MENU AFTER NAVIGATION
+            ============================================ */
+
+            document.querySelectorAll(".sidebar-nav .nav-item").forEach(link => {
+
+                link.addEventListener("click", () => {
+
+                    if (window.innerWidth <= 1100) {
+                        closeSidebar();
+                    }
+
+                });
+
+            });
+
+
+            /* ============================================
+               NOTIFICATIONS
+            ============================================ */
+
+            const notificationBtn =
+                document.getElementById("notificationBtn");
+
+            const notificationPanel =
+                document.getElementById("notificationPanel");
+
+            const closeNotificationBtn =
+                document.getElementById("closeNotificationBtn");
+
+
+            function toggleNotifications() {
+
+                if (!notificationPanel) return;
+
+                const isHidden = notificationPanel.hasAttribute("hidden");
+
+                if (isHidden) {
+
+                    notificationPanel.removeAttribute("hidden");
+
+                    if (notificationBtn) {
+                        notificationBtn.setAttribute(
+                            "aria-expanded",
+                            "true"
+                        );
+                    }
+
+                } else {
+
+                    notificationPanel.setAttribute(
+                        "hidden",
+                        ""
+                    );
+
+                    if (notificationBtn) {
+                        notificationBtn.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+                    }
+
+                }
+
+            }
+
+
+            function closeNotifications() {
+
+                if (!notificationPanel) return;
+
+                notificationPanel.setAttribute(
+                    "hidden",
+                    ""
+                );
+
+                if (notificationBtn) {
+                    notificationBtn.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+                }
+
+            }
+
+
+            if (notificationBtn) {
+                notificationBtn.addEventListener(
+                    "click",
+                    (event) => {
+
+                        event.stopPropagation();
+
+                        toggleNotifications();
+
+                    }
+                );
+            }
+
+
+            if (closeNotificationBtn) {
+                closeNotificationBtn.addEventListener(
+                    "click",
+                    closeNotifications
+                );
+            }
+
+
+            document.addEventListener("click", event => {
+
+                if (
+                    notificationPanel &&
+                    !notificationPanel.hasAttribute("hidden") &&
+                    !notificationPanel.contains(event.target) &&
+                    notificationBtn &&
+                    !notificationBtn.contains(event.target)
+                ) {
+
+                    closeNotifications();
+
+                }
+
+            });
+
+
+            /* ============================================
+               ESCAPE KEY
+            ============================================ */
+
+            document.addEventListener("keydown", event => {
+
+                if (event.key === "Escape") {
+
+                    closeNotifications();
+                    closeSidebar();
+
+                }
+
+            });
+
+        });
