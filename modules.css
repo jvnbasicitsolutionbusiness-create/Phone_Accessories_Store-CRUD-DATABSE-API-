@@ -1149,3 +1149,713 @@ body.suppliers-page .sf-empty {
         width: 100%;
     }
 }
+
+/* =========================================================
+   STOCKFLOW — PROFILE MODULE
+   Scoped only to .profile-page
+   Does not affect Transactions, Suppliers, or other pages
+========================================================= */
+
+
+/* =========================================================
+   PROFILE PAGE FOUNDATION
+========================================================= */
+
+body.profile-page {
+    min-height: 100vh;
+    margin: 0;
+
+    overflow-x: hidden;
+
+    background: #f4f7fb;
+}
+
+
+/* =========================================================
+   PROFILE LAYOUT
+========================================================= */
+
+body.profile-page .sf-layout {
+    display: flex;
+    align-items: stretch;
+
+    width: 100%;
+    min-height: 100vh;
+}
+
+
+/* =========================================================
+   PROFILE SIDEBAR
+========================================================= */
+
+body.profile-page .sf-side {
+    position: relative;
+
+    width: 276px;
+    min-width: 276px;
+    flex: 0 0 276px;
+
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    background:
+        linear-gradient(
+            180deg,
+            #07172c 0%,
+            #081a31 52%,
+            #061426 100%
+        );
+
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+    box-shadow:
+        12px 0 38px rgba(3, 15, 31, 0.08);
+
+    z-index: 50;
+}
+
+
+/* =========================================================
+   PROFILE BRAND
+========================================================= */
+
+body.profile-page .sf-brand {
+    height: 124px;
+    min-height: 124px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 34px;
+
+    box-sizing: border-box;
+
+    color: #ffffff;
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 25px;
+    font-weight: 800;
+
+    letter-spacing: 0.065em;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+
+/* =========================================================
+   PROFILE NAVIGATION
+========================================================= */
+
+body.profile-page .sf-nav {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 25px 16px;
+
+    box-sizing: border-box;
+
+    overflow-y: auto;
+}
+
+
+body.profile-page .sf-nav a {
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 18px;
+
+    box-sizing: border-box;
+
+    border-radius: 12px;
+
+    color: #91a4c1;
+
+    text-decoration: none;
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+body.profile-page .sf-nav a:hover {
+    color: #ffffff;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    transform: translateX(2px);
+}
+
+
+body.profile-page .sf-nav a.active,
+body.profile-page .sf-nav a[aria-current="page"] {
+    color: #ffffff;
+
+    font-weight: 700;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2d6df6 0%,
+            #2463df 100%
+        );
+
+    box-shadow:
+        0 9px 24px rgba(37, 99, 235, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+    transform: none;
+}
+
+
+/* =========================================================
+   PROFILE MAIN CONTENT
+========================================================= */
+
+body.profile-page .sf-main {
+    flex: 1 1 auto;
+
+    width: auto;
+    min-width: 0;
+    min-height: 100vh;
+
+    box-sizing: border-box;
+
+    padding: 32px 38px 50px;
+
+    background:
+        radial-gradient(
+            circle at 92% 0%,
+            rgba(37, 99, 235, 0.055),
+            transparent 30%
+        ),
+        #f4f7fb;
+}
+
+
+/* =========================================================
+   PROFILE TOP HEADER
+========================================================= */
+
+body.profile-page .sf-top {
+    width: 100%;
+
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    margin: 0 0 28px;
+    padding: 0 0 22px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #e1e7ef;
+}
+
+
+body.profile-page .sf-title {
+    margin: 0;
+
+    color: #10203a;
+
+    font-size: 31px;
+    line-height: 1.15;
+
+    font-weight: 800;
+
+    letter-spacing: -0.025em;
+}
+
+
+body.profile-page .sf-top .sf-muted {
+    margin-top: 7px;
+
+    color: #71829d;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   PROFILE MENU BUTTON
+========================================================= */
+
+body.profile-page .sf-top .sf-btn[data-menu] {
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #d7e0eb;
+    border-radius: 11px;
+
+    background: #ffffff;
+    color: #40536f;
+
+    box-shadow:
+        0 5px 16px rgba(15, 35, 65, 0.06);
+
+    cursor: pointer;
+
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+body.profile-page .sf-top .sf-btn[data-menu]:hover {
+    color: #2563eb;
+
+    border-color: #b9cdf6;
+
+    background: #f8fbff;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   PROFILE CARD
+========================================================= */
+
+body.profile-page .sf-card {
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    border: 1px solid #dfe6ef;
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 10px 30px rgba(15, 35, 65, 0.055);
+}
+
+
+/* =========================================================
+   PROFILE CARD HEADER
+========================================================= */
+
+body.profile-page .sf-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 28px 30px 25px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #edf1f6;
+}
+
+
+body.profile-page .sf-card-head h3 {
+    margin: 0;
+
+    color: #10203a;
+
+    font-size: 21px;
+    line-height: 1.3;
+
+    font-weight: 750;
+
+    letter-spacing: -0.015em;
+}
+
+
+body.profile-page .sf-card-head .sf-muted {
+    margin: 7px 0 0;
+
+    color: #71829d;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   PROFILE INFORMATION GRID
+========================================================= */
+
+body.profile-page .profile-grid {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+
+    padding: 28px 30px 30px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PROFILE INFORMATION ITEM
+========================================================= */
+
+body.profile-page .profile-item {
+    position: relative;
+
+    min-width: 0;
+    min-height: 120px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    padding: 24px 26px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #dfe6ef;
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f8fafc 100%
+        );
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+/* LEFT ACCENT */
+
+body.profile-page .profile-item::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #4b83f7 0%,
+            #2563eb 100%
+        );
+
+    border-radius: 14px 0 0 14px;
+}
+
+
+body.profile-page .profile-item:hover {
+    border-color: #cbd8e8;
+
+    box-shadow:
+        0 8px 22px rgba(15, 35, 65, 0.055);
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   PROFILE LABEL
+========================================================= */
+
+body.profile-page .profile-item small {
+    display: block;
+
+    margin: 0 0 11px;
+
+    color: #71829d;
+
+    font-size: 10px;
+    line-height: 1.2;
+
+    font-weight: 800;
+
+    letter-spacing: 0.12em;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   PROFILE VALUE
+========================================================= */
+
+body.profile-page .profile-item h3 {
+    margin: 0;
+
+    max-width: 100%;
+
+    color: #10203a;
+
+    font-size: 18px;
+    line-height: 1.45;
+
+    font-weight: 700;
+
+    letter-spacing: -0.01em;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   ROLE VALUE
+========================================================= */
+
+body.profile-page [data-user-role] {
+    display: inline-flex;
+    align-items: center;
+
+    width: fit-content;
+    max-width: 100%;
+
+    padding: 7px 13px;
+
+    border-radius: 999px;
+
+    background: #edf4ff;
+
+    color: #2563eb;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.04em;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   EMPTY / LOADING PROFILE VALUES
+========================================================= */
+
+body.profile-page .profile-item h3:empty::after {
+    content: "—";
+}
+
+
+body.profile-page .profile-item h3[data-user-name],
+body.profile-page .profile-item h3[data-user-email],
+body.profile-page .profile-item h3[data-user-phone] {
+    min-height: 26px;
+}
+
+
+/* =========================================================
+   PROFILE RESPONSIVE — TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    body.profile-page .sf-side {
+        width: 260px;
+        min-width: 260px;
+        flex-basis: 260px;
+    }
+
+
+    body.profile-page .sf-main {
+        padding: 26px 24px 42px;
+    }
+
+
+    body.profile-page .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =========================================================
+   PROFILE RESPONSIVE — MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    body.profile-page .sf-layout {
+        display: block;
+    }
+
+
+    body.profile-page .sf-side {
+        position: fixed;
+
+        top: 0;
+        left: 0;
+        bottom: 0;
+
+        width: 280px;
+        min-width: 280px;
+
+        height: 100vh;
+
+        transform: translateX(-105%);
+
+        transition:
+            transform 0.25s ease;
+
+        z-index: 1000;
+    }
+
+
+    body.profile-page .sf-side.open {
+        transform: translateX(0);
+    }
+
+
+    body.profile-page .sf-main {
+        width: 100%;
+        min-height: 100vh;
+
+        padding: 22px 20px 40px;
+    }
+
+
+    body.profile-page .sf-title {
+        font-size: 27px;
+    }
+
+
+    body.profile-page .profile-grid {
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+        padding: 23px 22px 26px;
+    }
+
+
+    body.profile-page .profile-item {
+        min-height: 110px;
+
+        padding: 22px 23px;
+    }
+}
+
+
+/* =========================================================
+   PROFILE RESPONSIVE — SMALL MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+
+    body.profile-page .sf-main {
+        padding: 18px 14px 30px;
+    }
+
+
+    body.profile-page .sf-title {
+        font-size: 24px;
+    }
+
+
+    body.profile-page .sf-top {
+        min-height: 58px;
+
+        gap: 14px;
+
+        margin-bottom: 22px;
+
+        padding-bottom: 17px;
+    }
+
+
+    body.profile-page .sf-top .sf-btn[data-menu] {
+        width: 42px;
+        height: 42px;
+
+        flex-basis: 42px;
+    }
+
+
+    body.profile-page .sf-card {
+        border-radius: 15px;
+    }
+
+
+    body.profile-page .sf-card-head {
+        padding: 21px 20px;
+    }
+
+
+    body.profile-page .sf-card-head h3 {
+        font-size: 18px;
+    }
+
+
+    body.profile-page .profile-grid {
+        padding: 20px;
+
+        gap: 13px;
+    }
+
+
+    body.profile-page .profile-item {
+        min-height: 105px;
+
+        padding: 20px 21px;
+    }
+
+
+    body.profile-page .profile-item h3 {
+        font-size: 16px;
+    }
+}
