@@ -16,8 +16,13 @@
 
     <title>STOCKFLOW | My Profile</title>
 
+    <!-- GLOBAL CSS -->
     <link rel="stylesheet" href="./style.css">
+
+    <!-- SHARED MODULE CSS -->
     <link rel="stylesheet" href="./modules.css">
+
+    <!-- PROFILE-ONLY CSS -->
     <link rel="stylesheet" href="./profile.css">
 </head>
 
@@ -28,7 +33,7 @@
         <!-- =====================================================
              SIDEBAR
         ====================================================== -->
-        <aside class="sf-side">
+        <aside class="sf-side" data-sidebar>
 
             <!-- BRAND -->
             <div class="sf-brand">
@@ -168,27 +173,32 @@
 
                 <div class="sf-user-mini">
 
-                    <div class="sf-user-avatar">
+                    <div
+                        class="sf-user-avatar"
+                        data-user-avatar
+                    >
                         SF
                     </div>
 
                     <div class="sf-user-info">
 
                         <strong data-user-name>
-                            STOCKFLOW USER
+                            Loading...
                         </strong>
 
                         <span data-user-role>
-                            Employee
+                            Loading...
                         </span>
 
                     </div>
 
                 </div>
 
+
                 <button
                     type="button"
                     class="sf-logout"
+                    id="logoutBtn"
                     data-logout
                 >
                     <span>↪</span>
@@ -205,7 +215,7 @@
         ====================================================== -->
         <main class="sf-main">
 
-            <!-- TOPBAR -->
+            <!-- TOP HEADER -->
             <header class="sf-top">
 
                 <div class="sf-page-heading">
@@ -299,6 +309,28 @@
                         </div>
 
 
+                        <!-- USERNAME -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                @
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    USERNAME
+                                </small>
+
+                                <h3 data-user-username>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
                         <!-- ROLE -->
                         <div class="profile-item">
 
@@ -364,6 +396,50 @@
 
                         </div>
 
+
+                        <!-- AGE -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                ◷
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    AGE
+                                </small>
+
+                                <h3 data-user-age>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ACCOUNT STATUS -->
+                        <div class="profile-item">
+
+                            <div class="profile-item-icon">
+                                ✓
+                            </div>
+
+                            <div class="profile-item-content">
+
+                                <small>
+                                    ACCOUNT STATUS
+                                </small>
+
+                                <h3 data-user-status>
+                                    —
+                                </h3>
+
+                            </div>
+
+                        </div>
+
                     </div>
 
                 </section>
@@ -374,17 +450,20 @@
 
                     <div class="profile-status">
 
-                        <div class="profile-status-indicator">
+                        <div
+                            class="profile-status-indicator"
+                            data-status-indicator
+                        >
                             ✓
                         </div>
 
                         <div>
 
-                            <strong>
+                            <strong data-status-title>
                                 Account Active
                             </strong>
 
-                            <p>
+                            <p data-status-message>
                                 Your STOCKFLOW session is currently active.
                             </p>
 
@@ -404,10 +483,19 @@
     <!-- =====================================================
          JAVASCRIPT
     ====================================================== -->
+
     <script src="./config.js"></script>
+
+    <!-- API / SESSION -->
     <script src="./api.js"></script>
+
+    <!-- AUTH UI -->
     <script src="./auth.js"></script>
+
+    <!-- SHARED PAGE JS -->
     <script src="./main.js"></script>
+
+    <!-- PROFILE PAGE JS -->
     <script src="./profile.js"></script>
 
 </body>
