@@ -4,8 +4,9 @@
    Purpose:
    - Load the currently logged-in user
    - Display account information
-   - Refresh user information from the backend
-   - Synchronize sidebar/profile information
+   - Show loading skeletons INSIDE profile fields
+   - Keep sidebar user area normal
+   - Refresh user information from backend
    - Handle mobile navigation
    - Handle logout
 
@@ -15,7 +16,7 @@
    - Does NOT modify registration
    - Does NOT modify verification
    - Does NOT use the nonexistent backend "session" action
-   ========================================================= */
+========================================================= */
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -36,6 +37,103 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector(
             "#logoutBtn, [data-logout]"
         );
+
+
+    /* =====================================================
+       LOADING STATE
+    ===================================================== */
+
+    function showProfileLoading() {
+
+        /*
+         * IMPORTANT:
+         *
+         * Loading belongs INSIDE the profile
+         * information fields.
+         *
+         * It must NOT replace the sidebar
+         * user information.
+         */
+
+        const loadingSelectors = [
+            "[data-user-name]",
+            "[data-user-username]",
+            "[data-user-role]",
+            "[data-user-email]",
+            "[data-user-phone]",
+            "[data-user-age]",
+            "[data-user-status]"
+        ];
+
+
+        loadingSelectors.forEach(selector => {
+
+            document
+                .querySelectorAll(selector)
+                .forEach(element => {
+
+                    /*
+                     * Do not put "Loading..."
+                     * into the sidebar.
+                     *
+                     * Only the actual profile
+                     * information values receive
+                     * the loading state.
+                     */
+
+                    if (
+                        element.closest(".sf-sidebar-user") ||
+                        element.closest(".sf-sidebar-footer")
+                    ) {
+                        return;
+                    }
+
+
+                    element.classList.add(
+                        "profile-field-loading"
+                    );
+
+
+                    /*
+                     * Save original content so
+                     * it can be restored if needed.
+                     */
+
+                    if (
+                        !element.dataset.profileOriginal
+                    ) {
+
+                        element.dataset.profileOriginal =
+                            element.textContent;
+                    }
+
+
+                    element.textContent = "";
+
+                });
+
+        });
+    }
+
+
+    /* =====================================================
+       REMOVE LOADING STATE
+    ===================================================== */
+
+    function removeProfileLoading() {
+
+        document
+            .querySelectorAll(
+                ".profile-field-loading"
+            )
+            .forEach(element => {
+
+                element.classList.remove(
+                    "profile-field-loading"
+                );
+
+            });
+    }
 
 
     /* =====================================================
@@ -61,7 +159,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         elements.forEach(element => {
-            element.textContent = text;
+
+            /*
+             * Never allow profile loading
+             * to remain after real data arrives.
+             */
+
+            element.classList.remove(
+                "profile-field-loading"
+            );
+
+
+            element.textContent =
+                text;
+
         });
     }
 
@@ -120,7 +231,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * Backend:
+         * Backend response:
          *
          * {
          *     success: true,
@@ -139,11 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * Generic:
-         *
-         * {
-         *     data: {...}
-         * }
+         * Generic data wrapper
          */
 
         if (
@@ -163,6 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 user =
                     rawUser.data;
+
             }
         }
 
@@ -292,6 +400,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "VERIFIED"
                     ]
                 )
+
         };
 
 
@@ -403,6 +512,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             "STOCKFLOW USER";
 
 
+        /*
+         * Remove profile loading state
+         */
+
+        removeProfileLoading();
+
+
+        /*
+         * PROFILE INFORMATION
+         */
+
         setText(
             "[data-user-name]",
             fullName
@@ -452,26 +572,47 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * Avatar
+         * SIDEBAR USER
+         *
+         * Only update the sidebar with
+         * the real user information.
          */
 
-        const avatar =
-            document.querySelector(
-                "[data-user-avatar]"
+        setText(
+            ".sf-sidebar-user [data-user-name]",
+            fullName
+        );
+
+
+        setText(
+            ".sf-sidebar-user [data-user-role]",
+            user.role ||
+            "Employee"
+        );
+
+
+        /*
+         * AVATAR
+         */
+
+        const avatars =
+            document.querySelectorAll(
+                "[data-user-avatar], .sf-sidebar-avatar"
             );
 
 
-        if (avatar) {
+        avatars.forEach(avatar => {
 
             avatar.textContent =
                 getInitials(
                     fullName
                 );
-        }
+
+        });
 
 
         /*
-         * Status card
+         * STATUS CARD
          */
 
         updateStatusCard(
@@ -491,10 +632,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "[data-status-title]"
             );
 
+
         const message =
             document.querySelector(
                 "[data-status-message]"
             );
+
 
         const indicator =
             document.querySelector(
@@ -510,16 +653,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .trim()
                 .toLowerCase();
 
-
-        /*
-         * Backend normalizeStatus() uses:
-         *
-         * VERIFIED
-         * SUSPENDED
-         * DISABLED
-         * BLOCKED
-         * PENDING
-         */
 
         const active =
             [
@@ -538,6 +671,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 title.textContent =
                     "Account Active";
+
             }
 
 
@@ -545,6 +679,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 message.textContent =
                     "Your STOCKFLOW account is currently active.";
+
             }
 
 
@@ -558,6 +693,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 indicator.style.color =
                     "#16a05a";
+
             }
 
 
@@ -573,6 +709,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     status ||
                     "Inactive"
                 );
+
         }
 
 
@@ -580,6 +717,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             message.textContent =
                 "Please check your account status.";
+
         }
 
 
@@ -593,12 +731,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             indicator.style.color =
                 "#c77700";
+
         }
+
     }
 
 
     /* =====================================================
-       REMOVE ERROR
+       REMOVE PROFILE ERROR
     ===================================================== */
 
     function removeProfileError() {
@@ -612,12 +752,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (errorBox) {
 
             errorBox.remove();
+
         }
+
     }
 
 
     /* =====================================================
-       SHOW ERROR
+       SHOW PROFILE ERROR
     ===================================================== */
 
     function showProfileError(message) {
@@ -666,6 +808,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             profileContent.prepend(
                 errorBox
             );
+
         }
 
 
@@ -686,18 +829,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         /*
-         * -------------------------------------------------
-         * CHECK API
-         * -------------------------------------------------
+         * START WITH PROFILE SKELETONS
+         *
+         * These appear in the account information
+         * cards, NOT in the sidebar.
          */
 
-        if (
-            !window.StockFlowAPI
-        ) {
+        showProfileLoading();
+
+
+        /*
+         * CHECK API
+         */
+
+        if (!window.StockFlowAPI) {
 
             console.error(
                 "STOCKFLOW PROFILE: StockFlowAPI is unavailable."
             );
+
+
+            removeProfileLoading();
 
 
             showProfileError(
@@ -713,21 +865,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             null;
 
 
-        /*
-         * -------------------------------------------------
-         * 1. READ THE SAME AUTH STORAGE USED BY LOGIN
-         * -------------------------------------------------
-         *
-         * Your current StockFlowAuth stores the user as:
-         *
-         *     stockflow_user
-         *
-         * NOT:
-         *
-         *     STOCKFLOW_USER
-         *
-         * Therefore we check StockFlowAuth first.
-         */
+        /* =================================================
+           1. STOCKFLOW AUTH USER
+        ================================================= */
 
         try {
 
@@ -747,6 +887,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "STOCKFLOW PROFILE: StockFlowAuth.user():",
                     currentUser
                 );
+
             }
 
         } catch (error) {
@@ -755,20 +896,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "STOCKFLOW PROFILE: unable to read StockFlowAuth user:",
                 error
             );
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 2. COMPATIBILITY STORAGE
-         * -------------------------------------------------
-         *
-         * Some of your verification code uses:
-         *
-         *     STOCKFLOW_USER
-         *
-         * So check that as a fallback.
-         */
+        /* =================================================
+           2. API STORED USER
+        ================================================= */
 
         if (!currentUser) {
 
@@ -789,6 +923,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "STOCKFLOW PROFILE: StockFlowAPI stored user:",
                         currentUser
                     );
+
                 }
 
             } catch (error) {
@@ -797,15 +932,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "STOCKFLOW PROFILE: unable to read API stored user:",
                     error
                 );
+
             }
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 3. DIRECT STORAGE COMPATIBILITY
-         * -------------------------------------------------
-         */
+        /* =================================================
+           3. DIRECT SESSION STORAGE
+        ================================================= */
 
         if (!currentUser) {
 
@@ -825,6 +960,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 rawUser
                             )
                         );
+
                 }
 
 
@@ -844,7 +980,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     uppercaseUser
                                 )
                             );
+
                     }
+
                 }
 
 
@@ -859,15 +997,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     "STOCKFLOW PROFILE: direct storage read failed:",
                     error
                 );
+
             }
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 4. DISPLAY USER IMMEDIATELY
-         * -------------------------------------------------
-         */
+        /* =================================================
+           4. DISPLAY LOCAL USER IMMEDIATELY
+        ================================================= */
 
         if (currentUser) {
 
@@ -882,21 +1020,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log(
                 "STOCKFLOW PROFILE: local user displayed."
             );
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 5. REFRESH FROM REAL BACKEND getUser()
-         * -------------------------------------------------
-         *
-         * Code.gs DOES contain getUser().
-         *
-         * It does NOT contain session().
-         *
-         * Therefore this is the only backend refresh
-         * needed here.
-         */
+        /* =================================================
+           5. BACKEND REFRESH
+        ================================================= */
 
         if (
             currentUser &&
@@ -955,31 +1085,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                         console.log(
                             "STOCKFLOW PROFILE: backend user loaded successfully."
                         );
+
                     }
 
                 } catch (error) {
 
                     /*
-                     * Backend refresh failure must NOT
-                     * erase the user already displayed.
+                     * Do NOT erase already loaded
+                     * profile information.
                      */
 
                     console.warn(
                         "STOCKFLOW PROFILE: backend refresh failed:",
                         error
                     );
+
                 }
+
             }
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 6. FINAL CHECK
-         * -------------------------------------------------
-         */
+        /* =================================================
+           6. FINAL RESULT
+        ================================================= */
 
         if (currentUser) {
+
+            removeProfileLoading();
 
             removeProfileError();
 
@@ -991,14 +1125,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             return;
+
         }
 
 
-        /*
-         * -------------------------------------------------
-         * 7. NOTHING FOUND
-         * -------------------------------------------------
-         */
+        /* =================================================
+           7. NOTHING FOUND
+        ================================================= */
+
+        removeProfileLoading();
+
 
         console.error(
             "STOCKFLOW PROFILE: no user found in authentication storage."
@@ -1008,6 +1144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showProfileError(
             "Unable to load your account information."
         );
+
     }
 
 
@@ -1022,7 +1159,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         menuButton.addEventListener(
             "click",
-            () => {
+            event => {
+
+                event.preventDefault();
+
 
                 const isOpen =
                     sidebar.classList.toggle(
@@ -1036,8 +1176,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         isOpen
                     )
                 );
+
             }
         );
+
     }
 
 
@@ -1049,7 +1191,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         sidebar
             .querySelectorAll(
-                ".sf-nav-link"
+                ".sf-nav-link, a"
             )
             .forEach(
                 link => {
@@ -1058,22 +1200,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                         "click",
                         () => {
 
-                            sidebar.classList.remove(
-                                "open"
-                            );
+                            if (
+                                window.innerWidth <=
+                                900
+                            ) {
 
-
-                            if (menuButton) {
-
-                                menuButton.setAttribute(
-                                    "aria-expanded",
-                                    "false"
+                                sidebar.classList.remove(
+                                    "open"
                                 );
+
+
+                                if (menuButton) {
+
+                                    menuButton.setAttribute(
+                                        "aria-expanded",
+                                        "false"
+                                    );
+
+                                }
+
                             }
+
                         }
                     );
+
                 }
             );
+
     }
 
 
@@ -1090,7 +1243,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (
                     logoutButton.disabled
                 ) {
+
                     return;
+
                 }
 
 
@@ -1102,11 +1257,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     logoutButton.innerHTML;
 
 
-                logoutButton.innerHTML =
-                    `
-                        <span>...</span>
-                        <span>Logging out...</span>
-                    `;
+                logoutButton.innerHTML = `
+                    <span>...</span>
+                    <span>Logging out...</span>
+                `;
 
 
                 try {
@@ -1121,10 +1275,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     } else {
 
-                        /*
-                         * Fallback cleanup.
-                         */
-
                         sessionStorage.removeItem(
                             "STOCKFLOW_TOKEN"
                         );
@@ -1148,6 +1298,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         localStorage.removeItem(
                             "stockflow_user"
                         );
+
                     }
 
 
@@ -1162,19 +1313,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
 
 
-                    /*
-                     * Clear local login information even
-                     * when the server logout request fails.
-                     */
-
                     try {
 
                         if (
+                            window.StockFlowAPI &&
                             typeof window.StockFlowAPI.clearToken ===
-                            "function"
+                                "function"
                         ) {
 
                             window.StockFlowAPI.clearToken();
+
                         }
 
                     } catch (_) {}
@@ -1183,11 +1331,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     try {
 
                         if (
+                            window.StockFlowAPI &&
                             typeof window.StockFlowAPI.clearStoredUser ===
-                            "function"
+                                "function"
                         ) {
 
                             window.StockFlowAPI.clearStoredUser();
+
                         }
 
                     } catch (_) {}
@@ -1204,9 +1354,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     window.location.href =
                         "./login.html";
+
                 }
+
             }
         );
+
     }
 
 
