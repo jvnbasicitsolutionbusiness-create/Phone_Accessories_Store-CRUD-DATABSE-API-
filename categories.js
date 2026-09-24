@@ -1,144 +1,249 @@
 /* =========================================================
-   STOCKFLOW - CATEGORIES
-   Complete CRUD frontend
+   STOCKFLOW — CATEGORIES
+   File: categories.js
+
+   Works with the existing config.js:
+
+       window.STOCKFLOW_CONFIG.API_URL
+
+   Backend actions:
+
+       listCategories
+       saveCategory
+       deleteCategory
 ========================================================= */
 
 (function () {
+
     "use strict";
+
 
     /* =====================================================
        CONFIG
     ===================================================== */
 
-    const API_URL =
-        window.API_URL ||
-        window.STOCKFLOW_API_URL ||
-        "";
+    const CONFIG =
+        window.STOCKFLOW_CONFIG;
 
-    if (!API_URL) {
+
+    if (!CONFIG) {
+
         console.error(
-            "StockFlow: API_URL is missing. Check config.js."
+            "[STOCKFLOW] STOCKFLOW_CONFIG is not available."
         );
+
+        return;
     }
 
 
+    const API_URL =
+        CONFIG.API_URL;
+
+
+    if (!API_URL) {
+
+        console.error(
+            "[STOCKFLOW] CONFIG.API_URL is missing."
+        );
+
+        return;
+    }
+
+
+    console.log(
+        "[STOCKFLOW] Categories API:",
+        API_URL
+    );
+
+
     /* =====================================================
-       DOM HELPERS
+       DOM
     ===================================================== */
 
-    const $ = (id) => document.getElementById(id);
-
-
     const addCategoryBtn =
-        $("addCategoryBtn");
+        document.getElementById(
+            "addCategoryBtn"
+        );
 
     const emptyAddCategoryBtn =
-        $("emptyAddCategoryBtn");
+        document.getElementById(
+            "emptyAddCategoryBtn"
+        );
 
     const categoryModal =
-        $("categoryModal");
+        document.getElementById(
+            "categoryModal"
+        );
 
     const closeCategoryModal =
-        $("closeCategoryModal");
+        document.getElementById(
+            "closeCategoryModal"
+        );
 
     const cancelCategoryBtn =
-        $("cancelCategoryBtn");
+        document.getElementById(
+            "cancelCategoryBtn"
+        );
 
     const categoryForm =
-        $("categoryForm");
+        document.getElementById(
+            "categoryForm"
+        );
 
     const categoryId =
-        $("categoryId");
+        document.getElementById(
+            "categoryId"
+        );
 
     const categoryName =
-        $("categoryName");
+        document.getElementById(
+            "categoryName"
+        );
 
     const categoryDescription =
-        $("categoryDescription");
+        document.getElementById(
+            "categoryDescription"
+        );
 
     const categoryStatus =
-        $("categoryStatus");
+        document.getElementById(
+            "categoryStatus"
+        );
 
     const categoryFormMessage =
-        $("categoryFormMessage");
+        document.getElementById(
+            "categoryFormMessage"
+        );
 
     const saveCategoryBtn =
-        $("saveCategoryBtn");
+        document.getElementById(
+            "saveCategoryBtn"
+        );
 
     const saveCategorySpinner =
-        $("saveCategorySpinner");
+        document.getElementById(
+            "saveCategorySpinner"
+        );
 
     const saveCategoryIcon =
-        $("saveCategoryIcon");
+        document.getElementById(
+            "saveCategoryIcon"
+        );
 
     const saveCategoryText =
-        $("saveCategoryText");
+        document.getElementById(
+            "saveCategoryText"
+        );
 
     const categoriesTableBody =
-        $("categoriesTableBody");
+        document.getElementById(
+            "categoriesTableBody"
+        );
 
     const categoriesLoading =
-        $("categoriesLoading");
+        document.getElementById(
+            "categoriesLoading"
+        );
 
     const categoriesEmpty =
-        $("categoriesEmpty");
+        document.getElementById(
+            "categoriesEmpty"
+        );
 
     const categoriesError =
-        $("categoriesError");
+        document.getElementById(
+            "categoriesError"
+        );
 
     const categoriesErrorMessage =
-        $("categoriesErrorMessage");
+        document.getElementById(
+            "categoriesErrorMessage"
+        );
 
     const retryCategoriesBtn =
-        $("retryCategoriesBtn");
+        document.getElementById(
+            "retryCategoriesBtn"
+        );
 
     const categorySearch =
-        $("categorySearch");
+        document.getElementById(
+            "categorySearch"
+        );
 
     const categoryStatusFilter =
-        $("categoryStatusFilter");
+        document.getElementById(
+            "categoryStatusFilter"
+        );
 
     const refreshCategoriesBtn =
-        $("refreshCategoriesBtn");
+        document.getElementById(
+            "refreshCategoriesBtn"
+        );
 
     const totalCategories =
-        $("totalCategories");
+        document.getElementById(
+            "totalCategories"
+        );
 
     const activeCategories =
-        $("activeCategories");
+        document.getElementById(
+            "activeCategories"
+        );
 
     const categorizedProducts =
-        $("categorizedProducts");
+        document.getElementById(
+            "categorizedProducts"
+        );
 
     const emptyCategories =
-        $("emptyCategories");
+        document.getElementById(
+            "emptyCategories"
+        );
 
     const categoryResultsInfo =
-        $("categoryResultsInfo");
+        document.getElementById(
+            "categoryResultsInfo"
+        );
 
     const categoryPagination =
-        $("categoryPagination");
+        document.getElementById(
+            "categoryPagination"
+        );
 
     const connectionMessage =
-        $("connectionMessage");
+        document.getElementById(
+            "connectionMessage"
+        );
 
     const deleteCategoryModal =
-        $("deleteCategoryModal");
+        document.getElementById(
+            "deleteCategoryModal"
+        );
 
     const deleteCategoryName =
-        $("deleteCategoryName");
+        document.getElementById(
+            "deleteCategoryName"
+        );
 
     const deleteCategoryMessage =
-        $("deleteCategoryMessage");
+        document.getElementById(
+            "deleteCategoryMessage"
+        );
 
     const cancelDeleteCategoryBtn =
-        $("cancelDeleteCategoryBtn");
+        document.getElementById(
+            "cancelDeleteCategoryBtn"
+        );
 
     const confirmDeleteCategoryBtn =
-        $("confirmDeleteCategoryBtn");
+        document.getElementById(
+            "confirmDeleteCategoryBtn"
+        );
 
     const deleteCategorySpinner =
-        $("deleteCategorySpinner");
+        document.getElementById(
+            "deleteCategorySpinner"
+        );
 
 
     /* =====================================================
@@ -153,70 +258,99 @@
 
 
     /* =====================================================
-       API
+       API REQUEST
     ===================================================== */
 
-    async function apiRequest(action, data = {}) {
+    async function apiRequest(
+        action,
+        data = {}
+    ) {
 
         if (!API_URL) {
+
             throw new Error(
-                "API URL is not configured."
+                "StockFlow API URL is not configured."
             );
         }
 
 
         const payload = {
+
             action: action,
+
             data: data
+
         };
 
 
         console.log(
-            "StockFlow API request:",
+            "[STOCKFLOW API] Request:",
             payload
         );
 
 
-        const response = await fetch(
-            API_URL,
-            {
-                method: "POST",
+        let response;
 
-                /*
-                 * IMPORTANT:
-                 * Do NOT use application/json here.
-                 *
-                 * Google Apps Script Web Apps can trigger
-                 * a CORS preflight with application/json.
-                 *
-                 * text/plain avoids that problem.
-                 */
-                headers: {
-                    "Content-Type":
-                        "text/plain;charset=utf-8"
-                },
 
-                body: JSON.stringify(payload)
-            }
-        );
+        try {
+
+            response =
+                await fetch(
+                    API_URL,
+                    {
+                        method:
+                            "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "text/plain;charset=utf-8"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+        } catch (networkError) {
+
+            console.error(
+                "[STOCKFLOW API] Network error:",
+                networkError
+            );
+
+            throw new Error(
+                "Unable to connect to the StockFlow server. Check the Apps Script deployment and API URL."
+            );
+        }
 
 
         if (!response.ok) {
+
             throw new Error(
-                "API returned HTTP " +
+                "Server returned HTTP " +
                 response.status
             );
         }
 
 
-        const text =
+        const responseText =
             await response.text();
 
 
         console.log(
-            "StockFlow API response:",
-            text
+            "[STOCKFLOW API] Response:",
+            responseText
         );
+
+
+        if (!responseText) {
+
+            throw new Error(
+                "The server returned an empty response."
+            );
+        }
 
 
         let result;
@@ -224,26 +358,32 @@
 
         try {
 
-            result = JSON.parse(text);
+            result =
+                JSON.parse(
+                    responseText
+                );
 
-        } catch (error) {
+        } catch (parseError) {
 
             console.error(
-                "Invalid JSON from API:",
-                text
+                "[STOCKFLOW API] Invalid JSON:",
+                responseText
             );
 
             throw new Error(
-                "The server returned an invalid response."
+                "The server returned an invalid JSON response."
             );
         }
 
 
-        if (!result.success) {
+        if (
+            !result ||
+            result.success !== true
+        ) {
 
             throw new Error(
-                result.error ||
-                "The request failed."
+                result?.error ||
+                "The API request failed."
             );
         }
 
@@ -253,7 +393,7 @@
 
 
     /* =====================================================
-       LOAD CATEGORIES
+       LOAD
     ===================================================== */
 
     async function loadCategories() {
@@ -272,13 +412,15 @@
 
 
             categories =
-                Array.isArray(result.categories)
+                Array.isArray(
+                    result.categories
+                )
                     ? result.categories
                     : [];
 
 
             console.log(
-                "Loaded categories:",
+                "[STOCKFLOW] Categories:",
                 categories
             );
 
@@ -286,6 +428,7 @@
             applyFilters();
 
             updateStatistics();
+
 
             showConnectionMessage(
                 "Categories loaded successfully.",
@@ -296,7 +439,7 @@
         } catch (error) {
 
             console.error(
-                "loadCategories error:",
+                "[STOCKFLOW] Failed to load categories:",
                 error
             );
 
@@ -305,7 +448,9 @@
 
             filteredCategories = [];
 
+
             renderCategories();
+
 
             showError(
                 error.message ||
@@ -316,7 +461,7 @@
 
 
     /* =====================================================
-       FILTERING
+       FILTER
     ===================================================== */
 
     function applyFilters() {
@@ -343,14 +488,16 @@
                         String(
                             category.categoryName ||
                             ""
-                        ).toLowerCase();
+                        )
+                            .toLowerCase();
 
 
                     const description =
                         String(
                             category.description ||
                             ""
-                        ).toLowerCase();
+                        )
+                            .toLowerCase();
 
 
                     const categoryStatus =
@@ -383,7 +530,7 @@
 
 
     /* =====================================================
-       RENDER TABLE
+       RENDER
     ===================================================== */
 
     function renderCategories() {
@@ -393,32 +540,52 @@
         }
 
 
-        categoriesTableBody.innerHTML = "";
+        categoriesTableBody.innerHTML =
+            "";
 
 
-        if (!filteredCategories.length) {
+        if (
+            categoriesLoading
+        ) {
 
-            categoriesTableBody.innerHTML = "";
+            categoriesLoading.hidden =
+                true;
+        }
+
+
+        if (
+            filteredCategories.length === 0
+        ) {
 
             if (categoriesEmpty) {
-                categoriesEmpty.hidden = false;
+
+                categoriesEmpty.hidden =
+                    false;
             }
 
+
             if (categoryResultsInfo) {
+
                 categoryResultsInfo.textContent =
                     "Showing 0 categories";
             }
 
+
             if (categoryPagination) {
-                categoryPagination.innerHTML = "";
+
+                categoryPagination.innerHTML =
+                    "";
             }
+
 
             return;
         }
 
 
         if (categoriesEmpty) {
-            categoriesEmpty.hidden = true;
+
+            categoriesEmpty.hidden =
+                true;
         }
 
 
@@ -426,19 +593,15 @@
             function (category) {
 
                 const row =
-                    document.createElement("tr");
+                    document.createElement(
+                        "tr"
+                    );
 
 
                 const status =
                     normalizeStatus(
                         category.status
                     );
-
-
-                const statusText =
-                    status === "ACTIVE"
-                        ? "Active"
-                        : "Inactive";
 
 
                 const productCount =
@@ -456,43 +619,70 @@
 
 
                 row.innerHTML = `
+
                     <td>
+
                         <div class="category-name-cell">
+
                             <div class="category-table-icon">
+
                                 <i class="fa-solid fa-layer-group"></i>
+
                             </div>
 
                             <strong>
                                 ${escapeHtml(
-                                    category.categoryName || "Unnamed"
+                                    category.categoryName ||
+                                    "Unnamed"
                                 )}
                             </strong>
+
                         </div>
+
                     </td>
+
 
                     <td>
                         ${escapeHtml(
-                            category.description || "—"
+                            category.description ||
+                            "—"
                         )}
                     </td>
 
+
                     <td>
+
                         <span class="product-count">
                             ${productCount}
                         </span>
+
                     </td>
 
+
                     <td>
-                        <span class="status-badge ${status.toLowerCase()}">
-                            ${statusText}
+
+                        <span
+                            class="status-badge ${status.toLowerCase()}"
+                        >
+                            ${
+                                status === "ACTIVE"
+                                    ? "Active"
+                                    : "Inactive"
+                            }
                         </span>
+
                     </td>
 
+
                     <td>
-                        ${escapeHtml(created)}
+                        ${escapeHtml(
+                            formatDate(created)
+                        )}
                     </td>
+
 
                     <td class="action-column">
+
                         <div class="table-actions">
 
                             <button
@@ -500,23 +690,31 @@
                                 class="table-action-btn delete"
                                 data-action="delete"
                                 data-id="${escapeAttribute(
-                                    category.categoryId || ""
+                                    category.categoryId ||
+                                    ""
                                 )}"
                                 data-name="${escapeAttribute(
-                                    category.categoryName || ""
+                                    category.categoryName ||
+                                    ""
                                 )}"
                                 title="Delete category"
                                 aria-label="Delete category"
                             >
+
                                 <i class="fa-solid fa-trash"></i>
+
                             </button>
 
                         </div>
+
                     </td>
+
                 `;
 
 
-                categoriesTableBody.appendChild(row);
+                categoriesTableBody.appendChild(
+                    row
+                );
             }
         );
 
@@ -525,6 +723,7 @@
 
             const count =
                 filteredCategories.length;
+
 
             categoryResultsInfo.textContent =
                 `Showing ${count} ${
@@ -536,7 +735,9 @@
 
 
         if (categoryPagination) {
-            categoryPagination.innerHTML = "";
+
+            categoryPagination.innerHTML =
+                "";
         }
     }
 
@@ -554,10 +755,12 @@
         const active =
             categories.filter(
                 function (category) {
+
                     return (
                         normalizeStatus(
                             category.status
-                        ) === "ACTIVE"
+                        ) ===
+                        "ACTIVE"
                     );
                 }
             ).length;
@@ -565,10 +768,13 @@
 
         const productTotal =
             categories.reduce(
-                function (sum, category) {
+                function (
+                    total,
+                    category
+                ) {
 
                     return (
-                        sum +
+                        total +
                         Number(
                             category.productCount ??
                             category.products ??
@@ -597,21 +803,28 @@
 
 
         if (totalCategories) {
+
             totalCategories.textContent =
                 total;
         }
 
+
         if (activeCategories) {
+
             activeCategories.textContent =
                 active;
         }
 
+
         if (categorizedProducts) {
+
             categorizedProducts.textContent =
                 productTotal;
         }
 
+
         if (emptyCategories) {
+
             emptyCategories.textContent =
                 empty;
         }
@@ -619,40 +832,51 @@
 
 
     /* =====================================================
-       ADD MODAL
+       ADD CATEGORY MODAL
     ===================================================== */
 
-    function openAddCategoryModal() {
+    function openCategoryModal() {
 
         if (!categoryModal) {
             return;
         }
 
 
-        categoryForm?.reset();
+        if (categoryForm) {
+
+            categoryForm.reset();
+        }
 
 
         if (categoryId) {
-            categoryId.value = "";
+
+            categoryId.value =
+                "";
         }
 
 
         if (categoryStatus) {
+
             categoryStatus.value =
                 "ACTIVE";
         }
 
 
-        const title =
-            $("categoryModalTitle");
+        const modalTitle =
+            document.getElementById(
+                "categoryModalTitle"
+            );
 
-        if (title) {
-            title.textContent =
+
+        if (modalTitle) {
+
+            modalTitle.textContent =
                 "Add Category";
         }
 
 
         if (saveCategoryText) {
+
             saveCategoryText.textContent =
                 "Save Category";
         }
@@ -661,13 +885,17 @@
         clearFormMessage();
 
 
-        categoryModal.hidden = false;
+        categoryModal.hidden =
+            false;
 
 
         setTimeout(
             function () {
 
-                categoryName?.focus();
+                if (categoryName) {
+
+                    categoryName.focus();
+                }
 
             },
             50
@@ -675,20 +903,27 @@
     }
 
 
-    function closeAddCategoryModal() {
+    function closeCategoryModalHandler() {
 
         if (!categoryModal) {
             return;
         }
 
 
-        categoryModal.hidden = true;
+        categoryModal.hidden =
+            true;
 
-        categoryForm?.reset();
+
+        if (categoryForm) {
+
+            categoryForm.reset();
+        }
 
 
         if (categoryId) {
-            categoryId.value = "";
+
+            categoryId.value =
+                "";
         }
 
 
@@ -700,20 +935,27 @@
        SAVE CATEGORY
     ===================================================== */
 
-    async function saveCategory() {
+    async function handleCategorySubmit(
+        event
+    ) {
+
+        event.preventDefault();
+
 
         const name =
             (
                 categoryName?.value ||
                 ""
-            ).trim();
+            )
+                .trim();
 
 
         const description =
             (
                 categoryDescription?.value ||
                 ""
-            ).trim();
+            )
+                .trim();
 
 
         const status =
@@ -727,6 +969,7 @@
                 "Category name is required."
             );
 
+
             categoryName?.focus();
 
             return;
@@ -739,39 +982,61 @@
                 "Category name must be 100 characters or less."
             );
 
+
             categoryName?.focus();
 
             return;
         }
 
 
-        setSaveLoading(true);
+        setSaveLoading(
+            true
+        );
+
 
         clearFormMessage();
 
 
         try {
 
+            /*
+             * THIS IS THE IMPORTANT PART.
+             *
+             * Your Apps Script expects:
+             *
+             * request.action
+             * request.data.categoryName
+             *
+             */
+
             const result =
                 await apiRequest(
                     "saveCategory",
                     {
-                        categoryName: name,
-                        description: description,
-                        status: status
+                        categoryName:
+                            name,
+
+                        description:
+                            description,
+
+                        status:
+                            status
                     }
                 );
 
 
             console.log(
-                "Category saved:",
+                "[STOCKFLOW] Save successful:",
                 result
             );
 
 
-            closeAddCategoryModal();
+            closeCategoryModalHandler();
 
 
+            /*
+             * Reload directly from Google Sheets.
+             */
             await loadCategories();
 
 
@@ -785,7 +1050,7 @@
         } catch (error) {
 
             console.error(
-                "saveCategory error:",
+                "[STOCKFLOW] Save category failed:",
                 error
             );
 
@@ -798,13 +1063,15 @@
 
         } finally {
 
-            setSaveLoading(false);
+            setSaveLoading(
+                false
+            );
         }
     }
 
 
     /* =====================================================
-       DELETE
+       DELETE MODAL
     ===================================================== */
 
     function openDeleteModal(
@@ -813,18 +1080,26 @@
     ) {
 
         categoryToDelete = {
-            id: id,
-            name: name
+
+            id:
+                id || "",
+
+            name:
+                name || ""
+
         };
 
 
         if (deleteCategoryName) {
+
             deleteCategoryName.textContent =
-                name || "this category";
+                name ||
+                "this category";
         }
 
 
         if (deleteCategoryMessage) {
+
             deleteCategoryMessage.hidden =
                 true;
 
@@ -834,6 +1109,7 @@
 
 
         if (deleteCategoryModal) {
+
             deleteCategoryModal.hidden =
                 false;
         }
@@ -842,24 +1118,28 @@
 
     function closeDeleteModal() {
 
-        categoryToDelete = null;
+        categoryToDelete =
+            null;
 
 
         if (deleteCategoryModal) {
+
             deleteCategoryModal.hidden =
                 true;
         }
     }
 
 
-    async function deleteSelectedCategory() {
+    async function handleDeleteCategory() {
 
         if (!categoryToDelete) {
             return;
         }
 
 
-        setDeleteLoading(true);
+        setDeleteLoading(
+            true
+        );
 
 
         try {
@@ -893,7 +1173,7 @@
         } catch (error) {
 
             console.error(
-                "deleteCategory error:",
+                "[STOCKFLOW] Delete category failed:",
                 error
             );
 
@@ -911,7 +1191,9 @@
 
         } finally {
 
-            setDeleteLoading(false);
+            setDeleteLoading(
+                false
+            );
         }
     }
 
@@ -923,40 +1205,54 @@
     function showLoading() {
 
         if (categoriesLoading) {
+
             categoriesLoading.hidden =
                 false;
         }
 
+
         if (categoriesEmpty) {
+
             categoriesEmpty.hidden =
                 true;
         }
 
+
         if (categoriesError) {
+
             categoriesError.hidden =
                 true;
         }
     }
 
 
-    function showError(message) {
+    function showError(
+        message
+    ) {
 
         if (categoriesLoading) {
+
             categoriesLoading.hidden =
                 true;
         }
 
+
         if (categoriesEmpty) {
+
             categoriesEmpty.hidden =
                 true;
         }
 
+
         if (categoriesError) {
+
             categoriesError.hidden =
                 false;
         }
 
+
         if (categoriesErrorMessage) {
+
             categoriesErrorMessage.textContent =
                 message;
         }
@@ -966,6 +1262,7 @@
     function hideError() {
 
         if (categoriesError) {
+
             categoriesError.hidden =
                 true;
         }
@@ -973,27 +1270,36 @@
 
 
     /* =====================================================
-       FORM LOADING
+       SAVE LOADING
     ===================================================== */
 
-    function setSaveLoading(loading) {
+    function setSaveLoading(
+        loading
+    ) {
 
         if (saveCategoryBtn) {
+
             saveCategoryBtn.disabled =
                 loading;
         }
 
+
         if (saveCategorySpinner) {
+
             saveCategorySpinner.hidden =
                 !loading;
         }
 
+
         if (saveCategoryIcon) {
+
             saveCategoryIcon.hidden =
                 loading;
         }
 
+
         if (saveCategoryText) {
+
             saveCategoryText.textContent =
                 loading
                     ? "Saving..."
@@ -1002,14 +1308,23 @@
     }
 
 
-    function setDeleteLoading(loading) {
+    /* =====================================================
+       DELETE LOADING
+    ===================================================== */
+
+    function setDeleteLoading(
+        loading
+    ) {
 
         if (confirmDeleteCategoryBtn) {
+
             confirmDeleteCategoryBtn.disabled =
                 loading;
         }
 
+
         if (deleteCategorySpinner) {
+
             deleteCategorySpinner.hidden =
                 !loading;
         }
@@ -1017,7 +1332,7 @@
 
 
     /* =====================================================
-       FORM MESSAGES
+       FORM MESSAGE
     ===================================================== */
 
     function showFormMessage(
@@ -1035,7 +1350,8 @@
 
 
         categoryFormMessage.className =
-            "form-message " + type;
+            "form-message " +
+            type;
 
 
         categoryFormMessage.hidden =
@@ -1053,8 +1369,10 @@
         categoryFormMessage.textContent =
             "";
 
+
         categoryFormMessage.hidden =
             true;
+
 
         categoryFormMessage.className =
             "form-message";
@@ -1110,7 +1428,9 @@
     ) {
 
         const container =
-            $("toastContainer");
+            document.getElementById(
+                "toastContainer"
+            );
 
 
         if (!container) {
@@ -1119,38 +1439,45 @@
 
 
         const toast =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
 
         toast.className =
-            `toast toast-${type}`;
+            "toast toast-" +
+            type;
+
+
+        const icon =
+            type === "success"
+                ? "fa-circle-check"
+                : "fa-circle-exclamation";
 
 
         toast.innerHTML = `
-            <i class="fa-solid ${
-                type === "success"
-                    ? "fa-circle-check"
-                    : "fa-circle-exclamation"
-            }"></i>
+
+            <i class="fa-solid ${icon}"></i>
 
             <span>
                 ${escapeHtml(message)}
             </span>
+
         `;
 
 
-        container.appendChild(toast);
+        container.appendChild(
+            toast
+        );
 
 
-        setTimeout(
+        requestAnimationFrame(
             function () {
 
                 toast.classList.add(
                     "show"
                 );
-
-            },
-            10
+            }
         );
 
 
@@ -1161,9 +1488,12 @@
                     "show"
                 );
 
+
                 setTimeout(
                     function () {
+
                         toast.remove();
+
                     },
                     300
                 );
@@ -1178,25 +1508,35 @@
        HELPERS
     ===================================================== */
 
-    function normalizeStatus(value) {
+    function normalizeStatus(
+        value
+    ) {
 
         const status =
             String(
-                value || "ACTIVE"
+                value ||
+                "ACTIVE"
             )
                 .trim()
                 .toUpperCase();
 
 
-        return status === "INACTIVE"
+        return (
+            status ===
+            "INACTIVE"
+        )
             ? "INACTIVE"
             : "ACTIVE";
     }
 
 
-    function escapeHtml(value) {
+    function escapeHtml(
+        value
+    ) {
 
-        return String(value ?? "")
+        return String(
+            value ?? ""
+        )
             .replace(
                 /&/g,
                 "&amp;"
@@ -1220,63 +1560,81 @@
     }
 
 
-    function escapeAttribute(value) {
+    function escapeAttribute(
+        value
+    ) {
 
-        return escapeHtml(value);
+        return escapeHtml(
+            value
+        );
+    }
+
+
+    function formatDate(
+        value
+    ) {
+
+        if (!value) {
+            return "—";
+        }
+
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return String(value);
+        }
+
+
+        return date.toLocaleDateString(
+            undefined,
+            {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            }
+        );
     }
 
 
     /* =====================================================
-       EVENTS
+       EVENT LISTENERS
     ===================================================== */
 
     addCategoryBtn?.addEventListener(
         "click",
-        openAddCategoryModal
+        openCategoryModal
     );
 
 
     emptyAddCategoryBtn?.addEventListener(
         "click",
-        openAddCategoryModal
+        openCategoryModal
     );
 
 
     closeCategoryModal?.addEventListener(
         "click",
-        closeAddCategoryModal
+        closeCategoryModalHandler
     );
 
 
     cancelCategoryBtn?.addEventListener(
         "click",
-        closeAddCategoryModal
-    );
-
-
-    categoryModal?.addEventListener(
-        "click",
-        function (event) {
-
-            if (
-                event.target ===
-                categoryModal
-            ) {
-
-                closeAddCategoryModal();
-            }
-        }
+        closeCategoryModalHandler
     );
 
 
     categoryForm?.addEventListener(
         "submit",
-        function (event) {
-
-            event.preventDefault();
-
-            saveCategory();
-        }
+        handleCategorySubmit
     );
 
 
@@ -1301,6 +1659,48 @@
     retryCategoriesBtn?.addEventListener(
         "click",
         loadCategories
+    );
+
+
+    confirmDeleteCategoryBtn?.addEventListener(
+        "click",
+        handleDeleteCategory
+    );
+
+
+    cancelDeleteCategoryBtn?.addEventListener(
+        "click",
+        closeDeleteModal
+    );
+
+
+    categoryModal?.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                categoryModal
+            ) {
+
+                closeCategoryModalHandler();
+            }
+        }
+    );
+
+
+    deleteCategoryModal?.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                deleteCategoryModal
+            ) {
+
+                closeDeleteModal();
+            }
+        }
     );
 
 
@@ -1333,25 +1733,30 @@
     );
 
 
-    cancelDeleteCategoryBtn?.addEventListener(
-        "click",
-        closeDeleteModal
-    );
-
-
-    confirmDeleteCategoryBtn?.addEventListener(
-        "click",
-        deleteSelectedCategory
-    );
-
-
-    deleteCategoryModal?.addEventListener(
-        "click",
+    document.addEventListener(
+        "keydown",
         function (event) {
 
             if (
-                event.target ===
-                deleteCategoryModal
+                event.key !==
+                "Escape"
+            ) {
+                return;
+            }
+
+
+            if (
+                categoryModal &&
+                !categoryModal.hidden
+            ) {
+
+                closeCategoryModalHandler();
+            }
+
+
+            if (
+                deleteCategoryModal &&
+                !deleteCategoryModal.hidden
             ) {
 
                 closeDeleteModal();
@@ -1360,35 +1765,8 @@
     );
 
 
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (
-                event.key === "Escape"
-            ) {
-
-                if (
-                    categoryModal &&
-                    !categoryModal.hidden
-                ) {
-                    closeAddCategoryModal();
-                }
-
-
-                if (
-                    deleteCategoryModal &&
-                    !deleteCategoryModal.hidden
-                ) {
-                    closeDeleteModal();
-                }
-            }
-        }
-    );
-
-
     /* =====================================================
-       PUBLIC API
+       GLOBAL FUNCTIONS
     ===================================================== */
 
     window.loadCategories =
@@ -1396,20 +1774,37 @@
 
 
     window.openCategoryModal =
-        openAddCategoryModal;
+        openCategoryModal;
 
 
     /* =====================================================
-       INITIAL LOAD
+       INITIALIZE
     ===================================================== */
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        function () {
+    function initialize() {
 
-            loadCategories();
+        console.log(
+            "[STOCKFLOW] Categories module initialized."
+        );
 
-        }
-    );
+
+        loadCategories();
+    }
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
+        );
+
+    } else {
+
+        initialize();
+    }
 
 })();
