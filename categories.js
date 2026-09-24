@@ -2,15 +2,13 @@
    STOCKFLOW — CATEGORIES
    File: categories.js
 
-   Works with the existing config.js:
-
-       window.STOCKFLOW_CONFIG.API_URL
-
-   Backend actions:
+   Google Apps Script API:
 
        listCategories
        saveCategory
        deleteCategory
+
+   API URL is configured directly in this file.
 ========================================================= */
 
 (function () {
@@ -22,28 +20,14 @@
        CONFIG
     ===================================================== */
 
-    const CONFIG =
-        window.STOCKFLOW_CONFIG;
-
-
-    if (!CONFIG) {
-
-        console.error(
-            "[STOCKFLOW] STOCKFLOW_CONFIG is not available."
-        );
-
-        return;
-    }
-
-
     const API_URL =
-        CONFIG.API_URL;
+        "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec";
 
 
     if (!API_URL) {
 
         console.error(
-            "[STOCKFLOW] CONFIG.API_URL is missing."
+            "[STOCKFLOW] API URL is missing."
         );
 
         return;
@@ -1000,8 +984,6 @@
         try {
 
             /*
-             * THIS IS THE IMPORTANT PART.
-             *
              * Your Apps Script expects:
              *
              * request.action
@@ -1037,6 +1019,7 @@
             /*
              * Reload directly from Google Sheets.
              */
+
             await loadCategories();
 
 
