@@ -2742,48 +2742,83 @@ async function inventoryRequest(
 
 
     /* =========================================================
-       GENERIC INVENTORY
-       ========================================================= */
+   GENERIC INVENTORY
+   ---------------------------------------------------------
+   Authentication API:
+       request()
+       ↓
+       API_URL
 
-    async function inventory(
-        action,
-        data = {}
-    ) {
+   Inventory API:
+       inventory()
+       ↓
+       inventoryRequest()
+       ↓
+       INVENTORY_API_URL
 
-        action =
-            safeString(
-                action
-            );
+   IMPORTANT:
+   - Authentication requests stay on API_URL.
+   - Inventory requests use INVENTORY_API_URL.
+   - The user's session token is still passed to
+     the Inventory backend.
+   ========================================================= */
+
+async function inventory(
+    action,
+    data = {}
+) {
+
+    action =
+        safeString(
+            action
+        );
 
 
-        if (!action) {
+    /* ---------------------------------------------------------
+       Validate inventory action
+       --------------------------------------------------------- */
 
-            throw new StockFlowAPIError(
+    if (!action) {
 
-                "Inventory action is required.",
+        throw new StockFlowAPIError(
 
-                "MISSING_INVENTORY_ACTION"
-            );
-        }
+            "Inventory action is required.",
 
-
-        return request(
-
-            action,
-
-            {
-
-                ...data,
-
-                token:
-                    safeString(
-                        data.token
-                    ) ||
-
-                    getToken()
-            }
+            "MISSING_INVENTORY_ACTION"
         );
     }
+
+
+    /* ---------------------------------------------------------
+       Send inventory request to the SEPARATE
+       Inventory Google Apps Script Web App.
+       --------------------------------------------------------- */
+
+    return inventoryRequest(
+
+        action,
+
+        {
+
+            ...(
+                data &&
+                typeof data ===
+                    "object"
+
+                    ? data
+
+                    : {}
+            ),
+
+            token:
+                safeString(
+                    data?.token
+                ) ||
+
+                getToken()
+        }
+    );
+}
 
 
     /* =========================================================
