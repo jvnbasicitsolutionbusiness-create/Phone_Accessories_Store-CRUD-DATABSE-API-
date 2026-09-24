@@ -1,11 +1,33 @@
 /* =========================================================
-   STOCKFLOW INVENTORY
-   inventory.js
-   Full replacement
-   Designed specifically for inventory.html
+   STOCKFLOW | INVENTORY.JS
+   =========================================================
+   Inventory Management Controller
+
+   Features:
+   - Authenticated session detection
+   - STOCKFLOW_SESSION support
+   - Current signed-in user detection
+   - API user refresh
+   - Sidebar user display
+   - Top-right user display
+   - Clickable profile navigation
+   - Working logout
+   - Mobile sidebar
+   - Notifications
+   - Inventory API loading
+   - Local storage fallback
+   - Inventory statistics
+   - Inventory table
+   - Connection monitoring
+   - Manual retry
+   - Automatic refresh
+   - Visibility refresh
+   - Audit/activity support
+   - Global theme compatibility
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
+
     "use strict";
 
 
@@ -21,11 +43,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
+       CONFIGURATION
+       ===================================================== */
+
+    const MOBILE_BREAKPOINT = 900;
+
+    const AUTO_REFRESH_INTERVAL = 60000;
+
+    const SESSION_KEY = "STOCKFLOW_SESSION";
+
+
+    /* =====================================================
        DOM ELEMENTS
        ===================================================== */
 
     const elements = {
-        body: document.body,
+
+        body:
+            document.body,
+
+        html:
+            document.documentElement,
+
+
+        /* -----------------------------------------------
+           SIDEBAR
+           ----------------------------------------------- */
 
         sidebar:
             document.getElementById("sidebar"),
@@ -36,8 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
         mobileMenuBtn:
             document.getElementById("mobileMenuBtn"),
 
+
+        /* -----------------------------------------------
+           AUTH
+           ----------------------------------------------- */
+
         logoutBtn:
             document.getElementById("logoutBtn"),
+
+
+        /* -----------------------------------------------
+           NOTIFICATIONS
+           ----------------------------------------------- */
 
         notificationBtn:
             document.getElementById("notificationBtn"),
@@ -45,11 +98,21 @@ document.addEventListener("DOMContentLoaded", () => {
         notificationPanel:
             document.getElementById("notificationPanel"),
 
+
+        /* -----------------------------------------------
+           CONNECTION
+           ----------------------------------------------- */
+
         connectionBadge:
             document.getElementById("connectionBadge"),
 
         connectionMessage:
             document.getElementById("connectionMessage"),
+
+
+        /* -----------------------------------------------
+           SIDEBAR USER
+           ----------------------------------------------- */
 
         userAvatar:
             document.getElementById("userAvatar"),
@@ -60,6 +123,11 @@ document.addEventListener("DOMContentLoaded", () => {
         userRole:
             document.getElementById("userRole"),
 
+
+        /* -----------------------------------------------
+           TOP USER
+           ----------------------------------------------- */
+
         topUserAvatar:
             document.getElementById("topUserAvatar"),
 
@@ -68,6 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         topUserRole:
             document.getElementById("topUserRole"),
+
+
+        /* -----------------------------------------------
+           INVENTORY STATISTICS
+           ----------------------------------------------- */
 
         productCount:
             document.getElementById("pc"),
@@ -81,404 +154,1115 @@ document.addEventListener("DOMContentLoaded", () => {
         outOfStock:
             document.getElementById("os"),
 
+
+        /* -----------------------------------------------
+           INVENTORY TABLE
+           ----------------------------------------------- */
+
         rows:
             document.getElementById("rows"),
+
+
+        /* -----------------------------------------------
+           ALERT
+           ----------------------------------------------- */
 
         alert:
             document.getElementById("alert"),
 
+
+        /* -----------------------------------------------
+           INVENTORY COUNT
+           ----------------------------------------------- */
+
         inventoryCount:
             document.getElementById("inventoryCount")
+
     };
 
 
     /* =====================================================
-       CONSTANTS
+       STATE
        ===================================================== */
 
-    const AUTH_STORAGE_KEYS = [
-        "stockflowUser",
-        "stockflow_user",
-        "currentUser",
-        "current_user",
-        "loggedInUser",
-        "logged_in_user",
-        "user",
-        "authUser",
-        "auth_user",
-        "sessionUser",
-        "session_user"
-    ];
+    const state = {
 
-    const PRODUCT_STORAGE_KEYS = [
-        "stockflowInventory",
-        "stockflow_inventory",
-        "inventory",
-        "products",
-        "stockflowProducts",
-        "stockflow_products"
-    ];
+        currentUser:
+            null,
 
-    let refreshTimer = null;
-    let currentInventory = [];
+        currentInventory:
+            [],
+
+        refreshTimer:
+            null,
+
+        isLoading:
+            false,
+
+        isLoggingOut:
+            false,
+
+        previousMobileState:
+            window.innerWidth <= MOBILE_BREAKPOINT
+
+    };
 
 
     /* =====================================================
-       UTILITY HELPERS
+       STORAGE KEYS
        ===================================================== */
 
-    function safeString(value, fallback = "") {
+    const LEGACY_AUTH_KEYS = [
+
+        "stockflowUser",
+        "stockflow_user",
+
+        "currentUser",
+        "current_user",
+
+        "loggedInUser",
+        "logged_in_user",
+
+        "user",
+
+        "authUser",
+        "auth_user",
+
+        "sessionUser",
+        "session_user"
+
+    ];
+
+
+    const PRODUCT_STORAGE_KEYS = [
+
+        "stockflowInventory",
+        "stockflow_inventory",
+
+        "inventory",
+
+        "products",
+
+        "stockflowProducts",
+        "stockflow_products"
+
+    ];
+
+
+    /* =====================================================
+       GENERAL HELPERS
+       ===================================================== */
+
+    function safeString(
+        value,
+        fallback = ""
+    ) {
+
         if (
             value === null ||
             value === undefined
         ) {
+
             return fallback;
+
         }
 
-        return String(value).trim() || fallback;
+
+        const result =
+            String(value).trim();
+
+
+        return result ||
+            fallback;
+
     }
 
 
-    function escapeHTML(value) {
+    function escapeHTML(
+        value
+    ) {
+
         return safeString(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
     }
 
 
-    function toNumber(value, fallback = 0) {
+    function toNumber(
+        value,
+        fallback = 0
+    ) {
+
         if (
             value === null ||
             value === undefined ||
             value === ""
         ) {
+
             return fallback;
+
         }
 
-        const number = Number(
-            String(value)
-                .replace(/,/g, "")
-                .replace(/[^\d.-]/g, "")
-        );
+
+        const number =
+            Number(
+                String(value)
+                    .replace(/,/g, "")
+                    .replace(
+                        /[^\d.-]/g,
+                        ""
+                    )
+            );
+
 
         return Number.isFinite(number)
             ? number
             : fallback;
+
     }
 
 
-    function formatNumber(value) {
-        return toNumber(value).toLocaleString(
-            "en-US"
-        );
+    function formatNumber(
+        value
+    ) {
+
+        return toNumber(value)
+            .toLocaleString(
+                "en-US"
+            );
+
     }
 
 
-    function getInitials(name) {
-        const cleanName = safeString(
-            name,
-            "StockFlow User"
-        );
+    function isObject(
+        value
+    ) {
 
-        const parts = cleanName
-            .split(/\s+/)
-            .filter(Boolean);
-
-        if (!parts.length) {
-            return "SF";
-        }
-
-        if (parts.length === 1) {
-            return parts[0]
-                .substring(0, 2)
-                .toUpperCase();
-        }
-
-        return (
-            parts[0][0] +
-            parts[parts.length - 1][0]
-        ).toUpperCase();
-    }
-
-
-    /* =====================================================
-       ROLE NORMALIZATION
-       ===================================================== */
-
-    function normalizeRole(role) {
-        const value = safeString(
-            role,
-            "Employee"
-        ).toLowerCase();
-
-        /*
-         * Administrator / Manager
-         */
-        if (
-            value.includes("admin") ||
-            value.includes("manager")
-        ) {
-            return "Administrator";
-        }
-
-        /*
-         * Employee / Staff / Worker
-         */
-        if (
-            value.includes("employee") ||
-            value.includes("staff") ||
-            value.includes("worker")
-        ) {
-            return "Employee";
-        }
-
-        /*
-         * IMPORTANT:
-         * Default role is Employee.
-         */
-        return "Employee";
-    }
-
-
-    function isObject(value) {
         return (
             value !== null &&
             typeof value === "object" &&
             !Array.isArray(value)
         );
+
+    }
+
+
+    function extractArray(
+        data
+    ) {
+
+        if (
+            Array.isArray(data)
+        ) {
+
+            return data;
+
+        }
+
+
+        if (
+            !isObject(data)
+        ) {
+
+            return [];
+
+        }
+
+
+        const possibleKeys = [
+
+            "data",
+            "items",
+            "results",
+
+            "inventory",
+            "inventories",
+
+            "products",
+
+            "rows",
+            "records"
+
+        ];
+
+
+        for (
+            const key of possibleKeys
+        ) {
+
+            if (
+                Array.isArray(
+                    data[key]
+                )
+            ) {
+
+                return data[key];
+
+            }
+
+        }
+
+
+        return [];
+
     }
 
 
     /* =====================================================
-       AUTHENTICATION
+       USER HELPERS
+       ===================================================== */
+
+    function getInitials(
+        name
+    ) {
+
+        const cleanName =
+            safeString(
+                name,
+                "StockFlow User"
+            );
+
+
+        const parts =
+            cleanName
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        if (!parts.length) {
+
+            return "SF";
+
+        }
+
+
+        if (
+            parts.length === 1
+        ) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+
+        return (
+            parts[0][0] +
+            parts[
+                parts.length - 1
+            ][0]
+        ).toUpperCase();
+
+    }
+
+
+    function normalizeRole(
+        role
+    ) {
+
+        const value =
+            safeString(
+                role,
+                "Employee"
+            ).toLowerCase();
+
+
+        if (
+            value.includes("admin") ||
+            value.includes("manager")
+        ) {
+
+            return "Administrator";
+
+        }
+
+
+        if (
+            value.includes("employee") ||
+            value.includes("staff") ||
+            value.includes("worker")
+        ) {
+
+            return "Employee";
+
+        }
+
+
+        return "Employee";
+
+    }
+
+
+    /* =====================================================
+       AUTHENTICATION CONTROLLER
        ===================================================== */
 
     function getAuthController() {
+
         return (
             window.StockFlowAuth ||
             window.StockFlowAuthUI ||
             window.Auth ||
             null
         );
+
     }
 
 
-    function readStoredUser() {
-        for (const key of AUTH_STORAGE_KEYS) {
+    /* =====================================================
+       READ MAIN STOCKFLOW SESSION
+       ===================================================== */
 
-            /* ---------------------------------------------
-               LOCAL STORAGE
-               --------------------------------------------- */
+    function readStockFlowSession() {
 
-            try {
-                const localValue =
-                    localStorage.getItem(key);
+        try {
 
-                if (localValue) {
+            const raw =
+                sessionStorage.getItem(
+                    SESSION_KEY
+                );
 
-                    try {
-                        return JSON.parse(
-                            localValue
-                        );
-                    } catch {
-                        return {
-                            name: localValue
-                        };
-                    }
-                }
 
-            } catch {
-                // Continue.
+            if (!raw) {
+
+                return null;
+
             }
 
+
+            const parsed =
+                JSON.parse(raw);
+
+
+            if (!parsed) {
+
+                return null;
+
+            }
+
+
+            /*
+             * Standard login structure:
+             *
+             * {
+             *     success: true,
+             *     user: {...}
+             * }
+             */
+
+            if (
+                isObject(parsed.user)
+            ) {
+
+                return parsed.user;
+
+            }
+
+
+            if (
+                isObject(
+                    parsed.data?.user
+                )
+            ) {
+
+                return parsed.data.user;
+
+            }
+
+
+            if (
+                isObject(
+                    parsed.data
+                )
+            ) {
+
+                return parsed.data;
+
+            }
+
+
+            return isObject(parsed)
+                ? parsed
+                : null;
+
+        }
+
+        catch (error) {
+
+            console.warn(
+                "STOCKFLOW_SESSION could not be read:",
+                error
+            );
+
+
+            return null;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LEGACY STORAGE FALLBACK
+       ===================================================== */
+
+    function readLegacyStoredUser() {
+
+        for (
+            const key of LEGACY_AUTH_KEYS
+        ) {
 
             /* ---------------------------------------------
                SESSION STORAGE
                --------------------------------------------- */
 
             try {
+
                 const sessionValue =
-                    sessionStorage.getItem(key);
+                    sessionStorage.getItem(
+                        key
+                    );
+
 
                 if (sessionValue) {
 
                     try {
+
                         return JSON.parse(
                             sessionValue
                         );
-                    } catch {
-                        return {
-                            name: sessionValue
-                        };
+
                     }
+
+                    catch {
+
+                        return {
+                            name:
+                                sessionValue
+                        };
+
+                    }
+
                 }
 
-            } catch {
+            }
+
+            catch {
                 // Continue.
             }
+
+
+            /* ---------------------------------------------
+               LOCAL STORAGE
+               --------------------------------------------- */
+
+            try {
+
+                const localValue =
+                    localStorage.getItem(
+                        key
+                    );
+
+
+                if (localValue) {
+
+                    try {
+
+                        return JSON.parse(
+                            localValue
+                        );
+
+                    }
+
+                    catch {
+
+                        return {
+                            name:
+                                localValue
+                        };
+
+                    }
+
+                }
+
+            }
+
+            catch {
+                // Continue.
+            }
+
         }
 
+
         return null;
+
     }
 
 
-    async function getCurrentUser() {
+    /* =====================================================
+       GET SESSION USER
+       ===================================================== */
+
+    function getSessionUser() {
+
+        return (
+            readStockFlowSession() ||
+            readLegacyStoredUser()
+        );
+
+    }
+
+
+    /* =====================================================
+       USER IDENTITY
+       ===================================================== */
+
+    function getUserIdentity(
+        user
+    ) {
+
+        if (!user) {
+
+            return null;
+
+        }
+
+
+        const identity = {
+
+            id:
+                user.id ??
+                user.user_id ??
+                user.userId ??
+                user.employee_id ??
+                user.employeeId ??
+                null,
+
+            username:
+                user.username ??
+                user.user_name ??
+                null,
+
+            email:
+                user.email ??
+                user.gmail ??
+                user.GMAIL ??
+                null,
+
+            phone:
+                user.phone ??
+                user.phone_number ??
+                user.phoneNumber ??
+                user["PHONE NO."] ??
+                null
+
+        };
+
+
+        return identity;
+
+    }
+
+
+    /* =====================================================
+       REFRESH USER FROM API
+       ===================================================== */
+
+    async function refreshUserFromAPI(
+        sessionUser
+    ) {
+
+        const api =
+            window.StockFlowAPI;
+
+
+        if (
+            !api ||
+            typeof api.getUser !==
+            "function"
+        ) {
+
+            return sessionUser;
+
+        }
+
+
+        const identity =
+            getUserIdentity(
+                sessionUser
+            );
+
+
+        if (!identity) {
+
+            return sessionUser;
+
+        }
+
+
+        /*
+         * Try the complete identity object first.
+         */
+
+        try {
+
+            const response =
+                await api.getUser(
+                    identity
+                );
+
+
+            const refreshed =
+                response?.user ||
+                response?.data?.user ||
+                response?.data ||
+                response;
+
+
+            if (
+                isObject(refreshed)
+            ) {
+
+                return {
+
+                    ...sessionUser,
+
+                    ...refreshed
+
+                };
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.warn(
+                "StockFlow user refresh failed:",
+                error
+            );
+
+        }
+
+
+        return sessionUser;
+
+    }
+
+
+    /* =====================================================
+       AUTHENTICATED USER
+       ===================================================== */
+
+    async function requireAuthenticatedUser() {
 
         const auth =
             getAuthController();
 
 
-        /* -------------------------------------------------
-           AUTH CONTROLLER
-           ------------------------------------------------- */
+        /*
+         * Use the central authentication
+         * controller if available.
+         */
 
-        if (auth) {
+        if (
+            auth &&
+            typeof auth.requireAuth ===
+            "function"
+        ) {
 
-            const methods = [
-                "getCurrentUser",
-                "currentUser",
-                "getUser",
-                "getLoggedInUser",
-                "getSessionUser",
-                "getSession"
-            ];
+            try {
 
+                const authenticatedUser =
+                    await auth.requireAuth();
 
-            for (const method of methods) {
 
                 if (
-                    typeof auth[method] !==
-                    "function"
+                    authenticatedUser
                 ) {
-                    continue;
+
+                    return authenticatedUser;
+
                 }
 
-
-                try {
-
-                    const result =
-                        await auth[method]();
-
-
-                    if (result) {
-                        return result;
-                    }
-
-                } catch {
-                    // Try next method.
-                }
             }
+
+            catch (error) {
+
+                console.warn(
+                    "Central authentication check failed:",
+                    error
+                );
+
+            }
+
         }
 
 
-        /* -------------------------------------------------
-           STORAGE FALLBACK
-           ------------------------------------------------- */
+        /*
+         * STOCKFLOW_SESSION is the actual
+         * login session source.
+         */
 
-        return readStoredUser();
+        const sessionUser =
+            getSessionUser();
+
+
+        if (!sessionUser) {
+
+            window.location.href =
+                "./auth.html";
+
+
+            return null;
+
+        }
+
+
+        /*
+         * Refresh current user information
+         * from the API when possible.
+         */
+
+        const refreshedUser =
+            await refreshUserFromAPI(
+                sessionUser
+            );
+
+
+        return refreshedUser;
+
     }
 
 
     /* =====================================================
-       APPLY USER
+       APPLY USER TO UI
        ===================================================== */
 
-    function applyUser(user) {
+    function applyUser(
+        user
+    ) {
 
-        const source =
-            isObject(user)
-                ? user
-                : {};
+        if (!user) {
+
+            return;
+
+        }
 
 
-        /* -------------------------------------------------
-           USER NAME
-           ------------------------------------------------- */
+        state.currentUser =
+            user;
+
 
         const name =
             safeString(
-                source.name ||
-                source.fullName ||
-                source.full_name ||
-                source.username ||
-                source.email ||
-                source.gmail ||
-                source.phone ||
+
+                user.name ||
+
+                user.fullName ||
+
+                user.full_name ||
+
+                user.username ||
+
+                user.email ||
+
+                user.gmail ||
+
+                user.phone ||
+
                 "StockFlow User"
+
             );
 
-
-        /* -------------------------------------------------
-           USER ROLE
-           
-           IMPORTANT:
-           Only source.role is used.
-
-           accountStatus / account_s are NOT used
-           because they represent account status,
-           not the employee role.
-           ------------------------------------------------- */
 
         const role =
             normalizeRole(
-                source.role ||
-                "Employee"
+                user.role
             );
 
 
-        /* -------------------------------------------------
-           INITIALS
-           ------------------------------------------------- */
-
         const initials =
-            getInitials(name);
+            getInitials(
+                name
+            );
 
 
-        /* -------------------------------------------------
-           SIDEBAR USER
-           ------------------------------------------------- */
+        /* ---------------------------------------------
+           SIDEBAR
+           --------------------------------------------- */
 
-        if (elements.userName) {
+        if (
+            elements.userName
+        ) {
+
             elements.userName.textContent =
                 name;
+
         }
 
 
-        if (elements.userRole) {
+        if (
+            elements.userRole
+        ) {
+
             elements.userRole.textContent =
                 role;
+
         }
 
 
-        if (elements.userAvatar) {
+        if (
+            elements.userAvatar
+        ) {
+
             elements.userAvatar.textContent =
                 initials;
+
         }
 
 
-        /* -------------------------------------------------
-           TOP USER
-           ------------------------------------------------- */
+        /* ---------------------------------------------
+           TOP RIGHT
+           --------------------------------------------- */
 
-        if (elements.topUserName) {
+        if (
+            elements.topUserName
+        ) {
+
             elements.topUserName.textContent =
                 name;
+
         }
 
 
-        if (elements.topUserRole) {
+        if (
+            elements.topUserRole
+        ) {
+
             elements.topUserRole.textContent =
                 role;
+
         }
 
 
-        if (elements.topUserAvatar) {
+        if (
+            elements.topUserAvatar
+        ) {
+
             elements.topUserAvatar.textContent =
                 initials;
+
         }
+
+
+        /*
+         * Let the central authentication UI
+         * controller also bind its user fields
+         * when available.
+         */
+
+        const auth =
+            getAuthController();
+
+
+        if (
+            auth &&
+            typeof auth.bindUserUI ===
+            "function"
+        ) {
+
+            try {
+
+                auth.bindUserUI(
+                    user
+                );
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    "StockFlow user UI binding failed:",
+                    error
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       PROFILE NAVIGATION
+       ===================================================== */
+
+    function makeProfileTarget(
+        element
+    ) {
+
+        if (!element) {
+
+            return;
+
+        }
+
+
+        /*
+         * Do not interfere with an existing
+         * anchor that already points to profile.
+         */
+
+        if (
+            element.tagName === "A"
+        ) {
+
+            element.href =
+                "./profile.html";
+
+        }
+
+        else {
+
+            element.setAttribute(
+                "role",
+                "link"
+            );
+
+            element.setAttribute(
+                "tabindex",
+                "0"
+            );
+
+        }
+
+
+        element.classList.add(
+            "sf-profile-clickable"
+        );
+
+
+        const navigate =
+            event => {
+
+                /*
+                 * Do not override an actual
+                 * button such as logout.
+                 */
+
+                if (
+                    event.target.closest(
+                        "#logoutBtn"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    event.target.closest(
+                        "a"
+                    ) &&
+                    event.target.closest(
+                        "a"
+                    ) !== element
+                ) {
+
+                    return;
+
+                }
+
+
+                event.preventDefault();
+
+                window.location.href =
+                    "./profile.html";
+
+            };
+
+
+        element.addEventListener(
+            "click",
+            navigate
+        );
+
+
+        element.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                ) {
+
+                    event.preventDefault();
+
+                    window.location.href =
+                        "./profile.html";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    function initializeProfileLinks() {
+
+        const sidebarCandidates = [
+
+            elements.userAvatar,
+            elements.userName
+
+        ];
+
+
+        const topCandidates = [
+
+            elements.topUserAvatar,
+            elements.topUserName
+
+        ];
+
+
+        sidebarCandidates
+            .filter(Boolean)
+            .forEach(
+                makeProfileTarget
+            );
+
+
+        topCandidates
+            .filter(Boolean)
+            .forEach(
+                makeProfileTarget
+            );
+
     }
 
 
@@ -488,56 +1272,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setConnectionStatus(
         connected,
-        message
+        message = ""
     ) {
 
-        if (!elements.connectionBadge) {
-            return;
+        if (
+            elements.connectionBadge
+        ) {
+
+            elements.connectionBadge.classList.toggle(
+                "offline",
+                !connected
+            );
+
+
+            elements.connectionBadge.classList.toggle(
+                "online",
+                connected
+            );
+
+
+            elements.connectionBadge.setAttribute(
+                "title",
+                message ||
+                (
+                    connected
+                        ? "SYSTEM CONNECTED"
+                        : "SYSTEM OFFLINE"
+                )
+            );
+
         }
 
 
-        elements.connectionBadge.classList.toggle(
-            "offline",
-            !connected
-        );
-
-
-        if (elements.connectionMessage) {
+        if (
+            elements.connectionMessage
+        ) {
 
             elements.connectionMessage.textContent =
                 connected
                     ? "SYSTEM CONNECTED"
                     : "SYSTEM OFFLINE";
+
         }
 
-
-        elements.connectionBadge.setAttribute(
-            "title",
-            message ||
-            (
-                connected
-                    ? "SYSTEM CONNECTED"
-                    : "SYSTEM OFFLINE"
-            )
-        );
-    }
-
-
-    function setConnected() {
-
-        setConnectionStatus(
-            true,
-            "SYSTEM CONNECTED"
-        );
-    }
-
-
-    function setOffline() {
-
-        setConnectionStatus(
-            false,
-            "SYSTEM OFFLINE"
-        );
     }
 
 
@@ -547,8 +1324,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function hideAlert() {
 
-        if (!elements.alert) {
+        if (
+            !elements.alert
+        ) {
+
             return;
+
         }
 
 
@@ -556,7 +1337,9 @@ document.addEventListener("DOMContentLoaded", () => {
             "sf-alert";
 
 
-        elements.alert.innerHTML = "";
+        elements.alert.innerHTML =
+            "";
+
     }
 
 
@@ -567,8 +1350,12 @@ document.addEventListener("DOMContentLoaded", () => {
         actionCallback = null
     ) {
 
-        if (!elements.alert) {
+        if (
+            !elements.alert
+        ) {
+
             return;
+
         }
 
 
@@ -585,6 +1372,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             info:
                 "fa-solid fa-circle-info"
+
         };
 
 
@@ -599,31 +1387,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
         elements.alert.innerHTML = `
 
-            <i class="alert-icon ${icon}"></i>
+            <i
+                class="alert-icon ${icon}"
+            ></i>
 
             <div class="alert-content">
+
                 ${escapeHTML(message)}
+
             </div>
 
             ${
                 actionText
                     ? `
+
                         <button
                             type="button"
                             class="alert-action"
                         >
                             ${escapeHTML(actionText)}
                         </button>
+
                     `
                     : ""
             }
+
         `;
 
 
         if (
             actionText &&
             typeof actionCallback ===
-                "function"
+            "function"
         ) {
 
             const button =
@@ -638,8 +1433,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     "click",
                     actionCallback
                 );
+
             }
+
         }
+
     }
 
 
@@ -647,10 +1445,24 @@ document.addEventListener("DOMContentLoaded", () => {
        SIDEBAR
        ===================================================== */
 
+    function isMobile() {
+
+        return (
+            window.innerWidth <=
+            MOBILE_BREAKPOINT
+        );
+
+    }
+
+
     function openSidebar() {
 
-        if (!elements.sidebar) {
+        if (
+            !elements.sidebar
+        ) {
+
             return;
+
         }
 
 
@@ -659,11 +1471,14 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        if (elements.sidebarOverlay) {
+        if (
+            elements.sidebarOverlay
+        ) {
 
             elements.sidebarOverlay.classList.add(
                 "show"
             );
+
         }
 
 
@@ -672,31 +1487,41 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        if (elements.mobileMenuBtn) {
+        if (
+            elements.mobileMenuBtn
+        ) {
 
             elements.mobileMenuBtn.setAttribute(
                 "aria-expanded",
                 "true"
             );
+
         }
+
     }
 
 
     function closeSidebar() {
 
-        if (elements.sidebar) {
+        if (
+            elements.sidebar
+        ) {
 
             elements.sidebar.classList.remove(
                 "open"
             );
+
         }
 
 
-        if (elements.sidebarOverlay) {
+        if (
+            elements.sidebarOverlay
+        ) {
 
             elements.sidebarOverlay.classList.remove(
                 "show"
             );
+
         }
 
 
@@ -705,20 +1530,32 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        if (elements.mobileMenuBtn) {
+        if (
+            elements.mobileMenuBtn
+        ) {
 
             elements.mobileMenuBtn.setAttribute(
                 "aria-expanded",
                 "false"
             );
+
         }
+
     }
 
 
     function toggleSidebar() {
 
         if (
-            elements.sidebar &&
+            !elements.sidebar
+        ) {
+
+            return;
+
+        }
+
+
+        if (
             elements.sidebar.classList.contains(
                 "open"
             )
@@ -726,10 +1563,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             closeSidebar();
 
-        } else {
+        }
+
+        else {
 
             openSidebar();
+
         }
+
     }
 
 
@@ -739,8 +1580,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function closeNotifications() {
 
-        if (!elements.notificationPanel) {
+        if (
+            !elements.notificationPanel
+        ) {
+
             return;
+
         }
 
 
@@ -754,20 +1599,28 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        if (elements.notificationBtn) {
+        if (
+            elements.notificationBtn
+        ) {
 
             elements.notificationBtn.setAttribute(
                 "aria-expanded",
                 "false"
             );
+
         }
+
     }
 
 
     function openNotifications() {
 
-        if (!elements.notificationPanel) {
+        if (
+            !elements.notificationPanel
+        ) {
+
             return;
+
         }
 
 
@@ -776,29 +1629,41 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
-        if (elements.notificationBtn) {
+        if (
+            elements.notificationBtn
+        ) {
 
             elements.notificationBtn.setAttribute(
                 "aria-expanded",
                 "true"
             );
+
         }
+
     }
 
 
-    function toggleNotifications(event) {
+    function toggleNotifications(
+        event
+    ) {
 
         if (event) {
+
             event.stopPropagation();
+
         }
 
 
-        if (!elements.notificationPanel) {
+        if (
+            !elements.notificationPanel
+        ) {
+
             return;
+
         }
 
 
-        const isOpen =
+        const open =
             elements.notificationPanel.classList.contains(
                 "show"
             ) ||
@@ -807,14 +1672,18 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (isOpen) {
+        if (open) {
 
             closeNotifications();
 
-        } else {
+        }
+
+        else {
 
             openNotifications();
+
         }
+
     }
 
 
@@ -824,74 +1693,203 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function logout() {
 
-        const auth =
-            getAuthController();
+        if (
+            state.isLoggingOut
+        ) {
+
+            return;
+
+        }
+
+
+        state.isLoggingOut =
+            true;
+
+
+        if (
+            elements.logoutBtn
+        ) {
+
+            elements.logoutBtn.disabled =
+                true;
+
+            elements.logoutBtn.classList.add(
+                "loading"
+            );
+
+        }
 
 
         try {
 
+            const auth =
+                getAuthController();
+
+
+            /*
+             * Use central logout first.
+             */
+
             if (
                 auth &&
                 typeof auth.logout ===
-                    "function"
+                "function"
             ) {
 
-                await auth.logout();
+                try {
 
-                return;
+                    await auth.logout();
+
+                }
+
+                catch (error) {
+
+                    console.warn(
+                        "Central logout failed. Clearing local session:",
+                        error
+                    );
+
+                }
+
             }
 
-
-            if (
+            else if (
                 auth &&
                 typeof auth.signOut ===
-                    "function"
+                "function"
             ) {
 
-                await auth.signOut();
+                try {
 
-                return;
+                    await auth.signOut();
+
+                }
+
+                catch (error) {
+
+                    console.warn(
+                        "Central signOut failed:",
+                        error
+                    );
+
+                }
+
             }
 
-        } catch (error) {
 
-            console.error(
-                "StockFlow logout error:",
-                error
-            );
-        }
-
-
-        for (
-            const key of AUTH_STORAGE_KEYS
-        ) {
-
-            try {
-
-                localStorage.removeItem(
-                    key
-                );
-
-            } catch {}
-
+            /*
+             * Always clear the main STOCKFLOW
+             * session locally as a safety measure.
+             */
 
             try {
 
                 sessionStorage.removeItem(
-                    key
+                    SESSION_KEY
                 );
 
-            } catch {}
+            }
+
+            catch {}
+
+
+            /*
+             * Clear old compatibility keys.
+             */
+
+            for (
+                const key of LEGACY_AUTH_KEYS
+            ) {
+
+                try {
+
+                    localStorage.removeItem(
+                        key
+                    );
+
+                }
+
+                catch {}
+
+
+                try {
+
+                    sessionStorage.removeItem(
+                        key
+                    );
+
+                }
+
+                catch {}
+
+            }
+
+
+            /*
+             * Stop inventory refresh.
+             */
+
+            if (
+                state.refreshTimer
+            ) {
+
+                clearInterval(
+                    state.refreshTimer
+                );
+
+
+                state.refreshTimer =
+                    null;
+
+            }
+
+
+            /*
+             * Redirect to the authentication
+             * page after the session is removed.
+             */
+
+            window.location.replace(
+                "./auth.html"
+            );
+
         }
 
+        catch (error) {
 
-        window.location.href =
-            "./login.html";
+            console.error(
+                "STOCKFLOW logout error:",
+                error
+            );
+
+
+            /*
+             * Even if the controller fails,
+             * force-clear the local session.
+             */
+
+            try {
+
+                sessionStorage.removeItem(
+                    SESSION_KEY
+                );
+
+            }
+
+            catch {}
+
+
+            window.location.replace(
+                "./auth.html"
+            );
+
+        }
+
     }
 
 
     /* =====================================================
-       DATA STORAGE FALLBACK
+       LOCAL INVENTORY FALLBACK
        ===================================================== */
 
     function readLocalInventory() {
@@ -900,15 +1898,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const key of PRODUCT_STORAGE_KEYS
         ) {
 
-            let value = null;
+            let value =
+                null;
 
 
             try {
 
                 value =
-                    localStorage.getItem(key);
+                    localStorage.getItem(
+                        key
+                    );
 
-            } catch {}
+            }
+
+            catch {}
 
 
             if (!value) {
@@ -920,87 +1923,58 @@ document.addEventListener("DOMContentLoaded", () => {
                             key
                         );
 
-                } catch {}
+                }
+
+                catch {}
+
             }
 
 
             if (!value) {
+
                 continue;
+
             }
 
 
             try {
 
                 const parsed =
-                    JSON.parse(value);
+                    JSON.parse(
+                        value
+                    );
 
 
                 const extracted =
-                    extractArray(parsed);
+                    extractArray(
+                        parsed
+                    );
 
 
-                if (extracted.length) {
+                if (
+                    extracted.length
+                ) {
 
                     return extracted;
+
                 }
 
-            } catch {
+            }
+
+            catch {
                 // Continue.
             }
+
         }
 
 
         return [];
+
     }
 
 
     /* =====================================================
-       ARRAY EXTRACTION
-       ===================================================== */
-
-    function extractArray(data) {
-
-        if (Array.isArray(data)) {
-            return data;
-        }
-
-
-        if (!isObject(data)) {
-            return [];
-        }
-
-
-        const possibleKeys = [
-            "data",
-            "items",
-            "results",
-            "inventory",
-            "inventories",
-            "products",
-            "rows",
-            "records"
-        ];
-
-
-        for (
-            const key of possibleKeys
-        ) {
-
-            if (
-                Array.isArray(data[key])
-            ) {
-
-                return data[key];
-            }
-        }
-
-
-        return [];
-    }
-
-
-    /* =====================================================
-       API DATA REQUEST
+       INVENTORY API
        ===================================================== */
 
     async function requestInventoryFromAPI() {
@@ -1018,20 +1992,25 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error(
                 "StockFlow API controller not found."
             );
+
         }
 
 
-        /* -------------------------------------------------
-           DIRECT INVENTORY METHODS
-           ------------------------------------------------- */
+        /*
+         * Direct methods.
+         */
 
         const directMethods = [
+
             "getInventory",
             "getInventories",
+
             "fetchInventory",
             "fetchInventories",
+
             "listInventory",
             "listInventories"
+
         ];
 
 
@@ -1043,7 +2022,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 typeof api[method] !==
                 "function"
             ) {
+
                 continue;
+
             }
 
 
@@ -1054,42 +2035,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 const data =
-                    extractArray(response);
+                    extractArray(
+                        response
+                    );
 
 
-                if (Array.isArray(data)) {
+                if (
+                    Array.isArray(data)
+                ) {
 
                     return data;
+
                 }
 
-            } catch (error) {
+            }
+
+            catch (error) {
 
                 console.warn(
                     `Inventory API method ${method} failed:`,
                     error
                 );
+
             }
+
         }
 
 
-        /* -------------------------------------------------
-           GENERIC REQUEST METHODS
-           ------------------------------------------------- */
+        /*
+         * Generic methods.
+         */
 
         const genericMethods = [
+
             "request",
             "get",
             "fetch"
+
         ];
 
 
         const endpoints = [
+
             "/inventory",
             "/inventories",
+
             "/api/inventory",
             "/api/inventories",
+
             "inventory",
             "inventories"
+
         ];
 
 
@@ -1101,7 +2097,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 typeof api[method] !==
                 "function"
             ) {
+
                 continue;
+
             }
 
 
@@ -1118,7 +2116,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                     const data =
-                        extractArray(response);
+                        extractArray(
+                            response
+                        );
 
 
                     if (
@@ -1126,23 +2126,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     ) {
 
                         return data;
+
                     }
 
-                } catch {
-                    // Try next endpoint.
                 }
+
+                catch {
+                    // Continue.
+                }
+
             }
+
         }
 
 
         throw new Error(
             "No compatible inventory API endpoint found."
         );
+
     }
 
 
     /* =====================================================
-       NORMALIZE INVENTORY RECORD
+       NORMALIZE INVENTORY ITEM
        ===================================================== */
 
     function normalizeInventoryItem(
@@ -1158,51 +2164,86 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const sku =
             safeString(
+
                 source.sku ||
+
                 source.SKU ||
+
                 source.product_sku ||
+
                 source.productSku ||
+
                 source.code ||
+
                 source.product_code ||
-                `SKU-${String(index + 1).padStart(4, "0")}`
+
+                `SKU-${String(
+                    index + 1
+                ).padStart(
+                    4,
+                    "0"
+                )}`
+
             );
 
 
         const product =
             safeString(
+
                 source.product ||
+
                 source.product_name ||
+
                 source.productName ||
+
                 source.name ||
+
                 source.item_name ||
+
                 source.itemName ||
+
                 source.title ||
+
                 "Unnamed Product"
+
             );
 
 
         const category =
             safeString(
+
                 source.category ||
+
                 source.category_name ||
+
                 source.categoryName ||
+
                 source.type ||
+
                 "Uncategorized"
+
             );
 
 
         const supplier =
             safeString(
+
                 source.supplier ||
+
                 source.supplier_name ||
+
                 source.supplierName ||
+
                 source.vendor ||
+
                 "—"
+
             );
 
 
         const stock =
             toNumber(
+
                 source.stock ??
                 source.quantity ??
                 source.qty ??
@@ -1211,11 +2252,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 source.available_stock ??
                 source.availableStock ??
                 0
+
             );
 
 
         const reorder =
             toNumber(
+
                 source.reorder ??
                 source.reorder_level ??
                 source.reorderLevel ??
@@ -1224,77 +2267,126 @@ document.addEventListener("DOMContentLoaded", () => {
                 source.min_stock ??
                 source.minStock ??
                 0
+
             );
 
 
-        let state =
+        let stockState =
             safeString(
+
                 source.state ||
+
                 source.status ||
+
                 source.stock_status ||
+
                 source.stockStatus
+
             ).toLowerCase();
 
 
         if (
-            !state ||
-            state === "available" ||
-            state === "in stock"
+            !stockState ||
+            stockState === "available" ||
+            stockState === "in stock"
         ) {
 
-            if (stock <= 0) {
+            if (
+                stock <= 0
+            ) {
 
-                state = "out";
+                stockState =
+                    "out";
 
-            } else if (
+            }
+
+            else if (
                 reorder > 0 &&
                 stock <= reorder
             ) {
 
-                state = "low";
+                stockState =
+                    "low";
 
-            } else {
-
-                state = "available";
             }
 
-        } else if (
-            state.includes("out")
+            else {
+
+                stockState =
+                    "available";
+
+            }
+
+        }
+
+        else if (
+            stockState.includes(
+                "out"
+            )
         ) {
 
-            state = "out";
+            stockState =
+                "out";
 
-        } else if (
-            state.includes("low")
+        }
+
+        else if (
+            stockState.includes(
+                "low"
+            )
         ) {
 
-            state = "low";
+            stockState =
+                "low";
 
-        } else {
+        }
 
-            state = "available";
+        else {
+
+            stockState =
+                "available";
+
         }
 
 
         return {
+
             sku,
+
             product,
+
             category,
+
             supplier,
+
             stock,
+
             reorder,
-            state
+
+            state:
+                stockState
+
         };
+
     }
 
 
     /* =====================================================
-       NORMALIZE COMPLETE DATASET
+       NORMALIZE COMPLETE INVENTORY
        ===================================================== */
 
     function normalizeInventory(
         records
     ) {
+
+        if (
+            !Array.isArray(records)
+        ) {
+
+            return [];
+
+        }
+
 
         return records.map(
             (
@@ -1306,11 +2398,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     index
                 )
         );
+
     }
 
 
     /* =====================================================
-       INVENTORY CALCULATIONS
+       CALCULATE INVENTORY STATS
        ===================================================== */
 
     function calculateStats(
@@ -1352,16 +2445,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         return {
+
             products,
+
             totalUnits,
+
             lowStock,
+
             outOfStock
+
         };
+
     }
 
 
     /* =====================================================
-       UPDATE STATISTICS
+       RENDER STATISTICS
        ===================================================== */
 
     function renderStats(
@@ -1374,43 +2473,57 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (elements.productCount) {
+        if (
+            elements.productCount
+        ) {
 
             elements.productCount.textContent =
                 formatNumber(
                     stats.products
                 );
+
         }
 
 
-        if (elements.totalStock) {
+        if (
+            elements.totalStock
+        ) {
 
             elements.totalStock.textContent =
                 formatNumber(
                     stats.totalUnits
                 );
+
         }
 
 
-        if (elements.lowStock) {
+        if (
+            elements.lowStock
+        ) {
 
             elements.lowStock.textContent =
                 formatNumber(
                     stats.lowStock
                 );
+
         }
 
 
-        if (elements.outOfStock) {
+        if (
+            elements.outOfStock
+        ) {
 
             elements.outOfStock.textContent =
                 formatNumber(
                     stats.outOfStock
                 );
+
         }
 
 
-        if (elements.inventoryCount) {
+        if (
+            elements.inventoryCount
+        ) {
 
             const label =
                 stats.products === 1
@@ -1419,48 +2532,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             elements.inventoryCount.textContent =
-                `${formatNumber(stats.products)} ${label}`;
+                `${formatNumber(
+                    stats.products
+                )} ${label}`;
+
         }
+
     }
 
 
     /* =====================================================
-       STOCK STATE HELPERS
+       STOCK STATE
        ===================================================== */
 
     function getStockClass(
         state
     ) {
 
-        if (state === "out") {
+        if (
+            state === "out"
+        ) {
+
             return "out";
+
         }
 
 
-        if (state === "low") {
+        if (
+            state === "low"
+        ) {
+
             return "low";
+
         }
 
 
         return "available";
-    }
 
-
-    function getStockLabel(
-        state
-    ) {
-
-        if (state === "out") {
-            return "OUT";
-        }
-
-
-        if (state === "low") {
-            return "LOW";
-        }
-
-
-        return "OK";
     }
 
 
@@ -1468,28 +2576,41 @@ document.addEventListener("DOMContentLoaded", () => {
         state
     ) {
 
-        if (state === "out") {
+        if (
+            state === "out"
+        ) {
+
             return "Out of Stock";
+
         }
 
 
-        if (state === "low") {
+        if (
+            state === "low"
+        ) {
+
             return "Low Stock";
+
         }
 
 
         return "Available";
+
     }
 
 
     /* =====================================================
-       RENDER LOADING
+       LOADING STATE
        ===================================================== */
 
     function renderLoading() {
 
-        if (!elements.rows) {
+        if (
+            !elements.rows
+        ) {
+
             return;
+
         }
 
 
@@ -1520,18 +2641,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
 
             </tr>
+
         `;
+
     }
 
 
     /* =====================================================
-       RENDER EMPTY
+       EMPTY STATE
        ===================================================== */
 
     function renderEmpty() {
 
-        if (!elements.rows) {
+        if (
+            !elements.rows
+        ) {
+
             return;
+
         }
 
 
@@ -1547,7 +2674,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="table-empty-state">
 
                         <div class="empty-icon">
-                            <i class="fa-solid fa-box-open"></i>
+
+                            <i
+                                class="fa-solid fa-box-open"
+                            ></i>
+
                         </div>
 
                         <strong>
@@ -1555,8 +2686,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         </strong>
 
                         <span>
-                            No products are currently available
-                            in the inventory.
+                            No products are currently
+                            available in the inventory.
                         </span>
 
                     </div>
@@ -1564,28 +2695,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
 
             </tr>
+
         `;
+
     }
 
 
     /* =====================================================
-       RENDER TABLE
+       INVENTORY TABLE
        ===================================================== */
 
     function renderInventory(
         inventory
     ) {
 
-        if (!elements.rows) {
+        if (
+            !elements.rows
+        ) {
+
             return;
+
         }
 
 
-        if (!inventory.length) {
+        if (
+            !inventory.length
+        ) {
 
             renderEmpty();
 
             return;
+
         }
 
 
@@ -1612,8 +2752,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="sku-cell">
-                                        ${escapeHTML(item.sku)}
+                                    <span
+                                        class="sku-cell"
+                                    >
+                                        ${escapeHTML(
+                                            item.sku
+                                        )}
                                     </span>
 
                                 </td>
@@ -1621,8 +2765,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="product-cell">
-                                        ${escapeHTML(item.product)}
+                                    <span
+                                        class="product-cell"
+                                    >
+                                        ${escapeHTML(
+                                            item.product
+                                        )}
                                     </span>
 
                                 </td>
@@ -1630,8 +2778,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="category-cell">
-                                        ${escapeHTML(item.category)}
+                                    <span
+                                        class="category-cell"
+                                    >
+                                        ${escapeHTML(
+                                            item.category
+                                        )}
                                     </span>
 
                                 </td>
@@ -1639,8 +2791,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="supplier-cell">
-                                        ${escapeHTML(item.supplier)}
+                                    <span
+                                        class="supplier-cell"
+                                    >
+                                        ${escapeHTML(
+                                            item.supplier
+                                        )}
                                     </span>
 
                                 </td>
@@ -1648,8 +2804,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="stock-badge ${stateClass}">
-                                        ${formatNumber(item.stock)}
+                                    <span
+                                        class="stock-badge ${stateClass}"
+                                    >
+                                        ${formatNumber(
+                                            item.stock
+                                        )}
                                     </span>
 
                                 </td>
@@ -1657,8 +2817,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="reorder-cell">
-                                        ${formatNumber(item.reorder)}
+                                    <span
+                                        class="reorder-cell"
+                                    >
+                                        ${formatNumber(
+                                            item.reorder
+                                        )}
                                     </span>
 
                                 </td>
@@ -1666,14 +2830,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 <td>
 
-                                    <span class="state-badge ${stateClass}">
-                                        ${escapeHTML(stateLabel)}
+                                    <span
+                                        class="state-badge ${stateClass}"
+                                    >
+                                        ${escapeHTML(
+                                            stateLabel
+                                        )}
                                     </span>
 
                                 </td>
 
                             </tr>
+
                         `;
+
                     }
                 )
                 .join("");
@@ -1681,6 +2851,116 @@ document.addEventListener("DOMContentLoaded", () => {
 
         elements.rows.innerHTML =
             html;
+
+    }
+
+
+    /* =====================================================
+       AUDIT / ACTIVITY SUPPORT
+       ===================================================== */
+
+    async function auditActivity(
+        action,
+        description = ""
+    ) {
+
+        const api =
+            window.StockFlowAPI;
+
+
+        if (!api) {
+
+            return;
+
+        }
+
+
+        const methods = [
+
+            "logActivity",
+            "createActivity",
+            "recordActivity",
+            "auditActivity",
+            "addActivity"
+
+        ];
+
+
+        const user =
+            state.currentUser ||
+            {};
+
+
+        const payload = {
+
+            action,
+
+            type:
+                action,
+
+            description,
+
+            user_id:
+                user.id ??
+                user.user_id ??
+                user.userId ??
+                "",
+
+            username:
+                user.username ??
+                "",
+
+            user_name:
+                user.name ??
+                user.fullName ??
+                user.full_name ??
+                "",
+
+            page:
+                "inventory",
+
+            timestamp:
+                new Date().toISOString()
+
+        };
+
+
+        for (
+            const method of methods
+        ) {
+
+            if (
+                typeof api[method] !==
+                "function"
+            ) {
+
+                continue;
+
+            }
+
+
+            try {
+
+                await api[method](
+                    payload
+                );
+
+
+                return;
+
+            }
+
+            catch (error) {
+
+                console.warn(
+                    `Inventory audit method ${method} failed:`,
+                    error
+                );
+
+            }
+
+        }
+
     }
 
 
@@ -1696,24 +2976,40 @@ document.addEventListener("DOMContentLoaded", () => {
             options.silent === true;
 
 
+        if (
+            state.isLoading
+        ) {
+
+            return false;
+
+        }
+
+
+        state.isLoading =
+            true;
+
+
         if (!silent) {
 
             renderLoading();
 
             hideAlert();
+
         }
 
 
         try {
 
-            let records = [];
+            let records =
+                [];
 
-            let apiWorked = false;
+            let apiWorked =
+                false;
 
 
-            /* ---------------------------------------------
-               PRIMARY SOURCE: API
-               --------------------------------------------- */
+            /*
+             * PRIMARY SOURCE
+             */
 
             try {
 
@@ -1721,72 +3017,85 @@ document.addEventListener("DOMContentLoaded", () => {
                     await requestInventoryFromAPI();
 
 
-                apiWorked = true;
+                apiWorked =
+                    true;
 
-            } catch (apiError) {
+            }
+
+            catch (apiError) {
 
                 console.warn(
                     "Inventory API unavailable:",
                     apiError
                 );
+
             }
 
 
-            /* ---------------------------------------------
-               FALLBACK: LOCAL STORAGE
-               --------------------------------------------- */
+            /*
+             * FALLBACK
+             */
 
             if (
                 !apiWorked ||
-                !Array.isArray(records)
+                !Array.isArray(
+                    records
+                )
             ) {
 
                 records =
                     readLocalInventory();
+
             }
 
 
-            if (!Array.isArray(records)) {
+            if (
+                !Array.isArray(
+                    records
+                )
+            ) {
 
-                records = [];
+                records =
+                    [];
+
             }
 
 
-            currentInventory =
+            state.currentInventory =
                 normalizeInventory(
                     records
                 );
 
 
             renderStats(
-                currentInventory
+                state.currentInventory
             );
 
 
             renderInventory(
-                currentInventory
+                state.currentInventory
             );
 
 
-            /* ---------------------------------------------
-               CONNECTION
-               --------------------------------------------- */
+            /*
+             * CONNECTION
+             */
+
+            setConnectionStatus(
+                true,
+                apiWorked
+                    ? "Inventory API connected."
+                    : "Inventory loaded from local data."
+            );
+
+
+            /*
+             * EMPTY DATA
+             */
 
             if (
-                apiWorked ||
-                currentInventory.length >= 0
-            ) {
-
-                setConnected();
-            }
-
-
-            /* ---------------------------------------------
-               EMPTY DATA NOTICE
-               --------------------------------------------- */
-
-            if (
-                currentInventory.length === 0
+                state.currentInventory.length ===
+                0
             ) {
 
                 if (!silent) {
@@ -1795,32 +3104,49 @@ document.addEventListener("DOMContentLoaded", () => {
                         "info",
                         "Inventory is currently empty."
                     );
+
                 }
 
-            } else {
+            }
+
+            else {
 
                 hideAlert();
+
             }
 
 
-        } catch (error) {
+            return true;
+
+        }
+
+        catch (error) {
 
             console.error(
-                "StockFlow inventory loading error:",
+                "STOCKFLOW inventory loading error:",
                 error
             );
 
 
-            currentInventory = [];
+            state.currentInventory =
+                [];
 
 
-            renderStats([]);
+            renderStats(
+                []
+            );
 
 
-            renderInventory([]);
+            renderInventory(
+                []
+            );
 
 
-            setOffline();
+            setConnectionStatus(
+                false,
+                error.message ||
+                "Unable to retrieve inventory data."
+            );
 
 
             showAlert(
@@ -1830,25 +3156,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 () =>
                     loadInventory()
             );
+
+
+            return false;
+
         }
+
+        finally {
+
+            state.isLoading =
+                false;
+
+        }
+
     }
 
 
     /* =====================================================
-       REFRESH
+       START AUTO REFRESH
        ===================================================== */
 
     function startAutoRefresh() {
 
-        if (refreshTimer) {
-
-            clearInterval(
-                refreshTimer
-            );
-        }
+        stopAutoRefresh();
 
 
-        refreshTimer =
+        state.refreshTimer =
             setInterval(
                 () => {
 
@@ -1860,224 +3193,430 @@ document.addEventListener("DOMContentLoaded", () => {
                         loadInventory({
                             silent: true
                         });
+
                     }
 
                 },
-                60000
+                AUTO_REFRESH_INTERVAL
             );
+
     }
 
 
     /* =====================================================
-       EVENT HANDLERS
+       STOP AUTO REFRESH
        ===================================================== */
 
-    /* -----------------------------------------------------
-       MOBILE MENU
-       ----------------------------------------------------- */
+    function stopAutoRefresh() {
 
-    if (elements.mobileMenuBtn) {
+        if (
+            state.refreshTimer
+        ) {
 
-        elements.mobileMenuBtn.addEventListener(
-            "click",
-            event => {
-
-                event.stopPropagation();
-
-                toggleSidebar();
-            }
-        );
-    }
+            clearInterval(
+                state.refreshTimer
+            );
 
 
-    /* -----------------------------------------------------
-       SIDEBAR OVERLAY
-       ----------------------------------------------------- */
+            state.refreshTimer =
+                null;
 
-    if (elements.sidebarOverlay) {
-
-        elements.sidebarOverlay.addEventListener(
-            "click",
-            closeSidebar
-        );
-    }
-
-
-    /* -----------------------------------------------------
-       NOTIFICATIONS
-       ----------------------------------------------------- */
-
-    if (elements.notificationBtn) {
-
-        elements.notificationBtn.addEventListener(
-            "click",
-            toggleNotifications
-        );
-    }
-
-
-    if (elements.notificationPanel) {
-
-        elements.notificationPanel.addEventListener(
-            "click",
-            event => {
-
-                event.stopPropagation();
-            }
-        );
-    }
-
-
-    /* -----------------------------------------------------
-       DOCUMENT CLICK
-       ----------------------------------------------------- */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            /* Notification */
-
-            if (
-                elements.notificationPanel &&
-                elements.notificationBtn &&
-                !elements.notificationPanel.contains(
-                    event.target
-                ) &&
-                !elements.notificationBtn.contains(
-                    event.target
-                )
-            ) {
-
-                closeNotifications();
-            }
-
-
-            /* Sidebar */
-
-            if (
-                window.innerWidth <= 900 &&
-                elements.sidebar &&
-                elements.sidebar.classList.contains(
-                    "open"
-                ) &&
-                !elements.sidebar.contains(
-                    event.target
-                ) &&
-                !elements.mobileMenuBtn?.contains(
-                    event.target
-                )
-            ) {
-
-                closeSidebar();
-            }
         }
-    );
+
+    }
 
 
-    /* -----------------------------------------------------
-       CLOSE SIDEBAR WHEN NAVIGATION ITEM IS CLICKED
-       ----------------------------------------------------- */
+    /* =====================================================
+       MOBILE MENU
+       ===================================================== */
 
-    document
-        .querySelectorAll(
-            ".sf-nav-link"
-        )
-        .forEach(
-            link => {
+    function initializeSidebarEvents() {
 
-                link.addEventListener(
-                    "click",
-                    () => {
+        if (
+            elements.mobileMenuBtn
+        ) {
 
-                        if (
-                            window.innerWidth <=
-                            900
-                        ) {
+            elements.mobileMenuBtn.type =
+                "button";
 
-                            closeSidebar();
+
+            elements.mobileMenuBtn.setAttribute(
+                "aria-label",
+                "Toggle navigation menu"
+            );
+
+
+            elements.mobileMenuBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            elements.mobileMenuBtn.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    toggleSidebar();
+
+                }
+            );
+
+        }
+
+
+        if (
+            elements.sidebarOverlay
+        ) {
+
+            elements.sidebarOverlay.addEventListener(
+                "click",
+                closeSidebar
+            );
+
+        }
+
+
+        document
+            .querySelectorAll(
+                ".sf-nav-link, .sidebar-link"
+            )
+            .forEach(
+                link => {
+
+                    link.addEventListener(
+                        "click",
+                        () => {
+
+                            if (
+                                isMobile()
+                            ) {
+
+                                closeSidebar();
+
+                            }
+
                         }
-                    }
-                );
-            }
-        );
+                    );
+
+                }
+            );
+
+    }
 
 
-    /* -----------------------------------------------------
-       LOGOUT
-       ----------------------------------------------------- */
+    /* =====================================================
+       NOTIFICATION EVENTS
+       ===================================================== */
 
-    if (elements.logoutBtn) {
+    function initializeNotificationEvents() {
+
+        if (
+            elements.notificationBtn
+        ) {
+
+            elements.notificationBtn.type =
+                "button";
+
+
+            elements.notificationBtn.setAttribute(
+                "aria-label",
+                "Notifications"
+            );
+
+
+            elements.notificationBtn.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            elements.notificationBtn.addEventListener(
+                "click",
+                toggleNotifications
+            );
+
+        }
+
+
+        if (
+            elements.notificationPanel
+        ) {
+
+            elements.notificationPanel.addEventListener(
+                "click",
+                event => {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOGOUT EVENTS
+       ===================================================== */
+
+    function initializeLogout() {
+
+        if (
+            !elements.logoutBtn
+        ) {
+
+            return;
+
+        }
+
+
+        elements.logoutBtn.type =
+            "button";
+
 
         elements.logoutBtn.addEventListener(
             "click",
-            async () => {
+            event => {
 
-                await logout();
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                logout();
+
             }
         );
+
     }
 
 
-    /* -----------------------------------------------------
-       ESCAPE KEY
-       ----------------------------------------------------- */
+    /* =====================================================
+       GLOBAL CLICK EVENTS
+       ===================================================== */
 
-    document.addEventListener(
-        "keydown",
-        event => {
+    function initializeGlobalEvents() {
 
-            if (
-                event.key !== "Escape"
-            ) {
-                return;
+        document.addEventListener(
+            "click",
+            event => {
+
+                /*
+                 * Notification
+                 */
+
+                if (
+                    elements.notificationPanel &&
+                    elements.notificationBtn &&
+                    !elements.notificationPanel.contains(
+                        event.target
+                    ) &&
+                    !elements.notificationBtn.contains(
+                        event.target
+                    )
+                ) {
+
+                    closeNotifications();
+
+                }
+
+
+                /*
+                 * Mobile sidebar
+                 */
+
+                if (
+                    isMobile() &&
+                    elements.sidebar &&
+                    elements.sidebar.classList.contains(
+                        "open"
+                    ) &&
+                    !elements.sidebar.contains(
+                        event.target
+                    ) &&
+                    !elements.mobileMenuBtn?.contains(
+                        event.target
+                    )
+                ) {
+
+                    closeSidebar();
+
+                }
+
             }
+        );
 
 
-            closeNotifications();
+        /*
+         * Escape key.
+         */
 
-            closeSidebar();
-        }
-    );
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key !==
+                    "Escape"
+                ) {
+
+                    return;
+
+                }
 
 
-    /* -----------------------------------------------------
-       WINDOW RESIZE
-       ----------------------------------------------------- */
-
-    window.addEventListener(
-        "resize",
-        () => {
-
-            if (
-                window.innerWidth > 900
-            ) {
+                closeNotifications();
 
                 closeSidebar();
+
             }
-        }
-    );
+        );
 
 
-    /* -----------------------------------------------------
-       REFRESH WHEN RETURNING TO PAGE
-       ----------------------------------------------------- */
+        /*
+         * Resize.
+         */
 
-    document.addEventListener(
-        "visibilitychange",
-        () => {
+        window.addEventListener(
+            "resize",
+            () => {
 
-            if (
-                document.visibilityState ===
-                "visible"
-            ) {
+                const currentMobileState =
+                    isMobile();
+
+
+                if (
+                    currentMobileState !==
+                    state.previousMobileState
+                ) {
+
+                    closeSidebar();
+
+                }
+
+
+                state.previousMobileState =
+                    currentMobileState;
+
+            }
+        );
+
+
+        /*
+         * Visibility refresh.
+         */
+
+        document.addEventListener(
+            "visibilitychange",
+            () => {
+
+                if (
+                    document.visibilityState !==
+                    "visible"
+                ) {
+
+                    return;
+
+                }
+
 
                 loadInventory({
                     silent: true
                 });
+
             }
+        );
+
+
+        /*
+         * Online.
+         */
+
+        window.addEventListener(
+            "online",
+            () => {
+
+                setConnectionStatus(
+                    true,
+                    "Internet connection restored."
+                );
+
+
+                loadInventory();
+
+            }
+        );
+
+
+        /*
+         * Offline.
+         */
+
+        window.addEventListener(
+            "offline",
+            () => {
+
+                setConnectionStatus(
+                    false,
+                    "Browser is offline."
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       INITIAL USER UI
+       ===================================================== */
+
+    function initializeDefaultUserUI() {
+
+        if (
+            elements.userAvatar
+        ) {
+
+            elements.userAvatar.textContent =
+                "SF";
+
         }
-    );
+
+
+        if (
+            elements.topUserAvatar
+        ) {
+
+            elements.topUserAvatar.textContent =
+                "SF";
+
+        }
+
+
+        if (
+            elements.userRole
+        ) {
+
+            elements.userRole.textContent =
+                "Employee";
+
+        }
+
+
+        if (
+            elements.topUserRole
+        ) {
+
+            elements.topUserRole.textContent =
+                "Employee";
+
+        }
+
+    }
 
 
     /* =====================================================
@@ -2086,90 +3625,143 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function initialize() {
 
-        /* -------------------------------------------------
-           DEFAULT UI
-           ------------------------------------------------- */
-
-        if (elements.userAvatar) {
-
-            elements.userAvatar.textContent =
-                "SF";
-        }
+        initializeDefaultUserUI();
 
 
-        if (elements.topUserAvatar) {
+        /*
+         * Require a real authenticated session.
+         */
 
-            elements.topUserAvatar.textContent =
-                "SF";
+        const user =
+            await requireAuthenticatedUser();
+
+
+        if (!user) {
+
+            return;
+
         }
 
 
         /*
-         * DEFAULT ROLE
-         *
-         * If no authenticated user is available,
-         * Inventory will show Employee instead of
-         * Administrator.
+         * Apply actual signed-in user.
          */
 
-        if (elements.userRole) {
-
-            elements.userRole.textContent =
-                "Employee";
-        }
+        applyUser(
+            user
+        );
 
 
-        if (elements.topUserRole) {
+        /*
+         * Profile click behavior.
+         */
 
-            elements.topUserRole.textContent =
-                "Employee";
-        }
-
-
-        /* -------------------------------------------------
-           CONNECTION
-           ------------------------------------------------- */
-
-        setConnected();
+        initializeProfileLinks();
 
 
-        /* -------------------------------------------------
-           USER
-           ------------------------------------------------- */
+        /*
+         * Page controls.
+         */
 
-        try {
+        initializeSidebarEvents();
 
-            const user =
-                await getCurrentUser();
+        initializeNotificationEvents();
 
+        initializeLogout();
 
-            if (user) {
-
-                applyUser(user);
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Unable to resolve StockFlow user:",
-                error
-            );
-        }
+        initializeGlobalEvents();
 
 
-        /* -------------------------------------------------
-           INVENTORY
-           ------------------------------------------------- */
+        /*
+         * Initial connection state.
+         */
+
+        setConnectionStatus(
+            navigator.onLine,
+            navigator.onLine
+                ? "SYSTEM CONNECTED"
+                : "SYSTEM OFFLINE"
+        );
+
+
+        /*
+         * Load inventory.
+         */
 
         await loadInventory();
 
 
-        /* -------------------------------------------------
-           AUTO REFRESH
-           ------------------------------------------------- */
+        /*
+         * Record that the authenticated
+         * employee opened the inventory.
+         *
+         * This is intentionally non-blocking.
+         */
+
+        auditActivity(
+            "Inventory Viewed",
+            "Opened the inventory management page."
+        );
+
+
+        /*
+         * Automatic refresh.
+         */
 
         startAutoRefresh();
+
     }
+
+
+    /* =====================================================
+       CLEANUP
+       ===================================================== */
+
+    window.addEventListener(
+        "beforeunload",
+        stopAutoRefresh
+    );
+
+
+    /* =====================================================
+       PUBLIC API
+       ===================================================== */
+
+    window.StockFlowInventory = {
+
+        refresh:
+            () =>
+                loadInventory(),
+
+        reload:
+            () =>
+                loadInventory(),
+
+        getInventory:
+            () =>
+                [
+                    ...state.currentInventory
+                ],
+
+        getCurrentUser:
+            () =>
+                state.currentUser,
+
+        logout,
+
+        openSidebar,
+
+        closeSidebar,
+
+        toggleSidebar,
+
+        openNotifications,
+
+        closeNotifications,
+
+        toggleNotifications
+
+    };
 
 
     /* =====================================================
