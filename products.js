@@ -9,6 +9,599 @@
    Google Apps Script Connection
 ========================================================= */
 
+/* =====================================================
+   PRODUCT MODAL
+===================================================== */
+
+function initProductModal() {
+
+    const addProductBtn =
+        document.getElementById("addProductBtn");
+
+    const emptyAddProductBtn =
+        document.getElementById("emptyAddProductBtn");
+
+    const productModal =
+        document.getElementById("productModal");
+
+    const closeProductModal =
+        document.getElementById("closeProductModal");
+
+    const cancelProductBtn =
+        document.getElementById("cancelProductBtn");
+
+    const productForm =
+        document.getElementById("productForm");
+
+    /*
+     * IMPORTANT:
+     * This must match the category <select> in your HTML.
+     *
+     * Example:
+     * <select id="productCategory">
+     */
+    const categorySelect =
+        document.getElementById("productCategory");
+
+
+    if (!productModal) {
+        return;
+    }
+
+
+    /* =================================================
+       LOAD EXISTING CATEGORIES
+    ================================================= */
+
+    async function loadProductCategories() {
+
+        if (!categorySelect) {
+
+            console.warn(
+                "StockFlow: #productCategory was not found."
+            );
+
+            return;
+        }
+
+
+        /* ---------------------------------------------
+           Loading state
+        --------------------------------------------- */
+
+        categorySelect.innerHTML = `
+            <option value="">Loading categories...</option>
+        `;
+
+        categorySelect.disabled = true;
+
+
+        try {
+
+            const result =
+                await window.StockFlowInventoryAPI
+                    .listCategories();
+
+
+            console.log(
+                "StockFlow categories response:",
+                result
+            );
+
+
+            /*
+             * Support several possible API response shapes:
+             *
+             * {
+             *   success: true,
+             *   categories: [...]
+             * }
+             *
+             * or
+             *
+             * {
+             *   success: true,
+             *   data: [...]
+             * }
+             */
+
+            let categories = [];
+
+
+            if (Array.isArray(result.categories)) {
+
+                categories =
+                    result.categories;
+
+            } else if (
+                result.data &&
+                Array.isArray(result.data)
+            ) {
+
+                categories =
+                    result.data;
+
+            } else if (
+                result.data &&
+                Array.isArray(result.data.categories)
+            ) {
+
+                categories =
+                    result.data.categories;
+
+            }
+
+
+            /* ---------------------------------------------
+               Remove duplicates
+            --------------------------------------------- */
+
+            const uniqueCategories = [];
+            const seen = new Set();
+
+
+            categories.forEach(category => {
+
+                let categoryId = "";
+                let categoryName = "";
+
+
+                /*
+                 * Support object format
+                 *
+                 * {
+                 *   id: "...",
+                 *   name: "Electronics"
+                 * }
+                 *
+                 * and
+                 *
+                 * {
+                 *   categoryId: "...",
+                 *   categoryName: "Electronics"
+                 * }
+                 */
+
+                if (
+                    typeof category === "string"
+                ) {
+
+                    categoryName =
+                        category;
+
+                    categoryId =
+                        category;
+
+                } else if (
+                    category &&
+                    typeof category === "object"
+                ) {
+
+                    categoryId =
+                        category.categoryId ??
+                        category.id ??
+                        category.ID ??
+                        category.Id ??
+                        "";
+
+                    categoryName =
+                        category.categoryName ??
+                        category.name ??
+                        category.category ??
+                        category.Category ??
+                        "";
+
+                }
+
+
+                categoryName =
+                    String(categoryName).trim();
+
+
+                if (!categoryName) {
+                    return;
+                }
+
+
+                const uniqueKey =
+                    categoryName.toLowerCase();
+
+
+                if (seen.has(uniqueKey)) {
+                    return;
+                }
+
+
+                seen.add(uniqueKey);
+
+
+                uniqueCategories.push({
+                    id:
+                        String(
+                            categoryId ||
+                            categoryName
+                        ),
+                    name:
+                        categoryName
+                });
+
+            });
+
+
+            /* ---------------------------------------------
+               No categories
+            --------------------------------------------- */
+
+            if (
+                uniqueCategories.length === 0
+            ) {
+
+                categorySelect.innerHTML = `
+                    <option value="">
+                        No categories available
+                    </option>
+                `;
+
+                categorySelect.disabled = true;
+
+                console.warn(
+                    "StockFlow: API returned no categories.",
+                    result
+                );
+
+                return;
+
+            }
+
+
+            /* ---------------------------------------------
+               Populate select
+            --------------------------------------------- */
+
+            categorySelect.innerHTML = `
+                <option value="">
+                    Select category
+                </option>
+            `;
+
+
+            uniqueCategories.forEach(category => {
+
+                const option =
+                    document.createElement("option");
+
+
+                /*
+                 * Use category ID when available.
+                 * If your products API expects the category
+                 * NAME instead, change value to:
+                 *
+                 * option.value = category.name;
+                 */
+
+                option.value =
+                    category.id;
+
+                option.textContent =
+                    category.name;
+
+
+                categorySelect.appendChild(
+                    option
+                );
+
+            });
+
+
+            categorySelect.disabled = false;
+
+
+        } catch (error) {
+
+            console.error(
+                "StockFlow: Failed to load categories:",
+                error
+            );
+
+
+            categorySelect.innerHTML = `
+                <option value="">
+                    Unable to load categories
+                </option>
+            `;
+
+            categorySelect.disabled = true;
+
+        }
+
+    }
+
+
+    /* =================================================
+       RESET FORM
+    ================================================= */
+
+    function resetProductForm() {
+
+        if (!productForm) {
+            return;
+        }
+
+
+        productForm.reset();
+
+
+        const status =
+            document.getElementById(
+                "productStatus"
+            );
+
+        if (status) {
+
+            status.value =
+                "active";
+
+        }
+
+
+        const unit =
+            document.getElementById(
+                "productUnit"
+            );
+
+        if (unit) {
+
+            unit.value =
+                "piece";
+
+        }
+
+
+        /*
+         * Reset category to placeholder.
+         *
+         * Do NOT remove the existing options here.
+         * loadProductCategories() will refresh them.
+         */
+
+        if (categorySelect) {
+
+            categorySelect.value = "";
+
+        }
+
+
+        productForm
+            .querySelectorAll(
+                ".invalid, .is-invalid"
+            )
+            .forEach(element => {
+
+                element.classList.remove(
+                    "invalid",
+                    "is-invalid"
+                );
+
+            });
+
+
+        const message =
+            document.getElementById(
+                "productFormMessage"
+            );
+
+        if (message) {
+
+            message.textContent =
+                "";
+
+            message.className =
+                "form-message";
+
+        }
+
+    }
+
+
+    /* =================================================
+       OPEN PRODUCT MODAL
+    ================================================= */
+
+    async function openProductModal() {
+
+        resetProductForm();
+
+
+        productModal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.classList.add(
+            "modal-open"
+        );
+
+
+        const title =
+            document.getElementById(
+                "productModalTitle"
+            );
+
+        if (title) {
+
+            title.textContent =
+                "Add Product";
+
+        }
+
+
+        const saveButton =
+            document.getElementById(
+                "saveProductBtn"
+            );
+
+        if (saveButton) {
+
+            saveButton.innerHTML = `
+                <i class="fa-solid fa-check"></i>
+                <span>Save Product</span>
+            `;
+
+        }
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Load categories when modal opens.
+         *
+         * This ensures newly-created categories on the
+         * Categories page are available immediately.
+         */
+
+        await loadProductCategories();
+
+
+        setTimeout(() => {
+
+            const firstInput =
+                document.getElementById(
+                    "productName"
+                );
+
+            if (firstInput) {
+
+                firstInput.focus();
+
+            }
+
+        }, 100);
+
+    }
+
+
+    /* =================================================
+       CLOSE PRODUCT MODAL
+    ================================================= */
+
+    function closeProductModalWindow() {
+
+        productModal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        document.body.classList.remove(
+            "modal-open"
+        );
+
+    }
+
+
+    /* =================================================
+       ADD PRODUCT
+    ================================================= */
+
+    if (addProductBtn) {
+
+        addProductBtn.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                openProductModal();
+
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       EMPTY STATE ADD PRODUCT
+    ================================================= */
+
+    if (emptyAddProductBtn) {
+
+        emptyAddProductBtn.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                openProductModal();
+
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       CLOSE BUTTON
+    ================================================= */
+
+    if (closeProductModal) {
+
+        closeProductModal.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                closeProductModalWindow();
+
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       CANCEL BUTTON
+    ================================================= */
+
+    if (cancelProductBtn) {
+
+        cancelProductBtn.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                closeProductModalWindow();
+
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       BACKDROP
+    ================================================= */
+
+    const backdrop =
+        productModal.querySelector(
+            ".modal-backdrop"
+        );
+
+
+    if (backdrop) {
+
+        backdrop.addEventListener(
+            "click",
+            closeProductModalWindow
+        );
+
+    }
+
+}
+
+
 const STOCKFLOW_INVENTORY_API =
     "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec";
 
