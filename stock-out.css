@@ -1607,3 +1607,652 @@
         width: auto;
     }
 }
+
+/* =========================================================
+   STOCKFLOW — STOCK OUT THEME ADDON
+   ========================================================= */
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+html.sf-theme-light .stock-out-page,
+html.sf-theme-light .stockout-page,
+html.sf-theme-light .stock-out-content,
+html.sf-theme-light .stockout-content,
+html.sf-theme-light main {
+
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+
+}
+
+
+/* Cards */
+
+html.sf-theme-light .stock-out-card,
+html.sf-theme-light .stockout-card,
+html.sf-theme-light .form-card,
+html.sf-theme-light .preview-card,
+html.sf-theme-light .summary-card,
+html.sf-theme-light .card {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+
+}
+
+
+/* Headings */
+
+html.sf-theme-light
+.stock-out-card h1,
+html.sf-theme-light
+.stock-out-card h2,
+html.sf-theme-light
+.stock-out-card h3,
+html.sf-theme-light
+.stock-out-card h4,
+html.sf-theme-light
+.stockout-card h1,
+html.sf-theme-light
+.stockout-card h2,
+html.sf-theme-light
+.stockout-card h3,
+html.sf-theme-light
+.stockout-card h4,
+html.sf-theme-light
+.form-card h1,
+html.sf-theme-light
+.form-card h2,
+html.sf-theme-light
+.form-card h3,
+html.sf-theme-light
+.form-card h4 {
+
+    color: #111827 !important;
+
+}
+
+
+/* Text */
+
+html.sf-theme-light
+.stock-out-card p,
+html.sf-theme-light
+.stockout-card p,
+html.sf-theme-light
+.form-card p,
+html.sf-theme-light
+.preview-card p {
+
+    color: #374151 !important;
+
+}
+
+
+/* Labels */
+
+html.sf-theme-light label,
+html.sf-theme-light .form-label,
+html.sf-theme-light .input-label,
+html.sf-theme-light .field-label {
+
+    color: #111827 !important;
+
+}
+
+
+/* Inputs */
+
+html.sf-theme-light input,
+html.sf-theme-light select,
+html.sf-theme-light textarea {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-color: #cbd5e1 !important;
+
+}
+
+
+/* Placeholder */
+
+html.sf-theme-light input::placeholder,
+html.sf-theme-light textarea::placeholder {
+
+    color: #6b7280 !important;
+
+}
+
+
+/* Select */
+
+html.sf-theme-light select option {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+
+}
+
+
+/* Preview */
+
+html.sf-theme-light
+.stock-out-preview,
+html.sf-theme-light
+.stockout-preview,
+html.sf-theme-light
+.preview-section,
+html.sf-theme-light
+.preview-box {
+
+    background: #f8fafc !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+
+}
+
+
+/* Preview labels */
+
+html.sf-theme-light
+.preview-label,
+html.sf-theme-light
+.preview-item-label,
+html.sf-theme-light
+.summary-label {
+
+    color: #6b7280 !important;
+
+}
+
+
+/* Preview values */
+
+html.sf-theme-light
+.preview-value,
+html.sf-theme-light
+.preview-item-value,
+html.sf-theme-light
+.summary-value,
+html.sf-theme-light
+#previewProduct,
+html.sf-theme-light
+#previewAvailable,
+html.sf-theme-light
+#previewQuantity,
+html.sf-theme-light
+#previewRemaining,
+html.sf-theme-light
+#previewReason,
+html.sf-theme-light
+#previewRecipient,
+html.sf-theme-light
+#previewReference,
+html.sf-theme-light
+#previewDate {
+
+    color: #111827 !important;
+
+}
+
+
+/* Table */
+
+html.sf-theme-light table {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+
+}
+
+
+html.sf-theme-light th {
+
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+
+}
+
+
+html.sf-theme-light td {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+
+}
+
+
+html.sf-theme-light tbody tr:hover td {
+
+    background: #f8fafc !important;
+
+}
+
+
+/* Empty/loading/error */
+
+html.sf-theme-light
+.table-loading,
+html.sf-theme-light
+.table-empty-state,
+html.sf-theme-light
+.table-error-state {
+
+    color: #374151 !important;
+
+}
+
+
+/* Connection */
+
+html.sf-theme-light
+#connectionMessage {
+
+    color: #111827 !important;
+
+}
+
+
+/* Notification */
+
+html.sf-theme-light
+#notificationPanel,
+html.sf-theme-light
+.stockflow-notification-panel {
+
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+
+}
+
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+html.sf-theme-dark .stock-out-page,
+html.sf-theme-dark .stockout-page,
+html.sf-theme-dark .stock-out-content,
+html.sf-theme-dark .stockout-content,
+html.sf-theme-dark main {
+
+    background: #0f172a !important;
+    color: #f8fafc !important;
+
+}
+
+
+/* Cards */
+
+html.sf-theme-dark .stock-out-card,
+html.sf-theme-dark .stockout-card,
+html.sf-theme-dark .form-card,
+html.sf-theme-dark .preview-card,
+html.sf-theme-dark .summary-card,
+html.sf-theme-dark .card {
+
+    background: #172033 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+}
+
+
+/* Headings */
+
+html.sf-theme-dark
+.stock-out-card h1,
+html.sf-theme-dark
+.stock-out-card h2,
+html.sf-theme-dark
+.stock-out-card h3,
+html.sf-theme-dark
+.stock-out-card h4,
+html.sf-theme-dark
+.stockout-card h1,
+html.sf-theme-dark
+.stockout-card h2,
+html.sf-theme-dark
+.stockout-card h3,
+html.sf-theme-dark
+.stockout-card h4,
+html.sf-theme-dark
+.form-card h1,
+html.sf-theme-dark
+.form-card h2,
+html.sf-theme-dark
+.form-card h3,
+html.sf-theme-dark
+.form-card h4 {
+
+    color: #ffffff !important;
+
+}
+
+
+/* Text */
+
+html.sf-theme-dark
+.stock-out-card p,
+html.sf-theme-dark
+.stockout-card p,
+html.sf-theme-dark
+.form-card p,
+html.sf-theme-dark
+.preview-card p {
+
+    color: #cbd5e1 !important;
+
+}
+
+
+/* Labels */
+
+html.sf-theme-dark label,
+html.sf-theme-dark .form-label,
+html.sf-theme-dark .input-label,
+html.sf-theme-dark .field-label {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* Inputs */
+
+html.sf-theme-dark input,
+html.sf-theme-dark select,
+html.sf-theme-dark textarea {
+
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+
+}
+
+
+/* Focus */
+
+html.sf-theme-dark input:focus,
+html.sf-theme-dark select:focus,
+html.sf-theme-dark textarea:focus {
+
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+
+}
+
+
+/* Placeholder */
+
+html.sf-theme-dark input::placeholder,
+html.sf-theme-dark textarea::placeholder {
+
+    color: #94a3b8 !important;
+
+}
+
+
+/* Select */
+
+html.sf-theme-dark select option {
+
+    background: #0f172a !important;
+    color: #f8fafc !important;
+
+}
+
+
+/* Preview */
+
+html.sf-theme-dark
+.stock-out-preview,
+html.sf-theme-dark
+.stockout-preview,
+html.sf-theme-dark
+.preview-section,
+html.sf-theme-dark
+.preview-box {
+
+    background: #111827 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+}
+
+
+/* Preview labels */
+
+html.sf-theme-dark
+.preview-label,
+html.sf-theme-dark
+.preview-item-label,
+html.sf-theme-dark
+.summary-label {
+
+    color: #94a3b8 !important;
+
+}
+
+
+/* Preview values */
+
+html.sf-theme-dark
+.preview-value,
+html.sf-theme-dark
+.preview-item-value,
+html.sf-theme-dark
+.summary-value,
+html.sf-theme-dark
+#previewProduct,
+html.sf-theme-dark
+#previewAvailable,
+html.sf-theme-dark
+#previewQuantity,
+html.sf-theme-dark
+#previewRemaining,
+html.sf-theme-dark
+#previewReason,
+html.sf-theme-dark
+#previewRecipient,
+html.sf-theme-dark
+#previewReference,
+html.sf-theme-dark
+#previewDate {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* Table */
+
+html.sf-theme-dark table {
+
+    background: #172033 !important;
+    color: #f8fafc !important;
+
+}
+
+
+html.sf-theme-dark th {
+
+    background: #111827 !important;
+    color: #ffffff !important;
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark td {
+
+    background: #172033 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark tbody tr:hover td {
+
+    background: #1e293b !important;
+
+}
+
+
+/* Empty/loading/error */
+
+html.sf-theme-dark
+.table-loading,
+html.sf-theme-dark
+.table-empty-state,
+html.sf-theme-dark
+.table-error-state {
+
+    color: #cbd5e1 !important;
+
+}
+
+
+/* Connection */
+
+html.sf-theme-dark
+#connectionMessage {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* Notification */
+
+html.sf-theme-dark
+#notificationPanel,
+html.sf-theme-dark
+.stockflow-notification-panel {
+
+    background: #172033 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+}
+
+
+/* Notification text */
+
+html.sf-theme-dark
+.notification-panel-head strong,
+html.sf-theme-dark
+.notification-panel-item strong {
+
+    color: #ffffff !important;
+
+}
+
+
+html.sf-theme-dark
+.notification-panel-item span {
+
+    color: #cbd5e1 !important;
+
+}
+
+
+/* =========================================================
+   USER PROFILE CLICK
+   ========================================================= */
+
+#sidebarUserName,
+#sidebarAvatar,
+#topbarUserName,
+#topbarAvatar {
+
+    cursor: pointer;
+
+}
+
+
+[data-user-profile]:focus-visible,
+.sidebar-user:focus-visible,
+.topbar-user:focus-visible,
+.user-profile:focus-visible {
+
+    outline: 2px solid #3b82f6;
+
+    outline-offset: 3px;
+
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+/*
+ * Sidebar remains the original STOCKFLOW
+ * navy/blue design in all themes.
+ */
+
+html.sf-theme-light #sidebar,
+html.sf-theme-dark #sidebar {
+
+    color: #ffffff;
+
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+html.sf-theme-light
+#stockOutModal {
+
+    color: #111827;
+
+}
+
+
+html.sf-theme-dark
+#stockOutModal {
+
+    color: #f8fafc;
+
+}
+
+
+html.sf-theme-dark
+#stockOutModal
+.modal-content,
+html.sf-theme-dark
+#stockOutModal
+.modal-card {
+
+    background: #172033 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark
+#stockOutModalTitle {
+
+    color: #ffffff !important;
+
+}
+
+
+html.sf-theme-dark
+#stockOutModalMessage {
+
+    color: #cbd5e1 !important;
+
+}
