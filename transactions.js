@@ -21,14 +21,23 @@
     const stockOutCount = $("stockOutCount");
     const totalUnits = $("totalUnits");
 
-    const transactionCountText = $("transactionResultText");
+    const transactionCountText =
+        $("transactionResultText");
 
-    const searchInput = $("transactionSearch");
+    const searchInput =
+        $("transactionSearch");
 
-    const emptyState = $("emptyState");
+    const emptyState =
+        $("emptyState");
+
 
     let allTransactions = [];
+
     let currentFilter = "ALL";
+
+    let currentUser = null;
+
+    let initialized = false;
 
 
     /* =========================================================
@@ -43,45 +52,52 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+
     }
 
 
     /* =========================================================
        NUMBER HELPERS
-    ============================================================ */
+    ========================================================= */
 
     function number(value) {
 
-        const parsed = Number(value);
+        const parsed =
+            Number(value);
 
         return Number.isFinite(parsed)
             ? parsed
             : 0;
+
     }
 
 
     function formatNumber(value) {
 
-        return number(value).toLocaleString(
-            "en-PH",
-            {
-                maximumFractionDigits: 0
-            }
-        );
+        return number(value)
+            .toLocaleString(
+                "en-PH",
+                {
+                    maximumFractionDigits: 0
+                }
+            );
+
     }
 
 
     function formatCurrency(value) {
 
-        return number(value).toLocaleString(
-            "en-PH",
-            {
-                style: "currency",
-                currency: "PHP",
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }
-        );
+        return number(value)
+            .toLocaleString(
+                "en-PH",
+                {
+                    style: "currency",
+                    currency: "PHP",
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
     }
 
 
@@ -95,11 +111,21 @@
             return "—";
         }
 
-        const date = new Date(value);
 
-        if (Number.isNaN(date.getTime())) {
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
             return escapeHTML(value);
+
         }
+
 
         return date.toLocaleString(
             "en-PH",
@@ -111,6 +137,7 @@
                 minute: "2-digit"
             }
         );
+
     }
 
 
@@ -118,13 +145,19 @@
        ALERTS
     ============================================================ */
 
-    function showAlert(message, type = "error") {
+    function showAlert(
+        message,
+        type = "error"
+    ) {
 
         if (!alertBox) {
             return;
         }
 
-        alertBox.textContent = message || "";
+
+        alertBox.textContent =
+            message || "";
+
 
         alertBox.className =
             `sf-alert show ${type}`;
@@ -138,9 +171,730 @@
             return;
         }
 
-        alertBox.textContent = "";
 
-        alertBox.className = "sf-alert";
+        alertBox.textContent =
+            "";
+
+
+        alertBox.className =
+            "sf-alert";
+
+    }
+
+
+    /* =========================================================
+       SESSION USER
+       ============================================================ */
+
+    function getSessionUser() {
+
+        try {
+
+            const raw =
+                sessionStorage.getItem(
+                    "STOCKFLOW_SESSION"
+                );
+
+
+            if (!raw) {
+                return null;
+            }
+
+
+            const session =
+                JSON.parse(raw);
+
+
+            if (!session) {
+                return null;
+            }
+
+
+            return (
+                session.user ||
+                session.data?.user ||
+                session.profile ||
+                null
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: unable to read session user.",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       USER IDENTITY
+    ============================================================ */
+
+    function getUserIdentity(user) {
+
+        if (!user) {
+            return "";
+        }
+
+
+        return (
+            user.username ||
+            user.email ||
+            user.gmail ||
+            user.phone ||
+            user.employeeId ||
+            user.employee_id ||
+            user.id ||
+            user.userId ||
+            ""
+        );
+
+    }
+
+
+    /* =========================================================
+       INITIALS
+    ============================================================ */
+
+    function getInitials(name) {
+
+        const value =
+            String(name || "SF")
+                .trim();
+
+
+        if (!value) {
+            return "SF";
+        }
+
+
+        const parts =
+            value
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        if (parts.length === 1) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+
+        return (
+            parts[0][0] +
+            parts[parts.length - 1][0]
+        ).toUpperCase();
+
+    }
+
+
+    /* =========================================================
+       USER NAME
+    ============================================================ */
+
+    function getUserName(user) {
+
+        if (!user) {
+            return "STOCKFLOW USER";
+        }
+
+
+        return (
+            user.name ||
+            user.fullName ||
+            user.full_name ||
+            user.username ||
+            user.email ||
+            user.gmail ||
+            "STOCKFLOW USER"
+        );
+
+    }
+
+
+    /* =========================================================
+       USER ROLE
+    ============================================================ */
+
+    function getUserRole(user) {
+
+        if (!user) {
+            return "Employee";
+        }
+
+
+        return (
+            user.role ||
+            user.position ||
+            user.accountStatus ||
+            user.account_status ||
+            "Employee"
+        );
+
+    }
+
+
+    /* =========================================================
+       USER UI ELEMENTS
+    ============================================================ */
+
+    function getUserNameElements() {
+
+        return [
+            $("headerUserName"),
+            $("sidebarUserName"),
+            $("topbarUserName"),
+            $("userName"),
+            $("topUserName")
+        ].filter(Boolean);
+
+    }
+
+
+    function getUserRoleElements() {
+
+        return [
+            $("headerUserRole"),
+            $("sidebarUserRole"),
+            $("topbarUserRole"),
+            $("userRole"),
+            $("topUserRole")
+        ].filter(Boolean);
+
+    }
+
+
+    /* =========================================================
+       POPULATE USER
+    ============================================================ */
+
+    function populateUser() {
+
+        try {
+
+            let user =
+                getSessionUser();
+
+
+            /*
+             * Keep compatibility with the existing
+             * StockFlowAuth system if it exists.
+             */
+
+            if (
+                !user &&
+                typeof StockFlowAuth !== "undefined" &&
+                typeof StockFlowAuth.getUser ===
+                    "function"
+            ) {
+
+                try {
+
+                    user =
+                        StockFlowAuth.getUser();
+
+                } catch (error) {
+
+                    console.warn(
+                        "StockFlowAuth user lookup failed:",
+                        error
+                    );
+
+                }
+
+            }
+
+
+            if (!user) {
+
+                console.warn(
+                    "STOCKFLOW: No active session user found."
+                );
+
+                return;
+
+            }
+
+
+            currentUser =
+                user;
+
+
+            const name =
+                getUserName(user);
+
+
+            const role =
+                getUserRole(user);
+
+
+            const initials =
+                getInitials(name);
+
+
+            /*
+             * Name
+             */
+
+            getUserNameElements()
+                .forEach(element => {
+
+                    element.textContent =
+                        name;
+
+                });
+
+
+            /*
+             * Role
+             */
+
+            getUserRoleElements()
+                .forEach(element => {
+
+                    element.textContent =
+                        role;
+
+                });
+
+
+            /*
+             * Avatar
+             */
+
+            document
+                .querySelectorAll(
+                    [
+                        ".sf-user-avatar",
+                        ".sf-header-avatar",
+                        ".sf-sidebar-avatar",
+                        "#headerUserAvatar",
+                        "#sidebarUserAvatar",
+                        "#topbarAvatar",
+                        "#userAvatar"
+                    ].join(",")
+                )
+                .forEach(avatar => {
+
+                    avatar.textContent =
+                        initials;
+
+                });
+
+
+            /*
+             * Optional email / employee fields
+             */
+
+            const email =
+                user.email ||
+                user.gmail ||
+                "";
+
+
+            document
+                .querySelectorAll(
+                    [
+                        "#headerUserEmail",
+                        "#sidebarUserEmail",
+                        "#topbarUserEmail"
+                    ].join(",")
+                )
+                .forEach(element => {
+
+                    if (email) {
+                        element.textContent =
+                            email;
+                    }
+
+                });
+
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to populate user information:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       USER PROFILE CLICK
+    ============================================================ */
+
+    function setupUserProfileLinks() {
+
+        const selectors = [
+            "[data-user-profile]",
+            "#userProfile",
+            "#topUserProfile",
+            "#headerUserProfile",
+            "#sidebarUserProfile",
+            ".topbar-user",
+            ".top-user-profile",
+            ".sidebar-user",
+            ".sf-user-profile",
+            ".user-profile"
+        ];
+
+
+        const elements =
+            document.querySelectorAll(
+                selectors.join(",")
+            );
+
+
+        elements.forEach(element => {
+
+            /*
+             * Do not convert logout controls into
+             * profile links.
+             */
+
+            if (
+                element.id === "logoutButton" ||
+                element.closest("#logoutButton") ||
+                element.matches(
+                    "[data-logout], .logout-button"
+                )
+            ) {
+                return;
+            }
+
+
+            /*
+             * Avoid duplicate handlers.
+             */
+
+            if (
+                element.dataset.stockflowProfileBound ===
+                "true"
+            ) {
+                return;
+            }
+
+
+            element.dataset.stockflowProfileBound =
+                "true";
+
+
+            /*
+             * If it is already an anchor,
+             * simply point it to profile.
+             */
+
+            if (
+                element.tagName.toLowerCase() ===
+                "a"
+            ) {
+
+                element.setAttribute(
+                    "href",
+                    "./profile.html"
+                );
+
+            } else {
+
+                element.setAttribute(
+                    "role",
+                    "link"
+                );
+
+                element.setAttribute(
+                    "tabindex",
+                    "0"
+                );
+
+
+                element.addEventListener(
+                    "click",
+                    () => {
+
+                        window.location.href =
+                            "./profile.html";
+
+                    }
+                );
+
+
+                element.addEventListener(
+                    "keydown",
+                    event => {
+
+                        if (
+                            event.key === "Enter" ||
+                            event.key === " "
+                        ) {
+
+                            event.preventDefault();
+
+                            window.location.href =
+                                "./profile.html";
+
+                        }
+
+                    }
+                );
+
+            }
+
+        });
+
+
+        /*
+         * Extra protection for user name/avatar
+         * when the surrounding container is not
+         * marked correctly in the HTML.
+         */
+
+        const clickableIds = [
+            "headerUserName",
+            "sidebarUserName",
+            "topbarUserName",
+            "userName",
+            "headerUserAvatar",
+            "sidebarUserAvatar",
+            "topbarAvatar",
+            "userAvatar"
+        ];
+
+
+        clickableIds.forEach(id => {
+
+            const element =
+                $(id);
+
+
+            if (!element) {
+                return;
+            }
+
+
+            if (
+                element.dataset.stockflowProfileBound ===
+                "true"
+            ) {
+                return;
+            }
+
+
+            element.dataset.stockflowProfileBound =
+                "true";
+
+
+            element.style.cursor =
+                "pointer";
+
+
+            element.addEventListener(
+                "click",
+                () => {
+
+                    window.location.href =
+                        "./profile.html";
+
+                }
+            );
+
+        });
+
+    }
+
+
+    /* =========================================================
+       LOGOUT
+    ============================================================ */
+
+    function clearStockFlowSession() {
+
+        const sessionKeys = [
+
+            "STOCKFLOW_SESSION",
+
+            "STOCKFLOW_TOKEN",
+
+            "stockflow_auth",
+
+            "stockflow_user",
+
+            "AUTH_TOKEN",
+
+            "TOKEN",
+
+            "authToken",
+
+            "accessToken"
+
+        ];
+
+
+        sessionKeys.forEach(key => {
+
+            try {
+
+                sessionStorage.removeItem(
+                    key
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    `Unable to remove session key ${key}:`,
+                    error
+                );
+
+            }
+
+        });
+
+
+        /*
+         * Clear legacy localStorage authentication
+         * keys only.
+         *
+         * IMPORTANT:
+         * stockflow_settings is NOT removed.
+         * Therefore the user's selected theme
+         * remains saved.
+         */
+
+        const localKeys = [
+
+            "STOCKFLOW_TOKEN",
+
+            "stockflow_auth",
+
+            "stockflow_user",
+
+            "AUTH_TOKEN",
+
+            "TOKEN",
+
+            "authToken",
+
+            "accessToken"
+
+        ];
+
+
+        localKeys.forEach(key => {
+
+            try {
+
+                localStorage.removeItem(
+                    key
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    `Unable to remove local key ${key}:`,
+                    error
+                );
+
+            }
+
+        });
+
+    }
+
+
+    function setupLogout() {
+
+        const logoutButton =
+            $("logoutButton");
+
+
+        if (!logoutButton) {
+            return;
+        }
+
+
+        if (
+            logoutButton.dataset.stockflowLogoutBound ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        logoutButton.dataset.stockflowLogoutBound =
+            "true";
+
+
+        logoutButton.addEventListener(
+            "click",
+            async event => {
+
+                event.preventDefault();
+
+
+                try {
+
+                    logoutButton.disabled =
+                        true;
+
+
+                    logoutButton.innerHTML =
+                        "<span>↪</span><span>Signing out...</span>";
+
+
+                    /*
+                     * DO NOT use StockFlowAuth.logout()
+                     * here as the primary logout.
+                     *
+                     * The actual application login
+                     * session is STOCKFLOW_SESSION.
+                     */
+
+                    clearStockFlowSession();
+
+
+                    /*
+                     * Small delay allows the button
+                     * state to visibly update.
+                     */
+
+                    setTimeout(() => {
+
+                        window.location.replace(
+                            "./auth.html"
+                        );
+
+                    }, 150);
+
+                } catch (error) {
+
+                    console.error(
+                        "STOCKFLOW logout error:",
+                        error
+                    );
+
+
+                    clearStockFlowSession();
+
+
+                    window.location.replace(
+                        "./auth.html"
+                    );
+
+                }
+
+            }
+        );
+
     }
 
 
@@ -152,26 +906,32 @@
 
         if (
             typeof StockFlowAPI === "undefined" ||
-            typeof StockFlowAPI.request !== "function"
+            typeof StockFlowAPI.request !==
+                "function"
         ) {
+
             throw new Error(
                 "StockFlow API is not available. Check api.js."
             );
+
         }
 
 
-        const response = await StockFlowAPI.request({
+        const response =
+            await StockFlowAPI.request({
 
-            action: "listTransactions",
+                action:
+                    "listTransactions",
 
-            type,
+                type,
 
-            token:
-                typeof StockFlowAPI.token === "function"
-                    ? StockFlowAPI.token()
-                    : ""
+                token:
+                    typeof StockFlowAPI.token ===
+                        "function"
+                        ? StockFlowAPI.token()
+                        : ""
 
-        });
+            });
 
 
         if (!response) {
@@ -193,18 +953,12 @@
         }
 
 
-        /*
-         * Backend returns:
-         *
-         * {
-         *     success: true,
-         *     records: [...]
-         * }
-         */
-
-        return Array.isArray(response.records)
+        return Array.isArray(
+            response.records
+        )
             ? response.records
             : [];
+
     }
 
 
@@ -219,42 +973,72 @@
         showLoading();
 
 
+        const refreshButtons = [
+
+            $("refreshButton"),
+            $("bottomRefreshButton")
+
+        ].filter(Boolean);
+
+
+        refreshButtons.forEach(button => {
+
+            button.disabled =
+                true;
+
+        });
+
+
         try {
 
             /*
              * Backend requires IN or OUT.
-             * Therefore ALL = combine both requests.
+             *
+             * Therefore ALL combines both.
              */
 
             const [
                 stockIn,
                 stockOut
             ] = await Promise.all([
+
                 requestTransactions("IN"),
+
                 requestTransactions("OUT")
+
             ]);
 
 
             const normalizedIn =
-                stockIn.map(record =>
-                    normalizeRecord(record, "STOCK_IN")
+                stockIn.map(
+                    record =>
+                        normalizeRecord(
+                            record,
+                            "STOCK_IN"
+                        )
                 );
 
 
             const normalizedOut =
-                stockOut.map(record =>
-                    normalizeRecord(record, "STOCK_OUT")
+                stockOut.map(
+                    record =>
+                        normalizeRecord(
+                            record,
+                            "STOCK_OUT"
+                        )
                 );
 
 
             allTransactions = [
+
                 ...normalizedIn,
+
                 ...normalizedOut
+
             ];
 
 
             sortTransactions();
-
 
             updateSummary();
 
@@ -270,15 +1054,26 @@
 
             allTransactions = [];
 
+
             updateSummary();
 
             showErrorState();
+
 
             showAlert(
                 error.message ||
                 "Unable to load transaction records.",
                 "error"
             );
+
+        } finally {
+
+            refreshButtons.forEach(button => {
+
+                button.disabled =
+                    false;
+
+            });
 
         }
 
@@ -289,7 +1084,10 @@
        NORMALIZE RECORD
     ============================================================ */
 
-    function normalizeRecord(record, type) {
+    function normalizeRecord(
+        record,
+        type
+    ) {
 
         return {
 
@@ -361,10 +1159,14 @@
             (a, b) => {
 
                 const dateA =
-                    new Date(a.date).getTime() || 0;
+                    new Date(a.date)
+                        .getTime() || 0;
+
 
                 const dateB =
-                    new Date(b.date).getTime() || 0;
+                    new Date(b.date)
+                        .getTime() || 0;
+
 
                 return dateB - dateA;
 
@@ -382,44 +1184,68 @@
 
         const stockIn =
             allTransactions.filter(
-                item => item.type === "STOCK_IN"
+                item =>
+                    item.type ===
+                    "STOCK_IN"
             );
+
 
         const stockOut =
             allTransactions.filter(
-                item => item.type === "STOCK_OUT"
+                item =>
+                    item.type ===
+                    "STOCK_OUT"
             );
 
 
         const units =
             allTransactions.reduce(
                 (sum, item) =>
-                    sum + number(item.quantity),
+                    sum +
+                    number(
+                        item.quantity
+                    ),
                 0
             );
 
 
         if (totalTransactions) {
+
             totalTransactions.textContent =
-                formatNumber(allTransactions.length);
+                formatNumber(
+                    allTransactions.length
+                );
+
         }
 
 
         if (stockInCount) {
+
             stockInCount.textContent =
-                formatNumber(stockIn.length);
+                formatNumber(
+                    stockIn.length
+                );
+
         }
 
 
         if (stockOutCount) {
+
             stockOutCount.textContent =
-                formatNumber(stockOut.length);
+                formatNumber(
+                    stockOut.length
+                );
+
         }
 
 
         if (totalUnits) {
+
             totalUnits.textContent =
-                formatNumber(units);
+                formatNumber(
+                    units
+                );
+
         }
 
     }
@@ -435,12 +1261,16 @@
             [...allTransactions];
 
 
-        if (currentFilter !== "ALL") {
+        if (
+            currentFilter !==
+            "ALL"
+        ) {
 
             filtered =
                 filtered.filter(
                     item =>
-                        item.type === currentFilter
+                        item.type ===
+                        currentFilter
                 );
 
         }
@@ -448,7 +1278,8 @@
 
         const search =
             String(
-                searchInput?.value || ""
+                searchInput?.value ||
+                ""
             )
                 .trim()
                 .toLowerCase();
@@ -457,26 +1288,30 @@
         if (search) {
 
             filtered =
-                filtered.filter(item => {
+                filtered.filter(
+                    item => {
 
-                    return [
+                        return [
 
-                        item.reference,
+                            item.reference,
 
-                        item.product,
+                            item.product,
 
-                        item.sku,
+                            item.sku,
 
-                        item.user,
+                            item.user,
 
-                        item.type
+                            item.type
 
-                    ]
-                        .join(" ")
-                        .toLowerCase()
-                        .includes(search);
+                        ]
+                            .join(" ")
+                            .toLowerCase()
+                            .includes(
+                                search
+                            );
 
-                });
+                    }
+                );
 
         }
 
@@ -503,11 +1338,17 @@
 
         if (!filtered.length) {
 
-            rows.innerHTML = "";
+            rows.innerHTML =
+                "";
+
 
             if (emptyState) {
-                emptyState.hidden = false;
+
+                emptyState.hidden =
+                    false;
+
             }
+
 
             updateResultText(0);
 
@@ -517,13 +1358,18 @@
 
 
         if (emptyState) {
-            emptyState.hidden = true;
+
+            emptyState.hidden =
+                true;
+
         }
 
 
         rows.innerHTML =
             filtered
-                .map(renderTransactionRow)
+                .map(
+                    renderTransactionRow
+                )
                 .join("");
 
 
@@ -538,10 +1384,13 @@
        TABLE ROW
     ============================================================ */
 
-    function renderTransactionRow(item) {
+    function renderTransactionRow(
+        item
+    ) {
 
         const incoming =
-            item.type === "STOCK_IN";
+            item.type ===
+            "STOCK_IN";
 
 
         const typeLabel =
@@ -557,10 +1406,13 @@
 
 
         const initials =
-            getInitials(item.user);
+            getInitials(
+                item.user
+            );
 
 
         return `
+
             <tr>
 
                 <td>
@@ -586,46 +1438,64 @@
 
 
                 <td class="reference-cell">
-                    ${escapeHTML(item.reference)}
+                    ${escapeHTML(
+                        item.reference
+                    )}
                 </td>
 
 
                 <td class="product-cell">
-                    ${escapeHTML(item.product)}
+                    ${escapeHTML(
+                        item.product
+                    )}
                 </td>
 
 
                 <td>
 
-                    <span class="transaction-sku">
-                        ${escapeHTML(item.sku)}
+                    <span
+                        class="transaction-sku"
+                    >
+                        ${escapeHTML(
+                            item.sku
+                        )}
                     </span>
 
                 </td>
 
 
                 <td class="quantity-cell">
-                    ${formatNumber(item.quantity)}
+                    ${formatNumber(
+                        item.quantity
+                    )}
                 </td>
 
 
                 <td class="total-cell">
-                    ${formatCurrency(item.total)}
+                    ${formatCurrency(
+                        item.total
+                    )}
                 </td>
 
 
                 <td>
 
-                    <div class="transaction-user">
+                    <div
+                        class="transaction-user"
+                    >
 
                         <span
                             class="transaction-user-avatar"
                         >
-                            ${escapeHTML(initials)}
+                            ${escapeHTML(
+                                initials
+                            )}
                         </span>
 
                         <span>
-                            ${escapeHTML(item.user)}
+                            ${escapeHTML(
+                                item.user
+                            )}
                         </span>
 
                     </div>
@@ -633,46 +1503,8 @@
                 </td>
 
             </tr>
+
         `;
-
-    }
-
-
-    /* =========================================================
-       INITIALS
-    ============================================================ */
-
-    function getInitials(name) {
-
-        const value =
-            String(name || "SF")
-                .trim();
-
-
-        if (!value) {
-            return "SF";
-        }
-
-
-        const parts =
-            value
-                .split(/\s+/)
-                .filter(Boolean);
-
-
-        if (parts.length === 1) {
-
-            return parts[0]
-                .substring(0, 2)
-                .toUpperCase();
-
-        }
-
-
-        return (
-            parts[0][0] +
-            parts[parts.length - 1][0]
-        ).toUpperCase();
 
     }
 
@@ -681,7 +1513,9 @@
        RESULT TEXT
     ============================================================ */
 
-    function updateResultText(count) {
+    function updateResultText(
+        count
+    ) {
 
         if (!transactionCountText) {
             return;
@@ -706,7 +1540,9 @@
 
             transactionCountText.textContent =
                 `${formatNumber(total)} transaction record${
-                    total === 1 ? "" : "s"
+                    total === 1
+                        ? ""
+                        : "s"
                 }`;
 
             return;
@@ -732,11 +1568,15 @@
 
 
         if (emptyState) {
-            emptyState.hidden = true;
+
+            emptyState.hidden =
+                true;
+
         }
 
 
         rows.innerHTML = `
+
             <tr>
 
                 <td
@@ -746,7 +1586,9 @@
 
                     <span>
 
-                        <span class="loading-spinner"></span>
+                        <span
+                            class="loading-spinner"
+                        ></span>
 
                         Loading transaction records...
 
@@ -755,6 +1597,7 @@
                 </td>
 
             </tr>
+
         `;
 
     }
@@ -772,11 +1615,15 @@
 
 
         if (emptyState) {
-            emptyState.hidden = true;
+
+            emptyState.hidden =
+                true;
+
         }
 
 
         rows.innerHTML = `
+
             <tr>
 
                 <td
@@ -791,6 +1638,7 @@
                 </td>
 
             </tr>
+
         `;
 
 
@@ -818,9 +1666,24 @@
 
         buttons.forEach(button => {
 
+            if (
+                button.dataset.stockflowFilterBound ===
+                "true"
+            ) {
+                return;
+            }
+
+
+            button.dataset.stockflowFilterBound =
+                "true";
+
+
             button.addEventListener(
                 "click",
-                () => {
+                event => {
+
+                    event.preventDefault();
+
 
                     currentFilter =
                         button.dataset.filter ||
@@ -831,7 +1694,8 @@
                         other => {
 
                             const active =
-                                other === button;
+                                other ===
+                                button;
 
 
                             other.classList.toggle(
@@ -872,6 +1736,18 @@
         }
 
 
+        if (
+            searchInput.dataset.stockflowSearchBound ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        searchInput.dataset.stockflowSearchBound =
+            "true";
+
+
         searchInput.addEventListener(
             "input",
             renderTransactions
@@ -881,16 +1757,20 @@
 
 
     /* =========================================================
-       RESET
+       RESET FILTER
     ============================================================ */
 
     function resetFilter() {
 
-        currentFilter = "ALL";
+        currentFilter =
+            "ALL";
 
 
         if (searchInput) {
-            searchInput.value = "";
+
+            searchInput.value =
+                "";
+
         }
 
 
@@ -901,7 +1781,8 @@
             .forEach(button => {
 
                 const active =
-                    button.dataset.filter === "ALL";
+                    button.dataset.filter ===
+                    "ALL";
 
 
                 button.classList.toggle(
@@ -931,273 +1812,43 @@
 
     function setupRefresh() {
 
-        const refreshButton =
-            $("refreshButton");
+        const refreshButtons = [
 
-        const bottomRefreshButton =
-            $("bottomRefreshButton");
+            $("refreshButton"),
 
+            $("bottomRefreshButton")
 
-        if (refreshButton) {
+        ].filter(Boolean);
 
-            refreshButton.addEventListener(
-                "click",
-                loadTransactions
-            );
 
-        }
+        refreshButtons.forEach(
+            button => {
 
-
-        if (bottomRefreshButton) {
-
-            bottomRefreshButton.addEventListener(
-                "click",
-                loadTransactions
-            );
-
-        }
-
-    }
-
-
-    /* =========================================================
-       USER INFORMATION
-    ============================================================ */
-
-    function populateUser() {
-
-        try {
-
-            if (
-                typeof StockFlowAuth === "undefined" ||
-                typeof StockFlowAuth.getUser !== "function"
-            ) {
-                return;
-            }
-
-
-            const user =
-                StockFlowAuth.getUser();
-
-
-            if (!user) {
-                return;
-            }
-
-
-            const name =
-                user.name ||
-                user.fullName ||
-                user.username ||
-                user.email ||
-                "StockFlow User";
-
-
-            const role =
-                user.role ||
-                user.position ||
-                "Employee";
-
-
-            const nameElements = [
-
-                $("headerUserName"),
-                $("sidebarUserName")
-
-            ];
-
-
-            const roleElements = [
-
-                $("headerUserRole"),
-                $("sidebarUserRole")
-
-            ];
-
-
-            nameElements.forEach(
-                element => {
-
-                    if (element) {
-                        element.textContent = name;
-                    }
-
-                }
-            );
-
-
-            roleElements.forEach(
-                element => {
-
-                    if (element) {
-                        element.textContent = role;
-                    }
-
-                }
-            );
-
-
-            const initials =
-                getInitials(name);
-
-
-            document
-                .querySelectorAll(
-                    ".sf-user-avatar, .sf-header-avatar"
-                )
-                .forEach(
-                    avatar => {
-                        avatar.textContent =
-                            initials;
-                    }
-                );
-
-        } catch (error) {
-
-            console.warn(
-                "Unable to populate user information:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =========================================================
-       LOGOUT
-    ============================================================ */
-
-    function setupLogout() {
-
-        const logoutButton =
-            $("logoutButton");
-
-
-        if (!logoutButton) {
-            return;
-        }
-
-
-        logoutButton.addEventListener(
-            "click",
-            async () => {
-
-                try {
-
-                    logoutButton.disabled = true;
-
-                    logoutButton.innerHTML =
-                        "<span>↪</span><span>Signing out...</span>";
-
-
-                    if (
-                        typeof StockFlowAuth !== "undefined" &&
-                        typeof StockFlowAuth.logout === "function"
-                    ) {
-
-                        await StockFlowAuth.logout();
-
-                    } else {
-
-                        sessionStorage.clear();
-
-                        window.location.href =
-                            "auth.html";
-
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
-
-                    sessionStorage.clear();
-
-                    window.location.href =
-                        "auth.html";
-
+                if (
+                    button.dataset.stockflowRefreshBound ===
+                    "true"
+                ) {
+                    return;
                 }
 
-            }
-        );
 
-    }
-
-
-    /* =========================================================
-       MOBILE SIDEBAR
-    ============================================================ */
-
-    function setupMobileMenu() {
-
-        const menuButton =
-            $("mobileMenuButton");
-
-        const sidebar =
-            document.querySelector(
-                ".sf-sidebar"
-            );
-
-        const overlay =
-            $("sidebarOverlay");
+                button.dataset.stockflowRefreshBound =
+                    "true";
 
 
-        if (
-            !menuButton ||
-            !sidebar ||
-            !overlay
-        ) {
-            return;
-        }
-
-
-        function openMenu() {
-
-            sidebar.classList.add(
-                "mobile-open"
-            );
-
-            overlay.hidden = false;
-
-        }
-
-
-        function closeMenu() {
-
-            sidebar.classList.remove(
-                "mobile-open"
-            );
-
-            overlay.hidden = true;
-
-        }
-
-
-        menuButton.addEventListener(
-            "click",
-            openMenu
-        );
-
-
-        overlay.addEventListener(
-            "click",
-            closeMenu
-        );
-
-
-        sidebar
-            .querySelectorAll(".sf-nav-item")
-            .forEach(link => {
-
-                link.addEventListener(
+                button.addEventListener(
                     "click",
-                    closeMenu
+                    event => {
+
+                        event.preventDefault();
+
+                        loadTransactions();
+
+                    }
                 );
 
-            });
+            }
+        );
 
     }
 
@@ -1217,40 +1868,357 @@
         }
 
 
+        if (
+            button.dataset.stockflowResetBound ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        button.dataset.stockflowResetBound =
+            "true";
+
+
         button.addEventListener(
             "click",
-            resetFilter
+            event => {
+
+                event.preventDefault();
+
+                resetFilter();
+
+            }
         );
 
     }
 
 
     /* =========================================================
-       AUTH CHECK
+       MOBILE SIDEBAR
+    ============================================================ */
+
+    function setupMobileMenu() {
+
+        const menuButton =
+            $("mobileMenuButton");
+
+
+        const sidebar =
+            document.querySelector(
+                ".sf-sidebar"
+            );
+
+
+        const overlay =
+            $("sidebarOverlay");
+
+
+        if (
+            !menuButton ||
+            !sidebar ||
+            !overlay
+        ) {
+            return;
+        }
+
+
+        if (
+            menuButton.dataset.stockflowMenuBound ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        menuButton.dataset.stockflowMenuBound =
+            "true";
+
+
+        function openMenu() {
+
+            sidebar.classList.add(
+                "mobile-open"
+            );
+
+
+            overlay.hidden =
+                false;
+
+        }
+
+
+        function closeMenu() {
+
+            sidebar.classList.remove(
+                "mobile-open"
+            );
+
+
+            overlay.hidden =
+                true;
+
+        }
+
+
+        menuButton.addEventListener(
+            "click",
+            openMenu
+        );
+
+
+        overlay.addEventListener(
+            "click",
+            closeMenu
+        );
+
+
+        sidebar
+            .querySelectorAll(
+                ".sf-nav-item"
+            )
+            .forEach(link => {
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+
+            });
+
+    }
+
+
+    /* =========================================================
+       NOTIFICATION ICON
+    ============================================================ */
+
+    function setupNotifications() {
+
+        const notificationButtons =
+            document.querySelectorAll(
+                [
+                    "#notificationButton",
+                    "#notificationsButton",
+                    ".notification-button",
+                    ".sf-notification-button"
+                ].join(",")
+            );
+
+
+        notificationButtons.forEach(
+            button => {
+
+                if (
+                    button.dataset.stockflowNotificationBound ===
+                    "true"
+                ) {
+                    return;
+                }
+
+
+                button.dataset.stockflowNotificationBound =
+                    "true";
+
+
+                button.addEventListener(
+                    "click",
+                    event => {
+
+                        event.preventDefault();
+
+
+                        /*
+                         * If a notification panel
+                         * already exists, toggle it.
+                         */
+
+                        const panel =
+                            document.querySelector(
+                                "#notificationPanel, .notification-panel, .sf-notification-panel"
+                            );
+
+
+                        if (panel) {
+
+                            panel.hidden =
+                                !panel.hidden;
+
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * Otherwise provide a
+                         * lightweight feedback message.
+                         */
+
+                        showAlert(
+                            "No new notifications.",
+                            "success"
+                        );
+
+
+                        setTimeout(
+                            clearAlert,
+                            2500
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       AUTH / SESSION INITIALIZATION
     ============================================================ */
 
     async function initializeAuth() {
 
-        if (
-            typeof StockFlowAuth === "undefined"
-        ) {
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT call StockFlowAuth.requireAuth()
+         * here.
+         *
+         * The current STOCKFLOW application login
+         * stores the active user in:
+         *
+         * STOCKFLOW_SESSION
+         *
+         * Calling another auth guard here can cause
+         * the page to redirect unexpectedly.
+         */
+
+
+        const sessionUser =
+            getSessionUser();
+
+
+        if (sessionUser) {
+
+            currentUser =
+                sessionUser;
+
+
+            /*
+             * Optional server refresh.
+             *
+             * Failure here must NOT log the user out.
+             */
+
+            const identity =
+                getUserIdentity(
+                    sessionUser
+                );
+
+
+            if (
+                identity &&
+                typeof StockFlowAPI !==
+                    "undefined" &&
+                typeof StockFlowAPI.getUser ===
+                    "function"
+            ) {
+
+                try {
+
+                    const freshUser =
+                        await StockFlowAPI.getUser(
+                            identity
+                        );
+
+
+                    if (freshUser) {
+
+                        currentUser =
+                            freshUser;
+
+                    }
+
+                } catch (error) {
+
+                    console.warn(
+                        "STOCKFLOW: user refresh failed. Keeping session user.",
+                        error
+                    );
+
+                }
+
+            }
+
+
             return true;
+
         }
 
 
+        /*
+         * Compatibility fallback only.
+         *
+         * This does NOT call requireAuth(),
+         * because that is the redirect source
+         * we are avoiding.
+         */
+
         if (
-            typeof StockFlowAuth.requireAuth !==
-            "function"
+            typeof StockFlowAuth !==
+                "undefined" &&
+            typeof StockFlowAuth.getUser ===
+                "function"
         ) {
-            return true;
+
+            try {
+
+                const legacyUser =
+                    StockFlowAuth.getUser();
+
+
+                if (legacyUser) {
+
+                    currentUser =
+                        legacyUser;
+
+                    return true;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Legacy StockFlowAuth user lookup failed:",
+                    error
+                );
+
+            }
+
         }
 
 
-        const user =
-            await StockFlowAuth.requireAuth();
+        /*
+         * No active session.
+         *
+         * Redirect ONLY to the actual login page,
+         * never to dashboard.
+         */
+
+        console.warn(
+            "STOCKFLOW: No active login session."
+        );
 
 
-        return Boolean(user);
+        window.location.replace(
+            "./auth.html"
+        );
+
+
+        return false;
 
     }
 
@@ -1260,6 +2228,15 @@
     ============================================================ */
 
     async function initialize() {
+
+        if (initialized) {
+            return;
+        }
+
+
+        initialized =
+            true;
+
 
         try {
 
@@ -1274,6 +2251,8 @@
 
             populateUser();
 
+            setupUserProfileLinks();
+
             setupFilters();
 
             setupSearch();
@@ -1286,6 +2265,9 @@
 
             setupMobileMenu();
 
+            setupNotifications();
+
+
             await loadTransactions();
 
         } catch (error) {
@@ -1294,6 +2276,7 @@
                 "STOCKFLOW transaction initialization error:",
                 error
             );
+
 
             showAlert(
                 error.message ||
@@ -1307,16 +2290,58 @@
 
 
     /* =========================================================
+       PAGE VISIBILITY REFRESH
+    ============================================================ */
+
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
+
+                /*
+                 * Refresh user UI from the
+                 * current session without
+                 * triggering an auth redirect.
+                 */
+
+                const user =
+                    getSessionUser();
+
+
+                if (user) {
+
+                    currentUser =
+                        user;
+
+                    populateUser();
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /* =========================================================
        START
     ============================================================ */
 
     if (
-        document.readyState === "loading"
+        document.readyState ===
+        "loading"
     ) {
 
         document.addEventListener(
             "DOMContentLoaded",
-            initialize
+            initialize,
+            {
+                once: true
+            }
         );
 
     } else {
