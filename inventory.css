@@ -2243,3 +2243,895 @@
         transition-duration: .01ms !important;
     }
 }
+
+/* =========================================================
+   STOCKFLOW INVENTORY
+   GLOBAL THEME ADDON
+   =========================================================
+   This section allows the Settings theme to control
+   inventory.html without changing the original layout.
+   ========================================================= */
+
+
+/* =========================================================
+   SYSTEM / DEFAULT
+   ========================================================= */
+
+html.sf-theme-system body,
+body.sf-theme-system {
+
+    --inventory-bg:
+        #f4f7fb;
+
+    --inventory-surface:
+        #ffffff;
+
+    --inventory-surface-soft:
+        #f8fafc;
+
+    --inventory-border:
+        #e5eaf1;
+
+    --inventory-text:
+        #10203a;
+
+    --inventory-text-soft:
+        #64748b;
+
+    --inventory-heading:
+        #10203a;
+
+    --inventory-shadow:
+        0 8px 24px rgba(
+            15,
+            23,
+            42,
+            0.06
+        );
+
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   Grey-white background + black text
+   ========================================================= */
+
+html.sf-theme-light body,
+body.sf-theme-light {
+
+    --inventory-bg:
+        #e5e7eb;
+
+    --inventory-surface:
+        #ffffff;
+
+    --inventory-surface-soft:
+        #f8fafc;
+
+    --inventory-border:
+        #cbd5e1;
+
+    --inventory-text:
+        #000000;
+
+    --inventory-text-soft:
+        #374151;
+
+    --inventory-heading:
+        #000000;
+
+    --inventory-shadow:
+        0 8px 24px rgba(
+            0,
+            0,
+            0,
+            0.10
+        );
+
+}
+
+
+/* =========================================================
+   DARK THEME
+   Dark navy + white/light text
+   ========================================================= */
+
+html.sf-theme-dark body,
+body.sf-theme-dark {
+
+    --inventory-bg:
+        #0b1220;
+
+    --inventory-surface:
+        #111827;
+
+    --inventory-surface-soft:
+        #172033;
+
+    --inventory-border:
+        #263247;
+
+    --inventory-text:
+        #f8fafc;
+
+    --inventory-text-soft:
+        #cbd5e1;
+
+    --inventory-heading:
+        #ffffff;
+
+    --inventory-shadow:
+        0 8px 24px rgba(
+            0,
+            0,
+            0,
+            0.30
+        );
+
+}
+
+
+/* =========================================================
+   INVENTORY PAGE
+   ========================================================= */
+
+html.sf-theme-light body,
+body.sf-theme-light {
+
+    background:
+        var(--inventory-bg) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+html.sf-theme-dark body,
+body.sf-theme-dark {
+
+    background:
+        var(--inventory-bg) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content,
+
+html.sf-theme-light
+.main-content,
+
+html.sf-theme-light
+.content-wrapper,
+
+html.sf-theme-light
+.sf-main,
+
+html.sf-theme-dark
+.inventory-content,
+
+html.sf-theme-dark
+.main-content,
+
+html.sf-theme-dark
+.content-wrapper,
+
+html.sf-theme-dark
+.sf-main {
+
+    background:
+        var(--inventory-bg) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   HEADINGS
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content h1,
+
+html.sf-theme-light
+.inventory-content h2,
+
+html.sf-theme-light
+.inventory-content h3,
+
+html.sf-theme-light
+.inventory-content h4,
+
+html.sf-theme-dark
+.inventory-content h1,
+
+html.sf-theme-dark
+.inventory-content h2,
+
+html.sf-theme-dark
+.inventory-content h3,
+
+html.sf-theme-dark
+.inventory-content h4 {
+
+    color:
+        var(--inventory-heading) !important;
+
+}
+
+
+/* =========================================================
+   NORMAL TEXT
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content p,
+
+html.sf-theme-light
+.inventory-content span,
+
+html.sf-theme-light
+.inventory-content label,
+
+html.sf-theme-dark
+.inventory-content p,
+
+html.sf-theme-dark
+.inventory-content span,
+
+html.sf-theme-dark
+.inventory-content label {
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   CARDS / PANELS
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content .card,
+
+html.sf-theme-light
+.inventory-content .panel,
+
+html.sf-theme-light
+.inventory-content .stat-card,
+
+html.sf-theme-light
+.inventory-content .inventory-card,
+
+html.sf-theme-light
+.inventory-content .sf-card,
+
+html.sf-theme-dark
+.inventory-content .card,
+
+html.sf-theme-dark
+.inventory-content .panel,
+
+html.sf-theme-dark
+.inventory-content .stat-card,
+
+html.sf-theme-dark
+.inventory-content .inventory-card,
+
+html.sf-theme-dark
+.inventory-content .sf-card {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+    box-shadow:
+        var(--inventory-shadow) !important;
+
+}
+
+
+/* =========================================================
+   COMMON CARD FALLBACK
+   ========================================================= */
+
+html.sf-theme-light
+.card,
+
+html.sf-theme-light
+.sf-card,
+
+html.sf-theme-dark
+.card,
+
+html.sf-theme-dark
+.sf-card {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+html.sf-theme-light
+.stat-card strong,
+
+html.sf-theme-light
+.stat-card .stat-value,
+
+html.sf-theme-light
+.stat-card .stat-number,
+
+html.sf-theme-dark
+.stat-card strong,
+
+html.sf-theme-dark
+.stat-card .stat-value,
+
+html.sf-theme-dark
+.stat-card .stat-number {
+
+    color:
+        var(--inventory-heading) !important;
+
+}
+
+
+html.sf-theme-light
+.stat-card span,
+
+html.sf-theme-light
+.stat-card small,
+
+html.sf-theme-dark
+.stat-card span,
+
+html.sf-theme-dark
+.stat-card small {
+
+    color:
+        var(--inventory-text-soft) !important;
+
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table-wrapper,
+
+html.sf-theme-light
+.table-wrapper,
+
+html.sf-theme-light
+.table-container,
+
+html.sf-theme-dark
+.inventory-table-wrapper,
+
+html.sf-theme-dark
+.table-wrapper,
+
+html.sf-theme-dark
+.table-container {
+
+    background:
+        var(--inventory-surface) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table,
+
+html.sf-theme-light
+.inventory-table table,
+
+html.sf-theme-dark
+.inventory-table,
+
+html.sf-theme-dark
+.inventory-table table {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table thead,
+
+html.sf-theme-light
+.inventory-table th,
+
+html.sf-theme-dark
+.inventory-table thead,
+
+html.sf-theme-dark
+.inventory-table th {
+
+    background:
+        var(--inventory-surface-soft) !important;
+
+    color:
+        var(--inventory-heading) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table tbody tr,
+
+html.sf-theme-dark
+.inventory-table tbody tr {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   TABLE CELLS
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table td,
+
+html.sf-theme-light
+.inventory-table tbody td,
+
+html.sf-theme-dark
+.inventory-table td,
+
+html.sf-theme-dark
+.inventory-table tbody td {
+
+    color:
+        var(--inventory-text) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   INVENTORY TEXT CELLS
+   ========================================================= */
+
+html.sf-theme-light
+.sku-cell,
+
+html.sf-theme-light
+.product-cell,
+
+html.sf-theme-light
+.category-cell,
+
+html.sf-theme-light
+.supplier-cell,
+
+html.sf-theme-light
+.reorder-cell,
+
+html.sf-theme-dark
+.sku-cell,
+
+html.sf-theme-dark
+.product-cell,
+
+html.sf-theme-dark
+.category-cell,
+
+html.sf-theme-dark
+.supplier-cell,
+
+html.sf-theme-dark
+.reorder-cell {
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   SECONDARY TABLE TEXT
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-table small,
+
+html.sf-theme-light
+.inventory-table .muted,
+
+html.sf-theme-light
+.inventory-table .secondary,
+
+html.sf-theme-dark
+.inventory-table small,
+
+html.sf-theme-dark
+.inventory-table .muted,
+
+html.sf-theme-dark
+.inventory-table .secondary {
+
+    color:
+        var(--inventory-text-soft) !important;
+
+}
+
+
+/* =========================================================
+   INPUTS / SELECTS
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content input,
+
+html.sf-theme-light
+.inventory-content select,
+
+html.sf-theme-light
+.inventory-content textarea,
+
+html.sf-theme-dark
+.inventory-content input,
+
+html.sf-theme-dark
+.inventory-content select,
+
+html.sf-theme-dark
+.inventory-content textarea {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   PLACEHOLDER
+   ========================================================= */
+
+html.sf-theme-light
+.inventory-content input::placeholder,
+
+html.sf-theme-light
+.inventory-content textarea::placeholder {
+
+    color:
+        #6b7280 !important;
+
+}
+
+
+html.sf-theme-dark
+.inventory-content input::placeholder,
+
+html.sf-theme-dark
+.inventory-content textarea::placeholder {
+
+    color:
+        #94a3b8 !important;
+
+}
+
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+html.sf-theme-light
+.sf-empty,
+
+html.sf-theme-light
+.table-empty-state,
+
+html.sf-theme-light
+.table-loading,
+
+html.sf-theme-dark
+.sf-empty,
+
+html.sf-theme-dark
+.table-empty-state,
+
+html.sf-theme-dark
+.table-loading {
+
+    background:
+        var(--inventory-surface) !important;
+
+    color:
+        var(--inventory-text) !important;
+
+}
+
+
+/* =========================================================
+   EMPTY STATE TEXT
+   ========================================================= */
+
+html.sf-theme-light
+.table-empty-state strong,
+
+html.sf-theme-light
+.table-loading strong,
+
+html.sf-theme-dark
+.table-empty-state strong,
+
+html.sf-theme-dark
+.table-loading strong {
+
+    color:
+        var(--inventory-heading) !important;
+
+}
+
+
+html.sf-theme-light
+.table-empty-state span,
+
+html.sf-theme-light
+.table-loading span,
+
+html.sf-theme-dark
+.table-empty-state span,
+
+html.sf-theme-dark
+.table-loading span {
+
+    color:
+        var(--inventory-text-soft) !important;
+
+}
+
+
+/* =========================================================
+   ALERT
+   ========================================================= */
+
+html.sf-theme-light
+.sf-alert,
+
+html.sf-theme-dark
+.sf-alert {
+
+    border-color:
+        var(--inventory-border) !important;
+
+}
+
+
+/* =========================================================
+   PROFILE CLICKABLE AREAS
+   ========================================================= */
+
+.sf-profile-clickable {
+
+    cursor:
+        pointer;
+
+}
+
+
+.sf-profile-clickable:focus-visible {
+
+    outline:
+        2px solid #2563eb;
+
+    outline-offset:
+        3px;
+
+}
+
+
+/* =========================================================
+   DARK NOTIFICATION PANEL
+   ========================================================= */
+
+html.sf-theme-dark
+.notification-panel {
+
+    background:
+        #111827 !important;
+
+    color:
+        #f8fafc !important;
+
+    border-color:
+        #263247 !important;
+
+}
+
+
+html.sf-theme-dark
+.notification-panel strong,
+
+html.sf-theme-dark
+.notification-panel span {
+
+    color:
+        #f8fafc !important;
+
+}
+
+
+/* =========================================================
+   DARK MODALS / DROPDOWNS
+   ========================================================= */
+
+html.sf-theme-dark
+.dropdown-menu,
+
+html.sf-theme-dark
+.modal-content,
+
+html.sf-theme-dark
+.modal-card,
+
+html.sf-theme-dark
+.popover {
+
+    background:
+        #111827 !important;
+
+    color:
+        #f8fafc !important;
+
+    border-color:
+        #263247 !important;
+
+}
+
+
+/* =========================================================
+   SIDEBAR
+   =========================================================
+   IMPORTANT:
+   Sidebar remains the original STOCKFLOW navy design
+   in ALL themes.
+   ========================================================= */
+
+html.sf-theme-system
+.sidebar,
+
+html.sf-theme-light
+.sidebar,
+
+html.sf-theme-dark
+.sidebar,
+
+html.sf-theme-system
+.sf-side,
+
+html.sf-theme-light
+.sf-side,
+
+html.sf-theme-dark
+.sf-side {
+
+    background:
+        #0b1f3a !important;
+
+    color:
+        #ffffff !important;
+
+}
+
+
+/* =========================================================
+   SIDEBAR USER TEXT
+   ========================================================= */
+
+html.sf-theme-system
+.sidebar .user-name,
+
+html.sf-theme-light
+.sidebar .user-name,
+
+html.sf-theme-dark
+.sidebar .user-name,
+
+html.sf-theme-system
+.sidebar .user-role,
+
+html.sf-theme-light
+.sidebar .user-role,
+
+html.sf-theme-dark
+.sidebar .user-role {
+
+    color:
+        #ffffff !important;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (
+    max-width: 900px
+) {
+
+    html.sf-theme-light
+    .inventory-content,
+
+    html.sf-theme-dark
+    .inventory-content {
+
+        background:
+            var(--inventory-bg) !important;
+
+    }
+
+}
