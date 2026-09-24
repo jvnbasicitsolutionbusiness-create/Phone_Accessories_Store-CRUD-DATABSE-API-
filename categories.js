@@ -2,37 +2,43 @@
  * STOCKFLOW INVENTORY BACKEND
  * Google Apps Script - Code.gs
  *
- * PURPOSE:
- * Backend for the separate STOCKFLOW Inventory Spreadsheet.
+ * PURPOSE
+ * -------
+ * Backend for the STOCKFLOW Inventory Spreadsheet.
  *
- * CURRENT DATA:
- * Row 1 contains the product categories horizontally.
+ * CURRENT DATA STRUCTURE
+ * ----------------------
  *
- * Example:
- * A1 = Phone Case
- * B1 = Phone Stand
- * C1 = Protection Scr
- * ...
+ * Categories:
+ *   Stored horizontally across Row 1 of the first sheet.
  *
- * The "Suppliers" sheet (a separate tab in this same
- * spreadsheet) stores suppliers as ROWS instead:
+ *   A1 = Phone Case
+ *   B1 = Phone Stand
+ *   C1 = Protection Scr
+ *   ...
  *
- * A = S_Name
- * B = contact person
- * C = email address
- * D = phone number
- * E = address
- * F = active/inactive
+ * Suppliers:
+ *   Stored as rows in the "Suppliers" sheet.
  *
- * SUPPORTED API ACTIONS:
- * - listCategories
- * - saveCategory
- * - deleteCategory
- * - listSuppliers
- * - createSupplier
- * - updateSupplier
- * - deleteSupplier
+ *   A = S_Name
+ *   B = contact person
+ *   C = email address
+ *   D = phone number
+ *   E = address
+ *   F = active/inactive
  *
+ * SUPPORTED API ACTIONS
+ * ---------------------
+ *   listCategories
+ *   saveCategory
+ *   deleteCategory
+ *   listSuppliers
+ *   createSupplier
+ *   updateSupplier
+ *   deleteSupplier
+ *
+ * NOTE
+ * ----
  * This file is NOT the authentication backend.
  *******************************************************/
 
@@ -41,11 +47,11 @@
    CONFIGURATION
    ===================================================== */
 
-// If this Apps Script is BOUND to your inventory spreadsheet,
-// you can leave this as an empty string.
+// Leave empty when this script is BOUND to the
+// inventory spreadsheet.
 //
-// If this is a STANDALONE Apps Script project,
-// put your Inventory Spreadsheet ID here.
+// For a STANDALONE Apps Script project, put the
+// Inventory Spreadsheet ID here.
 //
 // Example:
 // const SPREADSHEET_ID = "1AbCdEfGhIjKlMnOpQrStUvWxYz";
@@ -54,10 +60,24 @@ const SPREADSHEET_ID = "";
 
 
 /* =====================================================
-   SUPPLIERS SHEET NAME
+   SHEET CONFIGURATION
    ===================================================== */
 
 const SUPPLIERS_SHEET_NAME = "Suppliers";
+
+const CATEGORY_ID_PREFIX = "CAT-";
+const SUPPLIER_ID_PREFIX = "SUP-";
+
+const SUPPLIER_COLUMN_COUNT = 6;
+
+const SUPPLIER_COLUMNS = {
+  NAME: 1,
+  CONTACT_PERSON: 2,
+  EMAIL: 3,
+  PHONE: 4,
+  ADDRESS: 5,
+  STATUS: 6
+};
 
 const SUPPLIERS_HEADERS = [
   "S_Name",
@@ -73,48 +93,139 @@ const SUPPLIERS_HEADERS = [
    SPREADSHEET ACCESS
    ===================================================== */
 
+/**
+ * Returns the inventory spreadsheet.
+ *
+ * Bound script:
+ *   Uses the active spreadsheet.
+ *
+ * Standalone script:
+ *   Opens the spreadsheet configured above.
+ */
 function getInventorySpreadsheet() {
 
-  // If this script is bound directly to the spreadsheet
-  if (SPREADSHEET_ID === "") {
-    return SpreadsheetApp.getActiveSpreadsheet();
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
   }
 
-  // If this is a standalone Apps Script
-  return SpreadsheetApp.openById(SPREADSHEET_ID);
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (!spreadsheet) {
+    throw new Error(
+      "No spreadsheet is available. " +
+      "Bind this script to the inventory spreadsheet " +
+      "or configure SPREADSHEET_ID."
+    );
+  }
+
+  return spreadsheet;
+}
+
+
+/**
+ * Returns the first sheet.
+ *
+ * Categories currently live on the first sheet.
+ */
+function getCategorySheet() {
+
+  const spreadsheet = getInventorySpreadsheet();
+  const sheets = spreadsheet.getSheets();
+
+  if (!sheets.length) {
+    throw new Error("The inventory spreadsheet has no sheets.");
+  }
+
+  return sheets[0];
 }
 
 
 /* =====================================================
    SUPPLIERS SHEET ACCESS
-
-   Gets the "Suppliers" tab, creating it (with headers)
-   if it doesn't exist yet.
    ===================================================== */
 
+/**
+ * Returns the Suppliers sheet.
+ *
+ * Creates it automatically if it does not exist.
+ */
 function getSuppliersSheet() {
 
   const spreadsheet = getInventorySpreadsheet();
 
   let sheet = spreadsheet.getSheetByName(SUPPLIERS_SHEET_NAME);
 
-  if (!sheet) {
-
-    sheet = spreadsheet.insertSheet(SUPPLIERS_SHEET_NAME);
-
-    sheet
-      .getRange(1, 1, 1, SUPPLIERS_HEADERS.length)
-      .setValues([SUPPLIERS_HEADERS]);
-
-    sheet
-      .getRange(1, 1, 1, SUPPLIERS_HEADERS.length)
-      .setFontWeight("bold");
-
-    sheet.setFrozenRows(1);
-
+  if (sheet) {
+    return sheet;
   }
 
+  sheet = spreadsheet.insertSheet(SUPPLIERS_SHEET_NAME);
+
+  sheet
+    .getRange(1, 1, 1, SUPPLIERS_HEADERS.length)
+    .setValues([SUPPLIERS_HEADERS])
+    .setFontWeight("bold");
+
+  sheet.setFrozenRows(1);
+
   return sheet;
+}
+
+
+/* =====================================================
+   REQUEST HELPERS
+   ===================================================== */
+
+/**
+ * Returns the data object from an API request.
+ *
+ * Supports:
+ *   request.data
+ *   request.category
+ *   request.supplier
+ *   request itself
+ */
+function getRequestData(request) {
+
+  if (!request || typeof request !== "object") {
+    return {};
+  }
+
+  return (
+    request.data ||
+    request.category ||
+    request.supplier ||
+    request
+  );
+}
+
+
+/**
+ * Converts a value to a trimmed string.
+ */
+function stringValue(value) {
+
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value).trim();
+}
+
+
+/**
+ * Normalizes a supplier status.
+ *
+ * Only ACTIVE and INACTIVE are accepted.
+ * Anything else defaults to ACTIVE.
+ */
+function normalizeSupplierStatus(value) {
+
+  const status = stringValue(value).toUpperCase();
+
+  return status === "INACTIVE"
+    ? "INACTIVE"
+    : "ACTIVE";
 }
 
 
@@ -122,22 +233,45 @@ function getSuppliersSheet() {
    MAIN API ENTRY POINT
    ===================================================== */
 
+/**
+ * POST API endpoint.
+ */
 function doPost(e) {
 
   try {
 
-    if (!e || !e.postData || !e.postData.contents) {
+    if (
+      !e ||
+      !e.postData ||
+      !e.postData.contents
+    ) {
       return jsonResponse({
         success: false,
         error: "No request data received."
       });
     }
 
-    const request = JSON.parse(e.postData.contents);
+    let request;
 
-    const action = request.action;
+    try {
+
+      request = JSON.parse(
+        e.postData.contents
+      );
+
+    } catch (parseError) {
+
+      return jsonResponse({
+        success: false,
+        error: "Invalid JSON request."
+      });
+    }
+
+
+    const action = stringValue(request.action);
 
     if (!action) {
+
       return jsonResponse({
         success: false,
         error: "No API action specified."
@@ -145,77 +279,25 @@ function doPost(e) {
     }
 
 
-    /* ================================================
-       API ROUTER
-       ================================================ */
-
-    switch (action) {
-
-      case "listCategories":
-        return jsonResponse(
-          listCategories(request)
-        );
-
-
-      case "saveCategory":
-        return jsonResponse(
-          saveCategory(request)
-        );
-
-
-      case "deleteCategory":
-        return jsonResponse(
-          deleteCategory(request)
-        );
-
-
-      case "listSuppliers":
-        return jsonResponse(
-          listSuppliers(request)
-        );
-
-
-      case "createSupplier":
-        return jsonResponse(
-          createSupplier(request)
-        );
-
-
-      case "updateSupplier":
-        return jsonResponse(
-          updateSupplier(request)
-        );
-
-
-      case "deleteSupplier":
-        return jsonResponse(
-          deleteSupplierAction(request)
-        );
-
-
-      default:
-
-        return jsonResponse({
-          success: false,
-          error: "Unknown API action: " + action
-        });
-    }
+    return routeApiAction(action, request);
 
 
   } catch (error) {
 
     return jsonResponse({
       success: false,
-      error: error.message || String(error)
+      error: getErrorMessage(error)
     });
   }
 }
 
 
-/* =====================================================
-   GET SUPPORT
-   ===================================================== */
-
+/**
+ * GET API endpoint.
+ *
+ * Useful for checking whether the deployment
+ * is alive.
+ */
 function doGet(e) {
 
   return jsonResponse({
@@ -226,33 +308,77 @@ function doGet(e) {
 
 
 /* =====================================================
-   LIST CATEGORIES
+   API ROUTER
    ===================================================== */
 
+function routeApiAction(action, request) {
+
+  switch (action) {
+
+    case "listCategories":
+      return jsonResponse(
+        listCategories(request)
+      );
+
+    case "saveCategory":
+      return jsonResponse(
+        saveCategory(request)
+      );
+
+    case "deleteCategory":
+      return jsonResponse(
+        deleteCategory(request)
+      );
+
+    case "listSuppliers":
+      return jsonResponse(
+        listSuppliers(request)
+      );
+
+    case "createSupplier":
+      return jsonResponse(
+        createSupplier(request)
+      );
+
+    case "updateSupplier":
+      return jsonResponse(
+        updateSupplier(request)
+      );
+
+    case "deleteSupplier":
+      return jsonResponse(
+        deleteSupplier(request)
+      );
+
+    default:
+
+      return jsonResponse({
+        success: false,
+        error: "Unknown API action: " + action
+      });
+  }
+}
+
+
+/* =====================================================
+   CATEGORY API
+   ===================================================== */
+
+/**
+ * Returns all categories stored in Row 1.
+ */
 function listCategories(request) {
 
-  const spreadsheet = getInventorySpreadsheet();
-
-  /*
-   * Use the first sheet of the inventory spreadsheet.
-   *
-   * Your current spreadsheet has the categories
-   * horizontally across Row 1.
-   */
-
-  const sheet = spreadsheet.getSheets()[0];
-
+  const sheet = getCategorySheet();
   const lastColumn = sheet.getLastColumn();
 
-  const categories = [];
-
-  if (lastColumn === 0) {
+  if (lastColumn < 1) {
 
     return {
       success: true,
-      categories: []
+      categories: [],
+      total: 0
     };
-
   }
 
 
@@ -261,15 +387,123 @@ function listCategories(request) {
     .getValues()[0];
 
 
-  for (let i = 0; i < values.length; i++) {
+  const categories = [];
 
-    const categoryName = String(values[i] || "").trim();
 
-    if (categoryName !== "") {
+  values.forEach(function(value, index) {
 
-      categories.push({
+    const categoryName = stringValue(value);
 
-        categoryId: "CAT-" + (i + 1),
+    if (!categoryName) {
+      return;
+    }
+
+    const columnNumber = index + 1;
+
+    categories.push({
+      categoryId: CATEGORY_ID_PREFIX + columnNumber,
+      categoryName: categoryName,
+      description: "",
+      status: "Active",
+      column: columnNumber
+    });
+
+  });
+
+
+  return {
+    success: true,
+    categories: categories,
+    total: categories.length
+  };
+}
+
+
+/**
+ * Creates a new category.
+ *
+ * Categories are stored horizontally in Row 1.
+ */
+function saveCategory(request) {
+
+  const lock = LockService.getScriptLock();
+
+  lock.waitLock(10000);
+
+  try {
+
+    const sheet = getCategorySheet();
+    const data = getRequestData(request);
+
+    const categoryName = stringValue(
+      data.categoryName ||
+      data.name
+    );
+
+
+    if (!categoryName) {
+
+      return {
+        success: false,
+        error: "Category name is required."
+      };
+    }
+
+
+    const lastColumn = sheet.getLastColumn();
+
+    let values = [];
+
+    if (lastColumn > 0) {
+
+      values = sheet
+        .getRange(1, 1, 1, lastColumn)
+        .getValues()[0];
+
+    }
+
+
+    const duplicate = values.some(function(value) {
+
+      return (
+        stringValue(value).toLowerCase() ===
+        categoryName.toLowerCase()
+      );
+
+    });
+
+
+    if (duplicate) {
+
+      return {
+        success: false,
+        error: "Category already exists."
+      };
+    }
+
+
+    const nextColumn = Math.max(
+      1,
+      lastColumn + 1
+    );
+
+
+    sheet
+      .getRange(1, nextColumn)
+      .setValue(categoryName)
+      .setHorizontalAlignment("left");
+
+
+    return {
+
+      success: true,
+
+      message: "Category saved successfully.",
+
+      category: {
+
+        categoryId:
+          CATEGORY_ID_PREFIX + nextColumn,
 
         categoryName: categoryName,
 
@@ -277,392 +511,270 @@ function listCategories(request) {
 
         status: "Active",
 
-        column: i + 1
+        column: nextColumn
 
-      });
+      }
+    };
 
-    }
+
+  } finally {
+
+    lock.releaseLock();
+
   }
-
-
-  return {
-
-    success: true,
-
-    categories: categories,
-
-    total: categories.length
-
-  };
 }
 
 
-/* =====================================================
-   SAVE CATEGORY
-   ===================================================== */
+/**
+ * Deletes a category column.
+ *
+ * Accepts:
+ *   categoryId: CAT-3
+ *   categoryName
+ *   name
+ */
+function deleteCategory(request) {
 
-function saveCategory(request) {
+  const lock = LockService.getScriptLock();
 
-  const spreadsheet = getInventorySpreadsheet();
+  lock.waitLock(10000);
 
-  const sheet = spreadsheet.getSheets()[0];
+  try {
 
+    const sheet = getCategorySheet();
+    const data = getRequestData(request);
 
-  /*
-   * Accept different possible property names so the
-   * frontend remains flexible.
-   */
+    const categoryId = stringValue(
+      data.categoryId
+    );
 
-  const data = request.data || request.category || request;
-
-
-  const categoryName = String(
-    data.categoryName ||
-    data.name ||
-    ""
-  ).trim();
-
-
-  if (!categoryName) {
-
-    return {
-
-      success: false,
-
-      error: "Category name is required."
-
-    };
-  }
+    const categoryName = stringValue(
+      data.categoryName ||
+      data.name
+    );
 
 
-  /*
-   * Read existing categories
-   */
+    const lastColumn = sheet.getLastColumn();
 
-  const lastColumn = sheet.getLastColumn();
 
-  let values = [];
+    if (lastColumn < 1) {
 
-  if (lastColumn > 0) {
+      return {
+        success: false,
+        error: "No categories found."
+      };
+    }
 
-    values = sheet
+
+    const values = sheet
       .getRange(1, 1, 1, lastColumn)
       .getValues()[0];
 
-  }
 
+    let columnToDelete = -1;
 
-  /*
-   * Check for duplicate category
-   */
 
-  const duplicate = values.some(function(value) {
+    /*
+     * First try category ID.
+     */
+    if (categoryId) {
 
-    return String(value || "")
-      .trim()
-      .toLowerCase() === categoryName.toLowerCase();
+      const match = categoryId.match(
+        /^CAT-(\d+)$/i
+      );
 
-  });
+      if (match) {
 
+        const columnNumber = Number(
+          match[1]
+        );
 
-  if (duplicate) {
+        if (
+          columnNumber >= 1 &&
+          columnNumber <= lastColumn
+        ) {
 
-    return {
+          /*
+           * Only accept the ID if the target
+           * column actually contains a category.
+           */
+          if (
+            stringValue(
+              values[columnNumber - 1]
+            )
+          ) {
 
-      success: false,
+            columnToDelete = columnNumber;
 
-      error: "Category already exists."
-
-    };
-  }
-
-
-  /*
-   * Find the next available column
-   */
-
-  const nextColumn = lastColumn + 1;
-
-
-  /*
-   * Save the category into Row 1
-   */
-
-  sheet
-    .getRange(1, nextColumn)
-    .setValue(categoryName);
-
-
-  /*
-   * Optional formatting
-   */
-
-  sheet
-    .getRange(1, nextColumn)
-    .setHorizontalAlignment("left");
-
-
-  return {
-
-    success: true,
-
-    message: "Category saved successfully.",
-
-    category: {
-
-      categoryId: "CAT-" + nextColumn,
-
-      categoryName: categoryName,
-
-      description: "",
-
-      status: "Active",
-
-      column: nextColumn
-
-    }
-
-  };
-}
-
-
-/* =====================================================
-   DELETE CATEGORY
-   ===================================================== */
-
-function deleteCategory(request) {
-
-  const spreadsheet = getInventorySpreadsheet();
-
-  const sheet = spreadsheet.getSheets()[0];
-
-
-  const data = request.data || request.category || request;
-
-
-  /*
-   * The frontend may provide either:
-   *
-   * categoryId
-   * categoryName
-   * name
-   */
-
-  const categoryId = String(
-    data.categoryId ||
-    ""
-  ).trim();
-
-
-  const categoryName = String(
-    data.categoryName ||
-    data.name ||
-    ""
-  ).trim();
-
-
-  const lastColumn = sheet.getLastColumn();
-
-
-  if (lastColumn === 0) {
-
-    return {
-
-      success: false,
-
-      error: "No categories found."
-
-    };
-  }
-
-
-  const values = sheet
-    .getRange(1, 1, 1, lastColumn)
-    .getValues()[0];
-
-
-  let columnToDelete = -1;
-
-
-  /*
-   * First try Category ID
-   */
-
-  if (categoryId) {
-
-    const match = categoryId.match(/^CAT-(\d+)$/i);
-
-    if (match) {
-
-      const columnNumber = Number(match[1]);
-
-      if (
-        columnNumber >= 1 &&
-        columnNumber <= lastColumn
-      ) {
-
-        columnToDelete = columnNumber;
-
+          }
+        }
       }
     }
-  }
 
 
-  /*
-   * If ID wasn't found, search by name
-   */
+    /*
+     * If the ID didn't resolve, search by name.
+     */
+    if (
+      columnToDelete === -1 &&
+      categoryName
+    ) {
 
-  if (columnToDelete === -1 && categoryName) {
-
-    for (let i = 0; i < values.length; i++) {
-
-      if (
-        String(values[i] || "")
-          .trim()
-          .toLowerCase() === categoryName.toLowerCase()
+      for (
+        let i = 0;
+        i < values.length;
+        i++
       ) {
 
-        columnToDelete = i + 1;
+        if (
+          stringValue(values[i])
+            .toLowerCase() ===
+          categoryName.toLowerCase()
+        ) {
 
-        break;
+          columnToDelete = i + 1;
+          break;
 
+        }
       }
     }
-  }
 
 
-  if (columnToDelete === -1) {
+    if (columnToDelete === -1) {
 
-    return {
-
-      success: false,
-
-      error: "Category not found."
-
-    };
-  }
-
-
-  const deletedName = String(
-    values[columnToDelete - 1] || ""
-  ).trim();
-
-
-  /*
-   * Delete the entire category column.
-   *
-   * This is appropriate for your CURRENT sheet because
-   * categories are stored horizontally.
-   */
-
-  sheet.deleteColumn(columnToDelete);
-
-
-  return {
-
-    success: true,
-
-    message: "Category deleted successfully.",
-
-    category: {
-
-      categoryName: deletedName
-
+      return {
+        success: false,
+        error: "Category not found."
+      };
     }
 
-  };
-}
+
+    const deletedName = stringValue(
+      values[columnToDelete - 1]
+    );
 
 
-/* =====================================================
-   LIST SUPPLIERS
-   -----------------------------------------------------
-   Suppliers are stored as ROWS (unlike categories,
-   which are stored as columns).
+    sheet.deleteColumn(
+      columnToDelete
+    );
 
-   Row layout:
-     A = S_Name
-     B = contact person
-     C = email address
-     D = phone number
-     E = address
-     F = active/inactive
-
-   The row number itself is used to build a stable ID,
-   e.g. row 2 -> "SUP-2". This mirrors how categories
-   use "CAT-" + column number.
-   ===================================================== */
-
-function listSuppliers(request) {
-
-  const sheet = getSuppliersSheet();
-
-  const lastRow = sheet.getLastRow();
-
-  const suppliers = [];
-
-
-  if (lastRow < 2) {
 
     return {
 
       success: true,
 
-      suppliers: []
+      message:
+        "Category deleted successfully.",
+
+      category: {
+        categoryName: deletedName
+      }
 
     };
 
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+}
+
+
+/* =====================================================
+   SUPPLIER API
+   ===================================================== */
+
+/**
+ * Lists all suppliers.
+ */
+function listSuppliers(request) {
+
+  const sheet = getSuppliersSheet();
+  const lastRow = sheet.getLastRow();
+
+
+  if (lastRow < 2) {
+
+    return {
+      success: true,
+      suppliers: [],
+      total: 0
+    };
   }
 
 
   const values = sheet
-    .getRange(2, 1, lastRow - 1, 6)
+    .getRange(
+      2,
+      1,
+      lastRow - 1,
+      SUPPLIER_COLUMN_COUNT
+    )
     .getValues();
 
 
-  for (let i = 0; i < values.length; i++) {
+  const suppliers = [];
 
-    const row = values[i];
 
-    const name = String(row[0] || "").trim();
+  values.forEach(function(row, index) {
+
+    const name = stringValue(
+      row[SUPPLIER_COLUMNS.NAME - 1]
+    );
 
 
     /*
-     * Skip fully empty rows.
+     * Skip empty supplier rows.
      */
-
     if (!name) {
-      continue;
+      return;
     }
 
 
-    const rowNumber = i + 2;
+    const rowNumber = index + 2;
 
 
-    const statusRaw = String(row[5] || "Active")
-      .trim()
-      .toUpperCase();
-
-
-    const status =
-      statusRaw === "INACTIVE"
-        ? "INACTIVE"
-        : "ACTIVE";
+    const status = normalizeSupplierStatus(
+      row[SUPPLIER_COLUMNS.STATUS - 1]
+    );
 
 
     suppliers.push({
 
-      id: "SUP-" + rowNumber,
+      id:
+        SUPPLIER_ID_PREFIX +
+        rowNumber,
 
       name: name,
 
-      contactPerson: String(row[1] || "").trim(),
+      contactPerson:
+        stringValue(
+          row[
+            SUPPLIER_COLUMNS.CONTACT_PERSON - 1
+          ]
+        ),
 
-      email: String(row[2] || "").trim(),
+      email:
+        stringValue(
+          row[
+            SUPPLIER_COLUMNS.EMAIL - 1
+          ]
+        ),
 
-      phone: String(row[3] || "").trim(),
+      phone:
+        stringValue(
+          row[
+            SUPPLIER_COLUMNS.PHONE - 1
+          ]
+        ),
 
-      address: String(row[4] || "").trim(),
+      address:
+        stringValue(
+          row[
+            SUPPLIER_COLUMNS.ADDRESS - 1
+          ]
+        ),
 
       status: status,
 
@@ -670,7 +782,7 @@ function listSuppliers(request) {
 
     });
 
-  }
+  });
 
 
   return {
@@ -685,84 +797,111 @@ function listSuppliers(request) {
 }
 
 
-/* =====================================================
-   FIND SUPPLIER ROW
+/**
+ * Finds a supplier row by ID or name.
+ *
+ * Returns:
+ *   1-based row number
+ *   -1 when not found
+ */
+function findSupplierRow(
+  sheet,
+  id,
+  name
+) {
 
-   Accepts either:
-     id     -> "SUP-<rowNumber>"
-     name   -> exact match on S_Name (case-insensitive)
+  const trimmedId = stringValue(id);
 
-   Returns the 1-based row number, or -1 if not found.
-   ===================================================== */
 
-function findSupplierRow(sheet, id, name) {
-
-  const trimmedId = String(id || "").trim();
-
+  /*
+   * Search by SUP-<row>.
+   */
   if (trimmedId) {
 
-    const match = trimmedId.match(/^SUP-(\d+)$/i);
+    const match = trimmedId.match(
+      /^SUP-(\d+)$/i
+    );
+
 
     if (match) {
 
-      const rowNumber = Number(match[1]);
+      const rowNumber = Number(
+        match[1]
+      );
 
       const lastRow = sheet.getLastRow();
+
 
       if (
         rowNumber >= 2 &&
         rowNumber <= lastRow
       ) {
 
-        const existingName = String(
-          sheet.getRange(rowNumber, 1).getValue() || ""
-        ).trim();
+        const existingName =
+          stringValue(
+            sheet
+              .getRange(
+                rowNumber,
+                SUPPLIER_COLUMNS.NAME
+              )
+              .getValue()
+          );
 
 
-        /*
-         * Only trust the row number if it still
-         * actually holds a supplier (not a row that
-         * was deleted after this ID was generated).
-         */
-
-        if (existingName !== "") {
-
+        if (existingName) {
           return rowNumber;
-
         }
-
       }
     }
   }
 
 
-  const trimmedName = String(name || "").trim();
-
-  if (trimmedName) {
-
-    const lastRow = sheet.getLastRow();
-
-    if (lastRow >= 2) {
-
-      const values = sheet
-        .getRange(2, 1, lastRow - 1, 1)
-        .getValues();
+  /*
+   * Search by exact supplier name.
+   */
+  const trimmedName = stringValue(name);
 
 
-      for (let i = 0; i < values.length; i++) {
+  if (!trimmedName) {
+    return -1;
+  }
 
-        const existingName = String(values[i][0] || "").trim();
 
-        if (
-          existingName.toLowerCase() ===
-          trimmedName.toLowerCase()
-        ) {
+  const lastRow = sheet.getLastRow();
 
-          return i + 2;
 
-        }
+  if (lastRow < 2) {
+    return -1;
+  }
 
-      }
+
+  const values = sheet
+    .getRange(
+      2,
+      SUPPLIER_COLUMNS.NAME,
+      lastRow - 1,
+      1
+    )
+    .getValues();
+
+
+  for (
+    let i = 0;
+    i < values.length;
+    i++
+  ) {
+
+    const existingName =
+      stringValue(values[i][0]);
+
+
+    if (
+      existingName.toLowerCase() ===
+      trimmedName.toLowerCase()
+    ) {
+
+      return i + 2;
+
     }
   }
 
@@ -771,320 +910,424 @@ function findSupplierRow(sheet, id, name) {
 }
 
 
-/* =====================================================
-   CREATE SUPPLIER
-   ===================================================== */
-
+/**
+ * Creates a supplier.
+ */
 function createSupplier(request) {
 
-  const sheet = getSuppliersSheet();
+  const lock = LockService.getScriptLock();
+
+  lock.waitLock(10000);
+
+  try {
+
+    const sheet = getSuppliersSheet();
+    const data = getRequestData(request);
 
 
-  const data = request.data || request.supplier || request;
+    const name = stringValue(
+      data.name ||
+      data.supplierName
+    );
 
 
-  const name = String(
-    data.name ||
-    data.supplierName ||
-    ""
-  ).trim();
+    if (!name) {
 
-
-  if (!name) {
-
-    return {
-
-      success: false,
-
-      error: "Supplier name is required."
-
-    };
-  }
-
-
-  /*
-   * Prevent duplicate supplier names.
-   */
-
-  const duplicateRow = findSupplierRow(sheet, "", name);
-
-  if (duplicateRow !== -1) {
-
-    return {
-
-      success: false,
-
-      error: "A supplier with this name already exists."
-
-    };
-  }
-
-
-  const contactPerson = String(data.contactPerson || "").trim();
-
-  const email = String(data.email || "").trim();
-
-  const phone = String(data.phone || "").trim();
-
-  const address = String(data.address || "").trim();
-
-  const statusRaw = String(data.status || "ACTIVE")
-    .trim()
-    .toUpperCase();
-
-  const status = statusRaw === "INACTIVE" ? "Inactive" : "Active";
-
-
-  const newRow = sheet.getLastRow() + 1;
-
-
-  sheet
-    .getRange(newRow, 1, 1, 6)
-    .setValues([[
-      name,
-      contactPerson,
-      email,
-      phone,
-      address,
-      status
-    ]]);
-
-
-  return {
-
-    success: true,
-
-    message: "Supplier saved successfully.",
-
-    supplier: {
-
-      id: "SUP-" + newRow,
-
-      name: name,
-
-      contactPerson: contactPerson,
-
-      email: email,
-
-      phone: phone,
-
-      address: address,
-
-      status: status.toUpperCase()
-
+      return {
+        success: false,
+        error: "Supplier name is required."
+      };
     }
 
-  };
+
+    /*
+     * Prevent duplicate supplier names.
+     */
+    const duplicateRow =
+      findSupplierRow(
+        sheet,
+        "",
+        name
+      );
+
+
+    if (duplicateRow !== -1) {
+
+      return {
+        success: false,
+        error:
+          "A supplier with this name already exists."
+      };
+    }
+
+
+    const contactPerson =
+      stringValue(
+        data.contactPerson
+      );
+
+    const email =
+      stringValue(data.email);
+
+    const phone =
+      stringValue(data.phone);
+
+    const address =
+      stringValue(data.address);
+
+    const status =
+      normalizeSupplierStatus(
+        data.status
+      );
+
+
+    const newRow =
+      Math.max(
+        2,
+        sheet.getLastRow() + 1
+      );
+
+
+    sheet
+      .getRange(
+        newRow,
+        1,
+        1,
+        SUPPLIER_COLUMN_COUNT
+      )
+      .setValues([[
+        name,
+        contactPerson,
+        email,
+        phone,
+        address,
+        status
+      ]]);
+
+
+    return {
+
+      success: true,
+
+      message:
+        "Supplier saved successfully.",
+
+      supplier: {
+
+        id:
+          SUPPLIER_ID_PREFIX +
+          newRow,
+
+        name: name,
+
+        contactPerson:
+          contactPerson,
+
+        email: email,
+
+        phone: phone,
+
+        address: address,
+
+        status: status
+
+      }
+
+    };
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
 }
 
 
-/* =====================================================
-   UPDATE SUPPLIER
-   ===================================================== */
-
+/**
+ * Updates an existing supplier.
+ *
+ * The supplier must be identified by:
+ *   id = SUP-<row>
+ *
+ * Name is not used to locate the record here because
+ * the name may itself be changing.
+ */
 function updateSupplier(request) {
 
-  const sheet = getSuppliersSheet();
+  const lock = LockService.getScriptLock();
+
+  lock.waitLock(10000);
+
+  try {
+
+    const sheet = getSuppliersSheet();
+    const data = getRequestData(request);
 
 
-  const data = request.data || request.supplier || request;
+    const id = stringValue(
+      data.id
+    );
 
 
-  const id = String(data.id || "").trim();
-
-  const name = String(
-    data.name ||
-    data.supplierName ||
-    ""
-  ).trim();
+    const name = stringValue(
+      data.name ||
+      data.supplierName
+    );
 
 
-  if (!name) {
+    if (!id) {
 
-    return {
-
-      success: false,
-
-      error: "Supplier name is required."
-
-    };
-  }
-
-
-  const rowNumber = findSupplierRow(sheet, id, "");
-
-
-  if (rowNumber === -1) {
-
-    return {
-
-      success: false,
-
-      error: "Supplier not found."
-
-    };
-  }
-
-
-  /*
-   * Prevent renaming into a duplicate of a DIFFERENT
-   * existing supplier.
-   */
-
-  const duplicateRow = findSupplierRow(sheet, "", name);
-
-  if (
-    duplicateRow !== -1 &&
-    duplicateRow !== rowNumber
-  ) {
-
-    return {
-
-      success: false,
-
-      error: "A supplier with this name already exists."
-
-    };
-  }
-
-
-  const contactPerson = String(data.contactPerson || "").trim();
-
-  const email = String(data.email || "").trim();
-
-  const phone = String(data.phone || "").trim();
-
-  const address = String(data.address || "").trim();
-
-  const statusRaw = String(data.status || "ACTIVE")
-    .trim()
-    .toUpperCase();
-
-  const status = statusRaw === "INACTIVE" ? "Inactive" : "Active";
-
-
-  sheet
-    .getRange(rowNumber, 1, 1, 6)
-    .setValues([[
-      name,
-      contactPerson,
-      email,
-      phone,
-      address,
-      status
-    ]]);
-
-
-  return {
-
-    success: true,
-
-    message: "Supplier updated successfully.",
-
-    supplier: {
-
-      id: "SUP-" + rowNumber,
-
-      name: name,
-
-      contactPerson: contactPerson,
-
-      email: email,
-
-      phone: phone,
-
-      address: address,
-
-      status: status.toUpperCase()
-
+      return {
+        success: false,
+        error: "Supplier ID is required."
+      };
     }
 
-  };
+
+    if (!name) {
+
+      return {
+        success: false,
+        error: "Supplier name is required."
+      };
+    }
+
+
+    const rowNumber =
+      findSupplierRow(
+        sheet,
+        id,
+        ""
+      );
+
+
+    if (rowNumber === -1) {
+
+      return {
+        success: false,
+        error: "Supplier not found."
+      };
+    }
+
+
+    /*
+     * Prevent changing the supplier name to the
+     * name of another supplier.
+     */
+    const duplicateRow =
+      findSupplierRow(
+        sheet,
+        "",
+        name
+      );
+
+
+    if (
+      duplicateRow !== -1 &&
+      duplicateRow !== rowNumber
+    ) {
+
+      return {
+        success: false,
+        error:
+          "A supplier with this name already exists."
+      };
+    }
+
+
+    const contactPerson =
+      stringValue(
+        data.contactPerson
+      );
+
+    const email =
+      stringValue(data.email);
+
+    const phone =
+      stringValue(data.phone);
+
+    const address =
+      stringValue(data.address);
+
+    const status =
+      normalizeSupplierStatus(
+        data.status
+      );
+
+
+    sheet
+      .getRange(
+        rowNumber,
+        1,
+        1,
+        SUPPLIER_COLUMN_COUNT
+      )
+      .setValues([[
+        name,
+        contactPerson,
+        email,
+        phone,
+        address,
+        status
+      ]]);
+
+
+    return {
+
+      success: true,
+
+      message:
+        "Supplier updated successfully.",
+
+      supplier: {
+
+        id:
+          SUPPLIER_ID_PREFIX +
+          rowNumber,
+
+        name: name,
+
+        contactPerson:
+          contactPerson,
+
+        email: email,
+
+        phone: phone,
+
+        address: address,
+
+        status: status
+
+      }
+
+    };
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
+}
+
+
+/**
+ * Deletes a supplier.
+ *
+ * Accepts:
+ *   id   = SUP-<row>
+ *   name = supplier name
+ */
+function deleteSupplier(request) {
+
+  const lock = LockService.getScriptLock();
+
+  lock.waitLock(10000);
+
+  try {
+
+    const sheet = getSuppliersSheet();
+    const data = getRequestData(request);
+
+
+    const id = stringValue(
+      data.id
+    );
+
+    const name = stringValue(
+      data.name ||
+      data.supplierName
+    );
+
+
+    const rowNumber =
+      findSupplierRow(
+        sheet,
+        id,
+        name
+      );
+
+
+    if (rowNumber === -1) {
+
+      return {
+        success: false,
+        error: "Supplier not found."
+      };
+    }
+
+
+    const deletedName =
+      stringValue(
+        sheet
+          .getRange(
+            rowNumber,
+            SUPPLIER_COLUMNS.NAME
+          )
+          .getValue()
+      );
+
+
+    sheet.deleteRow(
+      rowNumber
+    );
+
+
+    return {
+
+      success: true,
+
+      message:
+        "Supplier deleted successfully.",
+
+      supplier: {
+        name: deletedName
+      }
+
+    };
+
+
+  } finally {
+
+    lock.releaseLock();
+
+  }
 }
 
 
 /* =====================================================
-   DELETE SUPPLIER
-
-   Named "deleteSupplierAction" (rather than
-   "deleteSupplier") only to avoid clashing with the
-   frontend-facing case label in the switch statement
-   above; behavior is otherwise the same style as
-   deleteCategory.
+   RESPONSE / ERROR HELPERS
    ===================================================== */
 
-function deleteSupplierAction(request) {
-
-  const sheet = getSuppliersSheet();
-
-
-  const data = request.data || request.supplier || request;
-
-
-  const id = String(
-    data.id ||
-    ""
-  ).trim();
-
-
-  const name = String(
-    data.name ||
-    ""
-  ).trim();
-
-
-  const rowNumber = findSupplierRow(sheet, id, name);
-
-
-  if (rowNumber === -1) {
-
-    return {
-
-      success: false,
-
-      error: "Supplier not found."
-
-    };
-  }
-
-
-  const deletedName = String(
-    sheet.getRange(rowNumber, 1).getValue() || ""
-  ).trim();
-
-
-  sheet.deleteRow(rowNumber);
-
-
-  return {
-
-    success: true,
-
-    message: "Supplier deleted successfully.",
-
-    supplier: {
-
-      name: deletedName
-
-    }
-
-  };
-}
-
-
-/* =====================================================
-   JSON RESPONSE
-   ===================================================== */
-
+/**
+ * Returns a JSON response suitable for
+ * Google Apps Script ContentService.
+ */
 function jsonResponse(data) {
 
   return ContentService
-
     .createTextOutput(
       JSON.stringify(data)
     )
-
     .setMimeType(
       ContentService.MimeType.JSON
     );
+}
+
+
+/**
+ * Safely extracts an error message.
+ */
+function getErrorMessage(error) {
+
+  if (
+    error &&
+    error.message
+  ) {
+
+    return error.message;
+  }
+
+  return String(error);
 }
