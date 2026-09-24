@@ -662,3 +662,278 @@ body.settings-page .settings-menu-btn:hover {
         width: 100%;
     }
 }
+
+
+/* =========================================================
+   STOCKFLOW — THEME SYSTEM
+========================================================= */
+
+
+/* =========================================================
+   LIGHT THEME
+========================================================= */
+
+html.sf-theme-light,
+body.sf-theme-light {
+
+    --sf-bg: #f8fafc;
+    --sf-surface: #ffffff;
+    --sf-surface-2: #f1f5f9;
+
+    --sf-text: #0f172a;
+    --sf-text-secondary: #475569;
+    --sf-text-muted: #64748b;
+
+    --sf-border: #e2e8f0;
+
+    --sf-input-bg: #ffffff;
+    --sf-input-border: #cbd5e1;
+
+    --sf-shadow:
+        0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+html.sf-theme-dark,
+body.sf-theme-dark {
+
+    --sf-bg: #0f172a;
+    --sf-surface: #111827;
+    --sf-surface-2: #1e293b;
+
+    --sf-text: #f8fafc;
+    --sf-text-secondary: #cbd5e1;
+    --sf-text-muted: #94a3b8;
+
+    --sf-border: #334155;
+
+    --sf-input-bg: #0f172a;
+    --sf-input-border: #475569;
+
+    --sf-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+body {
+    background:
+        var(--sf-bg, #f8fafc);
+
+    color:
+        var(--sf-text, #0f172a);
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+.sf-main,
+.settings-main,
+.settings-content,
+main {
+
+    background:
+        var(--sf-bg, #f8fafc);
+
+    color:
+        var(--sf-text, #0f172a);
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.settings-card,
+.settings-panel,
+.card {
+
+    background:
+        var(--sf-surface, #ffffff);
+
+    color:
+        var(--sf-text, #0f172a);
+
+    border-color:
+        var(--sf-border, #e2e8f0);
+
+    box-shadow:
+        var(--sf-shadow);
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+
+    color:
+        var(--sf-text, #0f172a);
+
+}
+
+
+/* =========================================================
+   NORMAL TEXT
+========================================================= */
+
+p,
+label,
+.settings-description,
+.settings-help,
+.text-muted {
+
+    color:
+        var(--sf-text-secondary, #475569);
+
+}
+
+
+/* =========================================================
+   INPUTS / SELECTS
+========================================================= */
+
+input,
+select,
+textarea {
+
+    background:
+        var(--sf-input-bg, #ffffff);
+
+    color:
+        var(--sf-text, #0f172a);
+
+    border-color:
+        var(--sf-input-border, #cbd5e1);
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+/* Placeholder */
+
+input::placeholder,
+textarea::placeholder {
+
+    color:
+        var(--sf-text-muted, #64748b);
+
+}
+
+
+/* Select option */
+
+select option {
+
+    background:
+        var(--sf-surface, #ffffff);
+
+    color:
+        var(--sf-text, #0f172a);
+
+}
+
+
+/* =========================================================
+   DARK MODE — SETTINGS SPECIFIC
+========================================================= */
+
+html.sf-theme-dark .settings-card,
+html.sf-theme-dark .settings-panel {
+
+    background:
+        #111827;
+
+    border-color:
+        #334155;
+}
+
+
+html.sf-theme-dark .settings-card *,
+html.sf-theme-dark .settings-panel * {
+
+    border-color:
+        #334155;
+}
+
+
+html.sf-theme-dark input,
+html.sf-theme-dark select,
+html.sf-theme-dark textarea {
+
+    background:
+        #0f172a;
+
+    color:
+        #f8fafc;
+
+    border-color:
+        #475569;
+}
+
+
+html.sf-theme-dark select option {
+
+    background:
+        #111827;
+
+    color:
+        #f8fafc;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sf-side {
+
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+/* =========================================================
+   THEME TRANSITION
+========================================================= */
+
+html.sf-theme-light *,
+html.sf-theme-dark * {
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
