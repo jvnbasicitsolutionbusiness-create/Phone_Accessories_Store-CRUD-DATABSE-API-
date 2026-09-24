@@ -1,1333 +1,1415 @@
-/*******************************************************
- * STOCKFLOW INVENTORY BACKEND
- * Google Apps Script - Code.gs
- *
- * PURPOSE
- * -------
- * Backend for the STOCKFLOW Inventory Spreadsheet.
- *
- * CURRENT DATA STRUCTURE
- * ----------------------
- *
- * Categories:
- *   Stored horizontally across Row 1 of the first sheet.
- *
- *   A1 = Phone Case
- *   B1 = Phone Stand
- *   C1 = Protection Scr
- *   ...
- *
- * Suppliers:
- *   Stored as rows in the "Suppliers" sheet.
- *
- *   A = S_Name
- *   B = contact person
- *   C = email address
- *   D = phone number
- *   E = address
- *   F = active/inactive
- *
- * SUPPORTED API ACTIONS
- * ---------------------
- *   listCategories
- *   saveCategory
- *   deleteCategory
- *   listSuppliers
- *   createSupplier
- *   updateSupplier
- *   deleteSupplier
- *
- * NOTE
- * ----
- * This file is NOT the authentication backend.
- *******************************************************/
+/* =========================================================
+   STOCKFLOW - CATEGORIES
+   Complete CRUD frontend
+========================================================= */
 
+(function () {
+    "use strict";
 
-/* =====================================================
-   CONFIGURATION
-   ===================================================== */
+    /* =====================================================
+       CONFIG
+    ===================================================== */
 
-// Leave empty when this script is BOUND to the
-// inventory spreadsheet.
-//
-// For a STANDALONE Apps Script project, put the
-// Inventory Spreadsheet ID here.
-//
-// Example:
-// const SPREADSHEET_ID = "1AbCdEfGhIjKlMnOpQrStUvWxYz";
+    const API_URL =
+        window.API_URL ||
+        window.STOCKFLOW_API_URL ||
+        "";
 
-const SPREADSHEET_ID = "";
-
-
-/* =====================================================
-   SHEET CONFIGURATION
-   ===================================================== */
-
-const SUPPLIERS_SHEET_NAME = "Suppliers";
-
-const CATEGORY_ID_PREFIX = "CAT-";
-const SUPPLIER_ID_PREFIX = "SUP-";
-
-const SUPPLIER_COLUMN_COUNT = 6;
-
-const SUPPLIER_COLUMNS = {
-  NAME: 1,
-  CONTACT_PERSON: 2,
-  EMAIL: 3,
-  PHONE: 4,
-  ADDRESS: 5,
-  STATUS: 6
-};
-
-const SUPPLIERS_HEADERS = [
-  "S_Name",
-  "contact person",
-  "email address",
-  "phone number",
-  "address",
-  "active/inactive"
-];
-
-
-/* =====================================================
-   SPREADSHEET ACCESS
-   ===================================================== */
-
-/**
- * Returns the inventory spreadsheet.
- *
- * Bound script:
- *   Uses the active spreadsheet.
- *
- * Standalone script:
- *   Opens the spreadsheet configured above.
- */
-function getInventorySpreadsheet() {
-
-  if (SPREADSHEET_ID) {
-    return SpreadsheetApp.openById(SPREADSHEET_ID);
-  }
-
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-
-  if (!spreadsheet) {
-    throw new Error(
-      "No spreadsheet is available. " +
-      "Bind this script to the inventory spreadsheet " +
-      "or configure SPREADSHEET_ID."
-    );
-  }
-
-  return spreadsheet;
-}
-
-
-/**
- * Returns the first sheet.
- *
- * Categories currently live on the first sheet.
- */
-function getCategorySheet() {
-
-  const spreadsheet = getInventorySpreadsheet();
-  const sheets = spreadsheet.getSheets();
-
-  if (!sheets.length) {
-    throw new Error("The inventory spreadsheet has no sheets.");
-  }
-
-  return sheets[0];
-}
-
-
-/* =====================================================
-   SUPPLIERS SHEET ACCESS
-   ===================================================== */
-
-/**
- * Returns the Suppliers sheet.
- *
- * Creates it automatically if it does not exist.
- */
-function getSuppliersSheet() {
-
-  const spreadsheet = getInventorySpreadsheet();
-
-  let sheet = spreadsheet.getSheetByName(SUPPLIERS_SHEET_NAME);
-
-  if (sheet) {
-    return sheet;
-  }
-
-  sheet = spreadsheet.insertSheet(SUPPLIERS_SHEET_NAME);
-
-  sheet
-    .getRange(1, 1, 1, SUPPLIERS_HEADERS.length)
-    .setValues([SUPPLIERS_HEADERS])
-    .setFontWeight("bold");
-
-  sheet.setFrozenRows(1);
-
-  return sheet;
-}
-
-
-/* =====================================================
-   REQUEST HELPERS
-   ===================================================== */
-
-/**
- * Returns the data object from an API request.
- *
- * Supports:
- *   request.data
- *   request.category
- *   request.supplier
- *   request itself
- */
-function getRequestData(request) {
-
-  if (!request || typeof request !== "object") {
-    return {};
-  }
-
-  return (
-    request.data ||
-    request.category ||
-    request.supplier ||
-    request
-  );
-}
-
-
-/**
- * Converts a value to a trimmed string.
- */
-function stringValue(value) {
-
-  if (value === null || value === undefined) {
-    return "";
-  }
-
-  return String(value).trim();
-}
-
-
-/**
- * Normalizes a supplier status.
- *
- * Only ACTIVE and INACTIVE are accepted.
- * Anything else defaults to ACTIVE.
- */
-function normalizeSupplierStatus(value) {
-
-  const status = stringValue(value).toUpperCase();
-
-  return status === "INACTIVE"
-    ? "INACTIVE"
-    : "ACTIVE";
-}
-
-
-/* =====================================================
-   MAIN API ENTRY POINT
-   ===================================================== */
-
-/**
- * POST API endpoint.
- */
-function doPost(e) {
-
-  try {
-
-    if (
-      !e ||
-      !e.postData ||
-      !e.postData.contents
-    ) {
-      return jsonResponse({
-        success: false,
-        error: "No request data received."
-      });
-    }
-
-    let request;
-
-    try {
-
-      request = JSON.parse(
-        e.postData.contents
-      );
-
-    } catch (parseError) {
-
-      return jsonResponse({
-        success: false,
-        error: "Invalid JSON request."
-      });
+    if (!API_URL) {
+        console.error(
+            "StockFlow: API_URL is missing. Check config.js."
+        );
     }
 
 
-    const action = stringValue(request.action);
+    /* =====================================================
+       DOM HELPERS
+    ===================================================== */
 
-    if (!action) {
+    const $ = (id) => document.getElementById(id);
 
-      return jsonResponse({
-        success: false,
-        error: "No API action specified."
-      });
-    }
 
+    const addCategoryBtn =
+        $("addCategoryBtn");
 
-    return routeApiAction(action, request);
+    const emptyAddCategoryBtn =
+        $("emptyAddCategoryBtn");
 
+    const categoryModal =
+        $("categoryModal");
 
-  } catch (error) {
+    const closeCategoryModal =
+        $("closeCategoryModal");
 
-    return jsonResponse({
-      success: false,
-      error: getErrorMessage(error)
-    });
-  }
-}
+    const cancelCategoryBtn =
+        $("cancelCategoryBtn");
 
+    const categoryForm =
+        $("categoryForm");
 
-/**
- * GET API endpoint.
- *
- * Useful for checking whether the deployment
- * is alive.
- */
-function doGet(e) {
+    const categoryId =
+        $("categoryId");
 
-  return jsonResponse({
-    success: true,
-    message: "STOCKFLOW Inventory API is running."
-  });
-}
+    const categoryName =
+        $("categoryName");
 
+    const categoryDescription =
+        $("categoryDescription");
 
-/* =====================================================
-   API ROUTER
-   ===================================================== */
+    const categoryStatus =
+        $("categoryStatus");
 
-function routeApiAction(action, request) {
+    const categoryFormMessage =
+        $("categoryFormMessage");
 
-  switch (action) {
+    const saveCategoryBtn =
+        $("saveCategoryBtn");
 
-    case "listCategories":
-      return jsonResponse(
-        listCategories(request)
-      );
+    const saveCategorySpinner =
+        $("saveCategorySpinner");
 
-    case "saveCategory":
-      return jsonResponse(
-        saveCategory(request)
-      );
+    const saveCategoryIcon =
+        $("saveCategoryIcon");
 
-    case "deleteCategory":
-      return jsonResponse(
-        deleteCategory(request)
-      );
+    const saveCategoryText =
+        $("saveCategoryText");
 
-    case "listSuppliers":
-      return jsonResponse(
-        listSuppliers(request)
-      );
+    const categoriesTableBody =
+        $("categoriesTableBody");
 
-    case "createSupplier":
-      return jsonResponse(
-        createSupplier(request)
-      );
+    const categoriesLoading =
+        $("categoriesLoading");
 
-    case "updateSupplier":
-      return jsonResponse(
-        updateSupplier(request)
-      );
+    const categoriesEmpty =
+        $("categoriesEmpty");
 
-    case "deleteSupplier":
-      return jsonResponse(
-        deleteSupplier(request)
-      );
+    const categoriesError =
+        $("categoriesError");
 
-    default:
+    const categoriesErrorMessage =
+        $("categoriesErrorMessage");
 
-      return jsonResponse({
-        success: false,
-        error: "Unknown API action: " + action
-      });
-  }
-}
+    const retryCategoriesBtn =
+        $("retryCategoriesBtn");
 
+    const categorySearch =
+        $("categorySearch");
 
-/* =====================================================
-   CATEGORY API
-   ===================================================== */
+    const categoryStatusFilter =
+        $("categoryStatusFilter");
 
-/**
- * Returns all categories stored in Row 1.
- */
-function listCategories(request) {
+    const refreshCategoriesBtn =
+        $("refreshCategoriesBtn");
 
-  const sheet = getCategorySheet();
-  const lastColumn = sheet.getLastColumn();
+    const totalCategories =
+        $("totalCategories");
 
-  if (lastColumn < 1) {
+    const activeCategories =
+        $("activeCategories");
 
-    return {
-      success: true,
-      categories: [],
-      total: 0
-    };
-  }
+    const categorizedProducts =
+        $("categorizedProducts");
 
+    const emptyCategories =
+        $("emptyCategories");
 
-  const values = sheet
-    .getRange(1, 1, 1, lastColumn)
-    .getValues()[0];
+    const categoryResultsInfo =
+        $("categoryResultsInfo");
 
+    const categoryPagination =
+        $("categoryPagination");
 
-  const categories = [];
+    const connectionMessage =
+        $("connectionMessage");
 
+    const deleteCategoryModal =
+        $("deleteCategoryModal");
 
-  values.forEach(function(value, index) {
+    const deleteCategoryName =
+        $("deleteCategoryName");
 
-    const categoryName = stringValue(value);
+    const deleteCategoryMessage =
+        $("deleteCategoryMessage");
 
-    if (!categoryName) {
-      return;
-    }
+    const cancelDeleteCategoryBtn =
+        $("cancelDeleteCategoryBtn");
 
-    const columnNumber = index + 1;
+    const confirmDeleteCategoryBtn =
+        $("confirmDeleteCategoryBtn");
 
-    categories.push({
-      categoryId: CATEGORY_ID_PREFIX + columnNumber,
-      categoryName: categoryName,
-      description: "",
-      status: "Active",
-      column: columnNumber
-    });
+    const deleteCategorySpinner =
+        $("deleteCategorySpinner");
 
-  });
 
+    /* =====================================================
+       STATE
+    ===================================================== */
 
-  return {
-    success: true,
-    categories: categories,
-    total: categories.length
-  };
-}
+    let categories = [];
 
+    let filteredCategories = [];
 
-/**
- * Creates a new category.
- *
- * Categories are stored horizontally in Row 1.
- */
-function saveCategory(request) {
+    let categoryToDelete = null;
 
-  const lock = LockService.getScriptLock();
 
-  lock.waitLock(10000);
+    /* =====================================================
+       API
+    ===================================================== */
 
-  try {
+    async function apiRequest(action, data = {}) {
 
-    const sheet = getCategorySheet();
-    const data = getRequestData(request);
+        if (!API_URL) {
+            throw new Error(
+                "API URL is not configured."
+            );
+        }
 
-    const categoryName = stringValue(
-      data.categoryName ||
-      data.name
-    );
 
+        const payload = {
+            action: action,
+            data: data
+        };
 
-    if (!categoryName) {
 
-      return {
-        success: false,
-        error: "Category name is required."
-      };
-    }
-
-
-    const lastColumn = sheet.getLastColumn();
-
-    let values = [];
-
-    if (lastColumn > 0) {
-
-      values = sheet
-        .getRange(1, 1, 1, lastColumn)
-        .getValues()[0];
-
-    }
-
-
-    const duplicate = values.some(function(value) {
-
-      return (
-        stringValue(value).toLowerCase() ===
-        categoryName.toLowerCase()
-      );
-
-    });
-
-
-    if (duplicate) {
-
-      return {
-        success: false,
-        error: "Category already exists."
-      };
-    }
-
-
-    const nextColumn = Math.max(
-      1,
-      lastColumn + 1
-    );
-
-
-    sheet
-      .getRange(1, nextColumn)
-      .setValue(categoryName)
-      .setHorizontalAlignment("left");
-
-
-    return {
-
-      success: true,
-
-      message: "Category saved successfully.",
-
-      category: {
-
-        categoryId:
-          CATEGORY_ID_PREFIX + nextColumn,
-
-        categoryName: categoryName,
-
-        description: "",
-
-        status: "Active",
-
-        column: nextColumn
-
-      }
-    };
-
-
-  } finally {
-
-    lock.releaseLock();
-
-  }
-}
-
-
-/**
- * Deletes a category column.
- *
- * Accepts:
- *   categoryId: CAT-3
- *   categoryName
- *   name
- */
-function deleteCategory(request) {
-
-  const lock = LockService.getScriptLock();
-
-  lock.waitLock(10000);
-
-  try {
-
-    const sheet = getCategorySheet();
-    const data = getRequestData(request);
-
-    const categoryId = stringValue(
-      data.categoryId
-    );
-
-    const categoryName = stringValue(
-      data.categoryName ||
-      data.name
-    );
-
-
-    const lastColumn = sheet.getLastColumn();
-
-
-    if (lastColumn < 1) {
-
-      return {
-        success: false,
-        error: "No categories found."
-      };
-    }
-
-
-    const values = sheet
-      .getRange(1, 1, 1, lastColumn)
-      .getValues()[0];
-
-
-    let columnToDelete = -1;
-
-
-    /*
-     * First try category ID.
-     */
-    if (categoryId) {
-
-      const match = categoryId.match(
-        /^CAT-(\d+)$/i
-      );
-
-      if (match) {
-
-        const columnNumber = Number(
-          match[1]
+        console.log(
+            "StockFlow API request:",
+            payload
         );
 
-        if (
-          columnNumber >= 1 &&
-          columnNumber <= lastColumn
-        ) {
 
-          /*
-           * Only accept the ID if the target
-           * column actually contains a category.
-           */
-          if (
-            stringValue(
-              values[columnNumber - 1]
+        const response = await fetch(
+            API_URL,
+            {
+                method: "POST",
+
+                /*
+                 * IMPORTANT:
+                 * Do NOT use application/json here.
+                 *
+                 * Google Apps Script Web Apps can trigger
+                 * a CORS preflight with application/json.
+                 *
+                 * text/plain avoids that problem.
+                 */
+                headers: {
+                    "Content-Type":
+                        "text/plain;charset=utf-8"
+                },
+
+                body: JSON.stringify(payload)
+            }
+        );
+
+
+        if (!response.ok) {
+            throw new Error(
+                "API returned HTTP " +
+                response.status
+            );
+        }
+
+
+        const text =
+            await response.text();
+
+
+        console.log(
+            "StockFlow API response:",
+            text
+        );
+
+
+        let result;
+
+
+        try {
+
+            result = JSON.parse(text);
+
+        } catch (error) {
+
+            console.error(
+                "Invalid JSON from API:",
+                text
+            );
+
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
+
+
+        if (!result.success) {
+
+            throw new Error(
+                result.error ||
+                "The request failed."
+            );
+        }
+
+
+        return result;
+    }
+
+
+    /* =====================================================
+       LOAD CATEGORIES
+    ===================================================== */
+
+    async function loadCategories() {
+
+        showLoading();
+
+        hideError();
+
+
+        try {
+
+            const result =
+                await apiRequest(
+                    "listCategories"
+                );
+
+
+            categories =
+                Array.isArray(result.categories)
+                    ? result.categories
+                    : [];
+
+
+            console.log(
+                "Loaded categories:",
+                categories
+            );
+
+
+            applyFilters();
+
+            updateStatistics();
+
+            showConnectionMessage(
+                "Categories loaded successfully.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "loadCategories error:",
+                error
+            );
+
+
+            categories = [];
+
+            filteredCategories = [];
+
+            renderCategories();
+
+            showError(
+                error.message ||
+                "Unable to load categories."
+            );
+        }
+    }
+
+
+    /* =====================================================
+       FILTERING
+    ===================================================== */
+
+    function applyFilters() {
+
+        const search =
+            (
+                categorySearch?.value ||
+                ""
             )
-          ) {
+                .trim()
+                .toLowerCase();
 
-            columnToDelete = columnNumber;
 
-          }
+        const status =
+            categoryStatusFilter?.value ||
+            "ALL";
+
+
+        filteredCategories =
+            categories.filter(
+                function (category) {
+
+                    const name =
+                        String(
+                            category.categoryName ||
+                            ""
+                        ).toLowerCase();
+
+
+                    const description =
+                        String(
+                            category.description ||
+                            ""
+                        ).toLowerCase();
+
+
+                    const categoryStatus =
+                        normalizeStatus(
+                            category.status
+                        );
+
+
+                    const matchesSearch =
+                        !search ||
+                        name.includes(search) ||
+                        description.includes(search);
+
+
+                    const matchesStatus =
+                        status === "ALL" ||
+                        categoryStatus === status;
+
+
+                    return (
+                        matchesSearch &&
+                        matchesStatus
+                    );
+                }
+            );
+
+
+        renderCategories();
+    }
+
+
+    /* =====================================================
+       RENDER TABLE
+    ===================================================== */
+
+    function renderCategories() {
+
+        if (!categoriesTableBody) {
+            return;
         }
-      }
-    }
 
 
-    /*
-     * If the ID didn't resolve, search by name.
-     */
-    if (
-      columnToDelete === -1 &&
-      categoryName
-    ) {
+        categoriesTableBody.innerHTML = "";
 
-      for (
-        let i = 0;
-        i < values.length;
-        i++
-      ) {
 
-        if (
-          stringValue(values[i])
-            .toLowerCase() ===
-          categoryName.toLowerCase()
-        ) {
+        if (!filteredCategories.length) {
 
-          columnToDelete = i + 1;
-          break;
+            categoriesTableBody.innerHTML = "";
 
+            if (categoriesEmpty) {
+                categoriesEmpty.hidden = false;
+            }
+
+            if (categoryResultsInfo) {
+                categoryResultsInfo.textContent =
+                    "Showing 0 categories";
+            }
+
+            if (categoryPagination) {
+                categoryPagination.innerHTML = "";
+            }
+
+            return;
         }
-      }
-    }
 
 
-    if (columnToDelete === -1) {
-
-      return {
-        success: false,
-        error: "Category not found."
-      };
-    }
-
-
-    const deletedName = stringValue(
-      values[columnToDelete - 1]
-    );
-
-
-    sheet.deleteColumn(
-      columnToDelete
-    );
-
-
-    return {
-
-      success: true,
-
-      message:
-        "Category deleted successfully.",
-
-      category: {
-        categoryName: deletedName
-      }
-
-    };
-
-
-  } finally {
-
-    lock.releaseLock();
-
-  }
-}
-
-
-/* =====================================================
-   SUPPLIER API
-   ===================================================== */
-
-/**
- * Lists all suppliers.
- */
-function listSuppliers(request) {
-
-  const sheet = getSuppliersSheet();
-  const lastRow = sheet.getLastRow();
-
-
-  if (lastRow < 2) {
-
-    return {
-      success: true,
-      suppliers: [],
-      total: 0
-    };
-  }
-
-
-  const values = sheet
-    .getRange(
-      2,
-      1,
-      lastRow - 1,
-      SUPPLIER_COLUMN_COUNT
-    )
-    .getValues();
-
-
-  const suppliers = [];
-
-
-  values.forEach(function(row, index) {
-
-    const name = stringValue(
-      row[SUPPLIER_COLUMNS.NAME - 1]
-    );
-
-
-    /*
-     * Skip empty supplier rows.
-     */
-    if (!name) {
-      return;
-    }
-
-
-    const rowNumber = index + 2;
-
-
-    const status = normalizeSupplierStatus(
-      row[SUPPLIER_COLUMNS.STATUS - 1]
-    );
-
-
-    suppliers.push({
-
-      id:
-        SUPPLIER_ID_PREFIX +
-        rowNumber,
-
-      name: name,
-
-      contactPerson:
-        stringValue(
-          row[
-            SUPPLIER_COLUMNS.CONTACT_PERSON - 1
-          ]
-        ),
-
-      email:
-        stringValue(
-          row[
-            SUPPLIER_COLUMNS.EMAIL - 1
-          ]
-        ),
-
-      phone:
-        stringValue(
-          row[
-            SUPPLIER_COLUMNS.PHONE - 1
-          ]
-        ),
-
-      address:
-        stringValue(
-          row[
-            SUPPLIER_COLUMNS.ADDRESS - 1
-          ]
-        ),
-
-      status: status,
-
-      row: rowNumber
-
-    });
-
-  });
-
-
-  return {
-
-    success: true,
-
-    suppliers: suppliers,
-
-    total: suppliers.length
-
-  };
-}
-
-
-/**
- * Finds a supplier row by ID or name.
- *
- * Returns:
- *   1-based row number
- *   -1 when not found
- */
-function findSupplierRow(
-  sheet,
-  id,
-  name
-) {
-
-  const trimmedId = stringValue(id);
-
-
-  /*
-   * Search by SUP-<row>.
-   */
-  if (trimmedId) {
-
-    const match = trimmedId.match(
-      /^SUP-(\d+)$/i
-    );
-
-
-    if (match) {
-
-      const rowNumber = Number(
-        match[1]
-      );
-
-      const lastRow = sheet.getLastRow();
-
-
-      if (
-        rowNumber >= 2 &&
-        rowNumber <= lastRow
-      ) {
-
-        const existingName =
-          stringValue(
-            sheet
-              .getRange(
-                rowNumber,
-                SUPPLIER_COLUMNS.NAME
-              )
-              .getValue()
-          );
-
-
-        if (existingName) {
-          return rowNumber;
+        if (categoriesEmpty) {
+            categoriesEmpty.hidden = true;
         }
-      }
-    }
-  }
 
 
-  /*
-   * Search by exact supplier name.
-   */
-  const trimmedName = stringValue(name);
+        filteredCategories.forEach(
+            function (category) {
 
+                const row =
+                    document.createElement("tr");
 
-  if (!trimmedName) {
-    return -1;
-  }
 
+                const status =
+                    normalizeStatus(
+                        category.status
+                    );
+
+
+                const statusText =
+                    status === "ACTIVE"
+                        ? "Active"
+                        : "Inactive";
+
+
+                const productCount =
+                    Number(
+                        category.productCount ??
+                        category.products ??
+                        0
+                    );
+
+
+                const created =
+                    category.createdAt ||
+                    category.created ||
+                    "—";
+
+
+                row.innerHTML = `
+                    <td>
+                        <div class="category-name-cell">
+                            <div class="category-table-icon">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+
+                            <strong>
+                                ${escapeHtml(
+                                    category.categoryName || "Unnamed"
+                                )}
+                            </strong>
+                        </div>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            category.description || "—"
+                        )}
+                    </td>
+
+                    <td>
+                        <span class="product-count">
+                            ${productCount}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="status-badge ${status.toLowerCase()}">
+                            ${statusText}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(created)}
+                    </td>
+
+                    <td class="action-column">
+                        <div class="table-actions">
+
+                            <button
+                                type="button"
+                                class="table-action-btn delete"
+                                data-action="delete"
+                                data-id="${escapeAttribute(
+                                    category.categoryId || ""
+                                )}"
+                                data-name="${escapeAttribute(
+                                    category.categoryName || ""
+                                )}"
+                                title="Delete category"
+                                aria-label="Delete category"
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                        </div>
+                    </td>
+                `;
+
+
+                categoriesTableBody.appendChild(row);
+            }
+        );
+
+
+        if (categoryResultsInfo) {
 
-  const lastRow = sheet.getLastRow();
+            const count =
+                filteredCategories.length;
 
+            categoryResultsInfo.textContent =
+                `Showing ${count} ${
+                    count === 1
+                        ? "category"
+                        : "categories"
+                }`;
+        }
 
-  if (lastRow < 2) {
-    return -1;
-  }
 
-
-  const values = sheet
-    .getRange(
-      2,
-      SUPPLIER_COLUMNS.NAME,
-      lastRow - 1,
-      1
-    )
-    .getValues();
-
-
-  for (
-    let i = 0;
-    i < values.length;
-    i++
-  ) {
-
-    const existingName =
-      stringValue(values[i][0]);
-
-
-    if (
-      existingName.toLowerCase() ===
-      trimmedName.toLowerCase()
-    ) {
-
-      return i + 2;
-
-    }
-  }
-
-
-  return -1;
-}
-
-
-/**
- * Creates a supplier.
- */
-function createSupplier(request) {
-
-  const lock = LockService.getScriptLock();
-
-  lock.waitLock(10000);
-
-  try {
-
-    const sheet = getSuppliersSheet();
-    const data = getRequestData(request);
-
-
-    const name = stringValue(
-      data.name ||
-      data.supplierName
-    );
-
-
-    if (!name) {
-
-      return {
-        success: false,
-        error: "Supplier name is required."
-      };
-    }
-
-
-    /*
-     * Prevent duplicate supplier names.
-     */
-    const duplicateRow =
-      findSupplierRow(
-        sheet,
-        "",
-        name
-      );
-
-
-    if (duplicateRow !== -1) {
-
-      return {
-        success: false,
-        error:
-          "A supplier with this name already exists."
-      };
-    }
-
-
-    const contactPerson =
-      stringValue(
-        data.contactPerson
-      );
-
-    const email =
-      stringValue(data.email);
-
-    const phone =
-      stringValue(data.phone);
-
-    const address =
-      stringValue(data.address);
-
-    const status =
-      normalizeSupplierStatus(
-        data.status
-      );
-
-
-    const newRow =
-      Math.max(
-        2,
-        sheet.getLastRow() + 1
-      );
-
-
-    sheet
-      .getRange(
-        newRow,
-        1,
-        1,
-        SUPPLIER_COLUMN_COUNT
-      )
-      .setValues([[
-        name,
-        contactPerson,
-        email,
-        phone,
-        address,
-        status
-      ]]);
-
-
-    return {
-
-      success: true,
-
-      message:
-        "Supplier saved successfully.",
-
-      supplier: {
-
-        id:
-          SUPPLIER_ID_PREFIX +
-          newRow,
-
-        name: name,
-
-        contactPerson:
-          contactPerson,
-
-        email: email,
-
-        phone: phone,
-
-        address: address,
-
-        status: status
-
-      }
-
-    };
-
-
-  } finally {
-
-    lock.releaseLock();
-
-  }
-}
-
-
-/**
- * Updates an existing supplier.
- *
- * The supplier must be identified by:
- *   id = SUP-<row>
- *
- * Name is not used to locate the record here because
- * the name may itself be changing.
- */
-function updateSupplier(request) {
-
-  const lock = LockService.getScriptLock();
-
-  lock.waitLock(10000);
-
-  try {
-
-    const sheet = getSuppliersSheet();
-    const data = getRequestData(request);
-
-
-    const id = stringValue(
-      data.id
-    );
-
-
-    const name = stringValue(
-      data.name ||
-      data.supplierName
-    );
-
-
-    if (!id) {
-
-      return {
-        success: false,
-        error: "Supplier ID is required."
-      };
+        if (categoryPagination) {
+            categoryPagination.innerHTML = "";
+        }
     }
 
 
-    if (!name) {
+    /* =====================================================
+       STATISTICS
+    ===================================================== */
 
-      return {
-        success: false,
-        error: "Supplier name is required."
-      };
+    function updateStatistics() {
+
+        const total =
+            categories.length;
+
+
+        const active =
+            categories.filter(
+                function (category) {
+                    return (
+                        normalizeStatus(
+                            category.status
+                        ) === "ACTIVE"
+                    );
+                }
+            ).length;
+
+
+        const productTotal =
+            categories.reduce(
+                function (sum, category) {
+
+                    return (
+                        sum +
+                        Number(
+                            category.productCount ??
+                            category.products ??
+                            0
+                        )
+                    );
+
+                },
+                0
+            );
+
+
+        const empty =
+            categories.filter(
+                function (category) {
+
+                    return (
+                        Number(
+                            category.productCount ??
+                            category.products ??
+                            0
+                        ) === 0
+                    );
+                }
+            ).length;
+
+
+        if (totalCategories) {
+            totalCategories.textContent =
+                total;
+        }
+
+        if (activeCategories) {
+            activeCategories.textContent =
+                active;
+        }
+
+        if (categorizedProducts) {
+            categorizedProducts.textContent =
+                productTotal;
+        }
+
+        if (emptyCategories) {
+            emptyCategories.textContent =
+                empty;
+        }
     }
 
 
-    const rowNumber =
-      findSupplierRow(
-        sheet,
-        id,
-        ""
-      );
+    /* =====================================================
+       ADD MODAL
+    ===================================================== */
+
+    function openAddCategoryModal() {
+
+        if (!categoryModal) {
+            return;
+        }
 
 
-    if (rowNumber === -1) {
+        categoryForm?.reset();
 
-      return {
-        success: false,
-        error: "Supplier not found."
-      };
+
+        if (categoryId) {
+            categoryId.value = "";
+        }
+
+
+        if (categoryStatus) {
+            categoryStatus.value =
+                "ACTIVE";
+        }
+
+
+        const title =
+            $("categoryModalTitle");
+
+        if (title) {
+            title.textContent =
+                "Add Category";
+        }
+
+
+        if (saveCategoryText) {
+            saveCategoryText.textContent =
+                "Save Category";
+        }
+
+
+        clearFormMessage();
+
+
+        categoryModal.hidden = false;
+
+
+        setTimeout(
+            function () {
+
+                categoryName?.focus();
+
+            },
+            50
+        );
     }
 
 
-    /*
-     * Prevent changing the supplier name to the
-     * name of another supplier.
-     */
-    const duplicateRow =
-      findSupplierRow(
-        sheet,
-        "",
-        name
-      );
+    function closeAddCategoryModal() {
+
+        if (!categoryModal) {
+            return;
+        }
 
 
-    if (
-      duplicateRow !== -1 &&
-      duplicateRow !== rowNumber
-    ) {
+        categoryModal.hidden = true;
 
-      return {
-        success: false,
-        error:
-          "A supplier with this name already exists."
-      };
+        categoryForm?.reset();
+
+
+        if (categoryId) {
+            categoryId.value = "";
+        }
+
+
+        clearFormMessage();
     }
 
 
-    const contactPerson =
-      stringValue(
-        data.contactPerson
-      );
+    /* =====================================================
+       SAVE CATEGORY
+    ===================================================== */
 
-    const email =
-      stringValue(data.email);
+    async function saveCategory() {
 
-    const phone =
-      stringValue(data.phone);
-
-    const address =
-      stringValue(data.address);
-
-    const status =
-      normalizeSupplierStatus(
-        data.status
-      );
+        const name =
+            (
+                categoryName?.value ||
+                ""
+            ).trim();
 
 
-    sheet
-      .getRange(
-        rowNumber,
-        1,
-        1,
-        SUPPLIER_COLUMN_COUNT
-      )
-      .setValues([[
-        name,
-        contactPerson,
-        email,
-        phone,
-        address,
-        status
-      ]]);
+        const description =
+            (
+                categoryDescription?.value ||
+                ""
+            ).trim();
 
 
-    return {
-
-      success: true,
-
-      message:
-        "Supplier updated successfully.",
-
-      supplier: {
-
-        id:
-          SUPPLIER_ID_PREFIX +
-          rowNumber,
-
-        name: name,
-
-        contactPerson:
-          contactPerson,
-
-        email: email,
-
-        phone: phone,
-
-        address: address,
-
-        status: status
-
-      }
-
-    };
+        const status =
+            categoryStatus?.value ||
+            "ACTIVE";
 
 
-  } finally {
+        if (!name) {
 
-    lock.releaseLock();
+            showFormMessage(
+                "Category name is required."
+            );
 
-  }
-}
+            categoryName?.focus();
 
-
-/**
- * Deletes a supplier.
- *
- * Accepts:
- *   id   = SUP-<row>
- *   name = supplier name
- */
-function deleteSupplier(request) {
-
-  const lock = LockService.getScriptLock();
-
-  lock.waitLock(10000);
-
-  try {
-
-    const sheet = getSuppliersSheet();
-    const data = getRequestData(request);
+            return;
+        }
 
 
-    const id = stringValue(
-      data.id
-    );
+        if (name.length > 100) {
 
-    const name = stringValue(
-      data.name ||
-      data.supplierName
-    );
+            showFormMessage(
+                "Category name must be 100 characters or less."
+            );
+
+            categoryName?.focus();
+
+            return;
+        }
 
 
-    const rowNumber =
-      findSupplierRow(
-        sheet,
+        setSaveLoading(true);
+
+        clearFormMessage();
+
+
+        try {
+
+            const result =
+                await apiRequest(
+                    "saveCategory",
+                    {
+                        categoryName: name,
+                        description: description,
+                        status: status
+                    }
+                );
+
+
+            console.log(
+                "Category saved:",
+                result
+            );
+
+
+            closeAddCategoryModal();
+
+
+            await loadCategories();
+
+
+            showToast(
+                result.message ||
+                "Category saved successfully.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "saveCategory error:",
+                error
+            );
+
+
+            showFormMessage(
+                error.message ||
+                "Unable to save category."
+            );
+
+
+        } finally {
+
+            setSaveLoading(false);
+        }
+    }
+
+
+    /* =====================================================
+       DELETE
+    ===================================================== */
+
+    function openDeleteModal(
         id,
         name
-      );
+    ) {
+
+        categoryToDelete = {
+            id: id,
+            name: name
+        };
 
 
-    if (rowNumber === -1) {
+        if (deleteCategoryName) {
+            deleteCategoryName.textContent =
+                name || "this category";
+        }
 
-      return {
-        success: false,
-        error: "Supplier not found."
-      };
+
+        if (deleteCategoryMessage) {
+            deleteCategoryMessage.hidden =
+                true;
+
+            deleteCategoryMessage.textContent =
+                "";
+        }
+
+
+        if (deleteCategoryModal) {
+            deleteCategoryModal.hidden =
+                false;
+        }
     }
 
 
-    const deletedName =
-      stringValue(
-        sheet
-          .getRange(
-            rowNumber,
-            SUPPLIER_COLUMNS.NAME
-          )
-          .getValue()
-      );
+    function closeDeleteModal() {
+
+        categoryToDelete = null;
 
 
-    sheet.deleteRow(
-      rowNumber
+        if (deleteCategoryModal) {
+            deleteCategoryModal.hidden =
+                true;
+        }
+    }
+
+
+    async function deleteSelectedCategory() {
+
+        if (!categoryToDelete) {
+            return;
+        }
+
+
+        setDeleteLoading(true);
+
+
+        try {
+
+            const result =
+                await apiRequest(
+                    "deleteCategory",
+                    {
+                        categoryId:
+                            categoryToDelete.id,
+
+                        categoryName:
+                            categoryToDelete.name
+                    }
+                );
+
+
+            closeDeleteModal();
+
+
+            await loadCategories();
+
+
+            showToast(
+                result.message ||
+                "Category deleted successfully.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "deleteCategory error:",
+                error
+            );
+
+
+            if (deleteCategoryMessage) {
+
+                deleteCategoryMessage.textContent =
+                    error.message ||
+                    "Unable to delete category.";
+
+                deleteCategoryMessage.hidden =
+                    false;
+            }
+
+
+        } finally {
+
+            setDeleteLoading(false);
+        }
+    }
+
+
+    /* =====================================================
+       LOADING UI
+    ===================================================== */
+
+    function showLoading() {
+
+        if (categoriesLoading) {
+            categoriesLoading.hidden =
+                false;
+        }
+
+        if (categoriesEmpty) {
+            categoriesEmpty.hidden =
+                true;
+        }
+
+        if (categoriesError) {
+            categoriesError.hidden =
+                true;
+        }
+    }
+
+
+    function showError(message) {
+
+        if (categoriesLoading) {
+            categoriesLoading.hidden =
+                true;
+        }
+
+        if (categoriesEmpty) {
+            categoriesEmpty.hidden =
+                true;
+        }
+
+        if (categoriesError) {
+            categoriesError.hidden =
+                false;
+        }
+
+        if (categoriesErrorMessage) {
+            categoriesErrorMessage.textContent =
+                message;
+        }
+    }
+
+
+    function hideError() {
+
+        if (categoriesError) {
+            categoriesError.hidden =
+                true;
+        }
+    }
+
+
+    /* =====================================================
+       FORM LOADING
+    ===================================================== */
+
+    function setSaveLoading(loading) {
+
+        if (saveCategoryBtn) {
+            saveCategoryBtn.disabled =
+                loading;
+        }
+
+        if (saveCategorySpinner) {
+            saveCategorySpinner.hidden =
+                !loading;
+        }
+
+        if (saveCategoryIcon) {
+            saveCategoryIcon.hidden =
+                loading;
+        }
+
+        if (saveCategoryText) {
+            saveCategoryText.textContent =
+                loading
+                    ? "Saving..."
+                    : "Save Category";
+        }
+    }
+
+
+    function setDeleteLoading(loading) {
+
+        if (confirmDeleteCategoryBtn) {
+            confirmDeleteCategoryBtn.disabled =
+                loading;
+        }
+
+        if (deleteCategorySpinner) {
+            deleteCategorySpinner.hidden =
+                !loading;
+        }
+    }
+
+
+    /* =====================================================
+       FORM MESSAGES
+    ===================================================== */
+
+    function showFormMessage(
+        message,
+        type = "error"
+    ) {
+
+        if (!categoryFormMessage) {
+            return;
+        }
+
+
+        categoryFormMessage.textContent =
+            message;
+
+
+        categoryFormMessage.className =
+            "form-message " + type;
+
+
+        categoryFormMessage.hidden =
+            false;
+    }
+
+
+    function clearFormMessage() {
+
+        if (!categoryFormMessage) {
+            return;
+        }
+
+
+        categoryFormMessage.textContent =
+            "";
+
+        categoryFormMessage.hidden =
+            true;
+
+        categoryFormMessage.className =
+            "form-message";
+    }
+
+
+    /* =====================================================
+       CONNECTION MESSAGE
+    ===================================================== */
+
+    function showConnectionMessage(
+        message,
+        type
+    ) {
+
+        if (!connectionMessage) {
+            return;
+        }
+
+
+        connectionMessage.textContent =
+            message;
+
+
+        connectionMessage.className =
+            "connection-message " +
+            (type || "");
+
+
+        connectionMessage.hidden =
+            false;
+
+
+        setTimeout(
+            function () {
+
+                connectionMessage.hidden =
+                    true;
+
+            },
+            3000
+        );
+    }
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    function showToast(
+        message,
+        type = "success"
+    ) {
+
+        const container =
+            $("toastContainer");
+
+
+        if (!container) {
+            return;
+        }
+
+
+        const toast =
+            document.createElement("div");
+
+
+        toast.className =
+            `toast toast-${type}`;
+
+
+        toast.innerHTML = `
+            <i class="fa-solid ${
+                type === "success"
+                    ? "fa-circle-check"
+                    : "fa-circle-exclamation"
+            }"></i>
+
+            <span>
+                ${escapeHtml(message)}
+            </span>
+        `;
+
+
+        container.appendChild(toast);
+
+
+        setTimeout(
+            function () {
+
+                toast.classList.add(
+                    "show"
+                );
+
+            },
+            10
+        );
+
+
+        setTimeout(
+            function () {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+                setTimeout(
+                    function () {
+                        toast.remove();
+                    },
+                    300
+                );
+
+            },
+            3500
+        );
+    }
+
+
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+
+    function normalizeStatus(value) {
+
+        const status =
+            String(
+                value || "ACTIVE"
+            )
+                .trim()
+                .toUpperCase();
+
+
+        return status === "INACTIVE"
+            ? "INACTIVE"
+            : "ACTIVE";
+    }
+
+
+    function escapeHtml(value) {
+
+        return String(value ?? "")
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+    }
+
+
+    function escapeAttribute(value) {
+
+        return escapeHtml(value);
+    }
+
+
+    /* =====================================================
+       EVENTS
+    ===================================================== */
+
+    addCategoryBtn?.addEventListener(
+        "click",
+        openAddCategoryModal
     );
 
 
-    return {
-
-      success: true,
-
-      message:
-        "Supplier deleted successfully.",
-
-      supplier: {
-        name: deletedName
-      }
-
-    };
-
-
-  } finally {
-
-    lock.releaseLock();
-
-  }
-}
-
-
-/* =====================================================
-   RESPONSE / ERROR HELPERS
-   ===================================================== */
-
-/**
- * Returns a JSON response suitable for
- * Google Apps Script ContentService.
- */
-function jsonResponse(data) {
-
-  return ContentService
-    .createTextOutput(
-      JSON.stringify(data)
-    )
-    .setMimeType(
-      ContentService.MimeType.JSON
+    emptyAddCategoryBtn?.addEventListener(
+        "click",
+        openAddCategoryModal
     );
-}
 
 
-/**
- * Safely extracts an error message.
- */
-function getErrorMessage(error) {
+    closeCategoryModal?.addEventListener(
+        "click",
+        closeAddCategoryModal
+    );
 
-  if (
-    error &&
-    error.message
-  ) {
 
-    return error.message;
-  }
+    cancelCategoryBtn?.addEventListener(
+        "click",
+        closeAddCategoryModal
+    );
 
-  return String(error);
-}
+
+    categoryModal?.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                categoryModal
+            ) {
+
+                closeAddCategoryModal();
+            }
+        }
+    );
+
+
+    categoryForm?.addEventListener(
+        "submit",
+        function (event) {
+
+            event.preventDefault();
+
+            saveCategory();
+        }
+    );
+
+
+    categorySearch?.addEventListener(
+        "input",
+        applyFilters
+    );
+
+
+    categoryStatusFilter?.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    refreshCategoriesBtn?.addEventListener(
+        "click",
+        loadCategories
+    );
+
+
+    retryCategoriesBtn?.addEventListener(
+        "click",
+        loadCategories
+    );
+
+
+    categoriesTableBody?.addEventListener(
+        "click",
+        function (event) {
+
+            const button =
+                event.target.closest(
+                    "[data-action]"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            if (
+                button.dataset.action ===
+                "delete"
+            ) {
+
+                openDeleteModal(
+                    button.dataset.id,
+                    button.dataset.name
+                );
+            }
+        }
+    );
+
+
+    cancelDeleteCategoryBtn?.addEventListener(
+        "click",
+        closeDeleteModal
+    );
+
+
+    confirmDeleteCategoryBtn?.addEventListener(
+        "click",
+        deleteSelectedCategory
+    );
+
+
+    deleteCategoryModal?.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                deleteCategoryModal
+            ) {
+
+                closeDeleteModal();
+            }
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                if (
+                    categoryModal &&
+                    !categoryModal.hidden
+                ) {
+                    closeAddCategoryModal();
+                }
+
+
+                if (
+                    deleteCategoryModal &&
+                    !deleteCategoryModal.hidden
+                ) {
+                    closeDeleteModal();
+                }
+            }
+        }
+    );
+
+
+    /* =====================================================
+       PUBLIC API
+    ===================================================== */
+
+    window.loadCategories =
+        loadCategories;
+
+
+    window.openCategoryModal =
+        openAddCategoryModal;
+
+
+    /* =====================================================
+       INITIAL LOAD
+    ===================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            loadCategories();
+
+        }
+    );
+
+})();
