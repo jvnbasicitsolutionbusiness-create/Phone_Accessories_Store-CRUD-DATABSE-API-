@@ -24,6 +24,66 @@
         theme: "system"
     };
 
+   /* =====================================================
+   APPLY SAVED THEME IMMEDIATELY
+===================================================== */
+
+const applySavedThemeImmediately = () => {
+
+    try {
+
+        const stored =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+        if (!stored) {
+            return;
+        }
+
+        const settings =
+            JSON.parse(stored);
+
+        const theme =
+            VALID_THEMES.includes(
+                settings?.theme
+            )
+                ? settings.theme
+                : "system";
+
+        const resolvedTheme =
+            theme === "system"
+                ? getSystemTheme()
+                : theme;
+
+        document.documentElement.setAttribute(
+            "data-theme",
+            theme
+        );
+
+        document.documentElement.setAttribute(
+            "data-resolved-theme",
+            resolvedTheme
+        );
+
+        document.documentElement.classList.add(
+            `sf-theme-${resolvedTheme}`
+        );
+
+        document.documentElement.style.colorScheme =
+            resolvedTheme;
+
+    } catch (error) {
+
+        console.warn(
+            "STOCKFLOW: unable to apply saved theme.",
+            error
+        );
+
+    }
+
+};
+
 
     /* =====================================================
        HELPERS
