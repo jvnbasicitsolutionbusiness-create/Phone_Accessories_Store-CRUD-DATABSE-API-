@@ -1,0 +1,928 @@
+/* =========================================================
+   STOCKFLOW GLOBAL THEME SYSTEM
+   ---------------------------------------------------------
+   Themes:
+   1. system = ORIGINAL STOCKFLOW WHITE + BLUE DESIGN
+   2. light  = GREY / WHITE + BLACK TEXT
+   3. dark   = DARK NAVY / CHARCOAL + WHITE TEXT
+
+   IMPORTANT:
+   - "system" does NOT follow Windows/browser dark mode.
+   - Sidebar remains STOCKFLOW navy/blue in every theme.
+   - This file applies the selected theme globally.
+   ========================================================= */
+
+
+/* =========================================================
+   1. ORIGINAL / SYSTEM THEME
+   ---------------------------------------------------------
+   This is the normal STOCKFLOW appearance.
+   White content areas + blue accents.
+   ========================================================= */
+
+html.sf-theme-system,
+body.sf-theme-system {
+
+    --sf-bg: #f4f7fb;
+    --sf-surface: #ffffff;
+    --sf-surface-2: #f8fafc;
+    --sf-surface-3: #eef3f8;
+
+    --sf-text: #10203a;
+    --sf-text-strong: #0f1f38;
+    --sf-text-muted: #64748b;
+
+    --sf-border: #dbe3ec;
+    --sf-border-light: #e7edf3;
+
+    --sf-input-bg: #ffffff;
+    --sf-input-text: #10203a;
+
+    --sf-primary: #2563eb;
+    --sf-primary-dark: #1d4ed8;
+    --sf-primary-soft: #eff6ff;
+
+    --sf-success: #16a34a;
+    --sf-warning: #d97706;
+    --sf-danger: #dc2626;
+
+    --sf-shadow:
+        0 8px 24px rgba(15, 23, 42, 0.06);
+
+    --sf-shadow-lg:
+        0 16px 40px rgba(15, 23, 42, 0.10);
+}
+
+
+/* =========================================================
+   2. LIGHT THEME
+   ---------------------------------------------------------
+   Grey-white background + black text.
+   ========================================================= */
+
+html.sf-theme-light,
+body.sf-theme-light {
+
+    --sf-bg: #e5e7eb;
+    --sf-surface: #ffffff;
+    --sf-surface-2: #f9fafb;
+    --sf-surface-3: #f3f4f6;
+
+    --sf-text: #000000;
+    --sf-text-strong: #000000;
+    --sf-text-muted: #374151;
+
+    --sf-border: #cbd5e1;
+    --sf-border-light: #dbe1e8;
+
+    --sf-input-bg: #ffffff;
+    --sf-input-text: #000000;
+
+    --sf-primary: #2563eb;
+    --sf-primary-dark: #1d4ed8;
+    --sf-primary-soft: #eff6ff;
+
+    --sf-success: #15803d;
+    --sf-warning: #b45309;
+    --sf-danger: #dc2626;
+
+    --sf-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.08);
+
+    --sf-shadow-lg:
+        0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+
+/* =========================================================
+   3. DARK THEME
+   ---------------------------------------------------------
+   Dark navy/charcoal background + white text.
+   ========================================================= */
+
+html.sf-theme-dark,
+body.sf-theme-dark {
+
+    --sf-bg: #0b1220;
+    --sf-surface: #111827;
+    --sf-surface-2: #172033;
+    --sf-surface-3: #1e293b;
+
+    --sf-text: #f8fafc;
+    --sf-text-strong: #ffffff;
+    --sf-text-muted: #cbd5e1;
+
+    --sf-border: #334155;
+    --sf-border-light: #273449;
+
+    --sf-input-bg: #172033;
+    --sf-input-text: #ffffff;
+
+    --sf-primary: #3b82f6;
+    --sf-primary-dark: #60a5fa;
+    --sf-primary-soft: #172554;
+
+    --sf-success: #22c55e;
+    --sf-warning: #f59e0b;
+    --sf-danger: #ef4444;
+
+    --sf-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.30);
+
+    --sf-shadow-lg:
+        0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================================
+   4. GLOBAL PAGE BACKGROUND
+   ========================================================= */
+
+html.sf-theme-light body,
+body.sf-theme-light,
+html.sf-theme-dark body,
+body.sf-theme-dark {
+
+    background-color: var(--sf-bg) !important;
+    color: var(--sf-text) !important;
+}
+
+
+/* =========================================================
+   5. MAIN APPLICATION CONTAINERS
+   ========================================================= */
+
+body.sf-theme-light .sf-app,
+body.sf-theme-light .main-content,
+body.sf-theme-light .content-wrapper,
+body.sf-theme-light .sf-main,
+body.sf-theme-light main,
+
+body.sf-theme-dark .sf-app,
+body.sf-theme-dark .main-content,
+body.sf-theme-dark .content-wrapper,
+body.sf-theme-dark .sf-main,
+body.sf-theme-dark main {
+
+    background-color: var(--sf-bg) !important;
+    color: var(--sf-text) !important;
+}
+
+
+/* =========================================================
+   6. SIDEBAR
+   ---------------------------------------------------------
+   Sidebar intentionally stays STOCKFLOW blue/navy.
+   ========================================================= */
+
+html.sf-theme-system .sidebar,
+html.sf-theme-light .sidebar,
+html.sf-theme-dark .sidebar,
+
+html.sf-theme-system .sf-side,
+html.sf-theme-light .sf-side,
+html.sf-theme-dark .sf-side {
+
+    background: #0f2747 !important;
+    color: #ffffff !important;
+}
+
+
+/* Sidebar text */
+
+html.sf-theme-system .sidebar *,
+html.sf-theme-light .sidebar *,
+html.sf-theme-dark .sidebar *,
+
+html.sf-theme-system .sf-side *,
+html.sf-theme-light .sf-side *,
+html.sf-theme-dark .sf-side * {
+
+    color: inherit;
+}
+
+
+/* Sidebar links */
+
+html.sf-theme-system .sidebar a,
+html.sf-theme-light .sidebar a,
+html.sf-theme-dark .sidebar a,
+
+html.sf-theme-system .sf-side a,
+html.sf-theme-light .sf-side a,
+html.sf-theme-dark .sf-side a {
+
+    color: #ffffff !important;
+}
+
+
+/* =========================================================
+   7. TOP HEADER
+   ========================================================= */
+
+html.sf-theme-light .top-header,
+html.sf-theme-light .sf-top,
+html.sf-theme-light header.page-header,
+
+html.sf-theme-dark .top-header,
+html.sf-theme-dark .sf-top,
+html.sf-theme-dark header.page-header {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   8. CARDS / PANELS
+   ========================================================= */
+
+html.sf-theme-light .card,
+html.sf-theme-light .sf-card,
+html.sf-theme-light .settings-card,
+html.sf-theme-light .stat-card,
+html.sf-theme-light .panel,
+html.sf-theme-light .modal-content,
+html.sf-theme-light .modal-card,
+
+html.sf-theme-dark .card,
+html.sf-theme-dark .sf-card,
+html.sf-theme-dark .settings-card,
+html.sf-theme-dark .stat-card,
+html.sf-theme-dark .panel,
+html.sf-theme-dark .modal-content,
+html.sf-theme-dark .modal-card {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+    box-shadow: var(--sf-shadow) !important;
+}
+
+
+/* =========================================================
+   9. CARD HEADERS / FOOTERS
+   ========================================================= */
+
+html.sf-theme-light .card-header,
+html.sf-theme-light .card-footer,
+html.sf-theme-light .panel-header,
+html.sf-theme-light .panel-footer,
+
+html.sf-theme-dark .card-header,
+html.sf-theme-dark .card-footer,
+html.sf-theme-dark .panel-header,
+html.sf-theme-dark .panel-footer {
+
+    background-color: var(--sf-surface-2) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   10. HEADINGS
+   ========================================================= */
+
+html.sf-theme-light h1,
+html.sf-theme-light h2,
+html.sf-theme-light h3,
+html.sf-theme-light h4,
+html.sf-theme-light h5,
+html.sf-theme-light h6,
+
+html.sf-theme-dark h1,
+html.sf-theme-dark h2,
+html.sf-theme-dark h3,
+html.sf-theme-dark h4,
+html.sf-theme-dark h5,
+html.sf-theme-dark h6 {
+
+    color: var(--sf-text-strong) !important;
+}
+
+
+/* =========================================================
+   11. COMMON TEXT
+   ========================================================= */
+
+html.sf-theme-light p,
+html.sf-theme-light span,
+html.sf-theme-light label,
+html.sf-theme-light .text,
+html.sf-theme-light .description,
+
+html.sf-theme-dark p,
+html.sf-theme-dark span,
+html.sf-theme-dark label,
+html.sf-theme-dark .text,
+html.sf-theme-dark .description {
+
+    color: var(--sf-text);
+}
+
+
+/* =========================================================
+   12. MUTED TEXT
+   ========================================================= */
+
+html.sf-theme-light .muted,
+html.sf-theme-light .text-muted,
+html.sf-theme-light .subtitle,
+html.sf-theme-light .helper-text,
+
+html.sf-theme-dark .muted,
+html.sf-theme-dark .text-muted,
+html.sf-theme-dark .subtitle,
+html.sf-theme-dark .helper-text {
+
+    color: var(--sf-text-muted) !important;
+}
+
+
+/* =========================================================
+   13. INPUTS
+   ========================================================= */
+
+html.sf-theme-light input,
+html.sf-theme-light select,
+html.sf-theme-light textarea,
+
+html.sf-theme-dark input,
+html.sf-theme-dark select,
+html.sf-theme-dark textarea {
+
+    background-color: var(--sf-input-bg) !important;
+    color: var(--sf-input-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* Placeholder */
+
+html.sf-theme-light input::placeholder,
+html.sf-theme-light textarea::placeholder,
+
+html.sf-theme-dark input::placeholder,
+html.sf-theme-dark textarea::placeholder {
+
+    color: var(--sf-text-muted) !important;
+    opacity: 0.9;
+}
+
+
+/* Focus */
+
+html.sf-theme-light input:focus,
+html.sf-theme-light select:focus,
+html.sf-theme-light textarea:focus,
+
+html.sf-theme-dark input:focus,
+html.sf-theme-dark select:focus,
+html.sf-theme-dark textarea:focus {
+
+    border-color: var(--sf-primary) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+
+/* =========================================================
+   14. SELECT OPTIONS
+   ========================================================= */
+
+html.sf-theme-dark select option {
+
+    background-color: #111827 !important;
+    color: #ffffff !important;
+}
+
+html.sf-theme-light select option {
+
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+
+/* =========================================================
+   15. TABLES
+   ========================================================= */
+
+html.sf-theme-light table,
+html.sf-theme-light thead,
+html.sf-theme-light tbody,
+html.sf-theme-light tr,
+html.sf-theme-light td,
+html.sf-theme-light th,
+
+html.sf-theme-dark table,
+html.sf-theme-dark thead,
+html.sf-theme-dark tbody,
+html.sf-theme-dark tr,
+html.sf-theme-dark td,
+html.sf-theme-dark th {
+
+    border-color: var(--sf-border) !important;
+}
+
+
+/* Table header */
+
+html.sf-theme-light th {
+
+    background-color: #f3f4f6 !important;
+    color: #000000 !important;
+}
+
+html.sf-theme-dark th {
+
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* Table rows */
+
+html.sf-theme-light td {
+
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+html.sf-theme-dark td {
+
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+}
+
+
+/* Zebra rows */
+
+html.sf-theme-light tbody tr:nth-child(even) td {
+
+    background-color: #f9fafb !important;
+}
+
+html.sf-theme-dark tbody tr:nth-child(even) td {
+
+    background-color: #172033 !important;
+}
+
+
+/* Hover */
+
+html.sf-theme-light tbody tr:hover td {
+
+    background-color: #eef2f7 !important;
+}
+
+html.sf-theme-dark tbody tr:hover td {
+
+    background-color: #243047 !important;
+}
+
+
+/* =========================================================
+   16. NEUTRAL BUTTONS
+   ========================================================= */
+
+html.sf-theme-light .btn-secondary,
+html.sf-theme-light .secondary-btn,
+html.sf-theme-light .btn-outline,
+
+html.sf-theme-dark .btn-secondary,
+html.sf-theme-dark .secondary-btn,
+html.sf-theme-dark .btn-outline {
+
+    background-color: var(--sf-surface-2) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   17. MODALS / OVERLAYS
+   ========================================================= */
+
+html.sf-theme-light .modal,
+html.sf-theme-dark .modal {
+
+    color: var(--sf-text) !important;
+}
+
+
+/* Modal body */
+
+html.sf-theme-light .modal-body,
+html.sf-theme-light .modal-content,
+
+html.sf-theme-dark .modal-body,
+html.sf-theme-dark .modal-content {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+}
+
+
+/* =========================================================
+   18. DROPDOWNS
+   ========================================================= */
+
+html.sf-theme-light .dropdown-menu,
+html.sf-theme-light .dropdown-content,
+
+html.sf-theme-dark .dropdown-menu,
+html.sf-theme-dark .dropdown-content {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+    box-shadow: var(--sf-shadow-lg) !important;
+}
+
+
+/* Dropdown links */
+
+html.sf-theme-light .dropdown-menu a,
+html.sf-theme-light .dropdown-content a,
+
+html.sf-theme-dark .dropdown-menu a,
+html.sf-theme-dark .dropdown-content a {
+
+    color: var(--sf-text) !important;
+}
+
+
+/* =========================================================
+   19. SEARCH / FILTER AREAS
+   ========================================================= */
+
+html.sf-theme-light .search-box,
+html.sf-theme-light .filter-bar,
+html.sf-theme-light .filters,
+html.sf-theme-light .toolbar,
+
+html.sf-theme-dark .search-box,
+html.sf-theme-dark .filter-bar,
+html.sf-theme-dark .filters,
+html.sf-theme-dark .toolbar {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   20. EMPTY STATES
+   ========================================================= */
+
+html.sf-theme-light .empty-state,
+html.sf-theme-light .no-data,
+
+html.sf-theme-dark .empty-state,
+html.sf-theme-dark .no-data {
+
+    background-color: var(--sf-surface-2) !important;
+    color: var(--sf-text-muted) !important;
+}
+
+
+/* =========================================================
+   21. PAGINATION
+   ========================================================= */
+
+html.sf-theme-light .pagination button,
+html.sf-theme-light .pagination a,
+
+html.sf-theme-dark .pagination button,
+html.sf-theme-dark .pagination a {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   22. STAT CARDS
+   ========================================================= */
+
+html.sf-theme-light .stat-card,
+html.sf-theme-light .stat-box,
+
+html.sf-theme-dark .stat-card,
+html.sf-theme-dark .stat-box {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   23. BADGES / STATUS
+   ---------------------------------------------------------
+   Preserve semantic colors.
+   ========================================================= */
+
+html.sf-theme-dark .badge,
+html.sf-theme-dark .status-badge {
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   24. LINKS
+   ========================================================= */
+
+html.sf-theme-light a:not(.sidebar a):not(.sf-side a) {
+
+    color: #1d4ed8;
+}
+
+html.sf-theme-dark a:not(.sidebar a):not(.sf-side a) {
+
+    color: #60a5fa;
+}
+
+
+/* =========================================================
+   25. DIVIDERS
+   ========================================================= */
+
+html.sf-theme-light hr,
+html.sf-theme-light .divider,
+
+html.sf-theme-dark hr,
+html.sf-theme-dark .divider {
+
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   26. SCROLLBARS
+   ========================================================= */
+
+html.sf-theme-dark {
+
+    scrollbar-color: #475569 #0b1220;
+}
+
+html.sf-theme-light {
+
+    scrollbar-color: #9ca3af #e5e7eb;
+}
+
+
+/* =========================================================
+   27. DARK THEME — COMMON HARDCODED WHITE SURFACES
+   ---------------------------------------------------------
+   Helps override module CSS that uses #fff directly.
+   ========================================================= */
+
+html.sf-theme-dark .white-bg,
+html.sf-theme-dark .bg-white,
+html.sf-theme-dark .white-card,
+html.sf-theme-dark .content-card,
+html.sf-theme-dark .form-card,
+html.sf-theme-dark .info-card {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+}
+
+
+/* =========================================================
+   28. LIGHT THEME — COMMON GREY/WHITE SURFACES
+   ========================================================= */
+
+html.sf-theme-light .white-bg,
+html.sf-theme-light .bg-white,
+html.sf-theme-light .white-card,
+html.sf-theme-light .content-card,
+html.sf-theme-light .form-card,
+html.sf-theme-light .info-card {
+
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+
+/* =========================================================
+   29. DARK THEME — COMMON BLACK TEXT OVERRIDES
+   ========================================================= */
+
+html.sf-theme-dark .text-black,
+html.sf-theme-dark .black-text,
+html.sf-theme-dark .dark-text {
+
+    color: #ffffff !important;
+}
+
+
+/* =========================================================
+   30. LIGHT THEME — FORCE BLACK TEXT WHERE NEEDED
+   ========================================================= */
+
+html.sf-theme-light .text-black,
+html.sf-theme-light .black-text,
+html.sf-theme-light .dark-text {
+
+    color: #000000 !important;
+}
+
+
+/* =========================================================
+   31. DARK THEME — ICONS
+   ========================================================= */
+
+html.sf-theme-dark .icon,
+html.sf-theme-dark i,
+html.sf-theme-dark svg {
+
+    /* Do not force SVG fill because many icons use their own
+       brand/accent colors. */
+}
+
+
+/* =========================================================
+   32. DARK THEME — CHECKBOXES / RADIO BUTTONS
+   ========================================================= */
+
+html.sf-theme-dark input[type="checkbox"],
+html.sf-theme-dark input[type="radio"] {
+
+    accent-color: var(--sf-primary);
+}
+
+
+/* =========================================================
+   33. LIGHT THEME — CHECKBOXES / RADIO BUTTONS
+   ========================================================= */
+
+html.sf-theme-light input[type="checkbox"],
+html.sf-theme-light input[type="radio"] {
+
+    accent-color: var(--sf-primary);
+}
+
+
+/* =========================================================
+   34. SYSTEM THEME
+   ---------------------------------------------------------
+   IMPORTANT:
+   Do not use prefers-color-scheme here.
+   System = ORIGINAL STOCKFLOW design.
+   ========================================================= */
+
+html.sf-theme-system,
+html.sf-theme-system body {
+
+    color-scheme: light;
+}
+
+
+/* =========================================================
+   35. LIGHT THEME COLOR SCHEME
+   ========================================================= */
+
+html.sf-theme-light,
+html.sf-theme-light body {
+
+    color-scheme: light;
+}
+
+
+/* =========================================================
+   36. DARK THEME COLOR SCHEME
+   ========================================================= */
+
+html.sf-theme-dark,
+html.sf-theme-dark body {
+
+    color-scheme: dark;
+}
+
+
+/* =========================================================
+   37. SMOOTH THEME TRANSITION
+   ========================================================= */
+
+body.sf-theme-light,
+body.sf-theme-dark,
+body.sf-theme-system {
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+
+/* =========================================================
+   38. DARK THEME — TABLE CONTAINER
+   ========================================================= */
+
+html.sf-theme-dark .table-container,
+html.sf-theme-dark .table-wrapper,
+html.sf-theme-dark .data-table-container {
+
+    background-color: var(--sf-surface) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   39. LIGHT THEME — TABLE CONTAINER
+   ========================================================= */
+
+html.sf-theme-light .table-container,
+html.sf-theme-light .table-wrapper,
+html.sf-theme-light .data-table-container {
+
+    background-color: #ffffff !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   40. DARK THEME — FORM CONTAINERS
+   ========================================================= */
+
+html.sf-theme-dark .form-container,
+html.sf-theme-dark .form-section,
+html.sf-theme-dark .form-panel {
+
+    background-color: var(--sf-surface) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   41. LIGHT THEME — FORM CONTAINERS
+   ========================================================= */
+
+html.sf-theme-light .form-container,
+html.sf-theme-light .form-section,
+html.sf-theme-light .form-panel {
+
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   42. DARK THEME — FILE / UPLOAD AREAS
+   ========================================================= */
+
+html.sf-theme-dark .upload-area,
+html.sf-theme-dark .file-upload,
+html.sf-theme-dark .drop-zone {
+
+    background-color: var(--sf-surface-2) !important;
+    color: var(--sf-text) !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   43. LIGHT THEME — FILE / UPLOAD AREAS
+   ========================================================= */
+
+html.sf-theme-light .upload-area,
+html.sf-theme-light .file-upload,
+html.sf-theme-light .drop-zone {
+
+    background-color: #f9fafb !important;
+    color: #000000 !important;
+    border-color: var(--sf-border) !important;
+}
+
+
+/* =========================================================
+   44. DARK THEME — TOOLTIP
+   ========================================================= */
+
+html.sf-theme-dark [title] {
+
+    --tooltip-bg: #020617;
+}
+
+
+/* =========================================================
+   45. RESPONSIVE SAFETY
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    html.sf-theme-light body,
+    html.sf-theme-dark body {
+
+        min-height: 100vh;
+    }
+
+}
