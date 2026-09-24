@@ -75,6 +75,9 @@
         API_URL:
             "https://script.google.com/macros/s/AKfycbytfBA-SJDFkD8QlzHqpl65Lqg4CXkLfAZV2vec1Y36RcuIKbcwOER8jgDhIDeHtlgefw/exec",
 
+       INVENTORY_API_URL:
+             "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec",
+
 
         /* =====================================================
            GOOGLE SHEETS
@@ -82,6 +85,9 @@
 
         GOOGLE_SHEET_ID:
             "1w3j0sV9rDiBvS4cpHU31iGb4KIeyUPoALZf5vLH2ivY",
+
+        GOOGLE_SHEET_ID:
+          "12rD3dc5iktYAuSv7PCJu9Xg0x10gQbrteXXEwHtgI8s",
 
 
         /* =====================================================
