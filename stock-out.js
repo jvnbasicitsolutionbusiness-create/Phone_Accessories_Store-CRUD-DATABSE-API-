@@ -1,127 +1,1010 @@
 /* =========================================================
    STOCKFLOW — STOCK OUT
-   Functional + UI Controller
+   Functional + UI + Authentication Controller
+   =========================================================
+
+   Handles:
+   - Authentication
+   - Signed-in user detection
+   - User profile links
+   - Logout
+   - Mobile sidebar
+   - Notifications
+   - API connection status
+   - Product loading
+   - Available stock
+   - Stock Out submission
+   - Recent Stock Out transactions
+   - Preview
+   - Modal
+   - Refresh
+   - Clear
+   - Default date
+   - Optional activity logging
+
+   IMPORTANT:
+   Uses the CURRENT StockFlowAPI contract:
+
+   StockFlowAPI.requireSession()
+   StockFlowAPI.getStoredUser()
+   StockFlowAPI.getUser()
+   StockFlowAPI.listProducts()
+   StockFlowAPI.createStockOut()
+   StockFlowAPI.listStockOut()
+   StockFlowAPI.listTransactions()
+
 ========================================================= */
 
 (() => {
+
     "use strict";
 
-    const $ = (id) =>
-        document.getElementById(id);
 
-    const state = {
-        products: [],
-        currentUser: null
-    };
+    /* =====================================================
+       INITIALIZATION GUARD
+    ===================================================== */
+
+    if (
+        window.__stockFlowStockOutInitialized
+    ) {
+
+        return;
+
+    }
+
+
+    window.__stockFlowStockOutInitialized =
+        true;
+
 
     /* =====================================================
        HELPERS
     ===================================================== */
 
-    const esc = (value) =>
-        String(value ?? "")
-            .replace(/[&<>"']/g, char => ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-            }[char]));
+    const $ = (id) =>
+        document.getElementById(id);
 
-    const getProductId = p =>
-        p?.ID ??
-        p?.id ??
+
+    const state = {
+
+        products: [],
+
+        currentUser: null,
+
+        initialized: false
+
+    };
+
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    const esc = (value) =>
+
+        String(
+            value ?? ""
+        )
+            .replace(
+                /[&<>"']/g,
+                char => ({
+
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#039;"
+
+                }[char])
+            );
+
+
+    /* =====================================================
+       PRODUCT HELPERS
+    ===================================================== */
+
+    const getProductId = (
+        product
+    ) =>
+
+        product?.ID ??
+        product?.id ??
+        product?.PRODUCT_ID ??
+        product?.product_id ??
         "";
 
-    const getProductName = p =>
-        p?.NAME ??
-        p?.name ??
+
+    const getProductName = (
+        product
+    ) =>
+
+        product?.NAME ??
+        product?.name ??
+        product?.PRODUCT_NAME ??
+        product?.product_name ??
         "Unnamed Product";
 
-    const getStock = p =>
+
+    const getProductSku = (
+        product
+    ) =>
+
+        product?.SKU ??
+        product?.sku ??
+        "";
+
+
+    const getStock = (
+        product
+    ) =>
+
         Number(
-            p?.STOCK ??
-            p?.stock ??
+            product?.STOCK ??
+            product?.stock ??
+            product?.QUANTITY ??
+            product?.quantity ??
             0
         );
 
-    const show = el => {
-        if (el) el.hidden = false;
-    };
-
-    const hide = el => {
-        if (el) el.hidden = true;
-    };
 
     /* =====================================================
-       AUTH
+       SHOW / HIDE
+    ===================================================== */
+
+    const show = (
+        element
+    ) => {
+
+        if (element) {
+
+            element.hidden =
+                false;
+
+        }
+
+    };
+
+
+    const hide = (
+        element
+    ) => {
+
+        if (element) {
+
+            element.hidden =
+                true;
+
+        }
+
+    };
+
+
+    /* =====================================================
+       API CHECK
+    ===================================================== */
+
+    function requireAPI() {
+
+        if (
+            !window.StockFlowAPI
+        ) {
+
+            throw new Error(
+                "StockFlowAPI is not loaded. Make sure api.js is loaded before stock-out.js."
+            );
+
+        }
+
+
+        return window.StockFlowAPI;
+
+    }
+
+
+    /* =====================================================
+       AUTHENTICATION
     ===================================================== */
 
     async function initializeAuthentication() {
 
-        if (
-            !window.StockFlowAuth ||
-            typeof window.StockFlowAuth.requireAuth !== "function"
-        ) {
-            return true;
+        let api;
+
+        try {
+
+            api =
+                requireAPI();
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+            showOffline(
+                error.message
+            );
+
+            return false;
+
         }
 
-        const user =
-            await window.StockFlowAuth.requireAuth();
+
+        /* -------------------------------------------------
+           PRIMARY AUTHENTICATION
+        ------------------------------------------------- */
+
+        if (
+            typeof api.requireSession ===
+                "function"
+        ) {
+
+            try {
+
+                const session =
+                    await api.requireSession();
+
+
+                if (!session) {
+
+                    window.location.href =
+                        "./auth.html";
+
+                    return false;
+
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "StockFlow session verification failed:",
+                    error
+                );
+
+
+                window.location.href =
+                    "./auth.html";
+
+                return false;
+
+            }
+
+        }
+
+
+        /* -------------------------------------------------
+           GET STORED USER
+        ------------------------------------------------- */
+
+        let user = null;
+
+
+        if (
+            typeof api.getStoredUser ===
+                "function"
+        ) {
+
+            try {
+
+                user =
+                    await api.getStoredUser();
+
+            } catch (error) {
+
+                console.warn(
+                    "Unable to read stored StockFlow user:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* -------------------------------------------------
+           FALLBACK TO SESSION STORAGE
+        ------------------------------------------------- */
 
         if (!user) {
-            return false;
+
+            try {
+
+                const raw =
+                    sessionStorage.getItem(
+                        "STOCKFLOW_SESSION"
+                    );
+
+
+                if (raw) {
+
+                    const session =
+                        JSON.parse(
+                            raw
+                        );
+
+
+                    user =
+                        session?.user ||
+                        session?.data?.user ||
+                        session?.data ||
+                        null;
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Unable to read STOCKFLOW_SESSION:",
+                    error
+                );
+
+            }
+
         }
 
-        state.currentUser = user;
 
-        updateUserDisplay(user);
+        /* -------------------------------------------------
+           REFRESH USER FROM API
+        ------------------------------------------------- */
+
+        if (
+            user &&
+            typeof api.getUser ===
+                "function"
+        ) {
+
+            try {
+
+                const identity = {
+
+                    username:
+                        user.username ||
+                        user.USERNAME ||
+                        undefined,
+
+                    email:
+                        user.email ||
+                        user.EMAIL ||
+                        user.gmail ||
+                        user.GMAIL ||
+                        undefined,
+
+                    phone:
+                        user.phone ||
+                        user.PHONE ||
+                        user.phoneNumber ||
+                        user["PHONE NO."] ||
+                        undefined,
+
+                    userId:
+                        user.userId ||
+                        user.user_id ||
+                        user.id ||
+                        user.ID ||
+                        undefined
+
+                };
+
+
+                /*
+                 * Remove empty values.
+                 */
+
+                Object.keys(
+                    identity
+                ).forEach(
+                    key => {
+
+                        if (
+                            identity[key] ===
+                                undefined ||
+                            identity[key] ===
+                                null ||
+                            identity[key] ===
+                                ""
+                        ) {
+
+                            delete identity[key];
+
+                        }
+
+                    }
+                );
+
+
+                if (
+                    Object.keys(identity)
+                        .length
+                ) {
+
+                    const refreshed =
+                        await api.getUser(
+                            identity
+                        );
+
+
+                    if (
+                        refreshed &&
+                        typeof refreshed ===
+                            "object"
+                    ) {
+
+                        user =
+                            refreshed.user ||
+                            refreshed.data ||
+                            refreshed;
+
+                    }
+
+                }
+
+            } catch (error) {
+
+                /*
+                 * A profile-refresh error must
+                 * NOT invalidate a valid login.
+                 */
+
+                console.warn(
+                    "StockFlow user refresh failed. Using stored user.",
+                    error
+                );
+
+            }
+
+        }
+
+
+        if (!user) {
+
+            window.location.href =
+                "./auth.html";
+
+            return false;
+
+        }
+
+
+        state.currentUser =
+            user;
+
+
+        updateUserDisplay(
+            user
+        );
+
+
+        setupUserProfileLinks();
+
 
         return true;
+
     }
+
 
     /* =====================================================
-       USER
+       USER DISPLAY
     ===================================================== */
 
-    function updateUserDisplay(user) {
+    function getUserName(
+        user
+    ) {
 
-        const name =
+        return (
+
             user?.name ||
+
+            user?.fullName ||
+
             user?.fullname ||
+
+            user?.full_name ||
+
+            user?.displayName ||
+
             user?.username ||
-            "StockFlow User";
+
+            user?.USERNAME ||
+
+            user?.NAME ||
+
+            user?.email ||
+
+            user?.EMAIL ||
+
+            "StockFlow User"
+
+        );
+
+    }
+
+
+    function getUserRole(
+        user
+    ) {
 
         const role =
+
             user?.role ||
+
             user?.ROLE ||
+
+            user?.position ||
+
+            user?.POSITION ||
+
+            user?.accountStatus ||
+
+            user?.ACCOUNT_S ||
+
             "Employee";
 
-        const initials =
-            name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map(x =>
-                    x.charAt(0).toUpperCase()
-                )
-                .join("") || "SF";
 
-        if ($("topbarUserName")) {
-            $("topbarUserName").textContent =
-                name;
+        const normalized =
+
+            String(
+                role
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            normalized === "admin" ||
+            normalized === "administrator"
+        ) {
+
+            return "Administrator";
+
         }
 
-        if ($("topbarUserRole")) {
-            $("topbarUserRole").textContent =
-                role;
+
+        if (
+            normalized === "manager" ||
+            normalized === "supervisor"
+        ) {
+
+            return "Manager";
+
         }
 
-        if ($("topbarAvatar")) {
-            $("topbarAvatar").textContent =
-                initials;
+
+        if (
+            normalized === "staff" ||
+            normalized === "worker" ||
+            normalized === "employee"
+        ) {
+
+            return "Employee";
+
         }
+
+
+        return String(
+            role
+        );
+
     }
+
+
+    function getInitials(
+        name
+    ) {
+
+        const parts =
+
+            String(
+                name || ""
+            )
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        return (
+
+            parts
+                .slice(0, 2)
+                .map(
+                    part =>
+                        part
+                            .charAt(0)
+                            .toUpperCase()
+                )
+                .join("") ||
+
+            "SF"
+
+        );
+
+    }
+
+
+    function updateUserDisplay(
+        user
+    ) {
+
+        const name =
+            getUserName(
+                user
+            );
+
+
+        const role =
+            getUserRole(
+                user
+            );
+
+
+        const initials =
+            getInitials(
+                name
+            );
+
+
+        /* -------------------------------------------------
+           SIDEBAR NAME
+        ------------------------------------------------- */
+
+        if (
+            $("sidebarUserName")
+        ) {
+
+            $("sidebarUserName")
+                .textContent =
+                name;
+
+        }
+
+
+        /* -------------------------------------------------
+           SIDEBAR ROLE
+        ------------------------------------------------- */
+
+        if (
+            $("sidebarUserRole")
+        ) {
+
+            $("sidebarUserRole")
+                .textContent =
+                role;
+
+        }
+
+
+        /* -------------------------------------------------
+           SIDEBAR AVATAR
+        ------------------------------------------------- */
+
+        const sidebarAvatar =
+
+            $("sidebarAvatar") ||
+
+            document.querySelector(
+                ".sidebar-user-avatar"
+            );
+
+
+        if (
+            sidebarAvatar
+        ) {
+
+            sidebarAvatar
+                .textContent =
+                initials;
+
+        }
+
+
+        /* -------------------------------------------------
+           TOPBAR NAME
+        ------------------------------------------------- */
+
+        if (
+            $("topbarUserName")
+        ) {
+
+            $("topbarUserName")
+                .textContent =
+                name;
+
+        }
+
+
+        /* -------------------------------------------------
+           TOPBAR ROLE
+        ------------------------------------------------- */
+
+        if (
+            $("topbarUserRole")
+        ) {
+
+            $("topbarUserRole")
+                .textContent =
+                role;
+
+        }
+
+
+        /* -------------------------------------------------
+           TOPBAR AVATAR
+        ------------------------------------------------- */
+
+        const topbarAvatar =
+
+            $("topbarAvatar") ||
+
+            document.querySelector(
+                ".topbar .user-avatar"
+            );
+
+
+        if (
+            topbarAvatar
+        ) {
+
+            topbarAvatar
+                .textContent =
+                initials;
+
+        }
+
+
+        /*
+         * Make current user available
+         * to other StockFlow scripts.
+         */
+
+        window.STOCKFLOW_CURRENT_USER =
+            user;
+
+    }
+
+
+    /* =====================================================
+       PROFILE LINK
+    ===================================================== */
+
+    function goToProfile() {
+
+        window.location.href =
+            "./profile.html";
+
+    }
+
+
+    function setupUserProfileLinks() {
+
+        const selectors = [
+
+            "[data-user-profile]",
+
+            "#userProfile",
+
+            "#sidebarUser",
+
+            "#sidebarUserProfile",
+
+            ".sidebar-user",
+
+            ".sidebar-user-profile",
+
+            ".sidebar-profile",
+
+            ".top-user",
+
+            ".topbar-user",
+
+            ".topbar-profile",
+
+            ".top-user-profile",
+
+            ".user-profile"
+
+        ];
+
+
+        const elements = [];
+
+
+        selectors.forEach(
+            selector => {
+
+                document
+                    .querySelectorAll(
+                        selector
+                    )
+                    .forEach(
+                        element => {
+
+                            if (
+                                !elements.includes(
+                                    element
+                                )
+                            ) {
+
+                                elements.push(
+                                    element
+                                );
+
+                            }
+
+                        }
+                    );
+
+            }
+        );
+
+
+        elements.forEach(
+            element => {
+
+                /*
+                 * Never convert logout
+                 * into a profile link.
+                 */
+
+                if (
+                    element.id ===
+                        "logoutBtn" ||
+
+                    element.id ===
+                        "logoutButton" ||
+
+                    element.closest(
+                        "#logoutBtn, #logoutButton"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    element.tagName ===
+                        "A"
+                ) {
+
+                    element.href =
+                        "./profile.html";
+
+                    return;
+
+                }
+
+
+                if (
+                    element.dataset
+                        .stockflowProfileBound
+                ) {
+
+                    return;
+
+                }
+
+
+                element.setAttribute(
+                    "role",
+                    "link"
+                );
+
+
+                element.setAttribute(
+                    "tabindex",
+                    "0"
+                );
+
+
+                element.style.cursor =
+                    "pointer";
+
+
+                element.addEventListener(
+                    "click",
+                    event => {
+
+                        if (
+                            event.target.closest(
+                                "button"
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        goToProfile();
+
+                    }
+                );
+
+
+                element.addEventListener(
+                    "keydown",
+                    event => {
+
+                        if (
+                            event.key ===
+                                "Enter" ||
+
+                            event.key ===
+                                " "
+                        ) {
+
+                            event.preventDefault();
+
+                            goToProfile();
+
+                        }
+
+                    }
+                );
+
+
+                element.dataset
+                    .stockflowProfileBound =
+                    "true";
+
+            }
+        );
+
+
+        /*
+         * Direct fallback for pages whose
+         * user wrapper uses different classes.
+         */
+
+        [
+
+            $("sidebarUserName"),
+
+            $("sidebarAvatar"),
+
+            $("topbarUserName"),
+
+            $("topbarAvatar")
+
+        ]
+            .filter(Boolean)
+            .forEach(
+                element => {
+
+                    if (
+                        element.dataset
+                            .stockflowProfileBound
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    element.style.cursor =
+                        "pointer";
+
+
+                    element.addEventListener(
+                        "click",
+                        event => {
+
+                            event.preventDefault();
+
+                            goToProfile();
+
+                        }
+                    );
+
+
+                    element.dataset
+                        .stockflowProfileBound =
+                        "true";
+
+                }
+            );
+
+    }
+
 
     /* =====================================================
        SIDEBAR
@@ -132,60 +1015,158 @@
         const sidebar =
             $("sidebar");
 
+
         const overlay =
             $("sidebarOverlay");
+
 
         const menu =
             $("mobileMenuBtn");
 
-        if (!sidebar || !menu) {
+
+        if (
+            !sidebar ||
+            !menu
+        ) {
+
             return;
+
         }
+
 
         const close = () => {
 
-            sidebar.classList.remove("open");
-            overlay?.classList.remove("show");
+            sidebar.classList.remove(
+                "open"
+            );
+
+
+            overlay?.classList.remove(
+                "show"
+            );
+
+
+            overlay?.classList.remove(
+                "active"
+            );
+
 
             menu.setAttribute(
                 "aria-expanded",
                 "false"
             );
+
+
+            document.body.classList.remove(
+                "sidebar-open"
+            );
+
         };
+
+
+        const open = () => {
+
+            sidebar.classList.add(
+                "open"
+            );
+
+
+            overlay?.classList.add(
+                "show"
+            );
+
+
+            overlay?.classList.add(
+                "active"
+            );
+
+
+            menu.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+
+            document.body.classList.add(
+                "sidebar-open"
+            );
+
+        };
+
 
         menu.addEventListener(
             "click",
             () => {
 
-                const open =
-                    sidebar.classList.toggle("open");
+                if (
+                    sidebar.classList.contains(
+                        "open"
+                    )
+                ) {
 
-                overlay?.classList.toggle(
-                    "show",
-                    open
-                );
+                    close();
 
-                menu.setAttribute(
-                    "aria-expanded",
-                    String(open)
-                );
+                } else {
+
+                    open();
+
+                }
+
             }
         );
+
 
         overlay?.addEventListener(
             "click",
             close
         );
 
-        document
-            .querySelectorAll(".nav-item")
-            .forEach(item => {
-                item.addEventListener(
-                    "click",
-                    close
-                );
-            });
+
+        sidebar
+            .querySelectorAll(
+                ".nav-item, a"
+            )
+            .forEach(
+                item => {
+
+                    item.addEventListener(
+                        "click",
+                        () => {
+
+                            if (
+                                window.innerWidth <=
+                                    900
+                            ) {
+
+                                close();
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+        window.addEventListener(
+            "resize",
+            () => {
+
+                if (
+                    window.innerWidth >
+                        900
+                ) {
+
+                    close();
+
+                }
+
+            }
+        );
+
     }
+
 
     /* =====================================================
        NOTIFICATIONS
@@ -193,20 +1174,78 @@
 
     function setupNotifications() {
 
-        const right =
-            document.querySelector(".topbar-right");
+        /*
+         * If notification button already exists
+         * in HTML, use it.
+         */
 
-        if (!right || $("notificationBtn")) {
+        let button =
+            $("notificationButton") ||
+            $("notificationBtn");
+
+
+        let panel =
+            $("notificationPanel");
+
+
+        let closeButton =
+            $("closeNotification") ||
+            $("closeNotificationBtn");
+
+
+        /*
+         * If the HTML already has a notification
+         * system, do not create another one.
+         */
+
+        if (
+            button &&
+            panel
+        ) {
+
+            bindNotificationEvents(
+                button,
+                panel,
+                closeButton
+            );
+
             return;
+
         }
 
+
+        /*
+         * Otherwise create the same
+         * StockFlow notification UI.
+         */
+
+        const right =
+            document.querySelector(
+                ".topbar-right"
+            );
+
+
+        if (
+            !right
+        ) {
+
+            return;
+
+        }
+
+
         const wrapper =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         wrapper.className =
             "notification-wrapper";
 
+
         wrapper.innerHTML = `
+
             <button
                 type="button"
                 class="notification-btn"
@@ -214,111 +1253,247 @@
                 aria-label="Notifications"
                 aria-expanded="false"
             >
-                <i class="fa-regular fa-bell"></i>
+
+                <i
+                    class="fa-regular fa-bell"
+                ></i>
+
                 <span
                     class="notification-dot"
                     id="notificationDot"
                 ></span>
+
             </button>
+
 
             <div
                 id="notificationPanel"
                 class="stockflow-notification-panel"
                 hidden
             >
-                <div class="notification-panel-head">
-                    <strong>Notifications</strong>
+
+                <div
+                    class="notification-panel-head"
+                >
+
+                    <strong>
+                        Notifications
+                    </strong>
 
                     <button
                         type="button"
                         id="closeNotificationBtn"
+                        aria-label="Close notifications"
                     >
-                        <i class="fa-solid fa-xmark"></i>
+
+                        <i
+                            class="fa-solid fa-xmark"
+                        ></i>
+
                     </button>
+
                 </div>
 
-                <div class="notification-panel-item">
-                    <div class="notification-panel-icon">
-                        <i class="fa-solid fa-circle-check"></i>
+
+                <div
+                    class="notification-panel-item"
+                >
+
+                    <div
+                        class="notification-panel-icon"
+                    >
+
+                        <i
+                            class="fa-solid fa-circle-check"
+                        ></i>
+
                     </div>
 
+
                     <div>
-                        <strong>System Online</strong>
+
+                        <strong>
+                            System Online
+                        </strong>
+
                         <span>
                             StockFlow inventory services are ready.
                         </span>
+
                     </div>
+
                 </div>
+
             </div>
+
         `;
 
+
         const user =
-            right.querySelector(".topbar-user");
+            right.querySelector(
+                ".topbar-user"
+            );
+
 
         right.insertBefore(
             wrapper,
             user || null
         );
 
-        const button =
+
+        button =
             $("notificationBtn");
 
-        const panel =
+
+        panel =
             $("notificationPanel");
+
+
+        closeButton =
+            $("closeNotificationBtn");
+
+
+        bindNotificationEvents(
+            button,
+            panel,
+            closeButton
+        );
+
+    }
+
+
+    function bindNotificationEvents(
+        button,
+        panel,
+        closeButton
+    ) {
+
+        if (
+            !button ||
+            !panel
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            button.dataset
+                .stockflowNotificationBound
+        ) {
+
+            return;
+
+        }
+
+
+        button.dataset
+            .stockflowNotificationBound =
+            "true";
+
 
         const close = () => {
 
-            hide(panel);
+            hide(
+                panel
+            );
 
-            button?.setAttribute(
+
+            button.setAttribute(
                 "aria-expanded",
                 "false"
             );
+
         };
 
-        button?.addEventListener(
+
+        button.addEventListener(
             "click",
             event => {
 
                 event.stopPropagation();
 
+
                 const isHidden =
                     panel.hidden;
 
-                if (isHidden) {
-                    show(panel);
+
+                if (
+                    isHidden
+                ) {
+
+                    show(
+                        panel
+                    );
+
                 } else {
-                    hide(panel);
+
+                    hide(
+                        panel
+                    );
+
                 }
+
 
                 button.setAttribute(
                     "aria-expanded",
-                    String(isHidden)
+                    String(
+                        isHidden
+                    )
                 );
+
             }
         );
 
-        $("closeNotificationBtn")
-            ?.addEventListener(
-                "click",
-                close
-            );
+
+        closeButton?.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                close();
+
+            }
+        );
+
+
+        panel.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+            }
+        );
+
 
         document.addEventListener(
             "click",
             event => {
 
                 if (
-                    !wrapper.contains(event.target)
+                    !panel.contains(
+                        event.target
+                    ) &&
+                    !button.contains(
+                        event.target
+                    )
                 ) {
+
                     close();
+
                 }
+
             }
         );
+
     }
 
+
     /* =====================================================
-       CONNECTION
+       CONNECTION STATUS
     ===================================================== */
 
     function showOnline() {
@@ -326,69 +1501,174 @@
         const box =
             $("connectionMessage");
 
-        if (!box) {
-            return;
+
+        const badge =
+            $("connectionBadge");
+
+
+        if (
+            badge
+        ) {
+
+            badge.classList.remove(
+                "offline"
+            );
+
+
+            badge.classList.add(
+                "online"
+            );
+
+
+            const badgeText =
+                badge.querySelector(
+                    "span:last-child"
+                );
+
+
+            if (
+                badgeText
+            ) {
+
+                badgeText.textContent =
+                    "System Connected";
+
+            }
+
         }
 
-        box.style.borderColor =
-            "#cce8d8";
 
-        box.style.background =
-            "linear-gradient(90deg,#f0faf4,#f7fcf9)";
+        if (
+            !box
+        ) {
 
-        box.style.color =
-            "#1d7748";
+            return;
+
+        }
+
+
+        box.classList.remove(
+            "offline"
+        );
+
+
+        box.classList.add(
+            "online"
+        );
+
+
+        /*
+         * Avoid hard-coded theme-breaking
+         * colors whenever possible.
+         */
 
         box.innerHTML = `
+
             <i
                 class="fa-solid fa-circle-check"
-                style="
-                    margin-right:10px;
-                    color:#16a05d;
-                "
+                aria-hidden="true"
             ></i>
 
-            System Connected — StockFlow services are ready.
+            <span>
+                System Connected — StockFlow services are ready.
+            </span>
+
         `;
 
-        show(box);
+
+        show(
+            box
+        );
+
     }
 
-    function showOffline(message) {
+
+    function showOffline(
+        message
+    ) {
 
         const box =
             $("connectionMessage");
 
-        if (!box) {
-            return;
+
+        const badge =
+            $("connectionBadge");
+
+
+        if (
+            badge
+        ) {
+
+            badge.classList.add(
+                "offline"
+            );
+
+
+            badge.classList.remove(
+                "online"
+            );
+
+
+            const badgeText =
+                badge.querySelector(
+                    "span:last-child"
+                );
+
+
+            if (
+                badgeText
+            ) {
+
+                badgeText.textContent =
+                    "System Offline";
+
+            }
+
         }
 
-        box.style.borderColor =
-            "#f0cccc";
 
-        box.style.background =
-            "#fff4f4";
+        if (
+            !box
+        ) {
 
-        box.style.color =
-            "#9f3030";
+            return;
+
+        }
+
+
+        box.classList.remove(
+            "online"
+        );
+
+
+        box.classList.add(
+            "offline"
+        );
+
 
         box.innerHTML = `
+
             <i
                 class="fa-solid fa-triangle-exclamation"
-                style="
-                    margin-right:10px;
-                    color:#dc3030;
-                "
+                aria-hidden="true"
             ></i>
 
-            ${esc(
-                message ||
-                "Unable to connect to StockFlow services."
-            )}
+            <span>
+                ${esc(
+                    message ||
+                    "Unable to connect to StockFlow services."
+                )}
+            </span>
+
         `;
 
-        show(box);
+
+        show(
+            box
+        );
+
     }
+
 
     /* =====================================================
        PRODUCTS
@@ -396,100 +1676,212 @@
 
     async function loadProducts() {
 
+        const api =
+            requireAPI();
+
+
         if (
-            !window.StockFlowAPI ||
-            typeof window.StockFlowAPI.listProducts !== "function"
+            typeof api.listProducts !==
+                "function"
         ) {
+
             throw new Error(
-                "Product API is not available."
+                "StockFlowAPI.listProducts() is not available."
             );
+
         }
 
+
         const response =
-            await window.StockFlowAPI.listProducts();
+            await api.listProducts();
+
 
         if (
             response &&
             response.success === false
         ) {
+
             throw new Error(
                 response.message ||
                 "Unable to load products."
             );
+
         }
 
+
+        /*
+         * Support the current API response.
+         */
+
         state.products =
-            Array.isArray(response?.products)
+
+            Array.isArray(
+                response?.products
+            )
+
                 ? response.products
-                : [];
+
+                : Array.isArray(
+                    response?.data
+                )
+
+                    ? response.data
+
+                    : Array.isArray(
+                        response
+                    )
+
+                        ? response
+
+                        : [];
+
 
         populateProducts();
 
         updateAvailableStock();
+
         updatePreview();
+
     }
+
 
     function populateProducts() {
 
         const select =
             $("productSelect");
 
-        if (!select) {
+
+        if (
+            !select
+        ) {
+
             return;
+
         }
 
+
         const active =
-            state.products.filter(product =>
-                String(
-                    product.STATUS ??
-                    product.status ??
-                    "ACTIVE"
-                ).toUpperCase() === "ACTIVE"
+            state.products.filter(
+                product => {
+
+                    const status =
+
+                        product.STATUS ??
+                        product.status ??
+                        "ACTIVE";
+
+
+                    return (
+                        String(
+                            status
+                        )
+                            .trim()
+                            .toUpperCase() ===
+                        "ACTIVE"
+                    );
+
+                }
             );
 
-        select.innerHTML =
-            `
-                <option value="">
-                    Select a product
-                </option>
-            ` +
-            active
-                .map(product => {
 
-                    const stock =
-                        getStock(product);
+        select.innerHTML = `
 
-                    const sku =
-                        product.SKU ??
-                        product.sku ??
-                        "";
+            <option value="">
+                Select a product
+            </option>
 
-                    return `
-                        <option
-                            value="${esc(
-                                getProductId(product)
-                            )}"
-                        >
-                            ${esc(sku)} — 
-                            ${esc(getProductName(product))}
-                            (available: ${stock})
-                        </option>
-                    `;
-                })
-                .join("");
+        `;
+
+
+        active.forEach(
+            product => {
+
+                const stock =
+                    getStock(
+                        product
+                    );
+
+
+                const id =
+                    getProductId(
+                        product
+                    );
+
+
+                const sku =
+                    getProductSku(
+                        product
+                    );
+
+
+                const name =
+                    getProductName(
+                        product
+                    );
+
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    String(
+                        id
+                    );
+
+
+                option.textContent =
+
+                    sku
+
+                        ? `${sku} — ${name} (available: ${stock})`
+
+                        : `${name} (available: ${stock})`;
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
     }
+
 
     function selectedProduct() {
 
         const id =
             $("productSelect")?.value;
 
+
+        if (
+            !id
+        ) {
+
+            return null;
+
+        }
+
+
         return state.products.find(
             product =>
-                String(getProductId(product)) ===
-                String(id)
-        );
+
+                String(
+                    getProductId(
+                        product
+                    )
+                ) ===
+
+                String(
+                    id
+                )
+        ) || null;
+
     }
+
 
     /* =====================================================
        AVAILABLE STOCK
@@ -500,36 +1892,73 @@
         const product =
             selectedProduct();
 
+
         const stock =
             product
-                ? getStock(product)
+                ? getStock(
+                    product
+                )
                 : 0;
 
-        if ($("availableStock")) {
-            $("availableStock").textContent =
-                stock.toLocaleString();
+
+        if (
+            $("availableStock")
+        ) {
+
+            $("availableStock")
+                .textContent =
+                stock.toLocaleString(
+                    "en-PH"
+                );
+
         }
 
-        if ($("stockAvailabilityHelp")) {
+
+        if (
+            $("stockAvailabilityHelp")
+        ) {
 
             $("stockAvailabilityHelp")
                 .textContent =
+
                 product
-                    ? `Current available stock: ${stock.toLocaleString()} units.`
+
+                    ? `Current available stock: ${stock.toLocaleString("en-PH")} units.`
+
                     : "Select a product to view available stock.";
+
         }
 
-        if ($("quantity")) {
 
-            if (product) {
-                $("quantity").max =
-                    String(stock);
+        const quantity =
+            $("quantity");
+
+
+        if (
+            quantity
+        ) {
+
+            if (
+                product
+            ) {
+
+                quantity.max =
+                    String(
+                        stock
+                    );
+
             } else {
-                $("quantity")
-                    .removeAttribute("max");
+
+                quantity.removeAttribute(
+                    "max"
+                );
+
             }
+
         }
+
     }
+
 
     /* =====================================================
        PREVIEW
@@ -540,150 +1969,289 @@
         const product =
             selectedProduct();
 
+
         const stock =
             product
-                ? getStock(product)
+                ? getStock(
+                    product
+                )
                 : 0;
+
 
         const quantity =
             Math.max(
                 0,
                 Number(
-                    $("quantity")?.value || 0
+                    $("quantity")?.value ||
+                    0
                 )
             );
+
 
         const remaining =
             Math.max(
                 0,
-                stock - quantity
+                stock -
+                quantity
             );
+
 
         const reasonSelect =
             $("stockOutReason");
 
+
         const reasonText =
-            reasonSelect?.selectedOptions?.[0]
-                ?.textContent?.trim() ||
+
+            reasonSelect
+                ?.selectedOptions?.[0]
+                ?.textContent
+                ?.trim() ||
+
             "—";
+
 
         const recipient =
-            $("recipient")?.value.trim() ||
+            $("recipient")
+                ?.value
+                ?.trim() ||
+
             "—";
+
 
         const reference =
-            $("referenceNumber")?.value.trim() ||
+            $("referenceNumber")
+                ?.value
+                ?.trim() ||
+
             "—";
+
 
         const date =
-            $("stockOutDate")?.value ||
+            $("stockOutDate")
+                ?.value ||
+
             "—";
 
-        if ($("previewProduct")) {
-            $("previewProduct").textContent =
+
+        const previewProduct =
+            $("previewProduct");
+
+
+        if (
+            previewProduct
+        ) {
+
+            previewProduct.textContent =
+
                 product
-                    ? getProductName(product)
+
+                    ? getProductName(
+                        product
+                    )
+
                     : "No product selected";
+
         }
 
-        if ($("previewAvailable")) {
-            $("previewAvailable").textContent =
-                `Available stock: ${stock.toLocaleString()}`;
+
+        if (
+            $("previewAvailable")
+        ) {
+
+            $("previewAvailable")
+                .textContent =
+
+                `Available stock: ${stock.toLocaleString("en-PH")}`;
+
         }
 
-        if ($("previewQuantity")) {
-            $("previewQuantity").textContent =
-                quantity.toLocaleString();
+
+        if (
+            $("previewQuantity")
+        ) {
+
+            $("previewQuantity")
+                .textContent =
+
+                quantity.toLocaleString(
+                    "en-PH"
+                );
+
         }
 
-        if ($("previewRemaining")) {
-            $("previewRemaining").textContent =
-                remaining.toLocaleString();
+
+        if (
+            $("previewRemaining")
+        ) {
+
+            $("previewRemaining")
+                .textContent =
+
+                remaining.toLocaleString(
+                    "en-PH"
+                );
+
         }
 
-        if ($("previewReason")) {
-            $("previewReason").textContent =
+
+        if (
+            $("previewReason")
+        ) {
+
+            $("previewReason")
+                .textContent =
                 reasonText;
+
         }
 
-        if ($("previewRecipient")) {
-            $("previewRecipient").textContent =
+
+        if (
+            $("previewRecipient")
+        ) {
+
+            $("previewRecipient")
+                .textContent =
                 recipient;
+
         }
 
-        if ($("previewReference")) {
-            $("previewReference").textContent =
+
+        if (
+            $("previewReference")
+        ) {
+
+            $("previewReference")
+                .textContent =
                 reference;
+
         }
 
-        if ($("previewDate")) {
-            $("previewDate").textContent =
+
+        if (
+            $("previewDate")
+        ) {
+
+            $("previewDate")
+                .textContent =
                 date;
+
         }
 
-        /*
-         * Visual warning when quantity exceeds stock.
-         */
+
+        /* -------------------------------------------------
+           QUANTITY VALIDATION
+        ------------------------------------------------- */
 
         const quantityInput =
             $("quantity");
 
+
         if (
-            product &&
-            quantity > stock
+            quantityInput
         ) {
 
-            quantityInput?.setCustomValidity(
-                `Only ${stock} units are available.`
-            );
+            if (
+                product &&
+                quantity > stock
+            ) {
 
-        } else {
+                quantityInput.setCustomValidity(
+                    `Only ${stock} units are available.`
+                );
 
-            quantityInput?.setCustomValidity("");
+            } else {
+
+                quantityInput.setCustomValidity(
+                    ""
+                );
+
+            }
+
         }
+
     }
+
 
     /* =====================================================
        LOADING
     ===================================================== */
 
-    function setLoading(loading) {
+    function setLoading(
+        loading
+    ) {
 
         const overlay =
             $("stockOutLoading");
 
+
         const button =
             $("saveStockOutBtn");
 
-        if (loading) {
 
-            show(overlay);
+        if (
+            loading
+        ) {
 
-            if (button) {
+            show(
+                overlay
+            );
 
-                button.disabled = true;
+
+            if (
+                button
+            ) {
+
+                button.disabled =
+                    true;
+
 
                 button.innerHTML = `
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <span>Releasing Stock...</span>
+
+                    <i
+                        class="fa-solid fa-spinner fa-spin"
+                    ></i>
+
+                    <span>
+                        Releasing Stock...
+                    </span>
+
                 `;
+
             }
 
         } else {
 
-            hide(overlay);
+            hide(
+                overlay
+            );
 
-            if (button) {
 
-                button.disabled = false;
+            if (
+                button
+            ) {
+
+                button.disabled =
+                    false;
+
 
                 button.innerHTML = `
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    <span>Release Stock</span>
+
+                    <i
+                        class="fa-solid fa-arrow-right-from-bracket"
+                    ></i>
+
+                    <span>
+                        Release Stock
+                    </span>
+
                 `;
+
             }
+
         }
+
     }
+
 
     /* =====================================================
        RESULT MODAL
@@ -698,82 +2266,189 @@
         const modal =
             $("stockOutModal");
 
-        if (!modal) {
+
+        if (
+            !modal
+        ) {
+
             return;
+
         }
+
 
         const icon =
             $("stockOutModalIcon");
 
-        if (icon) {
 
-            icon.innerHTML = success
-                ? `<i class="fa-solid fa-check"></i>`
-                : `<i class="fa-solid fa-xmark"></i>`;
+        if (
+            icon
+        ) {
 
-            icon.style.background =
+            icon.innerHTML =
+
                 success
-                    ? "#eaf8f0"
-                    : "#fff0f0";
 
-            icon.style.color =
+                    ? `<i class="fa-solid fa-check"></i>`
+
+                    : `<i class="fa-solid fa-xmark"></i>`;
+
+
+            icon.classList.toggle(
+                "success",
                 success
-                    ? "#16a05d"
-                    : "#dc3030";
+            );
+
+
+            icon.classList.toggle(
+                "error",
+                !success
+            );
+
         }
 
-        if ($("stockOutModalTitle")) {
-            $("stockOutModalTitle").textContent =
+
+        if (
+            $("stockOutModalTitle")
+        ) {
+
+            $("stockOutModalTitle")
+                .textContent =
                 title;
+
         }
 
-        if ($("stockOutModalMessage")) {
-            $("stockOutModalMessage").textContent =
+
+        if (
+            $("stockOutModalMessage")
+        ) {
+
+            $("stockOutModalMessage")
+                .textContent =
                 message;
+
         }
 
-        show(modal);
+
+        show(
+            modal
+        );
+
     }
+
 
     function closeModal() {
 
         hide(
             $("stockOutModal")
         );
+
     }
 
+
     /* =====================================================
-       CLEAR
+       CLEAR FORM
     ===================================================== */
 
     function clearForm() {
 
-        $("stockOutForm")?.reset();
+        $("stockOutForm")
+            ?.reset();
 
-        if ($("stockOutDate")) {
 
-            $("stockOutDate").value =
-                new Date()
-                    .toISOString()
-                    .split("T")[0];
+        if (
+            $("stockOutDate")
+        ) {
+
+            $("stockOutDate")
+                .value =
+                getToday();
+
         }
 
+
         updateAvailableStock();
+
         updatePreview();
+
     }
+
+
+    /* =====================================================
+       DATE
+    ===================================================== */
+
+    function getToday() {
+
+        const now =
+            new Date();
+
+
+        const year =
+            now.getFullYear();
+
+
+        const month =
+            String(
+                now.getMonth() + 1
+            )
+                .padStart(
+                    2,
+                    "0"
+                );
+
+
+        const day =
+            String(
+                now.getDate()
+            )
+                .padStart(
+                    2,
+                    "0"
+                );
+
+
+        return `${year}-${month}-${day}`;
+
+    }
+
+
+    function setDefaultDate() {
+
+        const input =
+            $("stockOutDate");
+
+
+        if (
+            input &&
+            !input.value
+        ) {
+
+            input.value =
+                getToday();
+
+        }
+
+    }
+
 
     /* =====================================================
        SAVE STOCK OUT
     ===================================================== */
 
-    async function saveStockOut(event) {
+    async function saveStockOut(
+        event
+    ) {
 
         event.preventDefault();
+
 
         const product =
             selectedProduct();
 
-        if (!product) {
+
+        if (
+            !product
+        ) {
 
             openModal(
                 false,
@@ -782,18 +2457,28 @@
             );
 
             return;
+
         }
+
 
         const quantity =
             Number(
-                $("quantity")?.value || 0
+                $("quantity")
+                    ?.value ||
+                0
             );
 
+
         const available =
-            getStock(product);
+            getStock(
+                product
+            );
+
 
         if (
-            !Number.isInteger(quantity) ||
+            !Number.isInteger(
+                quantity
+            ) ||
             quantity <= 0
         ) {
 
@@ -804,9 +2489,14 @@
             );
 
             return;
+
         }
 
-        if (quantity > available) {
+
+        if (
+            quantity >
+            available
+        ) {
 
             openModal(
                 false,
@@ -815,13 +2505,19 @@
             );
 
             return;
+
         }
 
+
         const reason =
-            $("stockOutReason")?.value ||
+            $("stockOutReason")
+                ?.value ||
             "";
 
-        if (!reason) {
+
+        if (
+            !reason
+        ) {
 
             openModal(
                 false,
@@ -830,25 +2526,40 @@
             );
 
             return;
+
         }
 
+
         const reference =
-            $("referenceNumber")?.value.trim() ||
+            $("referenceNumber")
+                ?.value
+                ?.trim() ||
             "";
+
 
         const recipient =
-            $("recipient")?.value.trim() ||
+            $("recipient")
+                ?.value
+                ?.trim() ||
             "";
+
 
         const notes =
-            $("notes")?.value.trim() ||
+            $("notes")
+                ?.value
+                ?.trim() ||
             "";
+
 
         const date =
-            $("stockOutDate")?.value ||
+            $("stockOutDate")
+                ?.value ||
             "";
 
-        if (!date) {
+
+        if (
+            !date
+        ) {
 
             openModal(
                 false,
@@ -857,86 +2568,166 @@
             );
 
             return;
+
         }
 
-        setLoading(true);
+
+        setLoading(
+            true
+        );
+
 
         try {
 
+            const api =
+                requireAPI();
+
+
             /*
-             * The existing backend uses:
-             * productId
-             * quantity
-             * reference
-             * note
+             * IMPORTANT:
              *
-             * Recipient/reason/date are included in note
-             * so the existing TRANSACTIONS structure remains
-             * compatible.
+             * The correct API method is:
+             *
+             * StockFlowAPI.createStockOut()
+             *
+             * NOT:
+             *
+             * StockFlowAPI.stockOut()
+             *
+             */
+
+
+            if (
+                typeof api.createStockOut !==
+                    "function"
+            ) {
+
+                throw new Error(
+                    "StockFlowAPI.createStockOut() is not available. Please check that the latest api.js is loaded."
+                );
+
+            }
+
+
+            /*
+             * Keep the existing transaction structure
+             * compatible with the backend.
              */
 
             const combinedNote = [
+
                 `Reason: ${reason}`,
+
                 recipient
                     ? `Recipient: ${recipient}`
                     : "",
+
                 notes
                     ? `Notes: ${notes}`
                     : "",
+
                 date
                     ? `Date: ${date}`
                     : ""
+
             ]
                 .filter(Boolean)
-                .join(" | ");
+                .join(
+                    " | "
+                );
 
-            const response =
-                await window.StockFlowAPI.stockOut({
 
-                    productId:
-                        getProductId(product),
+            const payload = {
 
+                productId:
+                    getProductId(
+                        product
+                    ),
+
+                quantity:
                     quantity,
 
+                reference:
                     reference,
 
-                    note:
-                        combinedNote
-                });
+                note:
+                    combinedNote
+
+            };
+
+
+            /*
+             * CURRENT API
+             */
+
+            const response =
+                await api.createStockOut(
+                    payload
+                );
+
 
             if (
-                !response ||
+                response &&
                 response.success === false
             ) {
 
                 throw new Error(
-                    response?.message ||
+                    response.message ||
                     "Unable to record stock-out transaction."
                 );
+
             }
+
 
             openModal(
                 true,
                 "Stock Released Successfully",
-                response.message ||
+                response?.message ||
                 "The inventory has been updated successfully."
             );
 
+
             showOnline();
+
 
             clearForm();
 
+
+            /*
+             * Reload the latest product stock
+             * and transaction list.
+             */
+
             await Promise.all([
+
                 loadProducts(),
+
                 loadRecentTransactions()
+
             ]);
 
-        } catch (error) {
+
+            /*
+             * Optional activity logging.
+             * Only runs if the API actually
+             * exposes one of these methods.
+             */
+
+            await logStockOutActivity(
+                product,
+                quantity,
+                reference
+            );
+
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Stock Out error:",
                 error
             );
+
 
             openModal(
                 false,
@@ -945,19 +2736,49 @@
                 "Something went wrong while saving the transaction."
             );
 
-            showOffline(
-                error.message ||
-                "Unable to connect to StockFlow services."
-            );
+
+            /*
+             * Do not automatically claim the
+             * entire backend is offline when
+             * the API method itself is missing.
+             */
+
+            if (
+                /not available|not loaded/i
+                    .test(
+                        String(
+                            error.message ||
+                            ""
+                        )
+                    )
+            ) {
+
+                showOffline(
+                    error.message
+                );
+
+            } else {
+
+                showOffline(
+                    error.message ||
+                    "Unable to connect to StockFlow services."
+                );
+
+            }
 
         } finally {
 
-            setLoading(false);
+            setLoading(
+                false
+            );
+
         }
+
     }
 
+
     /* =====================================================
-       RECENT TRANSACTIONS
+       RECENT STOCK OUT
     ===================================================== */
 
     async function loadRecentTransactions() {
@@ -965,176 +2786,370 @@
         const tbody =
             $("stockOutTableBody");
 
-        if (!tbody) {
+
+        if (
+            !tbody
+        ) {
+
             return;
+
         }
 
+
         tbody.innerHTML = `
+
             <tr>
+
                 <td
                     colspan="7"
                     class="table-loading"
                 >
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    Loading stock transactions...
+
+                    <i
+                        class="fa-solid fa-spinner fa-spin"
+                    ></i>
+
+                    Loading stock-out transactions...
+
                 </td>
+
             </tr>
+
         `;
+
 
         try {
 
-            const response =
-                await window.StockFlowAPI.listTransactions({
-                    type: "STOCK_OUT"
-                });
+            const api =
+                requireAPI();
+
+
+            let response;
+
+
+            /*
+             * PRIMARY CURRENT API:
+             *
+             * listStockOut()
+             */
+
+            if (
+                typeof api.listStockOut ===
+                    "function"
+            ) {
+
+                response =
+                    await api.listStockOut();
+
+            }
+
+
+            /*
+             * SECONDARY CURRENT API:
+             *
+             * listTransactions()
+             *
+             * Used only if listStockOut()
+             * is not available.
+             */
+
+            else if (
+                typeof api.listTransactions ===
+                    "function"
+            ) {
+
+                response =
+                    await api.listTransactions({
+                        type: "STOCK_OUT"
+                    });
+
+            }
+
+
+            else {
+
+                throw new Error(
+                    "Neither StockFlowAPI.listStockOut() nor StockFlowAPI.listTransactions() is available."
+                );
+
+            }
+
 
             if (
                 response &&
                 response.success === false
             ) {
+
                 throw new Error(
                     response.message ||
-                    "Unable to load transactions."
+                    "Unable to load stock-out transactions."
                 );
+
             }
+
 
             const transactions =
-                Array.isArray(response?.transactions)
-                    ? response.transactions
-                    : [];
 
-            if (!transactions.length) {
+                Array.isArray(
+                    response?.transactions
+                )
+
+                    ? response.transactions
+
+                    : Array.isArray(
+                        response?.stockOut
+                    )
+
+                        ? response.stockOut
+
+                        : Array.isArray(
+                            response?.data
+                        )
+
+                            ? response.data
+
+                            : Array.isArray(
+                                response
+                            )
+
+                                ? response
+
+                                : [];
+
+
+            if (
+                !transactions.length
+            ) {
 
                 tbody.innerHTML = `
+
                     <tr>
+
                         <td
                             colspan="7"
-                            style="
-                                text-align:center;
-                                padding:35px;
-                                color:#8794a8;
-                            "
+                            class="table-empty-state"
                         >
+
                             No stock-out transactions yet.
+
                         </td>
+
                     </tr>
+
                 `;
 
+
                 return;
+
             }
 
+
             tbody.innerHTML =
+
                 transactions
-                    .slice(0, 10)
-                    .map(transaction => {
+                    .slice(
+                        0,
+                        10
+                    )
+                    .map(
+                        transaction => {
 
-                        const date =
-                            transaction.DATE ||
-                            "—";
+                            const date =
 
-                        const product =
-                            transaction.PRODUCT_NAME ||
-                            "—";
+                                transaction.DATE ||
 
-                        const quantity =
-                            Number(
-                                transaction.QUANTITY ||
-                                0
-                            );
+                                transaction.date ||
 
-                        const reference =
-                            transaction.REFERENCE ||
-                            "—";
+                                transaction.DATE_OUT ||
 
-                        const user =
-                            transaction.USER ||
-                            "—";
+                                transaction.stock_out_date ||
 
-                        const note =
-                            transaction.NOTE ||
-                            "";
+                                "—";
 
-                        const reason =
-                            extractNote(
-                                note,
-                                "Reason"
-                            );
 
-                        const recipient =
-                            extractNote(
-                                note,
-                                "Recipient"
-                            );
+                            const product =
 
-                        return `
-                            <tr>
+                                transaction.PRODUCT_NAME ||
 
-                                <td>
-                                    ${esc(
-                                        formatDate(date)
-                                    )}
-                                </td>
+                                transaction.product_name ||
 
-                                <td>
-                                    <strong>
-                                        ${esc(product)}
-                                    </strong>
-                                </td>
+                                transaction.PRODUCT ||
 
-                                <td>
-                                    <strong>
-                                        -${quantity.toLocaleString()}
-                                    </strong>
-                                </td>
+                                "—";
 
-                                <td>
-                                    ${esc(
-                                        reason || "—"
-                                    )}
-                                </td>
 
-                                <td>
-                                    ${esc(reference)}
-                                </td>
+                            const quantity =
 
-                                <td>
-                                    ${esc(
-                                        recipient || "—"
-                                    )}
-                                </td>
+                                Number(
+                                    transaction.QUANTITY ||
 
-                                <td>
-                                    ${esc(user)}
-                                </td>
+                                    transaction.quantity ||
 
-                            </tr>
-                        `;
-                    })
+                                    0
+                                );
+
+
+                            const reference =
+
+                                transaction.REFERENCE ||
+
+                                transaction.reference ||
+
+                                transaction.REFERENCE_NUMBER ||
+
+                                "—";
+
+
+                            const user =
+
+                                transaction.USER ||
+
+                                transaction.user ||
+
+                                transaction.USERNAME ||
+
+                                transaction.username ||
+
+                                "—";
+
+
+                            const note =
+
+                                transaction.NOTE ||
+
+                                transaction.note ||
+
+                                transaction.NOTES ||
+
+                                "";
+
+
+                            const reason =
+
+                                extractNote(
+                                    note,
+                                    "Reason"
+                                );
+
+
+                            const recipient =
+
+                                extractNote(
+                                    note,
+                                    "Recipient"
+                                );
+
+
+                            return `
+
+                                <tr>
+
+                                    <td>
+                                        ${esc(
+                                            formatDate(
+                                                date
+                                            )
+                                        )}
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong>
+                                            ${esc(
+                                                product
+                                            )}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong>
+                                            -${quantity.toLocaleString("en-PH")}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+                                        ${esc(
+                                            reason ||
+                                            "—"
+                                        )}
+                                    </td>
+
+
+                                    <td>
+                                        ${esc(
+                                            reference
+                                        )}
+                                    </td>
+
+
+                                    <td>
+                                        ${esc(
+                                            recipient ||
+                                            "—"
+                                        )}
+                                    </td>
+
+
+                                    <td>
+                                        ${esc(
+                                            user
+                                        )}
+                                    </td>
+
+                                </tr>
+
+                            `;
+
+                        }
+                    )
                     .join("");
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Stock-out transaction loading error:",
                 error
             );
 
+
             tbody.innerHTML = `
+
                 <tr>
+
                     <td
                         colspan="7"
-                        style="
-                            text-align:center;
-                            padding:35px;
-                            color:#c53b3b;
-                        "
+                        class="table-error-state"
                     >
-                        Unable to load recent transactions.
+
+                        Unable to load recent stock-out transactions.
+
+                        <br>
+
+                        <small>
+                            ${esc(
+                                error.message ||
+                                "Unknown API error."
+                            )}
+                        </small>
+
                     </td>
+
                 </tr>
+
             `;
+
         }
+
     }
+
 
     /* =====================================================
        NOTE PARSER
@@ -1145,95 +3160,471 @@
         label
     ) {
 
+        if (
+            !note
+        ) {
+
+            return "";
+
+        }
+
+
+        const escapedLabel =
+            String(
+                label
+            )
+                .replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&"
+                );
+
+
         const match =
-            String(note || "")
+            String(
+                note
+            )
                 .match(
                     new RegExp(
-                        `${label}:\\s*([^|]+)`
+                        `${escapedLabel}:\\s*([^|]+)`,
+                        "i"
                     )
                 );
+
 
         return match
             ? match[1].trim()
             : "";
+
     }
 
+
     /* =====================================================
-       DATE
+       DATE FORMAT
     ===================================================== */
 
-    function formatDate(value) {
+    function formatDate(
+        value
+    ) {
 
-        if (!value) {
+        if (
+            !value
+        ) {
+
             return "—";
+
         }
 
+
         const date =
-            new Date(value);
+            new Date(
+                value
+            );
+
 
         if (
             Number.isNaN(
                 date.getTime()
             )
         ) {
-            return String(value);
+
+            return String(
+                value
+            );
+
         }
+
 
         return date.toLocaleDateString(
             "en-PH",
             {
-                year: "numeric",
-                month: "short",
-                day: "numeric"
+
+                year:
+                    "numeric",
+
+                month:
+                    "short",
+
+                day:
+                    "numeric"
+
             }
         );
+
     }
+
+
+    /* =====================================================
+       OPTIONAL ACTIVITY LOG
+    ===================================================== */
+
+    async function logStockOutActivity(
+        product,
+        quantity,
+        reference
+    ) {
+
+        const api =
+            window.StockFlowAPI;
+
+
+        if (
+            !api
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * IMPORTANT:
+         *
+         * We DO NOT assume an activity API exists.
+         *
+         * Only use it if the actual api.js exposes
+         * one of these methods.
+         */
+
+        const method = [
+
+            "logActivity",
+
+            "recordActivity",
+
+            "createActivity",
+
+            "addActivity",
+
+            "createAuditLog"
+
+        ].find(
+            name =>
+                typeof api[name] ===
+                    "function"
+        );
+
+
+        if (
+            !method
+        ) {
+
+            return;
+
+        }
+
+
+        const user =
+            state.currentUser;
+
+
+        const payload = {
+
+            action:
+                "STOCK_OUT",
+
+            module:
+                "Stock Out",
+
+            description:
+                `${getUserName(user)} released ${quantity} unit(s) of ${getProductName(product)}${reference ? ` (${reference})` : ""}.`,
+
+            user:
+                getUserName(
+                    user
+                ),
+
+            username:
+                user?.username ||
+                user?.USERNAME ||
+                "",
+
+            email:
+                user?.email ||
+                user?.EMAIL ||
+                user?.gmail ||
+                user?.GMAIL ||
+                "",
+
+            timestamp:
+                new Date()
+                    .toISOString()
+
+        };
+
+
+        try {
+
+            await api[
+                method
+            ](
+                payload
+            );
+
+        } catch (
+            error
+        ) {
+
+            /*
+             * Activity logging must never
+             * break a successful Stock Out.
+             */
+
+            console.debug(
+                "StockFlow activity logging skipped:",
+                error
+            );
+
+        }
+
+    }
+
 
     /* =====================================================
        LOGOUT
     ===================================================== */
 
+    function clearSession() {
+
+        /*
+         * Primary actual StockFlow session.
+         */
+
+        try {
+
+            sessionStorage.removeItem(
+                "STOCKFLOW_SESSION"
+            );
+
+        } catch (
+            error
+        ) {
+
+            console.warn(
+                "Unable to clear STOCKFLOW_SESSION:",
+                error
+            );
+
+        }
+
+
+        /*
+         * Legacy keys.
+         */
+
+        const keys = [
+
+            "stockflowUser",
+
+            "stockflow_user",
+
+            "currentUser",
+
+            "current_user",
+
+            "loggedInUser",
+
+            "logged_in_user",
+
+            "user",
+
+            "authUser",
+
+            "auth_user",
+
+            "STOCKFLOW_TOKEN"
+
+        ];
+
+
+        keys.forEach(
+            key => {
+
+                try {
+
+                    sessionStorage.removeItem(
+                        key
+                    );
+
+                } catch (_) {}
+
+
+                try {
+
+                    localStorage.removeItem(
+                        key
+                    );
+
+                } catch (_) {}
+
+            }
+        );
+
+    }
+
+
     function setupLogout() {
 
-        $("logoutBtn")
-            ?.addEventListener(
-                "click",
-                async () => {
+        const button =
 
-                    const button =
-                        $("logoutBtn");
+            $("logoutButton") ||
 
-                    if (button) {
-                        button.disabled = true;
+            $("logoutBtn");
+
+
+        if (
+            !button
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            button.dataset
+                .stockflowLogoutBound
+        ) {
+
+            return;
+
+        }
+
+
+        button.dataset
+            .stockflowLogoutBound =
+            "true";
+
+
+        button.addEventListener(
+            "click",
+            async event => {
+
+                event.preventDefault();
+
+
+                const original =
+                    button.innerHTML;
+
+
+                button.disabled =
+                    true;
+
+
+                button.classList.add(
+                    "loading"
+                );
+
+
+                button.innerHTML = `
+
+                    <i
+                        class="fa-solid fa-spinner fa-spin"
+                    ></i>
+
+                    <span>
+                        Logging out...
+                    </span>
+
+                `;
+
+
+                try {
+
+                    const api =
+                        window.StockFlowAPI;
+
+
+                    /*
+                     * Use the actual API logout
+                     * if it exists.
+                     */
+
+                    if (
+                        api &&
+                        typeof api.logout ===
+                            "function"
+                    ) {
+
+                        try {
+
+                            await api.logout();
+
+                        } catch (
+                            error
+                        ) {
+
+                            console.warn(
+                                "StockFlow API logout failed:",
+                                error
+                            );
+
+                        }
+
                     }
 
-                    try {
 
-                        if (
-                            window.StockFlowAuth &&
-                            typeof window.StockFlowAuth.logout === "function"
-                        ) {
+                    /*
+                     * Compatibility with old
+                     * StockFlowAuth.
+                     */
+
+                    else if (
+                        window.StockFlowAuth &&
+                        typeof window.StockFlowAuth.logout ===
+                            "function"
+                    ) {
+
+                        try {
 
                             await window.StockFlowAuth.logout();
 
-                        } else {
+                        } catch (
+                            error
+                        ) {
 
-                            sessionStorage.clear();
+                            console.warn(
+                                "Legacy StockFlowAuth logout failed:",
+                                error
+                            );
 
-                            location.href =
-                                "auth.html";
                         }
 
-                    } catch (_) {
-
-                        sessionStorage.clear();
-
-                        location.href =
-                            "auth.html";
                     }
+
+
+                    /*
+                     * ALWAYS clear local session.
+                     */
+
+                    clearSession();
+
+
+                    window.location.href =
+                        "./auth.html";
+
+                } catch (
+                    error
+                ) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+
+                    clearSession();
+
+
+                    window.location.href =
+                        "./auth.html";
+
                 }
-            );
+
+            }
+        );
+
     }
+
 
     /* =====================================================
        EVENTS
@@ -1241,11 +3632,20 @@
 
     function setupEvents() {
 
+        /* -------------------------------------------------
+           FORM
+        ------------------------------------------------- */
+
         $("stockOutForm")
             ?.addEventListener(
                 "submit",
                 saveStockOut
             );
+
+
+        /* -------------------------------------------------
+           PRODUCT
+        ------------------------------------------------- */
 
         $("productSelect")
             ?.addEventListener(
@@ -1253,29 +3653,52 @@
                 () => {
 
                     updateAvailableStock();
+
                     updatePreview();
 
                 }
             );
 
+
+        /* -------------------------------------------------
+           INPUTS
+        ------------------------------------------------- */
+
         [
+
             "quantity",
+
             "referenceNumber",
+
             "recipient",
+
             "stockOutDate",
+
             "notes"
-        ].forEach(id => {
 
-            $(id)?.addEventListener(
-                "input",
-                updatePreview
-            );
+        ].forEach(
+            id => {
 
-            $(id)?.addEventListener(
-                "change",
-                updatePreview
-            );
-        });
+                $(id)
+                    ?.addEventListener(
+                        "input",
+                        updatePreview
+                    );
+
+
+                $(id)
+                    ?.addEventListener(
+                        "change",
+                        updatePreview
+                    );
+
+            }
+        );
+
+
+        /* -------------------------------------------------
+           REASON
+        ------------------------------------------------- */
 
         $("stockOutReason")
             ?.addEventListener(
@@ -1283,34 +3706,72 @@
                 updatePreview
             );
 
+
+        /* -------------------------------------------------
+           CLEAR
+        ------------------------------------------------- */
+
         $("clearStockOutBtn")
             ?.addEventListener(
                 "click",
-                clearForm
+                event => {
+
+                    event.preventDefault();
+
+                    clearForm();
+
+                }
             );
+
+
+        /* -------------------------------------------------
+           REFRESH
+        ------------------------------------------------- */
 
         $("refreshStockOutBtn")
             ?.addEventListener(
                 "click",
-                async () => {
+                async event => {
+
+                    event.preventDefault();
+
 
                     const button =
                         $("refreshStockOutBtn");
 
-                    if (button) {
-                        button.disabled = true;
+
+                    if (
+                        button
+                    ) {
+
+                        button.disabled =
+                            true;
+
                     }
+
 
                     try {
 
                         await Promise.all([
+
                             loadProducts(),
+
                             loadRecentTransactions()
+
                         ]);
+
 
                         showOnline();
 
-                    } catch (error) {
+                    } catch (
+                        error
+                    ) {
+
+                        console.error(
+                            "Stock Out refresh error:",
+                            error
+                        );
+
 
                         showOffline(
                             error.message
@@ -1318,12 +3779,24 @@
 
                     } finally {
 
-                        if (button) {
-                            button.disabled = false;
+                        if (
+                            button
+                        ) {
+
+                            button.disabled =
+                                false;
+
                         }
+
                     }
+
                 }
             );
+
+
+        /* -------------------------------------------------
+           MODAL CLOSE
+        ------------------------------------------------- */
 
         $("closeStockOutModal")
             ?.addEventListener(
@@ -1331,11 +3804,13 @@
                 closeModal
             );
 
+
         $("stockOutModalOk")
             ?.addEventListener(
                 "click",
                 closeModal
             );
+
 
         $("stockOutModal")
             ?.addEventListener(
@@ -1346,44 +3821,37 @@
                         event.target ===
                         $("stockOutModal")
                     ) {
+
                         closeModal();
+
                     }
+
                 }
             );
+
+
+        /* -------------------------------------------------
+           ESCAPE
+        ------------------------------------------------- */
 
         document.addEventListener(
             "keydown",
             event => {
 
                 if (
-                    event.key === "Escape"
+                    event.key ===
+                        "Escape"
                 ) {
+
                     closeModal();
+
                 }
+
             }
         );
+
     }
 
-    /* =====================================================
-       DEFAULT DATE
-    ===================================================== */
-
-    function setDefaultDate() {
-
-        const input =
-            $("stockOutDate");
-
-        if (
-            input &&
-            !input.value
-        ) {
-
-            input.value =
-                new Date()
-                    .toISOString()
-                    .split("T")[0];
-        }
-    }
 
     /* =====================================================
        INITIALIZE
@@ -1392,44 +3860,74 @@
     async function initialize() {
 
         setupSidebar();
+
         setupNotifications();
+
         setupLogout();
+
         setupEvents();
+
         setDefaultDate();
+
 
         try {
 
             const authenticated =
                 await initializeAuthentication();
 
-            if (!authenticated) {
+
+            if (
+                !authenticated
+            ) {
+
                 return;
+
             }
 
+
             await Promise.all([
+
                 loadProducts(),
+
                 loadRecentTransactions()
+
             ]);
+
 
             showOnline();
 
-        } catch (error) {
+
+            state.initialized =
+                true;
+
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Stock Out initialization error:",
                 error
             );
 
+
             showOffline(
                 error.message ||
                 "Unable to connect to StockFlow services."
             );
+
         }
+
     }
+
+
+    /* =====================================================
+       DOM READY
+    ===================================================== */
 
     document.addEventListener(
         "DOMContentLoaded",
         initialize
     );
+
 
 })();
