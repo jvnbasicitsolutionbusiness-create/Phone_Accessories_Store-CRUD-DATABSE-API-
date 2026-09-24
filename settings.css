@@ -1,19 +1,63 @@
 /* =========================================================
    STOCKFLOW — SETTINGS PAGE
-   Profile-style dashboard design
+   Settings / Theme / Sidebar / Responsive
 ========================================================= */
 
 
 /* =========================================================
-   PAGE FOUNDATION
+   SETTINGS PAGE FOUNDATION
 ========================================================= */
 
 body.settings-page {
-    min-height: 100vh;
+
     margin: 0;
-    overflow-x: hidden;
-    background: #f4f7fb;
-    color: #10203a;
+
+    min-height: 100vh;
+
+    background:
+        var(
+            --sf-bg,
+            #f4f7fb
+        );
+
+    color:
+        var(
+            --sf-text,
+            #10203a
+        );
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+
+}
+
+
+/* =========================================================
+   SETTINGS MAIN AREA
+========================================================= */
+
+body.settings-page
+.sf-main {
+
+    min-height: 100vh;
+
+    background:
+        var(
+            --sf-bg,
+            #f4f7fb
+        );
+
+    color:
+        var(
+            --sf-text,
+            #10203a
+        );
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+
 }
 
 
@@ -21,14 +65,90 @@ body.settings-page {
    SETTINGS CONTENT
 ========================================================= */
 
-body.settings-page .settings-content {
+.settings-content {
+
     width: 100%;
-    max-width: 100%;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding:
+        32px;
+
     box-sizing: border-box;
 
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+}
+
+
+/* =========================================================
+   SETTINGS PAGE HEADER
+========================================================= */
+
+.settings-header {
+
+    margin-bottom:
+        28px;
+
+}
+
+
+.settings-header h1 {
+
+    margin: 0 0 8px;
+
+    color:
+        var(
+            --sf-heading,
+            #10203a
+        );
+
+    font-size:
+        28px;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.25;
+
+}
+
+
+.settings-header p {
+
+    margin: 0;
+
+    color:
+        var(
+            --sf-muted,
+            #64748b
+        );
+
+    font-size:
+        14px;
+
+    line-height:
+        1.6;
+
+}
+
+
+/* =========================================================
+   SETTINGS GRID
+========================================================= */
+
+.settings-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        minmax(0, 1fr);
+
+    gap:
+        24px;
+
 }
 
 
@@ -36,97 +156,100 @@ body.settings-page .settings-content {
    SETTINGS CARD
 ========================================================= */
 
-body.settings-page .settings-card {
+.settings-card {
+
     width: 100%;
+
     box-sizing: border-box;
 
-    margin: 0;
+    padding:
+        24px;
 
-    overflow: hidden;
+    background:
+        var(
+            --sf-surface,
+            #ffffff
+        );
 
-    border: 1px solid #dfe6ef;
-    border-radius: 18px;
+    border:
+        1px solid
+        var(
+            --sf-border,
+            #dfe6ef
+        );
 
-    background: #ffffff;
+    border-radius:
+        16px;
 
     box-shadow:
-        0 10px 30px rgba(15, 35, 65, 0.055);
+        var(
+            --sf-shadow,
+            0 8px 24px rgba(15, 23, 42, 0.06)
+        );
+
+    color:
+        var(
+            --sf-text,
+            #10203a
+        );
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+
 }
 
 
 /* =========================================================
-   CARD HEADER
+   SETTINGS CARD HEADER
 ========================================================= */
 
-body.settings-page .settings-card .sf-card-head {
-    min-height: 94px;
+.settings-card-header {
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    margin-bottom:
+        20px;
 
-    gap: 20px;
-
-    padding: 25px 30px;
-
-    box-sizing: border-box;
-
-    border-bottom: 1px solid #edf1f6;
 }
 
 
-body.settings-page .settings-card .sf-card-head h3 {
+.settings-card-header h2 {
+
+    margin:
+        0 0 6px;
+
+    color:
+        var(
+            --sf-heading,
+            #10203a
+        );
+
+    font-size:
+        19px;
+
+    font-weight:
+        700;
+
+}
+
+
+.settings-card-header p {
+
     margin: 0;
 
-    color: #10203a;
+    color:
+        var(
+            --sf-muted,
+            #64748b
+        );
 
-    font-size: 20px;
-    line-height: 1.3;
+    font-size:
+        13px;
 
-    font-weight: 750;
-    letter-spacing: -0.015em;
-}
+    line-height:
+        1.6;
 
-
-body.settings-page .settings-card .sf-card-head .sf-muted {
-    margin: 7px 0 0;
-
-    color: #71829d;
-
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   CARD ICON
-========================================================= */
-
-body.settings-page .settings-card-icon {
-    width: 42px;
-    height: 42px;
-
-    flex: 0 0 42px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 12px;
-
-    background: #edf3ff;
-    color: #2563eb;
-
-    font-size: 18px;
-    line-height: 1;
-
-    box-sizing: border-box;
-}
-
-
-body.settings-page .settings-card-icon.session-icon {
-    background: #f1f4f8;
-    color: #52657f;
 }
 
 
@@ -134,806 +257,1559 @@ body.settings-page .settings-card-icon.session-icon {
    SETTINGS FORM
 ========================================================= */
 
-body.settings-page .settings-form {
-    width: 100%;
+#settings {
 
-    display: flex;
-    flex-direction: column;
+    display:
+        flex;
 
-    box-sizing: border-box;
+    flex-direction:
+        column;
 
-    padding: 28px 30px 30px;
+    gap:
+        22px;
 
-    gap: 24px;
 }
 
 
 /* =========================================================
-   SETTINGS FIELD
+   SETTINGS FORM GROUP
 ========================================================= */
 
-body.settings-page .settings-field {
-    width: 100%;
+.settings-group {
 
-    display: flex;
-    flex-direction: column;
+    display:
+        flex;
 
-    box-sizing: border-box;
+    flex-direction:
+        column;
+
+    gap:
+        8px;
+
 }
 
 
-body.settings-page .settings-field label {
-    margin-bottom: 6px;
+.settings-group label {
 
-    color: #263a57;
+    color:
+        var(
+            --sf-heading,
+            #10203a
+        );
 
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1.4;
-}
+    font-size:
+        14px;
 
+    font-weight:
+        600;
 
-body.settings-page .settings-help {
-    margin-bottom: 11px;
-
-    color: #8291a7;
-
-    font-size: 12px;
-    line-height: 1.55;
 }
 
 
 /* =========================================================
-   SETTINGS INPUTS
+   SETTINGS DESCRIPTION
 ========================================================= */
 
-body.settings-page .settings-field input,
-body.settings-page .settings-field select {
+.settings-description {
+
+    margin:
+        0;
+
+    color:
+        var(
+            --sf-muted,
+            #64748b
+        );
+
+    font-size:
+        12px;
+
+    line-height:
+        1.55;
+
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.settings-group input,
+.settings-group select {
+
     width: 100%;
-    min-height: 50px;
 
-    box-sizing: border-box;
+    min-height:
+        44px;
 
-    padding: 0 15px;
+    padding:
+        10px 13px;
 
-    border: 1px solid #d4deea;
-    border-radius: 11px;
+    box-sizing:
+        border-box;
+
+    background:
+        var(
+            --sf-input-bg,
+            #ffffff
+        );
+
+    color:
+        var(
+            --sf-input-text,
+            #10203a
+        );
+
+    border:
+        1px solid
+        var(
+            --sf-input-border,
+            #cbd5e1
+        );
+
+    border-radius:
+        10px;
 
     outline: none;
 
-    background: #f9fbfd;
-    color: #172b4d;
+    font-family:
+        inherit;
 
-    font-family: inherit;
-    font-size: 14px;
-
-    transition:
-        border-color 0.18s ease,
-        background 0.18s ease,
-        box-shadow 0.18s ease;
-}
-
-
-body.settings-page .settings-field input:hover,
-body.settings-page .settings-field select:hover {
-    border-color: #b8c7d9;
-
-    background: #ffffff;
-}
-
-
-body.settings-page .settings-field input:focus,
-body.settings-page .settings-field select:focus {
-    border-color: #2d6df6;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 0 0 3px rgba(45, 109, 246, 0.11);
-}
-
-
-body.settings-page .settings-field input::placeholder {
-    color: #8b9bb1;
-}
-
-
-/* =========================================================
-   SETTINGS ACTIONS
-========================================================= */
-
-body.settings-page .settings-actions {
-    display: flex;
-    align-items: center;
-
-    padding-top: 2px;
-}
-
-
-body.settings-page .settings-actions .sf-btn {
-    min-height: 46px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 22px;
-
-    border: 0;
-    border-radius: 10px;
-
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-
-    cursor: pointer;
+    font-size:
+        14px;
 
     transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease;
+        border-color 0.2s ease,
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+
 }
 
 
-/* =========================================================
-   PRIMARY BUTTON
-========================================================= */
+.settings-group input::placeholder {
 
-body.settings-page .settings-actions .sf-btn.primary {
-    background:
-        linear-gradient(
-            135deg,
-            #2d6df6 0%,
-            #2463df 100%
+    color:
+        var(
+            --sf-placeholder,
+            #94a3b8
         );
 
-    color: #ffffff;
+}
+
+
+.settings-group input:hover,
+.settings-group select:hover {
+
+    border-color:
+        var(
+            --sf-accent,
+            #2563eb
+        );
+
+}
+
+
+.settings-group input:focus,
+.settings-group select:focus {
+
+    border-color:
+        var(
+            --sf-accent,
+            #2563eb
+        );
 
     box-shadow:
-        0 8px 20px rgba(37, 99, 235, 0.20);
+        0 0 0 3px
+        var(
+            --sf-focus-ring,
+            rgba(37, 99, 235, 0.12)
+        );
+
 }
 
 
-body.settings-page .settings-actions .sf-btn.primary:hover {
-    transform: translateY(-1px);
+/* =========================================================
+   SELECT
+========================================================= */
+
+.settings-group select {
+
+    cursor:
+        pointer;
+
+    appearance:
+        auto;
+
+}
+
+
+/* =========================================================
+   THEME OPTIONS
+========================================================= */
+
+.theme-options {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap:
+        12px;
+
+}
+
+
+.theme-option {
+
+    position:
+        relative;
+
+}
+
+
+.theme-option input {
+
+    position:
+        absolute;
+
+    opacity:
+        0;
+
+    pointer-events:
+        none;
+
+}
+
+
+.theme-option label {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    min-height:
+        48px;
+
+    padding:
+        10px 14px;
+
+    box-sizing:
+        border-box;
+
+    background:
+        var(
+            --sf-option-bg,
+            #ffffff
+        );
+
+    color:
+        var(
+            --sf-option-text,
+            #10203a
+        );
+
+    border:
+        1px solid
+        var(
+            --sf-border,
+            #dfe6ef
+        );
+
+    border-radius:
+        10px;
+
+    cursor:
+        pointer;
+
+    font-size:
+        13px;
+
+    font-weight:
+        600;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+
+}
+
+
+.theme-option label:hover {
+
+    border-color:
+        var(
+            --sf-accent,
+            #2563eb
+        );
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+.theme-option input:checked + label {
+
+    background:
+        var(
+            --sf-accent,
+            #2563eb
+        );
+
+    color:
+        #ffffff;
+
+    border-color:
+        var(
+            --sf-accent,
+            #2563eb
+        );
 
     box-shadow:
-        0 11px 25px rgba(37, 99, 235, 0.27);
-}
+        0 5px 14px
+        rgba(
+            37,
+            99,
+            235,
+            0.20
+        );
 
-
-body.settings-page .settings-actions .sf-btn.primary:active {
-    transform: translateY(0);
-}
-
-
-/* =========================================================
-   SETTINGS MESSAGE
-========================================================= */
-
-body.settings-page .settings-message {
-    min-height: 0;
-
-    margin: 0;
-    padding: 0 30px 22px;
-
-    color: #52657f;
-
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-
-body.settings-page .settings-message:not(:empty) {
-    padding-top: 13px;
-
-    color: #2459a6;
 }
 
 
 /* =========================================================
-   SESSION CARD
+   SAVE BUTTON AREA
 ========================================================= */
 
-body.settings-page .session-card .sf-card-head {
-    min-height: 94px;
+.settings-actions {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        flex-end;
+
+    gap:
+        12px;
+
+    margin-top:
+        4px;
+
 }
 
 
 /* =========================================================
-   SESSION CONTENT
+   SAVE BUTTON
 ========================================================= */
 
-body.settings-page .session-content {
+.settings-save-btn {
+
+    min-height:
+        44px;
+
+    padding:
+        10px 20px;
+
+    border:
+        1px solid
+        var(
+            --sf-accent,
+            #2563eb
+        );
+
+    border-radius:
+        10px;
+
+    background:
+        var(
+            --sf-accent,
+            #2563eb
+        );
+
+    color:
+        #ffffff;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+}
+
+
+.settings-save-btn:hover {
+
+    background:
+        var(
+            --sf-accent-hover,
+            #1d4ed8
+        );
+
+    border-color:
+        var(
+            --sf-accent-hover,
+            #1d4ed8
+        );
+
+    transform:
+        translateY(-1px);
+
+    box-shadow:
+        0 6px 14px
+        rgba(
+            37,
+            99,
+            235,
+            0.20
+        );
+
+}
+
+
+.settings-save-btn:active {
+
+    transform:
+        translateY(0);
+
+}
+
+
+.settings-save-btn:disabled {
+
+    opacity:
+        0.65;
+
+    cursor:
+        not-allowed;
+
+    transform:
+        none;
+
+    box-shadow:
+        none;
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.settings-message {
+
+    min-height:
+        20px;
+
+    margin:
+        0;
+
+    font-size:
+        13px;
+
+    font-weight:
+        500;
+
+}
+
+
+.settings-message.success {
+
+    color:
+        #15803d;
+
+}
+
+
+.settings-message.error {
+
+    color:
+        #dc2626;
+
+}
+
+
+/* =========================================================
+   INFORMATION / SECURITY BOX
+========================================================= */
+
+.settings-info {
+
+    display:
+        flex;
+
+    gap:
+        12px;
+
+    padding:
+        14px 16px;
+
+    background:
+        var(
+            --sf-info-bg,
+            #eff6ff
+        );
+
+    color:
+        var(
+            --sf-info-text,
+            #1e40af
+        );
+
+    border:
+        1px solid
+        var(
+            --sf-info-border,
+            #bfdbfe
+        );
+
+    border-radius:
+        10px;
+
+    font-size:
+        13px;
+
+    line-height:
+        1.55;
+
+}
+
+
+/* =========================================================
+   SETTINGS DIVIDER
+========================================================= */
+
+.settings-divider {
+
     width: 100%;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    height:
+        1px;
 
-    gap: 24px;
+    margin:
+        4px 0;
 
-    padding: 27px 30px 30px;
+    background:
+        var(
+            --sf-border,
+            #dfe6ef
+        );
 
-    box-sizing: border-box;
 }
 
 
-body.settings-page .session-info {
-    min-width: 0;
+/* =========================================================
+   LOGOUT AREA
+========================================================= */
+
+.settings-logout {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        20px;
+
+    padding:
+        18px;
+
+    background:
+        var(
+            --sf-danger-bg,
+            #fff7f7
+        );
+
+    border:
+        1px solid
+        var(
+            --sf-danger-border,
+            #fecaca
+        );
+
+    border-radius:
+        12px;
+
 }
 
 
-body.settings-page .session-info strong {
-    display: block;
+.settings-logout-text {
+
+    min-width:
+        0;
+
+}
+
+
+.settings-logout-text h3 {
+
+    margin:
+        0 0 4px;
+
+    color:
+        var(
+            --sf-heading,
+            #10203a
+        );
+
+    font-size:
+        14px;
+
+    font-weight:
+        700;
+
+}
+
+
+.settings-logout-text p {
 
     margin: 0;
 
-    color: #263a57;
+    color:
+        var(
+            --sf-muted,
+            #64748b
+        );
 
-    font-size: 14px;
-    line-height: 1.5;
+    font-size:
+        12px;
 
-    font-weight: 750;
+    line-height:
+        1.5;
+
 }
 
 
-body.settings-page .session-info p {
-    max-width: 620px;
+.settings-logout button {
 
-    margin: 6px 0 0;
+    flex:
+        0 0 auto;
 
-    color: #8291a7;
+    min-height:
+        40px;
 
-    font-size: 12px;
-    line-height: 1.6;
-}
+    padding:
+        8px 16px;
 
+    background:
+        #dc2626;
 
-/* =========================================================
-   LOGOUT BUTTON
-========================================================= */
+    color:
+        #ffffff;
 
-body.settings-page .session-content .sf-btn.danger {
-    min-height: 44px;
+    border:
+        1px solid
+        #dc2626;
 
-    flex: 0 0 auto;
+    border-radius:
+        9px;
 
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    cursor:
+        pointer;
 
-    padding: 0 20px;
+    font-family:
+        inherit;
 
-    border: 1px solid #efc8c5;
-    border-radius: 10px;
+    font-size:
+        13px;
 
-    background: #fff7f6;
-    color: #b42318;
-
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-
-    cursor: pointer;
+    font-weight:
+        600;
 
     transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+
 }
 
 
-body.settings-page .session-content .sf-btn.danger:hover {
-    background: #fff0ee;
+.settings-logout button:hover {
 
-    border-color: #e6aaa5;
+    background:
+        #b91c1c;
 
-    color: #a51d13;
+    border-color:
+        #b91c1c;
 
-    transform: translateY(-1px);
+    transform:
+        translateY(-1px);
+
 }
 
 
-body.settings-page .session-content .sf-btn.danger:active {
-    transform: translateY(0);
-}
+.settings-logout button:disabled {
 
+    opacity:
+        0.65;
 
-/* =========================================================
-   SETTINGS MENU BUTTON
-========================================================= */
+    cursor:
+        not-allowed;
 
-body.settings-page .settings-menu-btn {
-    width: 44px;
-    height: 44px;
+    transform:
+        none;
 
-    flex: 0 0 44px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 1px solid #d7e0eb;
-    border-radius: 11px;
-
-    background: #ffffff;
-    color: #40536f;
-
-    box-shadow:
-        0 5px 16px rgba(15, 35, 65, 0.06);
-
-    cursor: pointer;
-
-    transition:
-        color 0.18s ease,
-        border-color 0.18s ease,
-        background 0.18s ease;
-}
-
-
-body.settings-page .settings-menu-btn:hover {
-    color: #2563eb;
-
-    border-color: #b9cdf6;
-
-    background: #f8fbff;
 }
 
 
 /* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 900px) {
-
-    body.settings-page .sf-main {
-        padding: 28px 24px 42px;
-    }
-
-    body.settings-page .settings-form {
-        padding: 25px 26px 28px;
-    }
-
-    body.settings-page .settings-message {
-        padding-left: 26px;
-        padding-right: 26px;
-    }
-
-    body.settings-page .session-content {
-        padding-left: 26px;
-        padding-right: 26px;
-    }
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 800px) {
-
-    body.settings-page .sf-layout {
-        display: block;
-    }
-
-    body.settings-page .sf-side {
-        position: fixed;
-
-        top: 0;
-        left: 0;
-        bottom: 0;
-
-        width: 280px;
-        min-width: 280px;
-
-        height: 100vh;
-
-        transform: translateX(-105%);
-
-        transition:
-            transform 0.25s ease;
-
-        z-index: 1000;
-    }
-
-    body.settings-page .sf-side.open {
-        transform: translateX(0);
-    }
-
-    body.settings-page .sf-main {
-        width: 100%;
-        min-height: 100vh;
-
-        padding: 22px 20px 40px;
-    }
-
-    body.settings-page .sf-title {
-        font-size: 27px;
-    }
-
-    body.settings-page .settings-content {
-        gap: 18px;
-    }
-
-    body.settings-page .settings-card {
-        border-radius: 16px;
-    }
-
-    body.settings-page .settings-card .sf-card-head {
-        padding: 23px 24px;
-    }
-
-    body.settings-page .settings-form {
-        padding: 24px;
-    }
-
-    body.settings-page .settings-message {
-        padding-left: 24px;
-        padding-right: 24px;
-    }
-
-    body.settings-page .session-content {
-        padding: 24px;
-    }
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 520px) {
-
-    body.settings-page .sf-main {
-        padding: 18px 14px 30px;
-    }
-
-    body.settings-page .sf-title {
-        font-size: 24px;
-    }
-
-    body.settings-page .sf-top {
-        min-height: 58px;
-
-        gap: 14px;
-
-        padding-bottom: 17px;
-    }
-
-    body.settings-page .settings-card {
-        border-radius: 15px;
-    }
-
-    body.settings-page .settings-card .sf-card-head {
-        min-height: 82px;
-
-        padding: 20px;
-    }
-
-    body.settings-page .settings-card .sf-card-head h3 {
-        font-size: 18px;
-    }
-
-    body.settings-page .settings-card-icon {
-        width: 38px;
-        height: 38px;
-
-        flex-basis: 38px;
-
-        font-size: 16px;
-    }
-
-    body.settings-page .settings-form {
-        padding: 20px;
-
-        gap: 21px;
-    }
-
-    body.settings-page .settings-actions {
-        width: 100%;
-    }
-
-    body.settings-page .settings-actions .sf-btn.primary {
-        width: 100%;
-    }
-
-    body.settings-page .settings-message {
-        padding: 0 20px 20px;
-    }
-
-    body.settings-page .session-content {
-        flex-direction: column;
-        align-items: stretch;
-
-        gap: 20px;
-
-        padding: 20px;
-    }
-
-    body.settings-page .session-info p {
-        max-width: none;
-    }
-
-    body.settings-page .session-content .sf-btn.danger {
-        width: 100%;
-    }
-}
-
-
-/* =========================================================
-   STOCKFLOW — THEME SYSTEM
+   STOCKFLOW THEME VARIABLES
 ========================================================= */
 
 
 /* =========================================================
-   LIGHT THEME
+   SYSTEM
+   ORIGINAL STOCKFLOW WHITE + BLUE DESIGN
+
+   IMPORTANT:
+   This does NOT follow OS/browser dark mode.
+========================================================= */
+
+html.sf-theme-system,
+body.sf-theme-system {
+
+    --sf-bg:
+        #f4f7fb;
+
+    --sf-surface:
+        #ffffff;
+
+    --sf-surface-2:
+        #f8fafc;
+
+    --sf-text:
+        #10203a;
+
+    --sf-heading:
+        #10203a;
+
+    --sf-muted:
+        #64748b;
+
+    --sf-border:
+        #dfe6ef;
+
+    --sf-input-bg:
+        #ffffff;
+
+    --sf-input-text:
+        #10203a;
+
+    --sf-input-border:
+        #cbd5e1;
+
+    --sf-placeholder:
+        #94a3b8;
+
+    --sf-option-bg:
+        #ffffff;
+
+    --sf-option-text:
+        #10203a;
+
+    --sf-accent:
+        #2563eb;
+
+    --sf-accent-hover:
+        #1d4ed8;
+
+    --sf-focus-ring:
+        rgba(
+            37,
+            99,
+            235,
+            0.12
+        );
+
+    --sf-shadow:
+        0 8px 24px
+        rgba(
+            15,
+            23,
+            42,
+            0.06
+        );
+
+    --sf-info-bg:
+        #eff6ff;
+
+    --sf-info-text:
+        #1e40af;
+
+    --sf-info-border:
+        #bfdbfe;
+
+    --sf-danger-bg:
+        #fff7f7;
+
+    --sf-danger-border:
+        #fecaca;
+
+}
+
+
+/* =========================================================
+   LIGHT
+   GREY-WHITE BACKGROUND + BLACK TEXT
 ========================================================= */
 
 html.sf-theme-light,
 body.sf-theme-light {
 
-    --sf-bg: #f8fafc;
-    --sf-surface: #ffffff;
-    --sf-surface-2: #f1f5f9;
+    --sf-bg:
+        #e5e7eb;
 
-    --sf-text: #0f172a;
-    --sf-text-secondary: #475569;
-    --sf-text-muted: #64748b;
+    --sf-surface:
+        #ffffff;
 
-    --sf-border: #e2e8f0;
+    --sf-surface-2:
+        #f9fafb;
 
-    --sf-input-bg: #ffffff;
-    --sf-input-border: #cbd5e1;
+    --sf-text:
+        #000000;
+
+    --sf-heading:
+        #000000;
+
+    --sf-muted:
+        #374151;
+
+    --sf-border:
+        #c7cbd1;
+
+    --sf-input-bg:
+        #ffffff;
+
+    --sf-input-text:
+        #000000;
+
+    --sf-input-border:
+        #9ca3af;
+
+    --sf-placeholder:
+        #6b7280;
+
+    --sf-option-bg:
+        #ffffff;
+
+    --sf-option-text:
+        #000000;
+
+    --sf-accent:
+        #2563eb;
+
+    --sf-accent-hover:
+        #1d4ed8;
+
+    --sf-focus-ring:
+        rgba(
+            37,
+            99,
+            235,
+            0.18
+        );
 
     --sf-shadow:
-        0 10px 30px rgba(15, 23, 42, 0.08);
+        0 8px 24px
+        rgba(
+            0,
+            0,
+            0,
+            0.08
+        );
+
+    --sf-info-bg:
+        #eff6ff;
+
+    --sf-info-text:
+        #1e3a8a;
+
+    --sf-info-border:
+        #93c5fd;
+
+    --sf-danger-bg:
+        #fef2f2;
+
+    --sf-danger-border:
+        #fca5a5;
+
 }
 
 
 /* =========================================================
-   DARK THEME
+   DARK
+   DARK NAVY / CHARCOAL + WHITE TEXT
 ========================================================= */
 
 html.sf-theme-dark,
 body.sf-theme-dark {
 
-    --sf-bg: #0f172a;
-    --sf-surface: #111827;
-    --sf-surface-2: #1e293b;
+    --sf-bg:
+        #0b1220;
 
-    --sf-text: #f8fafc;
-    --sf-text-secondary: #cbd5e1;
-    --sf-text-muted: #94a3b8;
-
-    --sf-border: #334155;
-
-    --sf-input-bg: #0f172a;
-    --sf-input-border: #475569;
-
-    --sf-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-
-/* =========================================================
-   PAGE
-========================================================= */
-
-body {
-    background:
-        var(--sf-bg, #f8fafc);
-
-    color:
-        var(--sf-text, #0f172a);
-
-    transition:
-        background-color 0.25s ease,
-        color 0.25s ease;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-========================================================= */
-
-.sf-main,
-.settings-main,
-.settings-content,
-main {
-
-    background:
-        var(--sf-bg, #f8fafc);
-
-    color:
-        var(--sf-text, #0f172a);
-
-    transition:
-        background-color 0.25s ease,
-        color 0.25s ease;
-}
-
-
-/* =========================================================
-   CARDS
-========================================================= */
-
-.settings-card,
-.settings-panel,
-.card {
-
-    background:
-        var(--sf-surface, #ffffff);
-
-    color:
-        var(--sf-text, #0f172a);
-
-    border-color:
-        var(--sf-border, #e2e8f0);
-
-    box-shadow:
-        var(--sf-shadow);
-
-    transition:
-        background-color 0.25s ease,
-        color 0.25s ease,
-        border-color 0.25s ease;
-}
-
-
-/* =========================================================
-   HEADINGS
-========================================================= */
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-
-    color:
-        var(--sf-text, #0f172a);
-
-}
-
-
-/* =========================================================
-   NORMAL TEXT
-========================================================= */
-
-p,
-label,
-.settings-description,
-.settings-help,
-.text-muted {
-
-    color:
-        var(--sf-text-secondary, #475569);
-
-}
-
-
-/* =========================================================
-   INPUTS / SELECTS
-========================================================= */
-
-input,
-select,
-textarea {
-
-    background:
-        var(--sf-input-bg, #ffffff);
-
-    color:
-        var(--sf-text, #0f172a);
-
-    border-color:
-        var(--sf-input-border, #cbd5e1);
-
-    transition:
-        background-color 0.25s ease,
-        color 0.25s ease,
-        border-color 0.25s ease;
-}
-
-
-/* Placeholder */
-
-input::placeholder,
-textarea::placeholder {
-
-    color:
-        var(--sf-text-muted, #64748b);
-
-}
-
-
-/* Select option */
-
-select option {
-
-    background:
-        var(--sf-surface, #ffffff);
-
-    color:
-        var(--sf-text, #0f172a);
-
-}
-
-
-/* =========================================================
-   DARK MODE — SETTINGS SPECIFIC
-========================================================= */
-
-html.sf-theme-dark .settings-card,
-html.sf-theme-dark .settings-panel {
-
-    background:
+    --sf-surface:
         #111827;
 
-    border-color:
+    --sf-surface-2:
+        #172033;
+
+    --sf-text:
+        #ffffff;
+
+    --sf-heading:
+        #ffffff;
+
+    --sf-muted:
+        #cbd5e1;
+
+    --sf-border:
         #334155;
-}
 
-
-html.sf-theme-dark .settings-card *,
-html.sf-theme-dark .settings-panel * {
-
-    border-color:
-        #334155;
-}
-
-
-html.sf-theme-dark input,
-html.sf-theme-dark select,
-html.sf-theme-dark textarea {
-
-    background:
+    --sf-input-bg:
         #0f172a;
 
-    color:
-        #f8fafc;
+    --sf-input-text:
+        #ffffff;
 
-    border-color:
+    --sf-input-border:
         #475569;
+
+    --sf-placeholder:
+        #94a3b8;
+
+    --sf-option-bg:
+        #111827;
+
+    --sf-option-text:
+        #ffffff;
+
+    --sf-accent:
+        #3b82f6;
+
+    --sf-accent-hover:
+        #60a5fa;
+
+    --sf-focus-ring:
+        rgba(
+            59,
+            130,
+            246,
+            0.25
+        );
+
+    --sf-shadow:
+        0 10px 30px
+        rgba(
+            0,
+            0,
+            0,
+            0.30
+        );
+
+    --sf-info-bg:
+        #172554;
+
+    --sf-info-text:
+        #dbeafe;
+
+    --sf-info-border:
+        #1d4ed8;
+
+    --sf-danger-bg:
+        #2a1518;
+
+    --sf-danger-border:
+        #7f1d1d;
+
 }
 
 
-html.sf-theme-dark select option {
+/* =========================================================
+   DARK THEME — SETTINGS PAGE OVERRIDES
+========================================================= */
+
+html.sf-theme-dark body.settings-page,
+body.sf-theme-dark.settings-page {
 
     background:
-        #111827;
+        #0b1220 !important;
 
     color:
-        #f8fafc;
+        #ffffff !important;
+
+}
+
+
+html.sf-theme-dark body.settings-page
+.sf-main,
+body.sf-theme-dark
+.sf-main {
+
+    background:
+        #0b1220 !important;
+
+    color:
+        #ffffff !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-content {
+
+    color:
+        #ffffff !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-card {
+
+    background:
+        #111827 !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #334155 !important;
+
+    box-shadow:
+        0 10px 30px
+        rgba(
+            0,
+            0,
+            0,
+            0.30
+        ) !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-header h1,
+html.sf-theme-dark
+.settings-card-header h2,
+html.sf-theme-dark
+.settings-group label,
+html.sf-theme-dark
+.settings-logout-text h3 {
+
+    color:
+        #ffffff !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-header p,
+html.sf-theme-dark
+.settings-card-header p,
+html.sf-theme-dark
+.settings-description,
+html.sf-theme-dark
+.settings-logout-text p {
+
+    color:
+        #cbd5e1 !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-group input,
+html.sf-theme-dark
+.settings-group select {
+
+    background:
+        #0f172a !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #475569 !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-group input::placeholder {
+
+    color:
+        #94a3b8 !important;
+
+}
+
+
+html.sf-theme-dark
+.theme-option label {
+
+    background:
+        #111827 !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #334155 !important;
+
+}
+
+
+html.sf-theme-dark
+.theme-option label:hover {
+
+    border-color:
+        #3b82f6 !important;
+
+}
+
+
+html.sf-theme-dark
+.theme-option input:checked + label {
+
+    background:
+        #2563eb !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #2563eb !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-divider {
+
+    background:
+        #334155 !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-info {
+
+    background:
+        #172554 !important;
+
+    color:
+        #dbeafe !important;
+
+    border-color:
+        #1d4ed8 !important;
+
+}
+
+
+html.sf-theme-dark
+.settings-logout {
+
+    background:
+        #2a1518 !important;
+
+    border-color:
+        #7f1d1d !important;
+
+}
+
+
+/* =========================================================
+   LIGHT THEME — SETTINGS PAGE OVERRIDES
+========================================================= */
+
+html.sf-theme-light body.settings-page,
+body.sf-theme-light.settings-page {
+
+    background:
+        #e5e7eb !important;
+
+    color:
+        #000000 !important;
+
+}
+
+
+html.sf-theme-light body.settings-page
+.sf-main,
+body.sf-theme-light
+.sf-main {
+
+    background:
+        #e5e7eb !important;
+
+    color:
+        #000000 !important;
+
+}
+
+
+html.sf-theme-light
+.settings-card {
+
+    background:
+        #ffffff !important;
+
+    color:
+        #000000 !important;
+
+    border-color:
+        #c7cbd1 !important;
+
+}
+
+
+html.sf-theme-light
+.settings-header h1,
+html.sf-theme-light
+.settings-card-header h2,
+html.sf-theme-light
+.settings-group label,
+html.sf-theme-light
+.settings-logout-text h3 {
+
+    color:
+        #000000 !important;
+
+}
+
+
+html.sf-theme-light
+.settings-header p,
+html.sf-theme-light
+.settings-card-header p,
+html.sf-theme-light
+.settings-description,
+html.sf-theme-light
+.settings-logout-text p {
+
+    color:
+        #374151 !important;
+
+}
+
+
+html.sf-theme-light
+.settings-group input,
+html.sf-theme-light
+.settings-group select {
+
+    background:
+        #ffffff !important;
+
+    color:
+        #000000 !important;
+
+    border-color:
+        #9ca3af !important;
+
+}
+
+
+html.sf-theme-light
+.theme-option label {
+
+    background:
+        #ffffff !important;
+
+    color:
+        #000000 !important;
+
+    border-color:
+        #c7cbd1 !important;
+
+}
+
+
+html.sf-theme-light
+.theme-option input:checked + label {
+
+    background:
+        #2563eb !important;
+
+    color:
+        #ffffff !important;
+
+    border-color:
+        #2563eb !important;
+
+}
+
+
+/* =========================================================
+   SYSTEM THEME — KEEP ORIGINAL STOCKFLOW LOOK
+========================================================= */
+
+html.sf-theme-system
+body.settings-page,
+body.sf-theme-system.settings-page {
+
+    background:
+        #f4f7fb;
+
+    color:
+        #10203a;
+
+}
+
+
+html.sf-theme-system
+.settings-card {
+
+    background:
+        #ffffff;
+
+    color:
+        #10203a;
+
+    border-color:
+        #dfe6ef;
+
 }
 
 
 /* =========================================================
    SIDEBAR
+       
+   The STOCKFLOW blue/navy sidebar remains unchanged
+   regardless of selected theme.
 ========================================================= */
 
+html.sf-theme-system
+.sidebar,
+html.sf-theme-light
+.sidebar,
+html.sf-theme-dark
+.sidebar,
+html.sf-theme-system
+.sf-side,
+html.sf-theme-light
+.sf-side,
+html.sf-theme-dark
 .sf-side {
 
-    transition:
-        background-color 0.25s ease,
-        border-color 0.25s ease;
+    color:
+        #ffffff;
+
 }
 
 
 /* =========================================================
-   THEME TRANSITION
+   RESPONSIVE — TABLET
 ========================================================= */
 
-html.sf-theme-light *,
-html.sf-theme-dark * {
+@media (
+    max-width: 900px
+) {
 
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
+    .settings-content {
+
+        padding:
+            24px;
+
+    }
+
+
+    .theme-options {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .settings-logout {
+
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+    }
+
+
+    .settings-logout button {
+
+        width:
+            100%;
+
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
+@media (
+    max-width: 600px
+) {
+
+    .settings-content {
+
+        padding:
+            18px;
+
+    }
+
+
+    .settings-header {
+
+        margin-bottom:
+            20px;
+
+    }
+
+
+    .settings-header h1 {
+
+        font-size:
+            23px;
+
+    }
+
+
+    .settings-header p {
+
+        font-size:
+            13px;
+
+    }
+
+
+    .settings-card {
+
+        padding:
+            18px;
+
+        border-radius:
+            13px;
+
+    }
+
+
+    .settings-card-header h2 {
+
+        font-size:
+            17px;
+
+    }
+
+
+    .settings-actions {
+
+        width:
+            100%;
+
+    }
+
+
+    .settings-save-btn {
+
+        width:
+            100%;
+
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (
+    max-width: 380px
+) {
+
+    .settings-content {
+
+        padding:
+            14px;
+
+    }
+
+
+    .settings-card {
+
+        padding:
+            15px;
+
+    }
+
+
+    .settings-header h1 {
+
+        font-size:
+            21px;
+
+    }
+
+}
+
+
+/* =========================================================
+   REDUCE MOTION
+========================================================= */
+
+@media (
+    prefers-reduced-motion: reduce
+) {
+
+    body.settings-page,
+    .settings-card,
+    .settings-group input,
+    .settings-group select,
+    .theme-option label,
+    .settings-save-btn,
+    .settings-logout button {
+
+        transition:
+            none !important;
+
+    }
+
 }
