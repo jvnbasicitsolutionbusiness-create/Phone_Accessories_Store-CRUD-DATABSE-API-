@@ -2,25 +2,29 @@
    STOCKFLOW | DASHBOARD.JS
    ============================================================
    Dashboard Controller
+
+   FEATURES
    ------------------------------------------------------------
-   Features:
-   - Authentication
-   - Employee user display
-   - Responsive sidebar
-   - Mobile sidebar overlay
-   - Desktop sidebar collapse
-   - Notification panel
-   - Dashboard statistics
-   - Inventory overview
-   - Recent transactions
-   - Recent activity
-   - Quick actions
-   - Connection monitoring
-   - Manual refresh
-   - Automatic refresh
-   - Online / Offline handling
-   - Safe HTML rendering
-   ============================================================ */
+   ✓ Signed-in user detection
+   ✓ User display in sidebar + top-right
+   ✓ Clickable user profile
+   ✓ Working logout
+   ✓ Session validation
+   ✓ Responsive sidebar
+   ✓ Mobile overlay
+   ✓ Notification panel
+   ✓ Dashboard statistics
+   ✓ Real recent transactions
+   ✓ Real recent activity / audit log
+   ✓ Inventory alerts
+   ✓ Quick navigation
+   ✓ Connection monitoring
+   ✓ Manual refresh support
+   ✓ Automatic refresh
+   ✓ Online / offline handling
+   ✓ Safe HTML rendering
+   ✓ Theme-compatible UI
+============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -29,28 +33,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* ========================================================
        CONFIGURATION
-       ======================================================== */
+    ======================================================== */
 
     const MOBILE_BREAKPOINT = 900;
 
     const AUTO_REFRESH_INTERVAL = 60000;
 
-    const MAX_ACTIVITY_ITEMS = 8;
+    const MAX_ITEMS = 8;
 
 
     /* ========================================================
-       DOM HELPERS
-       ======================================================== */
+       HELPERS
+    ======================================================== */
 
-    const get = (id) =>
+    const get = id =>
         document.getElementById(id);
 
 
-    const $ = (selector) =>
-        document.querySelector(selector);
-
-
-    const $$ = (selector) =>
+    const $$ = selector =>
         Array.from(
             document.querySelectorAll(selector)
         );
@@ -64,39 +64,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const element =
             get(id);
 
-
         if (element) {
 
             element.textContent =
-                value ?? "0";
+                value ?? "—";
 
         }
 
     };
 
-
-    const setHTML = (
-        id,
-        html
-    ) => {
-
-        const element =
-            get(id);
-
-
-        if (element) {
-
-            element.innerHTML =
-                html;
-
-        }
-
-    };
-
-
-    /* ========================================================
-       SECURITY / FORMAT HELPERS
-       ======================================================== */
 
     function esc(value) {
 
@@ -125,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const number =
             Number(value);
 
-
         return Number.isFinite(number)
             ? number
             : fallback;
@@ -135,8 +110,76 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function formatNumber(value) {
 
-        return toNumber(value)
-            .toLocaleString();
+        return toNumber(
+            value
+        ).toLocaleString();
+
+    }
+
+
+    function getValue(
+        object,
+        ...keys
+    ) {
+
+        if (!object) {
+            return "";
+        }
+
+        for (const key of keys) {
+
+            const value =
+                object[key];
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                value !== ""
+            ) {
+
+                return value;
+
+            }
+
+        }
+
+        return "";
+
+    }
+
+
+    function getDateValue(object) {
+
+        return getValue(
+            object,
+            "DATE",
+            "date",
+            "CREATED_AT",
+            "createdAt",
+            "UPDATED_AT",
+            "updatedAt",
+            "timestamp",
+            "TIMESTAMP"
+        );
+
+    }
+
+
+    function getTime(value) {
+
+        if (!value) {
+            return 0;
+        }
+
+        const date =
+            new Date(value);
+
+        const time =
+            date.getTime();
+
+        return Number.isFinite(time)
+            ? time
+            : 0;
 
     }
 
@@ -144,15 +187,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function formatDate(value) {
 
         if (!value) {
-
             return "—";
-
         }
-
 
         const date =
             new Date(value);
-
 
         if (
             Number.isNaN(
@@ -163,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return esc(value);
 
         }
-
 
         return date.toLocaleString(
             undefined,
@@ -179,47 +217,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function getValue(
-        object,
-        ...keys
-    ) {
+    function firstName(name) {
 
-        if (!object) {
-
-            return "";
-
-        }
-
-
-        for (
-            const key of keys
-        ) {
-
-            const value =
-                object[key];
-
-
-            if (
-                value !== undefined &&
-                value !== null &&
-                value !== ""
-            ) {
-
-                return value;
-
-            }
-
-        }
-
-
-        return "";
+        return String(
+            name || "User"
+        )
+            .trim()
+            .split(/\s+/)[0] ||
+            "User";
 
     }
 
 
     /* ========================================================
        STATE
-       ======================================================== */
+    ======================================================== */
 
     const state = {
 
@@ -229,118 +241,620 @@ document.addEventListener("DOMContentLoaded", () => {
 
         refreshTimer: null,
 
+        notificationPanel: null,
+
         previousMobileState:
             window.innerWidth <=
-            MOBILE_BREAKPOINT,
-
-        notificationPanel: null
+            MOBILE_BREAKPOINT
 
     };
 
 
     /* ========================================================
        DOM REFERENCES
-       ======================================================== */
+    ======================================================== */
 
     const sidebar =
         get("sidebar");
 
+    const sidebarOverlay =
+        get("sidebarOverlay");
 
     const mobileMenuBtn =
         get("mobileMenuBtn");
 
-
-    const sidebarOverlay =
-        get("sidebarOverlay");
-
-
     const notificationBtn =
         get("notificationBtn");
-
 
     const logoutBtn =
         get("logoutBtn");
 
 
     /* ========================================================
-       AUTHENTICATION
-       ======================================================== */
+       SESSION HELPERS
+    ======================================================== */
 
-    async function initializeAuthentication() {
+    function parseJSON(value) {
+
+        if (!value) {
+            return null;
+        }
+
+        if (
+            typeof value ===
+            "object"
+        ) {
+
+            return value;
+
+        }
+
+        try {
+
+            return JSON.parse(
+                value
+            );
+
+        } catch (_) {
+
+            return null;
+
+        }
+
+    }
+
+
+    /*
+     * The existing login.js can save:
+     *
+     * STOCKFLOW_SESSION
+     *
+     * containing:
+     * {
+     *   success: true,
+     *   token: "...",
+     *   user: {...}
+     * }
+     *
+     * This function restores that session into
+     * the API client's normal storage.
+     */
+
+    function hydrateLegacySession() {
+
+        try {
+
+            const raw =
+                sessionStorage.getItem(
+                    "STOCKFLOW_SESSION"
+                );
+
+            const session =
+                parseJSON(raw);
+
+            if (!session) {
+                return null;
+            }
+
+
+            const token =
+                session.token ||
+                session.data?.token ||
+                session.session?.token ||
+                "";
+
+
+            const user =
+                session.user ||
+                session.data?.user ||
+                session.account ||
+                null;
+
+
+            if (
+                token &&
+                window.StockFlowAPI &&
+                typeof window.StockFlowAPI.saveToken ===
+                    "function"
+            ) {
+
+                window.StockFlowAPI.saveToken(
+                    token
+                );
+
+            }
+
+
+            if (
+                user &&
+                window.StockFlowAPI &&
+                typeof window.StockFlowAPI.saveStoredUser ===
+                    "function"
+            ) {
+
+                window.StockFlowAPI.saveStoredUser(
+                    user
+                );
+
+            }
+
+
+            return user;
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to restore legacy session.",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
+    function getStoredUser() {
+
+        /*
+         * First restore legacy login session.
+         */
+
+        const legacyUser =
+            hydrateLegacySession();
+
+
+        if (legacyUser) {
+            return legacyUser;
+        }
+
+
+        /*
+         * Preferred API storage.
+         */
 
         try {
 
             if (
-                typeof StockFlowAuth ===
-                "undefined"
+                window.StockFlowAPI &&
+                typeof window.StockFlowAPI.getStoredUser ===
+                    "function"
+            ) {
+
+                const user =
+                    window.StockFlowAPI.getStoredUser();
+
+                if (user) {
+                    return user;
+                }
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to read stored user.",
+                error
+            );
+
+        }
+
+
+        /*
+         * Direct STOCKFLOW_USER fallback.
+         */
+
+        try {
+
+            const sessionUser =
+                parseJSON(
+                    sessionStorage.getItem(
+                        "STOCKFLOW_USER"
+                    )
+                );
+
+            if (sessionUser) {
+                return sessionUser;
+            }
+
+        } catch (_) {}
+
+
+        try {
+
+            const localUser =
+                parseJSON(
+                    localStorage.getItem(
+                        "STOCKFLOW_USER"
+                    )
+                );
+
+            if (localUser) {
+                return localUser;
+            }
+
+        } catch (_) {}
+
+
+        return null;
+
+    }
+
+
+    function getUserName(user) {
+
+        return String(
+
+            getValue(
+                user,
+                "name",
+                "fullName",
+                "full_name",
+                "displayName",
+                "NAME",
+                "username",
+                "USERNAME",
+                "email",
+                "EMAIL",
+                "gmail"
+            ) ||
+
+            "StockFlow User"
+
+        );
+
+    }
+
+
+    function getUserRole(user) {
+
+        const role =
+            String(
+                getValue(
+                    user,
+                    "role",
+                    "ROLE",
+                    "position",
+                    "POSITION",
+                    "accountRole",
+                    "userRole"
+                ) ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            role === "admin" ||
+            role === "administrator"
+        ) {
+
+            return "Administrator";
+
+        }
+
+
+        if (
+            role === "employee" ||
+            role === "staff"
+        ) {
+
+            return "Employee";
+
+        }
+
+
+        return role
+            ? role.charAt(0).toUpperCase() +
+              role.slice(1)
+            : "Employee";
+
+    }
+
+
+    function getInitials(name) {
+
+        const parts =
+            String(
+                name || ""
+            )
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        if (!parts.length) {
+            return "SF";
+        }
+
+
+        if (parts.length === 1) {
+
+            return parts[0]
+                .substring(0, 2)
+                .toUpperCase();
+
+        }
+
+
+        return (
+            parts[0].charAt(0) +
+            parts[1].charAt(0)
+        ).toUpperCase();
+
+    }
+
+
+    /* ========================================================
+       USER UI
+    ======================================================== */
+
+    function renderCurrentUser(user) {
+
+        if (!user) {
+            return;
+        }
+
+
+        const name =
+            getUserName(user);
+
+
+        const role =
+            getUserRole(user);
+
+
+        const initials =
+            getInitials(name);
+
+
+        const first =
+            firstName(name);
+
+
+        $$("[data-user-name]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        name;
+
+                }
+            );
+
+
+        $$("[data-user-role]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        role;
+
+                }
+            );
+
+
+        $$("[data-user-initials]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        initials;
+
+                }
+            );
+
+
+        $$("[data-user-first-name]")
+            .forEach(
+                element => {
+
+                    element.textContent =
+                        first;
+
+                }
+            );
+
+    }
+
+
+    /* ========================================================
+       USER PROFILE LINKS
+    ======================================================== */
+
+    function initializeUserLinks() {
+
+        /*
+         * Top-right account is already an <a>
+         * pointing to profile.html.
+         *
+         * Sidebar account is a <div>, so make it
+         * clickable as well.
+         */
+
+        const sidebarUser =
+            document.querySelector(
+                ".mini-user"
+            );
+
+
+        if (sidebarUser) {
+
+            sidebarUser.setAttribute(
+                "role",
+                "link"
+            );
+
+            sidebarUser.setAttribute(
+                "tabindex",
+                "0"
+            );
+
+            sidebarUser.setAttribute(
+                "aria-label",
+                "Open profile"
+            );
+
+
+            sidebarUser.addEventListener(
+                "click",
+                event => {
+
+                    /*
+                     * Do not navigate if the user clicked
+                     * an actual interactive child.
+                     */
+
+                    if (
+                        event.target.closest(
+                            "a, button"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+                    window.location.href =
+                        "./profile.html";
+
+                }
+            );
+
+
+            sidebarUser.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key === "Enter" ||
+                        event.key === " "
+                    ) {
+
+                        event.preventDefault();
+
+                        window.location.href =
+                            "./profile.html";
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* ========================================================
+       AUTHENTICATION
+    ======================================================== */
+
+    async function initializeAuthentication() {
+
+        const storedUser =
+            getStoredUser();
+
+
+        /*
+         * Immediately display the signed-in user
+         * before the network request finishes.
+         */
+
+        if (storedUser) {
+
+            state.currentUser =
+                storedUser;
+
+            renderCurrentUser(
+                storedUser
+            );
+
+        }
+
+
+        /*
+         * Require a valid API session.
+         */
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.requireSession !==
+                "function"
+        ) {
+
+            /*
+             * If a stored user exists, allow the page
+             * to continue rather than showing a blank UI.
+             */
+
+            return Boolean(
+                storedUser
+            );
+
+        }
+
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.requireSession();
+
+
+            if (
+                !response ||
+                response.success === false
             ) {
 
                 throw new Error(
-                    "StockFlowAuth is not available."
+                    response?.message ||
+                    "Session expired."
+                );
+
+            }
+
+
+            const authenticatedUser =
+                response.user ||
+                response.data?.user ||
+                storedUser;
+
+
+            if (!authenticatedUser) {
+
+                throw new Error(
+                    "No authenticated user was returned."
                 );
 
             }
 
 
             state.currentUser =
-                await StockFlowAuth.requireAuth();
+                authenticatedUser;
 
 
-            if (!state.currentUser) {
-
-                return false;
-
-            }
-
-
-            /* ------------------------------------------------
-               USER INFORMATION
-               ------------------------------------------------
-               Current system:
-               Registered users are employees.
-
-               Administrator login will be added later.
-               ------------------------------------------------ */
-
-            if (
-                typeof StockFlowAuth.bindUserUI ===
-                "function"
-            ) {
-
-                StockFlowAuth.bindUserUI(
-                    state.currentUser
-                );
-
-            }
+            renderCurrentUser(
+                authenticatedUser
+            );
 
 
             /*
-             * Current dashboard is for employee accounts.
-             *
-             * We intentionally display Employee here so that
-             * an old/default "Administrator" value from the
-             * dashboard HTML does not appear for employees.
-             *
-             * Administrator login can be enabled later when
-             * the admin authentication system is implemented.
+             * Keep the authenticated user locally
+             * so every page can identify the same account.
              */
 
-            const employeeRoleElements = [
+            if (
+                typeof window.StockFlowAPI.saveStoredUser ===
+                    "function"
+            ) {
 
-                get("userRole"),
-                get("topUserRole")
+                window.StockFlowAPI.saveStoredUser(
+                    authenticatedUser
+                );
 
-            ];
-
-
-            employeeRoleElements
-                .filter(Boolean)
-                .forEach(element => {
-
-                    element.textContent =
-                        "Employee";
-
-                });
+            }
 
 
             return true;
@@ -349,10 +863,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         catch (error) {
 
-            console.error(
-                "StockFlow authentication error:",
+            console.warn(
+                "STOCKFLOW: Session validation failed.",
                 error
             );
+
+
+            /*
+             * If we have a local user but the server is
+             * temporarily unavailable, do not immediately
+             * destroy the page.
+             *
+             * This makes the dashboard resilient to
+             * temporary backend problems.
+             */
+
+            if (storedUser) {
+
+                return true;
+
+            }
+
+
+            window.location.href =
+                "./auth.html";
 
 
             return false;
@@ -363,8 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* ========================================================
-       RESPONSIVE HELPERS
-       ======================================================== */
+       SIDEBAR
+    ======================================================== */
 
     function isMobile() {
 
@@ -376,16 +910,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* ========================================================
-       SIDEBAR CONTROLLER
-       ======================================================== */
-
     function openMobileSidebar() {
 
         if (!sidebar) {
-
             return;
-
         }
 
 
@@ -460,15 +988,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function toggleSidebar() {
 
         if (!sidebar) {
-
             return;
-
         }
 
-
-        /* ----------------------------------------------------
-           MOBILE SIDEBAR
-           ---------------------------------------------------- */
 
         if (isMobile()) {
 
@@ -480,43 +1002,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 closeMobileSidebar();
 
-            }
-
-            else {
+            } else {
 
                 openMobileSidebar();
 
             }
-
 
             return;
 
         }
 
 
-        /* ----------------------------------------------------
-           DESKTOP SIDEBAR
-           ---------------------------------------------------- */
-
         document.body.classList.toggle(
             "sidebar-collapsed"
         );
-
-
-        const collapsed =
-            document.body.classList.contains(
-                "sidebar-collapsed"
-            );
-
-
-        if (mobileMenuBtn) {
-
-            mobileMenuBtn.setAttribute(
-                "aria-expanded",
-                String(!collapsed)
-            );
-
-        }
 
     }
 
@@ -527,18 +1026,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             mobileMenuBtn.type =
                 "button";
-
-
-            mobileMenuBtn.setAttribute(
-                "aria-label",
-                "Toggle navigation menu"
-            );
-
-
-            mobileMenuBtn.setAttribute(
-                "aria-expanded",
-                "false"
-            );
 
 
             mobileMenuBtn.addEventListener(
@@ -568,109 +1055,205 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         $$(".sidebar-link")
-            .forEach(link => {
+            .forEach(
+                link => {
 
-                link.addEventListener(
-                    "click",
-                    () => {
+                    link.addEventListener(
+                        "click",
+                        () => {
 
-                        if (isMobile()) {
+                            if (isMobile()) {
 
-                            closeMobileSidebar();
+                                closeMobileSidebar();
+
+                            }
 
                         }
+                    );
 
-                    }
-                );
-
-            });
+                }
+            );
 
 
         window.addEventListener(
             "resize",
-            handleResize
+            () => {
+
+                const current =
+                    isMobile();
+
+
+                if (
+                    current !==
+                    state.previousMobileState
+                ) {
+
+                    closeMobileSidebar();
+
+                }
+
+
+                state.previousMobileState =
+                    current;
+
+            }
         );
-
-    }
-
-
-    function handleResize() {
-
-        const currentMobileState =
-            isMobile();
-
-
-        if (
-            currentMobileState !==
-            state.previousMobileState
-        ) {
-
-            closeMobileSidebar();
-
-        }
-
-
-        state.previousMobileState =
-            currentMobileState;
 
     }
 
 
     /* ========================================================
        LOGOUT
-       ======================================================== */
-
-    function initializeLogout() {
-
-        if (!logoutBtn) {
-
-            return;
-
-        }
-
-
-        logoutBtn.type =
-            "button";
-
-
-        logoutBtn.addEventListener(
-            "click",
-            handleLogout
-        );
-
-    }
-
+    ======================================================== */
 
     async function handleLogout() {
 
+        if (!logoutBtn) {
+            return;
+        }
+
+
+        logoutBtn.disabled =
+            true;
+
+
+        logoutBtn.classList.add(
+            "loading"
+        );
+
+
+        const originalHTML =
+            logoutBtn.innerHTML;
+
+
+        logoutBtn.innerHTML = `
+
+            <span
+                class="sf-btn-spinner"
+                aria-hidden="true">
+            </span>
+
+            <span>
+                Signing out...
+            </span>
+
+        `;
+
+
         try {
 
-            logoutBtn.disabled =
-                true;
-
-
-            logoutBtn.classList.add(
-                "loading"
-            );
-
+            /*
+             * Preferred backend logout.
+             */
 
             if (
-                typeof StockFlowAuth !==
-                    "undefined" &&
-                typeof StockFlowAuth.logout ===
+                window.StockFlowAPI &&
+                typeof window.StockFlowAPI.logout ===
                     "function"
             ) {
 
-                await StockFlowAuth.logout();
+                try {
+
+                    await window.StockFlowAPI.logout();
+
+                } catch (error) {
+
+                    /*
+                     * Even if backend logout fails,
+                     * continue clearing local session.
+                     */
+
+                    console.warn(
+                        "STOCKFLOW: Backend logout failed.",
+                        error
+                    );
+
+                }
 
             }
+
+
+            /*
+             * Clear known session storage.
+             */
+
+            try {
+
+                sessionStorage.removeItem(
+                    "STOCKFLOW_SESSION"
+                );
+
+                sessionStorage.removeItem(
+                    "STOCKFLOW_USER"
+                );
+
+                sessionStorage.removeItem(
+                    "STOCKFLOW_TOKEN"
+                );
+
+            } catch (_) {}
+
+
+            try {
+
+                localStorage.removeItem(
+                    "STOCKFLOW_USER"
+                );
+
+                localStorage.removeItem(
+                    "STOCKFLOW_TOKEN"
+                );
+
+                localStorage.removeItem(
+                    "STOCKFLOW_SESSION"
+                );
+
+            } catch (_) {}
+
+
+            /*
+             * Clear API-managed token/user if available.
+             */
+
+            try {
+
+                if (
+                    window.StockFlowAPI &&
+                    typeof window.StockFlowAPI.clearToken ===
+                        "function"
+                ) {
+
+                    window.StockFlowAPI.clearToken();
+
+                }
+
+                if (
+                    window.StockFlowAPI &&
+                    typeof window.StockFlowAPI.clearStoredUser ===
+                        "function"
+                ) {
+
+                    window.StockFlowAPI.clearStoredUser();
+
+                }
+
+            } catch (_) {}
+
+
+            /*
+             * Finally return to authentication.
+             */
+
+            window.location.replace(
+                "./auth.html"
+            );
 
         }
 
         catch (error) {
 
             console.error(
-                "Logout error:",
+                "STOCKFLOW: Logout failed.",
                 error
             );
 
@@ -683,14 +1266,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 "loading"
             );
 
+
+            logoutBtn.innerHTML =
+                originalHTML;
+
         }
 
     }
 
 
+    function initializeLogout() {
+
+        if (!logoutBtn) {
+            return;
+        }
+
+
+        logoutBtn.type =
+            "button";
+
+
+        logoutBtn.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                handleLogout();
+
+            }
+        );
+
+    }
+
+
     /* ========================================================
-       NOTIFICATION PANEL
-       ======================================================== */
+       NOTIFICATIONS
+    ======================================================== */
 
     function ensureNotificationPanel() {
 
@@ -712,16 +1324,13 @@ document.addEventListener("DOMContentLoaded", () => {
             state.notificationPanel =
                 existing;
 
-
             return existing;
 
         }
 
 
         if (!notificationBtn) {
-
             return null;
-
         }
 
 
@@ -732,9 +1341,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!wrapper) {
-
             return null;
-
         }
 
 
@@ -773,8 +1380,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     type="button"
                     class="notification-close"
                     id="notificationCloseBtn"
-                    aria-label="Close notifications"
-                >
+                    aria-label="Close notifications">
 
                     <i class="fa-solid fa-xmark"></i>
 
@@ -785,8 +1391,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             <div
                 class="notification-list"
-                id="notificationList"
-            >
+                id="notificationList">
 
                 <div class="notification-empty">
 
@@ -829,9 +1434,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!panel) {
-
             return;
-
         }
 
 
@@ -852,36 +1455,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function openNotifications() {
-
-        const panel =
-            ensureNotificationPanel();
-
-
-        if (!panel) {
-
-            return;
-
-        }
-
-
-        panel.classList.add(
-            "show"
-        );
-
-
-        if (notificationBtn) {
-
-            notificationBtn.setAttribute(
-                "aria-expanded",
-                "true"
-            );
-
-        }
-
-    }
-
-
     function toggleNotifications() {
 
         const panel =
@@ -889,9 +1462,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!panel) {
-
             return;
-
         }
 
 
@@ -905,11 +1476,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
             closeNotifications();
 
-        }
+        } else {
 
-        else {
+            panel.classList.add(
+                "show"
+            );
 
-            openNotifications();
+
+            if (notificationBtn) {
+
+                notificationBtn.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+
+            }
 
         }
 
@@ -919,20 +1500,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function initializeNotifications() {
 
         if (!notificationBtn) {
-
             return;
-
         }
 
 
         notificationBtn.type =
             "button";
-
-
-        notificationBtn.setAttribute(
-            "aria-label",
-            "Notifications"
-        );
 
 
         notificationBtn.setAttribute(
@@ -955,14 +1528,1733 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
 
+        const closeButton =
+            get("closeNotificationBtn");
+
+
+        closeButton?.addEventListener(
+            "click",
+            closeNotifications
+        );
+
+
         ensureNotificationPanel();
 
     }
 
 
     /* ========================================================
-       GLOBAL CLICK / KEYBOARD CONTROLS
-       ======================================================== */
+       CONNECTION
+    ======================================================== */
+
+    function setConnectionStatus(
+        online,
+        message = ""
+    ) {
+
+        const card =
+            get("connectionCard");
+
+        const icon =
+            get("connectionIcon");
+
+        const title =
+            get("connectionTitle");
+
+        const connectionMessage =
+            get("connectionMessage");
+
+        const status =
+            get("connectionStatus");
+
+
+        if (card) {
+
+            card.classList.toggle(
+                "offline",
+                !online
+            );
+
+            card.classList.toggle(
+                "online",
+                online
+            );
+
+        }
+
+
+        if (icon) {
+
+            icon.className =
+                online
+                    ? "fa-solid fa-circle-check"
+                    : "fa-solid fa-circle-xmark";
+
+        }
+
+
+        if (title) {
+
+            title.textContent =
+                online
+                    ? "System Connected"
+                    : "System Offline";
+
+        }
+
+
+        if (connectionMessage) {
+
+            connectionMessage.textContent =
+                message ||
+                (
+                    online
+                        ? "StockFlow services are connected."
+                        : "Unable to connect to StockFlow services."
+                );
+
+        }
+
+
+        if (status) {
+
+            status.textContent =
+                online
+                    ? "Online"
+                    : "Offline";
+
+
+            status.classList.toggle(
+                "offline",
+                !online
+            );
+
+        }
+
+    }
+
+
+    async function checkConnection() {
+
+        if (
+            !window.StockFlowAPI ||
+            typeof window.StockFlowAPI.health !==
+                "function"
+        ) {
+
+            setConnectionStatus(
+                navigator.onLine,
+                navigator.onLine
+                    ? "StockFlow is available."
+                    : "Your browser is offline."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            await window.StockFlowAPI.health();
+
+
+            setConnectionStatus(
+                true,
+                "StockFlow services are connected."
+            );
+
+        }
+
+        catch (error) {
+
+            setConnectionStatus(
+                false,
+                error.message ||
+                "Unable to connect to StockFlow services."
+            );
+
+        }
+
+    }
+
+
+    /* ========================================================
+       ACTIVITY ICON
+    ======================================================== */
+
+    function activityIcon(
+        type
+    ) {
+
+        const value =
+            String(
+                type || ""
+            ).toLowerCase();
+
+
+        if (
+            value.includes("stock in") ||
+            value.includes("stock-in") ||
+            value.includes("inbound") ||
+            value.includes("receive")
+        ) {
+
+            return "fa-solid fa-arrow-down";
+
+        }
+
+
+        if (
+            value.includes("stock out") ||
+            value.includes("stock-out") ||
+            value.includes("outbound") ||
+            value.includes("sale")
+        ) {
+
+            return "fa-solid fa-arrow-up";
+
+        }
+
+
+        if (
+            value.includes("product")
+        ) {
+
+            return "fa-solid fa-box";
+
+        }
+
+
+        if (
+            value.includes("category")
+        ) {
+
+            return "fa-solid fa-layer-group";
+
+        }
+
+
+        if (
+            value.includes("supplier")
+        ) {
+
+            return "fa-solid fa-truck-field";
+
+        }
+
+
+        if (
+            value.includes("login") ||
+            value.includes("logout") ||
+            value.includes("auth")
+        ) {
+
+            return "fa-solid fa-user-shield";
+
+        }
+
+
+        return "fa-solid fa-clock-rotate-left";
+
+    }
+
+
+    /* ========================================================
+       EMPTY STATE
+    ======================================================== */
+
+    function emptyState(
+        icon,
+        title,
+        message
+    ) {
+
+        return `
+
+            <div class="empty-state">
+
+                <div class="empty-state-icon">
+
+                    <i class="${esc(icon)}"></i>
+
+                </div>
+
+                <h3>
+                    ${esc(title)}
+                </h3>
+
+                <p>
+                    ${esc(message)}
+                </p>
+
+            </div>
+
+        `;
+
+    }
+
+
+    /* ========================================================
+       NOTIFICATIONS
+    ======================================================== */
+
+    function renderNotifications(
+        stats
+    ) {
+
+        const list =
+            get("notificationList");
+
+
+        if (!list) {
+            return;
+        }
+
+
+        const lowStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "lowStock",
+                    "lowStockCount"
+                )
+            );
+
+
+        const outOfStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "outOfStock",
+                    "outOfStockCount"
+                )
+            );
+
+
+        const products =
+            toNumber(
+                getValue(
+                    stats,
+                    "products",
+                    "totalProducts",
+                    "productCount"
+                )
+            );
+
+
+        const notifications = [];
+
+
+        if (outOfStock > 0) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-circle-xmark",
+
+                type:
+                    "danger",
+
+                title:
+                    `${formatNumber(outOfStock)} product${
+                        outOfStock === 1
+                            ? ""
+                            : "s"
+                    } out of stock`,
+
+                message:
+                    "Review inventory and restock unavailable products.",
+
+                link:
+                    "./inventory.html"
+
+            });
+
+        }
+
+
+        if (lowStock > 0) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-triangle-exclamation",
+
+                type:
+                    "warning",
+
+                title:
+                    `${formatNumber(lowStock)} product${
+                        lowStock === 1
+                            ? ""
+                            : "s"
+                    } low on stock`,
+
+                message:
+                    "Review low-stock products and record stock-in.",
+
+                link:
+                    "./inventory.html"
+
+            });
+
+        }
+
+
+        if (products === 0) {
+
+            notifications.push({
+
+                icon:
+                    "fa-solid fa-box-open",
+
+                type:
+                    "info",
+
+                title:
+                    "No products registered",
+
+                message:
+                    "Add your first product to begin managing inventory.",
+
+                link:
+                    "./products.html"
+
+            });
+
+        }
+
+
+        if (!notifications.length) {
+
+            list.innerHTML = `
+
+                <div class="notification-empty">
+
+                    <i class="fa-regular fa-circle-check"></i>
+
+                    <strong>
+                        All caught up
+                    </strong>
+
+                    <span>
+                        No inventory alerts right now.
+                    </span>
+
+                </div>
+
+            `;
+
+
+            const dot =
+                get("notificationDot");
+
+
+            if (dot) {
+                dot.hidden = true;
+            }
+
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            notifications
+                .map(
+                    item => `
+
+                        <a
+                            href="${esc(item.link)}"
+                            class="notification-item ${esc(item.type)}">
+
+                            <div class="notification-icon">
+
+                                <i class="${esc(item.icon)}"></i>
+
+                            </div>
+
+
+                            <div class="notification-content">
+
+                                <strong>
+                                    ${esc(item.title)}
+                                </strong>
+
+                                <span>
+                                    ${esc(item.message)}
+                                </span>
+
+                            </div>
+
+                        </a>
+
+                    `
+                )
+                .join("");
+
+
+        const dot =
+            get("notificationDot");
+
+
+        if (dot) {
+            dot.hidden = false;
+        }
+
+    }
+
+
+    /* ========================================================
+       INVENTORY ALERTS
+    ======================================================== */
+
+    function renderInventoryAlerts(
+        stats
+    ) {
+
+        const container =
+            get("inventoryAlerts");
+
+
+        if (!container) {
+            return;
+        }
+
+
+        const lowStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "lowStock",
+                    "lowStockCount"
+                )
+            );
+
+
+        const outOfStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "outOfStock",
+                    "outOfStockCount"
+                )
+            );
+
+
+        if (
+            lowStock === 0 &&
+            outOfStock === 0
+        ) {
+
+            container.innerHTML =
+                emptyState(
+                    "fa-solid fa-circle-check",
+                    "Inventory looks good",
+                    "There are no low-stock or out-of-stock alerts right now."
+                );
+
+            return;
+
+        }
+
+
+        const alerts = [];
+
+
+        if (outOfStock > 0) {
+
+            alerts.push(`
+
+                <a
+                    href="./inventory.html"
+                    class="inventory-alert danger">
+
+                    <div class="inventory-alert-icon">
+
+                        <i class="fa-solid fa-circle-xmark"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            ${formatNumber(outOfStock)}
+                            Out of stock
+                        </strong>
+
+                        <span>
+                            Products currently have zero stock.
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+            `);
+
+        }
+
+
+        if (lowStock > 0) {
+
+            alerts.push(`
+
+                <a
+                    href="./inventory.html"
+                    class="inventory-alert warning">
+
+                    <div class="inventory-alert-icon">
+
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            ${formatNumber(lowStock)}
+                            Low stock
+                        </strong>
+
+                        <span>
+                            Products are at or below reorder level.
+                        </span>
+
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+            `);
+
+        }
+
+
+        container.innerHTML =
+            alerts.join("");
+
+    }
+
+
+    /* ========================================================
+       INVENTORY OVERVIEW
+    ======================================================== */
+
+    function renderInventoryOverview(
+        stats
+    ) {
+
+        const container =
+            get("inventoryOverview");
+
+
+        if (!container) {
+            return;
+        }
+
+
+        const totalStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "totalStock",
+                    "stock",
+                    "totalUnits"
+                )
+            );
+
+
+        const lowStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "lowStock",
+                    "lowStockCount"
+                )
+            );
+
+
+        const outOfStock =
+            toNumber(
+                getValue(
+                    stats,
+                    "outOfStock",
+                    "outOfStockCount"
+                )
+            );
+
+
+        container.innerHTML = `
+
+            <div class="overview-grid">
+
+                <div class="overview-item">
+
+                    <div class="overview-icon">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            ${formatNumber(totalStock)}
+                        </strong>
+
+                        <span>
+                            Units on hand
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="overview-item">
+
+                    <div class="overview-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            ${formatNumber(lowStock)}
+                        </strong>
+
+                        <span>
+                            Low stock
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="overview-item">
+
+                    <div class="overview-icon">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            ${formatNumber(outOfStock)}
+                        </strong>
+
+                        <span>
+                            Out of stock
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    /* ========================================================
+       RECENT TRANSACTIONS
+    ======================================================== */
+
+    function normalizeTransaction(
+        transaction,
+        type
+    ) {
+
+        const product =
+            getValue(
+                transaction,
+                "PRODUCT",
+                "product",
+                "PRODUCT_NAME",
+                "productName",
+                "NAME",
+                "name"
+            ) ||
+            "Inventory Item";
+
+
+        const quantity =
+            getValue(
+                transaction,
+                "QTY",
+                "qty",
+                "QUANTITY",
+                "quantity"
+            );
+
+
+        const date =
+            getDateValue(
+                transaction
+            );
+
+
+        const createdBy =
+            getValue(
+                transaction,
+                "CREATED_BY",
+                "createdBy",
+                "USERNAME",
+                "username"
+            );
+
+
+        return {
+
+            ...transaction,
+
+            product,
+
+            quantity,
+
+            date,
+
+            type:
+                type === "IN"
+                    ? "Stock In"
+                    : "Stock Out",
+
+            createdBy
+
+        };
+
+    }
+
+
+    function renderTransactions(
+        transactions
+    ) {
+
+        const container =
+            get("recentTransactions");
+
+
+        if (!container) {
+            return;
+        }
+
+
+        if (
+            !Array.isArray(
+                transactions
+            ) ||
+            transactions.length === 0
+        ) {
+
+            container.innerHTML =
+                emptyState(
+                    "fa-solid fa-inbox",
+                    "No recent transactions",
+                    "Stock In and Stock Out transactions will appear here."
+                );
+
+            return;
+
+        }
+
+
+        const sorted =
+            transactions
+                .slice()
+                .sort(
+                    (a, b) =>
+                        getTime(
+                            b.date
+                        ) -
+                        getTime(
+                            a.date
+                        )
+                )
+                .slice(
+                    0,
+                    MAX_ITEMS
+                );
+
+
+        container.innerHTML =
+            sorted
+                .map(
+                    transaction => {
+
+                        const directionClass =
+                            transaction.type ===
+                            "Stock In"
+                                ? "in"
+                                : "out";
+
+
+                        const icon =
+                            transaction.type ===
+                            "Stock In"
+                                ? "fa-arrow-down"
+                                : "fa-arrow-up";
+
+
+                        return `
+
+                            <div class="activity-row">
+
+                                <div
+                                    class="activity-icon ${directionClass}">
+
+                                    <i
+                                        class="fa-solid ${icon}">
+                                    </i>
+
+                                </div>
+
+
+                                <div class="activity-content">
+
+                                    <strong>
+                                        ${esc(
+                                            transaction.product
+                                        )}
+                                    </strong>
+
+                                    <small>
+                                        ${esc(
+                                            transaction.type
+                                        )}
+
+                                        ${
+                                            transaction.createdBy
+                                                ? " • " +
+                                                  esc(
+                                                      transaction.createdBy
+                                                  )
+                                                : ""
+                                        }
+                                    </small>
+
+                                </div>
+
+
+                                <div class="activity-meta">
+
+                                    <strong>
+                                        ${
+                                            transaction.type ===
+                                            "Stock In"
+                                                ? "+"
+                                                : "-"
+                                        }${formatNumber(
+                                            transaction.quantity
+                                        )}
+                                    </strong>
+
+                                    <small>
+                                        ${formatDate(
+                                            transaction.date
+                                        )}
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        `;
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    /* ========================================================
+       RECENT ACTIVITY / AUDIT LOG
+    ======================================================== */
+
+    function renderActivity(
+        activities
+    ) {
+
+        const container =
+            get("recentActivity");
+
+
+        if (!container) {
+            return;
+        }
+
+
+        if (
+            !Array.isArray(
+                activities
+            ) ||
+            activities.length === 0
+        ) {
+
+            container.innerHTML =
+                emptyState(
+                    "fa-solid fa-clock-rotate-left",
+                    "No recent activity",
+                    "Your latest system actions will appear here."
+                );
+
+            return;
+
+        }
+
+
+        const sorted =
+            activities
+                .slice()
+                .sort(
+                    (a, b) =>
+                        getTime(
+                            getDateValue(b)
+                        ) -
+                        getTime(
+                            getDateValue(a)
+                        )
+                )
+                .slice(
+                    0,
+                    MAX_ITEMS
+                );
+
+
+        container.innerHTML =
+            sorted
+                .map(
+                    activity => {
+
+                        const action =
+                            getValue(
+                                activity,
+                                "ACTION",
+                                "action",
+                                "TYPE",
+                                "type"
+                            ) ||
+                            "Activity";
+
+
+                        const module =
+                            getValue(
+                                activity,
+                                "MODULE",
+                                "module"
+                            );
+
+
+                        const details =
+                            getValue(
+                                activity,
+                                "DETAILS",
+                                "details",
+                                "DESCRIPTION",
+                                "description"
+                            );
+
+
+                        const username =
+                            getValue(
+                                activity,
+                                "USERNAME",
+                                "username",
+                                "CREATED_BY",
+                                "createdBy"
+                            );
+
+
+                        const date =
+                            getDateValue(
+                                activity
+                            );
+
+
+                        return `
+
+                            <div class="activity-row">
+
+                                <div class="activity-icon">
+
+                                    <i
+                                        class="${esc(
+                                            activityIcon(
+                                                action
+                                            )
+                                        )}">
+                                    </i>
+
+                                </div>
+
+
+                                <div class="activity-content">
+
+                                    <strong>
+                                        ${esc(
+                                            action
+                                        )}
+                                    </strong>
+
+                                    <small>
+
+                                        ${
+                                            module
+                                                ? esc(
+                                                    module
+                                                )
+                                                : ""
+                                        }
+
+                                        ${
+                                            details
+                                                ? " • " +
+                                                  esc(
+                                                      details
+                                                  )
+                                                : ""
+                                        }
+
+                                    </small>
+
+                                </div>
+
+
+                                <div class="activity-meta">
+
+                                    ${
+                                        username
+                                            ? `<strong>${esc(
+                                                username
+                                            )}</strong>`
+                                            : ""
+                                    }
+
+                                    <small>
+                                        ${formatDate(
+                                            date
+                                        )}
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        `;
+
+                    }
+                )
+                .join("");
+
+    }
+
+
+    /* ========================================================
+       LOAD TRANSACTIONS + ACTIVITY
+    ======================================================== */
+
+    async function loadRecentData() {
+
+        const transactions = [];
+
+        let activities = [];
+
+
+        /*
+         * Stock In + Stock Out
+         */
+
+        const transactionResults =
+            await Promise.allSettled([
+
+                window.StockFlowAPI.listTransactions({
+                    type: "IN"
+                }),
+
+                window.StockFlowAPI.listTransactions({
+                    type: "OUT"
+                })
+
+            ]);
+
+
+        transactionResults
+            .forEach(
+                (result, index) => {
+
+                    if (
+                        result.status !==
+                        "fulfilled"
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const response =
+                        result.value;
+
+
+                    const records =
+                        response?.records ||
+                        response?.data?.records ||
+                        response?.data ||
+                        [];
+
+
+                    if (
+                        !Array.isArray(
+                            records
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const type =
+                        index === 0
+                            ? "IN"
+                            : "OUT";
+
+
+                    records.forEach(
+                        record => {
+
+                            transactions.push(
+                                normalizeTransaction(
+                                    record,
+                                    type
+                                )
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+        /*
+         * Activity / Audit Log
+         */
+
+        try {
+
+            const response =
+                await window.StockFlowAPI.listActivity({
+                    limit: 100
+                });
+
+
+            activities =
+                response?.activities ||
+                response?.data?.activities ||
+                response?.records ||
+                response?.data ||
+                [];
+
+
+            if (
+                !Array.isArray(
+                    activities
+                )
+            ) {
+
+                activities = [];
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to load activity log.",
+                error
+            );
+
+        }
+
+
+        renderTransactions(
+            transactions
+        );
+
+
+        renderActivity(
+            activities
+        );
+
+
+        return {
+            transactions,
+            activities
+        };
+
+    }
+
+
+    /* ========================================================
+       LOAD DASHBOARD
+    ======================================================== */
+
+    async function loadDashboard() {
+
+        if (state.isLoading) {
+            return false;
+        }
+
+
+        state.isLoading =
+            true;
+
+
+        try {
+
+            setConnectionStatus(
+                true,
+                "Loading StockFlow data..."
+            );
+
+
+            if (!navigator.onLine) {
+
+                throw new Error(
+                    "Your browser is offline."
+                );
+
+            }
+
+
+            if (
+                !window.StockFlowAPI
+            ) {
+
+                throw new Error(
+                    "StockFlowAPI is not available."
+                );
+
+            }
+
+
+            if (
+                typeof window.StockFlowAPI.dashboardStats !==
+                    "function"
+            ) {
+
+                /*
+                 * Your current api.js does not expose
+                 * dashboardStats() directly.
+                 *
+                 * The backend action DOES exist, so use
+                 * the generic inventory() method.
+                 */
+
+                if (
+                    typeof window.StockFlowAPI.inventory !==
+                        "function"
+                ) {
+
+                    throw new Error(
+                        "Dashboard API is unavailable."
+                    );
+
+                }
+
+            }
+
+
+            /*
+             * Dashboard statistics.
+             */
+
+            const statsResponse =
+                typeof window.StockFlowAPI.dashboardStats ===
+                    "function"
+
+                    ? await window.StockFlowAPI.dashboardStats()
+
+                    : await window.StockFlowAPI.inventory(
+                        "dashboardStats"
+                    );
+
+
+            const stats =
+                statsResponse?.stats ||
+                statsResponse?.data?.stats ||
+                statsResponse?.data ||
+                statsResponse ||
+                {};
+
+
+            const products =
+                toNumber(
+                    getValue(
+                        stats,
+                        "products",
+                        "totalProducts",
+                        "productCount"
+                    )
+                );
+
+
+            const categories =
+                toNumber(
+                    getValue(
+                        stats,
+                        "categories",
+                        "totalCategories",
+                        "categoryCount"
+                    )
+                );
+
+
+            const suppliers =
+                toNumber(
+                    getValue(
+                        stats,
+                        "suppliers",
+                        "totalSuppliers",
+                        "supplierCount"
+                    )
+                );
+
+
+            const totalStock =
+                toNumber(
+                    getValue(
+                        stats,
+                        "totalStock",
+                        "stock",
+                        "totalUnits"
+                    )
+                );
+
+
+            const lowStock =
+                toNumber(
+                    getValue(
+                        stats,
+                        "lowStock",
+                        "lowStockCount"
+                    )
+                );
+
+
+            const outOfStock =
+                toNumber(
+                    getValue(
+                        stats,
+                        "outOfStock",
+                        "outOfStockCount"
+                    )
+                );
+
+
+            /*
+             * Counters.
+             */
+
+            setText(
+                "productsCount",
+                formatNumber(
+                    products
+                )
+            );
+
+
+            setText(
+                "categoriesCount",
+                formatNumber(
+                    categories
+                )
+            );
+
+
+            setText(
+                "suppliersCount",
+                formatNumber(
+                    suppliers
+                )
+            );
+
+
+            setText(
+                "totalStockCount",
+                formatNumber(
+                    totalStock
+                )
+            );
+
+
+            setText(
+                "lowStockCount",
+                formatNumber(
+                    lowStock
+                )
+            );
+
+
+            setText(
+                "outOfStockCount",
+                formatNumber(
+                    outOfStock
+                )
+            );
+
+
+            renderInventoryOverview({
+
+                totalStock,
+                lowStock,
+                outOfStock
+
+            });
+
+
+            renderInventoryAlerts({
+
+                lowStock,
+                outOfStock
+
+            });
+
+
+            renderNotifications({
+
+                products,
+                lowStock,
+                outOfStock
+
+            });
+
+
+            /*
+             * Load actual transaction/activity data.
+             */
+
+            await loadRecentData();
+
+
+            /*
+             * Connection.
+             */
+
+            setConnectionStatus(
+                true,
+                "StockFlow is connected."
+            );
+
+
+            /*
+             * Last updated.
+             */
+
+            const lastUpdated =
+                get("lastUpdated");
+
+
+            if (lastUpdated) {
+
+                lastUpdated.textContent =
+                    `Updated ${
+                        new Date()
+                            .toLocaleTimeString(
+                                undefined,
+                                {
+                                    hour: "numeric",
+                                    minute: "2-digit"
+                                }
+                            )
+                    }`;
+
+            }
+
+
+            return true;
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "STOCKFLOW: Dashboard loading failed.",
+                error
+            );
+
+
+            setConnectionStatus(
+                false,
+                error.message ||
+                "Unable to load StockFlow data."
+            );
+
+
+            /*
+             * Do not leave the page permanently
+             * showing a spinner.
+             */
+
+            const transactions =
+                get("recentTransactions");
+
+
+            if (transactions) {
+
+                transactions.innerHTML =
+                    emptyState(
+                        "fa-solid fa-triangle-exclamation",
+                        "Unable to load transactions",
+                        "Use Refresh or check the StockFlow connection."
+                    );
+
+            }
+
+
+            const activity =
+                get("recentActivity");
+
+
+            if (activity) {
+
+                activity.innerHTML =
+                    emptyState(
+                        "fa-solid fa-triangle-exclamation",
+                        "Unable to load activity",
+                        "The activity log could not be retrieved."
+                    );
+
+            }
+
+
+            return false;
+
+        }
+
+        finally {
+
+            state.isLoading =
+                false;
+
+        }
+
+    }
+
+
+    /* ========================================================
+       REFRESH
+    ======================================================== */
+
+    function createRefreshButton() {
+
+        /*
+         * The current dashboard HTML does not have a
+         * refresh button, so we do not require one.
+         *
+         * If you later add:
+         *
+         * id="refreshDashboardBtn"
+         *
+         * this code automatically activates it.
+         */
+
+        const button =
+            get(
+                "refreshDashboardBtn"
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        button.type =
+            "button";
+
+
+        button.addEventListener(
+            "click",
+            async () => {
+
+                if (state.isLoading) {
+                    return;
+                }
+
+
+                button.disabled =
+                    true;
+
+
+                button.classList.add(
+                    "loading"
+                );
+
+
+                try {
+
+                    await loadDashboard();
+
+                }
+
+                finally {
+
+                    button.disabled =
+                        false;
+
+
+                    button.classList.remove(
+                        "loading"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       QUICK NAVIGATION
+    ======================================================== */
+
+    function initializeQuickActions() {
+
+        /*
+         * Existing dashboard quick-action links are already
+         * real <a> elements, so the browser handles navigation.
+         *
+         * This section only ensures keyboard/accessibility
+         * behavior and does not replace normal links.
+         */
+
+        $$(".quick-action")
+            .forEach(
+                link => {
+
+                    link.addEventListener(
+                        "click",
+                        () => {
+
+                            closeMobileSidebar();
+
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* ========================================================
+       GLOBAL CONTROLS
+    ======================================================== */
 
     function initializeGlobalControls() {
 
@@ -972,7 +3264,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const closeButton =
                     event.target.closest(
-                        "#notificationCloseBtn"
+                        "#notificationCloseBtn, #closeNotificationBtn"
                     );
 
 
@@ -990,9 +3282,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 if (!panel) {
-
                     return;
-
                 }
 
 
@@ -1050,1443 +3340,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* ========================================================
-       CONNECTION STATUS
-       ======================================================== */
-
-    function setConnectionStatus(
-        online,
-        message = ""
-    ) {
-
-        const badge =
-            get("connectionBadge");
-
-
-        const connectionMessage =
-            get("connectionMessage");
-
-
-        if (badge) {
-
-            badge.textContent =
-                online
-                    ? "ONLINE"
-                    : "OFFLINE";
-
-
-            badge.classList.toggle(
-                "online",
-                online
-            );
-
-
-            badge.classList.toggle(
-                "offline",
-                !online
-            );
-
-        }
-
-
-        if (connectionMessage) {
-
-            connectionMessage.textContent =
-                message ||
-                (
-                    online
-                        ? "Connected to StockFlow services."
-                        : "Unable to connect to StockFlow services."
-                );
-
-        }
-
-    }
-
-
-    /* ========================================================
-       EMPTY STATE
-       ======================================================== */
-
-    function emptyState(
-        icon,
-        title,
-        message
-    ) {
-
-        return `
-
-            <div class="empty-state">
-
-                <i class="${esc(icon)}"></i>
-
-                <strong>
-                    ${esc(title)}
-                </strong>
-
-                <span>
-                    ${esc(message)}
-                </span>
-
-            </div>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       ACTIVITY ICON
-       ======================================================== */
-
-    function activityIcon(
-        type
-    ) {
-
-        const value =
-            String(
-                type ?? ""
-            ).toLowerCase();
-
-
-        if (
-            value.includes("stock in") ||
-            value.includes("stock-in") ||
-            value.includes("inbound") ||
-            value.includes("receive")
-        ) {
-
-            return `
-                <i class="fa-solid fa-arrow-down"></i>
-            `;
-
-        }
-
-
-        if (
-            value.includes("stock out") ||
-            value.includes("stock-out") ||
-            value.includes("outbound") ||
-            value.includes("sale")
-        ) {
-
-            return `
-                <i class="fa-solid fa-arrow-up"></i>
-            `;
-
-        }
-
-
-        if (
-            value.includes("product")
-        ) {
-
-            return `
-                <i class="fa-solid fa-box"></i>
-            `;
-
-        }
-
-
-        if (
-            value.includes("category")
-        ) {
-
-            return `
-                <i class="fa-solid fa-layer-group"></i>
-            `;
-
-        }
-
-
-        if (
-            value.includes("supplier")
-        ) {
-
-            return `
-                <i class="fa-solid fa-truck-field"></i>
-            `;
-
-        }
-
-
-        if (
-            value.includes("login") ||
-            value.includes("logout") ||
-            value.includes("auth")
-        ) {
-
-            return `
-                <i class="fa-solid fa-user-shield"></i>
-            `;
-
-        }
-
-
-        return `
-            <i class="fa-solid fa-clock-rotate-left"></i>
-        `;
-
-    }
-
-
-    /* ========================================================
-       NOTIFICATIONS
-       ======================================================== */
-
-    function renderNotifications(
-        stats
-    ) {
-
-        const list =
-            get("notificationList");
-
-
-        if (!list) {
-
-            return;
-
-        }
-
-
-        const products =
-            toNumber(
-                getValue(
-                    stats,
-                    "products",
-                    "totalProducts",
-                    "productCount"
-                )
-            );
-
-
-        const lowStock =
-            toNumber(
-                getValue(
-                    stats,
-                    "lowStock",
-                    "lowStockCount"
-                )
-            );
-
-
-        const outOfStock =
-            toNumber(
-                getValue(
-                    stats,
-                    "outOfStock",
-                    "outOfStockCount"
-                )
-            );
-
-
-        const notifications = [];
-
-
-        /* ----------------------------------------------------
-           OUT OF STOCK
-           ---------------------------------------------------- */
-
-        if (outOfStock > 0) {
-
-            notifications.push({
-
-                icon:
-                    "fa-solid fa-circle-xmark",
-
-                type:
-                    "danger",
-
-                title:
-                    `${formatNumber(outOfStock)} product${outOfStock === 1 ? "" : "s"} out of stock`,
-
-                message:
-                    "Restock these products to keep inventory available.",
-
-                link:
-                    "./inventory.html"
-
-            });
-
-        }
-
-
-        /* ----------------------------------------------------
-           LOW STOCK
-           ---------------------------------------------------- */
-
-        if (lowStock > 0) {
-
-            notifications.push({
-
-                icon:
-                    "fa-solid fa-triangle-exclamation",
-
-                type:
-                    "warning",
-
-                title:
-                    `${formatNumber(lowStock)} product${lowStock === 1 ? "" : "s"} low on stock`,
-
-                message:
-                    "Review inventory levels and consider a stock-in.",
-
-                link:
-                    "./inventory.html"
-
-            });
-
-        }
-
-
-        /* ----------------------------------------------------
-           NO PRODUCTS
-           ---------------------------------------------------- */
-
-        if (products === 0) {
-
-            notifications.push({
-
-                icon:
-                    "fa-solid fa-box-open",
-
-                type:
-                    "info",
-
-                title:
-                    "No products registered",
-
-                message:
-                    "Start by adding your first product.",
-
-                link:
-                    "./products.html"
-
-            });
-
-        }
-
-
-        /* ----------------------------------------------------
-           ALL CLEAR
-           ---------------------------------------------------- */
-
-        if (
-            notifications.length === 0
-        ) {
-
-            list.innerHTML = `
-
-                <div class="notification-empty">
-
-                    <i class="fa-regular fa-circle-check"></i>
-
-                    <strong>
-                        All caught up
-                    </strong>
-
-                    <span>
-                        No inventory alerts right now.
-                    </span>
-
-                </div>
-
-            `;
-
-
-            return;
-
-        }
-
-
-        list.innerHTML =
-            notifications
-                .map(item => `
-
-                    <a
-                        href="${esc(item.link)}"
-                        class="notification-item ${esc(item.type)}"
-                    >
-
-                        <div class="notification-icon">
-
-                            <i class="${esc(item.icon)}"></i>
-
-                        </div>
-
-
-                        <div class="notification-content">
-
-                            <strong>
-                                ${esc(item.title)}
-                            </strong>
-
-                            <span>
-                                ${esc(item.message)}
-                            </span>
-
-                        </div>
-
-                    </a>
-
-                `)
-                .join("");
-
-    }
-
-
-    /* ========================================================
-       RECENT TRANSACTIONS
-       ======================================================== */
-
-    function renderTransactions(
-        transactions
-    ) {
-
-        const container =
-            get("recentTransactions");
-
-
-        if (!container) {
-
-            return;
-
-        }
-
-
-        if (
-            !Array.isArray(
-                transactions
-            ) ||
-            transactions.length === 0
-        ) {
-
-            container.innerHTML =
-                emptyState(
-                    "fa-solid fa-inbox",
-                    "No recent transactions",
-                    "Stock In and Stock Out transactions will appear here."
-                );
-
-
-            return;
-
-        }
-
-
-        container.innerHTML =
-            transactions
-                .slice(
-                    0,
-                    MAX_ACTIVITY_ITEMS
-                )
-                .map(transaction => {
-
-                    const product =
-                        getValue(
-                            transaction,
-                            "PRODUCT_NAME",
-                            "productName",
-                            "PRODUCT",
-                            "product",
-                            "NAME",
-                            "name"
-                        ) ||
-                        "Inventory Item";
-
-
-                    const type =
-                        getValue(
-                            transaction,
-                            "TYPE",
-                            "type",
-                            "ACTION",
-                            "action",
-                            "TRANSACTION_TYPE",
-                            "transactionType"
-                        ) ||
-                        "Inventory Activity";
-
-
-                    const quantity =
-                        getValue(
-                            transaction,
-                            "QUANTITY",
-                            "quantity",
-                            "QTY",
-                            "qty"
-                        );
-
-
-                    const date =
-                        getValue(
-                            transaction,
-                            "DATE",
-                            "date",
-                            "CREATED_AT",
-                            "createdAt",
-                            "UPDATED_AT",
-                            "updatedAt"
-                        );
-
-
-                    return `
-
-                        <div class="activity-row">
-
-                            <div class="activity-icon">
-
-                                ${activityIcon(type)}
-
-                            </div>
-
-
-                            <div class="activity-content">
-
-                                <strong>
-                                    ${esc(product)}
-                                </strong>
-
-                                <small>
-                                    ${esc(type)}
-                                </small>
-
-                            </div>
-
-
-                            <div class="activity-meta">
-
-                                <strong>
-                                    ${formatNumber(quantity)}
-                                </strong>
-
-                                <small>
-                                    ${formatDate(date)}
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    `;
-
-                })
-                .join("");
-
-    }
-
-
-    /* ========================================================
-       RECENT ACTIVITY
-       ======================================================== */
-
-    function renderActivity(
-        activities
-    ) {
-
-        const container =
-            get("recentActivity");
-
-
-        if (!container) {
-
-            return;
-
-        }
-
-
-        if (
-            !Array.isArray(
-                activities
-            ) ||
-            activities.length === 0
-        ) {
-
-            container.innerHTML =
-                emptyState(
-                    "fa-solid fa-clock-rotate-left",
-                    "No recent activity",
-                    "Your latest inventory activities will appear here."
-                );
-
-
-            return;
-
-        }
-
-
-        container.innerHTML =
-            activities
-                .slice(
-                    0,
-                    MAX_ACTIVITY_ITEMS
-                )
-                .map(activity => {
-
-                    const name =
-                        getValue(
-                            activity,
-                            "PRODUCT_NAME",
-                            "productName",
-                            "NAME",
-                            "name",
-                            "DESCRIPTION",
-                            "description"
-                        ) ||
-                        "Inventory activity";
-
-
-                    const type =
-                        getValue(
-                            activity,
-                            "TYPE",
-                            "type",
-                            "ACTION",
-                            "action"
-                        ) ||
-                        "Activity";
-
-
-                    const date =
-                        getValue(
-                            activity,
-                            "DATE",
-                            "date",
-                            "CREATED_AT",
-                            "createdAt",
-                            "UPDATED_AT",
-                            "updatedAt"
-                        );
-
-
-                    return `
-
-                        <div class="activity-row">
-
-                            <div class="activity-icon">
-
-                                ${activityIcon(type)}
-
-                            </div>
-
-
-                            <div class="activity-content">
-
-                                <strong>
-                                    ${esc(name)}
-                                </strong>
-
-                                <small>
-                                    ${esc(type)}
-                                </small>
-
-                            </div>
-
-
-                            <div class="activity-meta">
-
-                                <small>
-                                    ${formatDate(date)}
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    `;
-
-                })
-                .join("");
-
-    }
-
-
-    /* ========================================================
-       INVENTORY OVERVIEW
-       ======================================================== */
-
-    function renderInventoryOverview(
-        stats
-    ) {
-
-        const container =
-            get("inventoryOverview");
-
-
-        if (!container) {
-
-            return;
-
-        }
-
-
-        const totalStock =
-            toNumber(
-                getValue(
-                    stats,
-                    "totalStock",
-                    "stock",
-                    "totalUnits"
-                )
-            );
-
-
-        const lowStock =
-            toNumber(
-                getValue(
-                    stats,
-                    "lowStock",
-                    "lowStockCount"
-                )
-            );
-
-
-        const outOfStock =
-            toNumber(
-                getValue(
-                    stats,
-                    "outOfStock",
-                    "outOfStockCount"
-                )
-            );
-
-
-        container.innerHTML = `
-
-            <div class="overview-grid">
-
-                <div class="overview-item">
-
-                    <div class="overview-icon">
-
-                        <i class="fa-solid fa-boxes-stacked"></i>
-
-                    </div>
-
-
-                    <div>
-
-                        <strong>
-                            ${formatNumber(totalStock)}
-                        </strong>
-
-                        <span>
-                            Units on hand
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="overview-item">
-
-                    <div class="overview-icon">
-
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-
-                    </div>
-
-
-                    <div>
-
-                        <strong>
-                            ${formatNumber(lowStock)}
-                        </strong>
-
-                        <span>
-                            Low stock
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="overview-item">
-
-                    <div class="overview-icon">
-
-                        <i class="fa-solid fa-circle-xmark"></i>
-
-                    </div>
-
-
-                    <div>
-
-                        <strong>
-                            ${formatNumber(outOfStock)}
-                        </strong>
-
-                        <span>
-                            Out of stock
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        `;
-
-    }
-
-
-    /* ========================================================
-       RESET DASHBOARD
-       ======================================================== */
-
-    function resetDashboard() {
-
-        const counters = [
-
-            "productsCount",
-            "categoriesCount",
-            "suppliersCount",
-            "totalStockCount",
-            "stockInCount",
-            "stockOutCount",
-            "lowStockCount",
-            "outOfStockCount"
-
-        ];
-
-
-        counters.forEach(
-            id => setText(
-                id,
-                "—"
-            )
-        );
-
-
-        const overview =
-            get("inventoryOverview");
-
-
-        if (overview) {
-
-            overview.innerHTML =
-                emptyState(
-                    "fa-solid fa-cloud-arrow-down",
-                    "Inventory data unavailable",
-                    "Unable to load the latest inventory information."
-                );
-
-        }
-
-    }
-
-
-    /* ========================================================
-       API VALIDATION
-       ======================================================== */
-
-    function validateDashboardAPI() {
-
-        if (
-            typeof StockFlowAPI ===
-            "undefined"
-        ) {
-
-            throw new Error(
-                "StockFlowAPI is not available. Check api.js."
-            );
-
-        }
-
-
-        if (
-            typeof StockFlowAPI.dashboardStats !==
-            "function"
-        ) {
-
-            throw new Error(
-                "dashboardStats() is not available in api.js."
-            );
-
-        }
-
-    }
-
-
-    /* ========================================================
-       LOAD DASHBOARD
-       ======================================================== */
-
-    async function loadDashboard(
-        options = {}
-    ) {
-
-        const {
-            silent = false
-        } = options;
-
-
-        if (state.isLoading) {
-
-            return false;
-
-        }
-
-
-        state.isLoading =
-            true;
-
-
-        try {
-
-            if (!silent) {
-
-                setConnectionStatus(
-                    false,
-                    "Connecting to StockFlow..."
-                );
-
-            }
-
-
-            if (!navigator.onLine) {
-
-                throw new Error(
-                    "Your browser is offline."
-                );
-
-            }
-
-
-            validateDashboardAPI();
-
-
-            const response =
-                await StockFlowAPI.dashboardStats();
-
-
-            if (
-                !response ||
-                response.success === false
-            ) {
-
-                throw new Error(
-                    response?.message ||
-                    "Unable to load dashboard information."
-                );
-
-            }
-
-
-            /* ------------------------------------------------
-               NORMALIZE RESPONSE
-               ------------------------------------------------ */
-
-            const stats =
-                response.stats ||
-                response.data ||
-                response;
-
-
-            /* ------------------------------------------------
-               MAIN STATISTICS
-               ------------------------------------------------ */
-
-            const products =
-                toNumber(
-                    getValue(
-                        stats,
-                        "products",
-                        "totalProducts",
-                        "productCount"
-                    )
-                );
-
-
-            const categories =
-                toNumber(
-                    getValue(
-                        stats,
-                        "categories",
-                        "totalCategories",
-                        "categoryCount"
-                    )
-                );
-
-
-            const suppliers =
-                toNumber(
-                    getValue(
-                        stats,
-                        "suppliers",
-                        "totalSuppliers",
-                        "supplierCount"
-                    )
-                );
-
-
-            const totalStock =
-                toNumber(
-                    getValue(
-                        stats,
-                        "totalStock",
-                        "stock",
-                        "totalUnits"
-                    )
-                );
-
-
-            const stockIn =
-                toNumber(
-                    getValue(
-                        stats,
-                        "stockIn",
-                        "totalStockIn"
-                    )
-                );
-
-
-            const stockOut =
-                toNumber(
-                    getValue(
-                        stats,
-                        "stockOut",
-                        "totalStockOut"
-                    )
-                );
-
-
-            const lowStock =
-                toNumber(
-                    getValue(
-                        stats,
-                        "lowStock",
-                        "lowStockCount"
-                    )
-                );
-
-
-            const outOfStock =
-                toNumber(
-                    getValue(
-                        stats,
-                        "outOfStock",
-                        "outOfStockCount"
-                    )
-                );
-
-
-            /* ------------------------------------------------
-               DASHBOARD COUNTERS
-               ------------------------------------------------ */
-
-            setText(
-                "productsCount",
-                formatNumber(products)
-            );
-
-
-            setText(
-                "categoriesCount",
-                formatNumber(categories)
-            );
-
-
-            setText(
-                "suppliersCount",
-                formatNumber(suppliers)
-            );
-
-
-            setText(
-                "totalStockCount",
-                formatNumber(totalStock)
-            );
-
-
-            setText(
-                "stockInCount",
-                formatNumber(stockIn)
-            );
-
-
-            setText(
-                "stockOutCount",
-                formatNumber(stockOut)
-            );
-
-
-            setText(
-                "lowStockCount",
-                formatNumber(lowStock)
-            );
-
-
-            setText(
-                "outOfStockCount",
-                formatNumber(outOfStock)
-            );
-
-
-            /* ------------------------------------------------
-               INVENTORY OVERVIEW
-               ------------------------------------------------ */
-
-            renderInventoryOverview({
-
-                totalStock,
-                lowStock,
-                outOfStock
-
-            });
-
-
-            /* ------------------------------------------------
-               TRANSACTIONS
-               ------------------------------------------------ */
-
-            const transactions =
-                response.recentTransactions ||
-                stats.recentTransactions ||
-                response.transactions ||
-                [];
-
-
-            renderTransactions(
-                transactions
-            );
-
-
-            /* ------------------------------------------------
-               ACTIVITY
-               ------------------------------------------------ */
-
-            const activities =
-                response.recentActivity ||
-                stats.recentActivity ||
-                response.activity ||
-                [];
-
-
-            renderActivity(
-                activities
-            );
-
-
-            /* ------------------------------------------------
-               NOTIFICATIONS
-               ------------------------------------------------ */
-
-            renderNotifications({
-
-                products,
-                lowStock,
-                outOfStock
-
-            });
-
-
-            /* ------------------------------------------------
-               CONNECTION STATUS
-               ------------------------------------------------ */
-
-            setConnectionStatus(
-                true,
-                "StockFlow is connected."
-            );
-
-
-            /* ------------------------------------------------
-               LAST UPDATED
-               ------------------------------------------------ */
-
-            const lastUpdated =
-                get("lastUpdated");
-
-
-            if (lastUpdated) {
-
-                lastUpdated.textContent =
-                    `Updated ${
-                        new Date()
-                            .toLocaleTimeString(
-                                undefined,
-                                {
-                                    hour: "numeric",
-                                    minute: "2-digit"
-                                }
-                            )
-                    }`;
-
-            }
-
-
-            return true;
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "Dashboard loading failed:",
-                error
-            );
-
-
-            resetDashboard();
-
-
-            setConnectionStatus(
-                false,
-                error.message ||
-                "Unable to connect to StockFlow."
-            );
-
-
-            return false;
-
-        }
-
-        finally {
-
-            state.isLoading =
-                false;
-
-        }
-
-    }
-
-
-    /* ========================================================
-       REFRESH BUTTON STATE
-       ======================================================== */
-
-    function setRefreshButtonsLoading(
-        loading
-    ) {
-
-        const buttons = [
-
-            get("refreshDashboardBtn"),
-            get("refreshBtn")
-
-        ]
-            .filter(Boolean);
-
-
-        buttons.forEach(
-            button => {
-
-                button.disabled =
-                    loading;
-
-
-                button.classList.toggle(
-                    "loading",
-                    loading
-                );
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       MANUAL REFRESH
-       ======================================================== */
-
-    async function refreshDashboard() {
-
-        if (state.isLoading) {
-
-            return false;
-
-        }
-
-
-        setRefreshButtonsLoading(
-            true
-        );
-
-
-        try {
-
-            return await loadDashboard();
-
-        }
-
-        finally {
-
-            setRefreshButtonsLoading(
-                false
-            );
-
-        }
-
-    }
-
-
-    /* ========================================================
-       REFRESH BUTTONS
-       ======================================================== */
-
-    function initializeRefreshButtons() {
-
-        const refreshButtons = [
-
-            "refreshDashboardBtn",
-            "refreshBtn"
-
-        ];
-
-
-        refreshButtons.forEach(
-            id => {
-
-                const button =
-                    get(id);
-
-
-                if (!button) {
-
-                    return;
-
-                }
-
-
-                button.type =
-                    "button";
-
-
-                button.addEventListener(
-                    "click",
-                    refreshDashboard
-                );
-
-            }
-        );
-
-    }
-
-
-    /* ========================================================
-       QUICK ACTIONS
-       ======================================================== */
-
-    function bindQuickAction(
-        id,
-        destination
-    ) {
-
-        const button =
-            get(id);
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        button.addEventListener(
-            "click",
-            event => {
-
-                event.preventDefault();
-
-
-                window.location.href =
-                    destination;
-
-            }
-        );
-
-    }
-
-
-    function initializeQuickActions() {
-
-        bindQuickAction(
-            "addProductBtn",
-            "./products.html"
-        );
-
-
-        bindQuickAction(
-            "stockInBtn",
-            "./stock-in.html"
-        );
-
-
-        bindQuickAction(
-            "stockOutBtn",
-            "./stock-out.html"
-        );
-
-
-        bindQuickAction(
-            "manageProductsBtn",
-            "./products.html"
-        );
-
-
-        bindQuickAction(
-            "manageCategoriesBtn",
-            "./categories.html"
-        );
-
-
-        bindQuickAction(
-            "manageSuppliersBtn",
-            "./suppliers.html"
-        );
-
-    }
-
-
-    /* ========================================================
-       AUTO REFRESH
-       ======================================================== */
-
-    function stopAutoRefresh() {
-
-        if (state.refreshTimer) {
-
-            clearInterval(
-                state.refreshTimer
-            );
-
-
-            state.refreshTimer =
-                null;
-
-        }
-
-    }
-
-
-    function startAutoRefresh() {
-
-        stopAutoRefresh();
-
-
-        state.refreshTimer =
-            setInterval(
-                () => {
-
-                    loadDashboard({
-                        silent: true
-                    });
-
-                },
-                AUTO_REFRESH_INTERVAL
-            );
-
-    }
-
-
-    /* ========================================================
-       ONLINE / OFFLINE EVENTS
-       ======================================================== */
+       ONLINE / OFFLINE
+    ======================================================== */
 
     function initializeConnectionEvents() {
 
@@ -2496,7 +3351,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 setConnectionStatus(
                     true,
-                    "Internet connection restored. Refreshing..."
+                    "Connection restored. Refreshing..."
                 );
 
 
@@ -2522,8 +3377,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* ========================================================
-       VISIBILITY CHANGE
-       ======================================================== */
+       VISIBILITY
+    ======================================================== */
 
     function initializeVisibilityHandler() {
 
@@ -2532,18 +3387,13 @@ document.addEventListener("DOMContentLoaded", () => {
             () => {
 
                 if (
-                    document.visibilityState !==
+                    document.visibilityState ===
                     "visible"
                 ) {
 
-                    return;
+                    loadDashboard();
 
                 }
-
-
-                loadDashboard({
-                    silent: true
-                });
 
             }
         );
@@ -2552,58 +3402,101 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* ========================================================
-       CLEANUP
-       ======================================================== */
+       AUTO REFRESH
+    ======================================================== */
 
-    window.addEventListener(
-        "beforeunload",
-        stopAutoRefresh
-    );
+    function stopAutoRefresh() {
+
+        if (
+            state.refreshTimer
+        ) {
+
+            clearInterval(
+                state.refreshTimer
+            );
 
 
-    /* ========================================================
-       PUBLIC DASHBOARD API
-       ======================================================== */
+            state.refreshTimer =
+                null;
 
-    function exposeDashboardAPI() {
+        }
 
-        window.StockFlowDashboard = {
+    }
 
-            refresh:
-                refreshDashboard,
 
-            reload:
-                loadDashboard,
+    function startAutoRefresh() {
 
-            currentUser:
-                () => state.currentUser,
+        stopAutoRefresh();
 
-            openSidebar:
-                openMobileSidebar,
 
-            closeSidebar:
-                closeMobileSidebar,
+        state.refreshTimer =
+            setInterval(
+                () => {
 
-            toggleSidebar:
-                toggleSidebar,
+                    loadDashboard();
 
-            openNotifications:
-                openNotifications,
-
-            closeNotifications:
-                closeNotifications,
-
-            toggleNotifications:
-                toggleNotifications
-
-        };
+                },
+                AUTO_REFRESH_INTERVAL
+            );
 
     }
 
 
     /* ========================================================
-       INITIALIZE DASHBOARD
-       ======================================================== */
+       PUBLIC DASHBOARD API
+    ======================================================== */
+
+    window.StockFlowDashboard = {
+
+        refresh:
+            loadDashboard,
+
+        reload:
+            loadDashboard,
+
+        currentUser:
+            () => state.currentUser,
+
+        openSidebar:
+            openMobileSidebar,
+
+        closeSidebar:
+            closeMobileSidebar,
+
+        toggleSidebar:
+            toggleSidebar,
+
+        openNotifications:
+            () => {
+
+                const panel =
+                    ensureNotificationPanel();
+
+                if (panel) {
+
+                    panel.classList.add(
+                        "show"
+                    );
+
+                }
+
+            },
+
+        closeNotifications,
+
+        toggleNotifications:
+
+            toggleNotifications,
+
+        logout:
+            handleLogout
+
+    };
+
+
+    /* ========================================================
+       INITIALIZATION
+    ======================================================== */
 
     async function initializeDashboard() {
 
@@ -2612,11 +3505,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         if (!authenticated) {
-
             return;
-
         }
 
+
+        renderCurrentUser(
+            state.currentUser
+        );
+
+
+        initializeUserLinks();
 
         initializeSidebar();
 
@@ -2626,27 +3524,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         initializeGlobalControls();
 
-        initializeRefreshButtons();
-
         initializeQuickActions();
+
+        createRefreshButton();
 
         initializeConnectionEvents();
 
         initializeVisibilityHandler();
 
-        exposeDashboardAPI();
 
-
-        /* ----------------------------------------------------
-           INITIAL LOAD
-           ---------------------------------------------------- */
+        await checkConnection();
 
         await loadDashboard();
 
-
-        /* ----------------------------------------------------
-           AUTO REFRESH
-           ---------------------------------------------------- */
 
         startAutoRefresh();
 
@@ -2654,8 +3544,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* ========================================================
+       CLEANUP
+    ======================================================== */
+
+    window.addEventListener(
+        "beforeunload",
+        stopAutoRefresh
+    );
+
+
+    /* ========================================================
        START
-       ======================================================== */
+    ======================================================== */
 
     initializeDashboard();
 
