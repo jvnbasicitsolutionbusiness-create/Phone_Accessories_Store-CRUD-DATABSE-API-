@@ -24,16 +24,6 @@
         "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec";
 
 
-    if (!API_URL) {
-
-        console.error(
-            "[STOCKFLOW] API URL is missing."
-        );
-
-        return;
-    }
-
-
     console.log(
         "[STOCKFLOW] Categories API:",
         API_URL
@@ -250,19 +240,13 @@
         data = {}
     ) {
 
-        if (!API_URL) {
-
-            throw new Error(
-                "StockFlow API URL is not configured."
-            );
-        }
-
-
         const payload = {
 
-            action: action,
+            action:
+                action,
 
-            data: data
+            data:
+                data
 
         };
 
@@ -286,14 +270,19 @@
                             "POST",
 
                         headers: {
+
                             "Content-Type":
                                 "text/plain;charset=utf-8"
+
                         },
 
                         body:
                             JSON.stringify(
                                 payload
-                            )
+                            ),
+
+                        redirect:
+                            "follow"
                     }
                 );
 
@@ -304,19 +293,23 @@
                 networkError
             );
 
+
             throw new Error(
-                "Unable to connect to the StockFlow server. Check the Apps Script deployment and API URL."
+                "Unable to connect to the StockFlow server. Please check the Apps Script deployment."
             );
         }
 
 
-        if (!response.ok) {
+        console.log(
+            "[STOCKFLOW API] HTTP status:",
+            response.status
+        );
 
-            throw new Error(
-                "Server returned HTTP " +
-                response.status
-            );
-        }
+
+        console.log(
+            "[STOCKFLOW API] Final URL:",
+            response.url
+        );
 
 
         const responseText =
@@ -324,7 +317,7 @@
 
 
         console.log(
-            "[STOCKFLOW API] Response:",
+            "[STOCKFLOW API] Raw response:",
             responseText
         );
 
@@ -332,7 +325,7 @@
         if (!responseText) {
 
             throw new Error(
-                "The server returned an empty response."
+                "The StockFlow server returned an empty response."
             );
         }
 
@@ -350,14 +343,25 @@
         } catch (parseError) {
 
             console.error(
-                "[STOCKFLOW API] Invalid JSON:",
-                responseText
+                "[STOCKFLOW API] JSON parse error:",
+                parseError
             );
 
+
             throw new Error(
-                "The server returned an invalid JSON response."
+                "StockFlow returned an invalid response. Server response: " +
+                responseText.substring(
+                    0,
+                    500
+                )
             );
         }
+
+
+        console.log(
+            "[STOCKFLOW API] Parsed response:",
+            result
+        );
 
 
         if (
@@ -365,9 +369,20 @@
             result.success !== true
         ) {
 
+            const serverError =
+                result &&
+                (
+                    result.error ||
+                    result.message
+                );
+
+
             throw new Error(
-                result?.error ||
-                "The API request failed."
+                serverError ||
+                "The API request failed. Server response: " +
+                JSON.stringify(
+                    result
+                )
             );
         }
 
@@ -983,18 +998,11 @@
 
         try {
 
-            /*
-             * Your Apps Script expects:
-             *
-             * request.action
-             * request.data.categoryName
-             *
-             */
-
             const result =
                 await apiRequest(
                     "saveCategory",
                     {
+
                         categoryName:
                             name,
 
@@ -1003,6 +1011,7 @@
 
                         status:
                             status
+
                     }
                 );
 
@@ -1015,10 +1024,6 @@
 
             closeCategoryModalHandler();
 
-
-            /*
-             * Reload directly from Google Sheets.
-             */
 
             await loadCategories();
 
@@ -1131,11 +1136,13 @@
                 await apiRequest(
                     "deleteCategory",
                     {
+
                         categoryId:
                             categoryToDelete.id,
 
                         categoryName:
                             categoryToDelete.name
+
                     }
                 );
 
@@ -1460,6 +1467,7 @@
                 toast.classList.add(
                     "show"
                 );
+
             }
         );
 
@@ -1579,9 +1587,14 @@
         return date.toLocaleDateString(
             undefined,
             {
-                year: "numeric",
-                month: "short",
-                day: "numeric"
+                year:
+                    "numeric",
+
+                month:
+                    "short",
+
+                day:
+                    "numeric"
             }
         );
     }
