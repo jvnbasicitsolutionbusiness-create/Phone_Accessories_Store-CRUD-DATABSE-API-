@@ -4,6 +4,102 @@
    Logout / Keyboard Controls
 ========================================================= */
 
+/* =========================================================
+   STOCKFLOW — INVENTORY API
+   Google Apps Script Connection
+========================================================= */
+
+const STOCKFLOW_INVENTORY_API =
+    "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec";
+
+
+window.StockFlowInventoryAPI = {
+
+    async request(action, data = {}) {
+
+        const response = await fetch(
+            STOCKFLOW_INVENTORY_API,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+
+                body: JSON.stringify({
+                    action: action,
+                    data: data
+                })
+            }
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        if (!result.success) {
+
+            throw new Error(
+                result.error ||
+                "Inventory API request failed."
+            );
+
+        }
+
+
+        return result;
+
+    },
+
+
+    async listCategories() {
+
+        return this.request(
+            "listCategories"
+        );
+
+    },
+
+
+    async saveCategory(categoryName) {
+
+        return this.request(
+            "saveCategory",
+            {
+                categoryName: categoryName
+            }
+        );
+
+    },
+
+
+    async deleteCategory(
+        categoryId,
+        categoryName = ""
+    ) {
+
+        return this.request(
+            "deleteCategory",
+            {
+                categoryId: categoryId,
+                categoryName: categoryName
+            }
+        );
+
+    }
+
+};
+
 (() => {
     "use strict";
 
