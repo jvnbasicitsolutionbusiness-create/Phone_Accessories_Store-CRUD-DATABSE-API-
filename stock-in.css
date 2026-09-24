@@ -1562,3 +1562,703 @@ body.stock-in-page {
         width: auto;
     }
 }
+
+
+/* =========================================================
+   STOCKFLOW — STOCK IN THEME ADDON
+   =========================================================
+
+   Global theme:
+   - System = original STOCKFLOW white + blue
+   - Light  = grey/white + black text
+   - Dark   = navy/charcoal + white/light text
+
+   Sidebar remains STOCKFLOW blue/navy.
+========================================================= */
+
+
+/* =========================================================
+   SYSTEM THEME
+   ========================================================= */
+
+/*
+ * System theme intentionally has no aggressive override.
+ *
+ * The original STOCKFLOW design remains the default.
+ */
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+html.sf-theme-light .stock-in-page,
+html.sf-theme-light .stockin-page,
+html.sf-theme-light .stock-in-content,
+html.sf-theme-light .stockin-content {
+
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   MAIN CONTENT
+--------------------------------------------------------- */
+
+html.sf-theme-light main,
+html.sf-theme-light .main-content,
+html.sf-theme-light .content,
+html.sf-theme-light .page-content {
+
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   CARDS
+--------------------------------------------------------- */
+
+html.sf-theme-light .stock-in-card,
+html.sf-theme-light .stockin-card,
+html.sf-theme-light .form-card,
+html.sf-theme-light .preview-card,
+html.sf-theme-light .summary-card,
+html.sf-theme-light .card {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+    border-color: #d1d5db !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   HEADINGS
+--------------------------------------------------------- */
+
+html.sf-theme-light .stock-in-card h1,
+html.sf-theme-light .stock-in-card h2,
+html.sf-theme-light .stock-in-card h3,
+html.sf-theme-light .stock-in-card h4,
+html.sf-theme-light .stockin-card h1,
+html.sf-theme-light .stockin-card h2,
+html.sf-theme-light .stockin-card h3,
+html.sf-theme-light .stockin-card h4,
+html.sf-theme-light .form-card h1,
+html.sf-theme-light .form-card h2,
+html.sf-theme-light .form-card h3,
+html.sf-theme-light .form-card h4,
+html.sf-theme-light .preview-card h1,
+html.sf-theme-light .preview-card h2,
+html.sf-theme-light .preview-card h3,
+html.sf-theme-light .preview-card h4 {
+
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   LABELS
+--------------------------------------------------------- */
+
+html.sf-theme-light label,
+html.sf-theme-light .form-label,
+html.sf-theme-light .input-label,
+html.sf-theme-light .field-label {
+
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   FORM INPUTS
+--------------------------------------------------------- */
+
+html.sf-theme-light input,
+html.sf-theme-light select,
+html.sf-theme-light textarea {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+    border-color: #cbd5e1 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PLACEHOLDER
+--------------------------------------------------------- */
+
+html.sf-theme-light input::placeholder,
+html.sf-theme-light textarea::placeholder {
+
+    color: #6b7280 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   SELECT OPTIONS
+--------------------------------------------------------- */
+
+html.sf-theme-light select option {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW
+--------------------------------------------------------- */
+
+html.sf-theme-light .stock-in-preview,
+html.sf-theme-light .stockin-preview,
+html.sf-theme-light .preview-section,
+html.sf-theme-light .preview-box {
+
+    background: #f8fafc !important;
+
+    color: #111827 !important;
+
+    border-color: #d1d5db !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW LABELS
+--------------------------------------------------------- */
+
+html.sf-theme-light .preview-label,
+html.sf-theme-light .preview-item-label,
+html.sf-theme-light .summary-label {
+
+    color: #6b7280 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW VALUES
+--------------------------------------------------------- */
+
+html.sf-theme-light .preview-value,
+html.sf-theme-light .preview-item-value,
+html.sf-theme-light .summary-value,
+html.sf-theme-light #previewProduct,
+html.sf-theme-light #previewSupplier,
+html.sf-theme-light #previewQuantity,
+html.sf-theme-light #previewUnitCost,
+html.sf-theme-light #previewTotal,
+html.sf-theme-light #previewReference,
+html.sf-theme-light #previewDate {
+
+    color: #111827 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   TOTAL
+--------------------------------------------------------- */
+
+html.sf-theme-light #previewTotal {
+
+    color: #2563eb !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   DIVIDERS
+--------------------------------------------------------- */
+
+html.sf-theme-light .divider,
+html.sf-theme-light hr {
+
+    border-color: #e5e7eb !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   TABLES
+--------------------------------------------------------- */
+
+html.sf-theme-light table {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+}
+
+
+html.sf-theme-light th {
+
+    background: #f3f4f6 !important;
+
+    color: #111827 !important;
+
+    border-color: #d1d5db !important;
+
+}
+
+
+html.sf-theme-light td {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+    border-color: #e5e7eb !important;
+
+}
+
+
+html.sf-theme-light tbody tr:hover td {
+
+    background: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   CONNECTION BADGE
+--------------------------------------------------------- */
+
+html.sf-theme-light #connectionBadge {
+
+    color: #111827 !important;
+
+}
+
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+html.sf-theme-dark .stock-in-page,
+html.sf-theme-dark .stockin-page,
+html.sf-theme-dark .stock-in-content,
+html.sf-theme-dark .stockin-content {
+
+    background: #0f172a !important;
+
+    color: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   MAIN CONTENT
+--------------------------------------------------------- */
+
+html.sf-theme-dark main,
+html.sf-theme-dark .main-content,
+html.sf-theme-dark .content,
+html.sf-theme-dark .page-content {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   CARDS
+--------------------------------------------------------- */
+
+html.sf-theme-dark .stock-in-card,
+html.sf-theme-dark .stockin-card,
+html.sf-theme-dark .form-card,
+html.sf-theme-dark .preview-card,
+html.sf-theme-dark .summary-card,
+html.sf-theme-dark .card {
+
+    background: #172033 !important;
+
+    color: #f8fafc !important;
+
+    border-color: #334155 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   HEADINGS
+--------------------------------------------------------- */
+
+html.sf-theme-dark .stock-in-card h1,
+html.sf-theme-dark .stock-in-card h2,
+html.sf-theme-dark .stock-in-card h3,
+html.sf-theme-dark .stock-in-card h4,
+html.sf-theme-dark .stockin-card h1,
+html.sf-theme-dark .stockin-card h2,
+html.sf-theme-dark .stockin-card h3,
+html.sf-theme-dark .stockin-card h4,
+html.sf-theme-dark .form-card h1,
+html.sf-theme-dark .form-card h2,
+html.sf-theme-dark .form-card h3,
+html.sf-theme-dark .form-card h4,
+html.sf-theme-dark .preview-card h1,
+html.sf-theme-dark .preview-card h2,
+html.sf-theme-dark .preview-card h3,
+html.sf-theme-dark .preview-card h4 {
+
+    color: #ffffff !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   BODY TEXT
+--------------------------------------------------------- */
+
+html.sf-theme-dark .stock-in-card p,
+html.sf-theme-dark .stockin-card p,
+html.sf-theme-dark .form-card p,
+html.sf-theme-dark .preview-card p {
+
+    color: #cbd5e1 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   LABELS
+--------------------------------------------------------- */
+
+html.sf-theme-dark label,
+html.sf-theme-dark .form-label,
+html.sf-theme-dark .input-label,
+html.sf-theme-dark .field-label {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   FORM INPUTS
+--------------------------------------------------------- */
+
+html.sf-theme-dark input,
+html.sf-theme-dark select,
+html.sf-theme-dark textarea {
+
+    background: #0f172a !important;
+
+    color: #f8fafc !important;
+
+    border-color: #475569 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   INPUT FOCUS
+--------------------------------------------------------- */
+
+html.sf-theme-dark input:focus,
+html.sf-theme-dark select:focus,
+html.sf-theme-dark textarea:focus {
+
+    border-color: #3b82f6 !important;
+
+    color: #ffffff !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PLACEHOLDER
+--------------------------------------------------------- */
+
+html.sf-theme-dark input::placeholder,
+html.sf-theme-dark textarea::placeholder {
+
+    color: #94a3b8 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   SELECT OPTIONS
+--------------------------------------------------------- */
+
+html.sf-theme-dark select option {
+
+    background: #0f172a !important;
+
+    color: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW
+--------------------------------------------------------- */
+
+html.sf-theme-dark .stock-in-preview,
+html.sf-theme-dark .stockin-preview,
+html.sf-theme-dark .preview-section,
+html.sf-theme-dark .preview-box {
+
+    background: #111827 !important;
+
+    color: #f8fafc !important;
+
+    border-color: #334155 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW LABELS
+--------------------------------------------------------- */
+
+html.sf-theme-dark .preview-label,
+html.sf-theme-dark .preview-item-label,
+html.sf-theme-dark .summary-label {
+
+    color: #94a3b8 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PREVIEW VALUES
+--------------------------------------------------------- */
+
+html.sf-theme-dark .preview-value,
+html.sf-theme-dark .preview-item-value,
+html.sf-theme-dark .summary-value,
+html.sf-theme-dark #previewProduct,
+html.sf-theme-dark #previewSupplier,
+html.sf-theme-dark #previewQuantity,
+html.sf-theme-dark #previewUnitCost,
+html.sf-theme-dark #previewTotal,
+html.sf-theme-dark #previewReference,
+html.sf-theme-dark #previewDate {
+
+    color: #f8fafc !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   TOTAL
+--------------------------------------------------------- */
+
+html.sf-theme-dark #previewTotal {
+
+    color: #60a5fa !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   DIVIDERS
+--------------------------------------------------------- */
+
+html.sf-theme-dark .divider,
+html.sf-theme-dark hr {
+
+    border-color: #334155 !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   TABLES
+--------------------------------------------------------- */
+
+html.sf-theme-dark table {
+
+    background: #172033 !important;
+
+    color: #f8fafc !important;
+
+}
+
+
+html.sf-theme-dark th {
+
+    background: #111827 !important;
+
+    color: #ffffff !important;
+
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark td {
+
+    background: #172033 !important;
+
+    color: #f8fafc !important;
+
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark tbody tr:hover td {
+
+    background: #1e293b !important;
+
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+/*
+ * Keep the existing STOCKFLOW blue buttons.
+ * Only make sure text remains readable.
+ */
+
+html.sf-theme-light button,
+html.sf-theme-light .btn {
+
+    color: #ffffff;
+
+}
+
+
+html.sf-theme-dark button,
+html.sf-theme-dark .btn {
+
+    color: #ffffff;
+
+}
+
+
+/* ---------------------------------------------------------
+   SECONDARY BUTTONS
+--------------------------------------------------------- */
+
+html.sf-theme-light .btn-secondary,
+html.sf-theme-light .secondary-btn {
+
+    background: #e5e7eb !important;
+
+    color: #111827 !important;
+
+    border-color: #d1d5db !important;
+
+}
+
+
+html.sf-theme-dark .btn-secondary,
+html.sf-theme-dark .secondary-btn {
+
+    background: #334155 !important;
+
+    color: #f8fafc !important;
+
+    border-color: #475569 !important;
+
+}
+
+
+/* =========================================================
+   NOTIFICATION PANEL
+   ========================================================= */
+
+html.sf-theme-light #notificationPanel {
+
+    background: #ffffff !important;
+
+    color: #111827 !important;
+
+    border-color: #d1d5db !important;
+
+}
+
+
+html.sf-theme-dark #notificationPanel {
+
+    background: #172033 !important;
+
+    color: #f8fafc !important;
+
+    border-color: #334155 !important;
+
+}
+
+
+html.sf-theme-dark #notificationPanel h3,
+html.sf-theme-dark #notificationPanel h4,
+html.sf-theme-dark #notificationPanel strong {
+
+    color: #ffffff !important;
+
+}
+
+
+html.sf-theme-dark #notificationPanel p,
+html.sf-theme-dark #notificationPanel span {
+
+    color: #cbd5e1;
+
+}
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+   ========================================================= */
+
+/*
+ * Sidebar intentionally stays STOCKFLOW navy/blue
+ * in System, Light and Dark themes.
+ */
+
+html.sf-theme-light #sidebar,
+html.sf-theme-dark #sidebar {
+
+    color: #ffffff;
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+#sidebarUserName,
+#sidebarAvatar,
+#topbarUserName,
+#topbarAvatar {
+
+    cursor: pointer;
+
+}
+
+
+/* Keyboard focus for clickable user areas */
+
+[data-user-profile]:focus-visible,
+.sidebar-user:focus-visible,
+.topbar-user:focus-visible,
+.user-profile:focus-visible {
+
+    outline: 2px solid #3b82f6;
+
+    outline-offset: 3px;
+
+}
