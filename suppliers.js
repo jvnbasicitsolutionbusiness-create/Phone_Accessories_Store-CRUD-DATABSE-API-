@@ -2280,6 +2280,19 @@
 
     /* =====================================================
        SAVE SUPPLIER
+
+       FIX APPLIED HERE:
+
+       The API never had a "saveSupplier" method.
+       api.js only exposes createSupplier / updateSupplier.
+       We now pick the correct one based on whether we're
+       editing an existing supplier (state.editingId) or
+       adding a brand new one.
+
+       We also give the post-save reload (loadSuppliers)
+       its own try/catch, so that a reload failure can
+       never overwrite a genuinely successful save with
+       an error message.
     ===================================================== */
 
     const saveSupplier =
@@ -2302,16 +2315,38 @@
             }
 
 
+            const wasEditing =
+                Boolean(
+                    state.editingId
+                );
+
+
+            /*
+             * Pick the correct API method.
+             *
+             * Adding a new supplier  -> createSupplier
+             * Editing a supplier     -> updateSupplier
+             */
+
+            const apiMethodName =
+                wasEditing
+                    ? "updateSupplier"
+                    : "createSupplier";
+
+
             if (
                 !window.StockFlowAPI ||
                 typeof
-                window.StockFlowAPI
-                    .saveSupplier !==
+                window.StockFlowAPI[
+                    apiMethodName
+                ] !==
                     "function"
             ) {
 
                 showAlert(
-                    "Supplier save API is not available.",
+                    wasEditing
+                        ? "Supplier update API is not available."
+                        : "Supplier create API is not available.",
                     "error"
                 );
 
@@ -2372,12 +2407,6 @@
             };
 
 
-            const wasEditing =
-                Boolean(
-                    state.editingId
-                );
-
-
             state.saving =
                 true;
 
@@ -2421,15 +2450,18 @@
             try {
 
                 /*
-                 * Existing supplier API
-                 * is intentionally preserved.
+                 * Call the correct API method
+                 * (createSupplier / updateSupplier)
+                 * instead of the nonexistent
+                 * saveSupplier.
                  */
 
                 const response =
-                    await window.StockFlowAPI
-                        .saveSupplier(
-                            payload
-                        );
+                    await window.StockFlowAPI[
+                        apiMethodName
+                    ](
+                        payload
+                    );
 
 
                 if (
@@ -2460,7 +2492,29 @@
                 );
 
 
-                await loadSuppliers();
+                /*
+                 * FIX:
+                 *
+                 * Give the reload its own try/catch.
+                 *
+                 * If listSuppliers() fails here, it must
+                 * NOT be allowed to fall into the outer
+                 * catch block and overwrite the success
+                 * alert we just showed above.
+                 */
+
+                try {
+
+                    await loadSuppliers();
+
+                } catch (reloadError) {
+
+                    console.error(
+                        "StockFlow: supplier saved successfully, but reloading the list failed:",
+                        reloadError
+                    );
+
+                }
 
 
             } catch (error) {
