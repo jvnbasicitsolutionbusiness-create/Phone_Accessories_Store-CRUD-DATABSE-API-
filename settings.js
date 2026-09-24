@@ -24,66 +24,6 @@
         theme: "system"
     };
 
-   /* =====================================================
-   APPLY SAVED THEME IMMEDIATELY
-===================================================== */
-
-const applySavedThemeImmediately = () => {
-
-    try {
-
-        const stored =
-            localStorage.getItem(
-                STORAGE_KEY
-            );
-
-        if (!stored) {
-            return;
-        }
-
-        const settings =
-            JSON.parse(stored);
-
-        const theme =
-            VALID_THEMES.includes(
-                settings?.theme
-            )
-                ? settings.theme
-                : "system";
-
-        const resolvedTheme =
-            theme === "system"
-                ? getSystemTheme()
-                : theme;
-
-        document.documentElement.setAttribute(
-            "data-theme",
-            theme
-        );
-
-        document.documentElement.setAttribute(
-            "data-resolved-theme",
-            resolvedTheme
-        );
-
-        document.documentElement.classList.add(
-            `sf-theme-${resolvedTheme}`
-        );
-
-        document.documentElement.style.colorScheme =
-            resolvedTheme;
-
-    } catch (error) {
-
-        console.warn(
-            "STOCKFLOW: unable to apply saved theme.",
-            error
-        );
-
-    }
-
-};
-
 
     /* =====================================================
        HELPERS
@@ -102,6 +42,129 @@ const applySavedThemeImmediately = () => {
         "light",
         "dark"
     ];
+
+
+    /* =====================================================
+       APPLY SAVED THEME IMMEDIATELY
+       
+       IMPORTANT:
+       "system" means STOCKFLOW's ORIGINAL
+       WHITE + BLUE DESIGN.
+
+       It does NOT follow:
+       - Windows dark mode
+       - Browser dark mode
+       - OS color preference
+    ===================================================== */
+
+    const applySavedThemeImmediately = () => {
+
+        try {
+
+            const stored =
+                localStorage.getItem(
+                    STORAGE_KEY
+                );
+
+            let theme =
+                DEFAULT_SETTINGS.theme;
+
+
+            if (stored) {
+
+                const settings =
+                    JSON.parse(stored);
+
+
+                if (
+                    VALID_THEMES.includes(
+                        settings?.theme
+                    )
+                ) {
+
+                    theme =
+                        settings.theme;
+
+                }
+
+            }
+
+
+            const html =
+                document.documentElement;
+
+
+            html.setAttribute(
+                "data-theme",
+                theme
+            );
+
+
+            html.setAttribute(
+                "data-resolved-theme",
+                theme
+            );
+
+
+            html.classList.remove(
+                "sf-theme-system",
+                "sf-theme-light",
+                "sf-theme-dark"
+            );
+
+
+            html.classList.add(
+                `sf-theme-${theme}`
+            );
+
+
+            html.style.colorScheme =
+                theme === "dark"
+                    ? "dark"
+                    : "light";
+
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: unable to apply saved theme.",
+                error
+            );
+
+
+            const html =
+                document.documentElement;
+
+
+            html.setAttribute(
+                "data-theme",
+                "system"
+            );
+
+
+            html.setAttribute(
+                "data-resolved-theme",
+                "system"
+            );
+
+
+            html.classList.remove(
+                "sf-theme-light",
+                "sf-theme-dark"
+            );
+
+
+            html.classList.add(
+                "sf-theme-system"
+            );
+
+
+            html.style.colorScheme =
+                "light";
+
+        }
+
+    };
 
 
     /* =====================================================
@@ -128,11 +191,15 @@ const applySavedThemeImmediately = () => {
 
 
             const parsed =
-                JSON.parse(stored);
+                JSON.parse(
+                    stored
+                );
 
 
             const reorder =
-                Number(parsed?.reorder);
+                Number(
+                    parsed?.reorder
+                );
 
 
             const theme =
@@ -140,20 +207,27 @@ const applySavedThemeImmediately = () => {
                     parsed?.theme
                 )
                     ? parsed.theme
-                    : "system";
+                    : DEFAULT_SETTINGS.theme;
 
 
             return {
 
                 reorder:
-                    Number.isFinite(reorder) &&
+                    Number.isFinite(
+                        reorder
+                    ) &&
                     reorder >= 0
-                        ? Math.floor(reorder)
+
+                        ? Math.floor(
+                            reorder
+                        )
+
                         : DEFAULT_SETTINGS.reorder,
 
                 theme
 
             };
+
 
         } catch (error) {
 
@@ -173,202 +247,202 @@ const applySavedThemeImmediately = () => {
 
 
     /* =====================================================
-       SAVE SETTINGS
+       SAVE SETTINGS TO LOCAL STORAGE
     ===================================================== */
 
-    const saveSettingsToStorage = settings => {
+    const saveSettingsToStorage =
+        settings => {
 
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(settings)
-        );
-
-    };
-
-
-    /* =====================================================
-       SYSTEM THEME
-    ===================================================== */
-
-    const getSystemTheme = () => {
-
-        return window.matchMedia &&
-            window.matchMedia(
-                "(prefers-color-scheme: dark)"
-            ).matches
-                ? "dark"
-                : "light";
-
-    };
-
-
-   /* =====================================================
-   APPLY THEME
-===================================================== */
-
-const applyTheme = theme => {
-
-    if (!VALID_THEMES.includes(theme)) {
-        theme = "system";
-    }
-
-    const resolvedTheme =
-        theme === "system"
-            ? getSystemTheme()
-            : theme;
-
-    const html = document.documentElement;
-    const body = document.body;
-
-    /* ---------------------------------------------
-       DATA ATTRIBUTES
-    --------------------------------------------- */
-
-    html.setAttribute(
-        "data-theme",
-        theme
-    );
-
-    body.setAttribute(
-        "data-theme",
-        theme
-    );
-
-    html.setAttribute(
-        "data-resolved-theme",
-        resolvedTheme
-    );
-
-    body.setAttribute(
-        "data-resolved-theme",
-        resolvedTheme
-    );
-
-
-    /* ---------------------------------------------
-       THEME CLASSES
-    --------------------------------------------- */
-
-    html.classList.remove(
-        "sf-theme-light",
-        "sf-theme-dark"
-    );
-
-    body.classList.remove(
-        "sf-theme-light",
-        "sf-theme-dark"
-    );
-
-
-    html.classList.add(
-        `sf-theme-${resolvedTheme}`
-    );
-
-    body.classList.add(
-        `sf-theme-${resolvedTheme}`
-    );
-
-
-    /* ---------------------------------------------
-       COLOR SCHEME
-       Helps browser controls such as inputs,
-       scrollbars, selects, etc.
-    --------------------------------------------- */
-
-    html.style.colorScheme =
-        resolvedTheme;
-
-};
-
-
-    /* =====================================================
-       SYSTEM THEME LISTENER
-    ===================================================== */
-
-    const setupSystemThemeListener = () => {
-
-        if (
-            !window.matchMedia
-        ) {
-
-            return;
-
-        }
-
-
-        const mediaQuery =
-            window.matchMedia(
-                "(prefers-color-scheme: dark)"
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(
+                    settings
+                )
             );
-
-
-        const updateSystemTheme = () => {
-
-            const settings =
-                getSettings();
-
-
-            if (
-                settings.theme === "system"
-            ) {
-
-                applyTheme("system");
-
-            }
 
         };
 
 
-        if (
-            typeof mediaQuery.addEventListener ===
-            "function"
-        ) {
+    /* =====================================================
+       STOCKFLOW DEFAULT / SYSTEM THEME
+       
+       IMPORTANT:
+       "system" is NOT OS detection.
 
-            mediaQuery.addEventListener(
-                "change",
-                updateSystemTheme
-            );
+       It represents the original
+       STOCKFLOW white + blue interface.
+    ===================================================== */
 
-        } else if (
-            typeof mediaQuery.addListener ===
-            "function"
-        ) {
+    const getSystemTheme = () => {
 
-            mediaQuery.addListener(
-                updateSystemTheme
-            );
-
-        }
+        return "system";
 
     };
+
+
+    /* =====================================================
+       APPLY THEME
+    ===================================================== */
+
+    const applyTheme =
+        theme => {
+
+            if (
+                !VALID_THEMES.includes(
+                    theme
+                )
+            ) {
+
+                theme =
+                    getSystemTheme();
+
+            }
+
+
+            /*
+             * Do NOT resolve "system" using
+             * window.matchMedia().
+             *
+             * The STOCKFLOW system theme is
+             * always the original white + blue
+             * design.
+             */
+
+            const resolvedTheme =
+                theme;
+
+
+            const html =
+                document.documentElement;
+
+
+            const body =
+                document.body;
+
+
+            /* ---------------------------------------------
+               HTML ATTRIBUTES
+            --------------------------------------------- */
+
+            html.setAttribute(
+                "data-theme",
+                theme
+            );
+
+
+            html.setAttribute(
+                "data-resolved-theme",
+                resolvedTheme
+            );
+
+
+            /* ---------------------------------------------
+               BODY ATTRIBUTES
+            --------------------------------------------- */
+
+            if (body) {
+
+                body.setAttribute(
+                    "data-theme",
+                    theme
+                );
+
+
+                body.setAttribute(
+                    "data-resolved-theme",
+                    resolvedTheme
+                );
+
+            }
+
+
+            /* ---------------------------------------------
+               REMOVE OLD THEME CLASSES
+            --------------------------------------------- */
+
+            html.classList.remove(
+                "sf-theme-system",
+                "sf-theme-light",
+                "sf-theme-dark"
+            );
+
+
+            if (body) {
+
+                body.classList.remove(
+                    "sf-theme-system",
+                    "sf-theme-light",
+                    "sf-theme-dark"
+                );
+
+            }
+
+
+            /* ---------------------------------------------
+               ADD CURRENT THEME CLASS
+            --------------------------------------------- */
+
+            html.classList.add(
+                `sf-theme-${resolvedTheme}`
+            );
+
+
+            if (body) {
+
+                body.classList.add(
+                    `sf-theme-${resolvedTheme}`
+                );
+
+            }
+
+
+            /* ---------------------------------------------
+               COLOR SCHEME
+               
+               This controls native browser UI
+               such as form controls.
+
+               It does NOT determine the STOCKFLOW
+               theme itself.
+            --------------------------------------------- */
+
+            html.style.colorScheme =
+                resolvedTheme === "dark"
+                    ? "dark"
+                    : "light";
+
+        };
 
 
     /* =====================================================
        MESSAGE
     ===================================================== */
 
-    const showMessage = (
-        message,
-        type = "success"
-    ) => {
+    const showMessage =
+        (
+            message,
+            type = "success"
+        ) => {
 
-        const element =
-            $("msg");
-
-
-        if (!element) {
-            return;
-        }
+            const element =
+                $("msg");
 
 
-        element.textContent =
-            message || "";
+            if (!element) {
+
+                return;
+
+            }
 
 
-        element.className =
-            `settings-message ${type}`;
+            element.textContent =
+                message || "";
 
-    };
+
+            element.className =
+                `settings-message ${type}`;
+
+        };
 
 
     const clearMessage = () => {
@@ -378,7 +452,9 @@ const applyTheme = theme => {
 
 
         if (!element) {
+
             return;
+
         }
 
 
@@ -437,164 +513,189 @@ const applyTheme = theme => {
        SAVE SETTINGS
     ===================================================== */
 
-    const saveSettings = event => {
+    const saveSettings =
+        event => {
 
-        event.preventDefault();
-
-
-        const form =
-            $("settings");
+            event.preventDefault();
 
 
-        const saveButton =
-            form?.querySelector(
-                'button[type="submit"]'
-            );
+            const form =
+                $("settings");
 
 
-        const reorder =
-            $("reorder");
+            const saveButton =
+                form?.querySelector(
+                    'button[type="submit"]'
+                );
 
 
-        const theme =
-            $("theme");
+            const reorder =
+                $("reorder");
 
 
-        if (
-            !reorder ||
-            !theme
-        ) {
-
-            return;
-
-        }
+            const theme =
+                $("theme");
 
 
-        const reorderValue =
-            Number(
-                reorder.value
-            );
+            if (
+                !reorder ||
+                !theme
+            ) {
+
+                return;
+
+            }
 
 
-        /* ---------------------------------------------
-           VALIDATION
-        --------------------------------------------- */
-
-        if (
-            !Number.isFinite(
-                reorderValue
-            ) ||
-            reorderValue < 0
-        ) {
-
-            showMessage(
-                "Please enter a valid reorder level.",
-                "error"
-            );
+            const reorderValue =
+                Number(
+                    reorder.value
+                );
 
 
-            reorder.focus();
+            /* ---------------------------------------------
+               VALIDATE REORDER LEVEL
+            --------------------------------------------- */
 
-            return;
+            if (
+                !Number.isFinite(
+                    reorderValue
+                ) ||
+                reorderValue < 0
+            ) {
 
-        }
-
-
-        const selectedTheme =
-            VALID_THEMES.includes(
-                theme.value
-            )
-                ? theme.value
-                : "system";
-
-
-        /* ---------------------------------------------
-           LOADING
-        --------------------------------------------- */
-
-        if (saveButton) {
-
-            saveButton.disabled =
-                true;
+                showMessage(
+                    "Please enter a valid reorder level.",
+                    "error"
+                );
 
 
-            saveButton.dataset.originalText =
-                saveButton.textContent;
+                reorder.focus();
+
+                return;
+
+            }
 
 
-            saveButton.textContent =
-                "Saving...";
+            /* ---------------------------------------------
+               VALIDATE THEME
+            --------------------------------------------- */
 
-        }
-
-
-        clearMessage();
-
-
-        try {
-
-            const settings = {
-
-                reorder:
-                    Math.floor(
-                        reorderValue
-                    ),
-
-                theme:
-                    selectedTheme
-
-            };
+            const selectedTheme =
+                VALID_THEMES.includes(
+                    theme.value
+                )
+                    ? theme.value
+                    : getSystemTheme();
 
 
-            saveSettingsToStorage(
-                settings
-            );
-
-
-            applyTheme(
-                settings.theme
-            );
-
-
-            showMessage(
-                "Settings saved successfully.",
-                "success"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "STOCKFLOW settings save error:",
-                error
-            );
-
-
-            showMessage(
-                "Unable to save settings.",
-                "error"
-            );
-
-        } finally {
+            /* ---------------------------------------------
+               BUTTON LOADING STATE
+            --------------------------------------------- */
 
             if (saveButton) {
 
                 saveButton.disabled =
-                    false;
+                    true;
+
+
+                saveButton.dataset.originalText =
+                    saveButton.textContent;
 
 
                 saveButton.textContent =
-                    saveButton.dataset.originalText ||
-                    "Save Settings";
+                    "Saving...";
 
             }
 
-        }
 
-    };
+            clearMessage();
+
+
+            try {
+
+                const settings = {
+
+                    reorder:
+                        Math.floor(
+                            reorderValue
+                        ),
+
+                    theme:
+                        selectedTheme
+
+                };
+
+
+                /* -----------------------------------------
+                   SAVE
+                ----------------------------------------- */
+
+                saveSettingsToStorage(
+                    settings
+                );
+
+
+                /* -----------------------------------------
+                   APPLY
+                ----------------------------------------- */
+
+                applyTheme(
+                    settings.theme
+                );
+
+
+                /* -----------------------------------------
+                   SUCCESS
+                ----------------------------------------- */
+
+                showMessage(
+                    "Settings saved successfully.",
+                    "success"
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "STOCKFLOW settings save error:",
+                    error
+                );
+
+
+                showMessage(
+                    "Unable to save settings.",
+                    "error"
+                );
+
+
+            } finally {
+
+                if (saveButton) {
+
+                    saveButton.disabled =
+                        false;
+
+
+                    saveButton.textContent =
+                        saveButton.dataset.originalText ||
+                        "Save Settings";
+
+                }
+
+            }
+
+        };
 
 
     /* =====================================================
        LIVE THEME PREVIEW
+       
+       Changing the dropdown immediately previews
+       the selected theme.
+
+       The setting is permanently saved only
+       after clicking Save Settings.
     ===================================================== */
 
     const setupThemePreview = () => {
@@ -604,7 +705,9 @@ const applyTheme = theme => {
 
 
         if (!theme) {
+
             return;
+
         }
 
 
@@ -617,14 +720,8 @@ const applyTheme = theme => {
                         theme.value
                     )
                         ? theme.value
-                        : "system";
+                        : getSystemTheme();
 
-
-                /*
-                 * Preview immediately.
-                 * It is permanently stored only
-                 * when Save Settings is clicked.
-                 */
 
                 applyTheme(
                     selectedTheme
@@ -671,9 +768,9 @@ const applyTheme = theme => {
         }
 
 
-        /*
-         * Make sure the sidebar has an ID.
-         */
+        /* ---------------------------------------------
+           MAKE SURE SIDEBAR HAS ID
+        --------------------------------------------- */
 
         if (!sidebar.id) {
 
@@ -713,7 +810,7 @@ const applyTheme = theme => {
 
 
         /* ---------------------------------------------
-           CLOSE
+           CLOSE MENU
         --------------------------------------------- */
 
         const closeMenu = () => {
@@ -742,7 +839,7 @@ const applyTheme = theme => {
 
 
         /* ---------------------------------------------
-           OPEN
+           OPEN MENU
         --------------------------------------------- */
 
         const openMenu = () => {
@@ -817,28 +914,31 @@ const applyTheme = theme => {
 
         sidebar
             .querySelectorAll("a")
-            .forEach(link => {
+            .forEach(
+                link => {
 
-                link.addEventListener(
-                    "click",
-                    () => {
+                    link.addEventListener(
+                        "click",
+                        () => {
 
-                        if (
-                            window.innerWidth <= 900
-                        ) {
+                            if (
+                                window.innerWidth <=
+                                900
+                            ) {
 
-                            closeMenu();
+                                closeMenu();
+
+                            }
 
                         }
+                    );
 
-                    }
-                );
-
-            });
+                }
+            );
 
 
         /* ---------------------------------------------
-           ESCAPE
+           ESCAPE KEY
         --------------------------------------------- */
 
         document.addEventListener(
@@ -846,7 +946,8 @@ const applyTheme = theme => {
             event => {
 
                 if (
-                    event.key === "Escape"
+                    event.key ===
+                    "Escape"
                 ) {
 
                     closeMenu();
@@ -858,7 +959,7 @@ const applyTheme = theme => {
 
 
         /* ---------------------------------------------
-           RESIZE
+           WINDOW RESIZE
         --------------------------------------------- */
 
         window.addEventListener(
@@ -866,7 +967,8 @@ const applyTheme = theme => {
             () => {
 
                 if (
-                    window.innerWidth > 900
+                    window.innerWidth >
+                    900
                 ) {
 
                     closeMenu();
@@ -908,154 +1010,157 @@ const applyTheme = theme => {
         }
 
 
-        const performLogout = async clickedButton => {
-
-            if (
-                buttons.some(
-                    button =>
-                        button.disabled
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            const confirmed =
-                window.confirm(
-                    "Are you sure you want to logout from STOCKFLOW?"
-                );
-
-
-            if (!confirmed) {
-
-                return;
-
-            }
-
-
-            buttons.forEach(
-                button => {
-
-                    button.disabled =
-                        true;
-
-                }
-            );
-
-
-            const originalText =
-                clickedButton.textContent;
-
-
-            clickedButton.textContent =
-                "Logging out...";
-
-
-            try {
-
-                /*
-                 * Try the existing authentication
-                 * controller first.
-                 */
+        const performLogout =
+            async clickedButton => {
 
                 if (
-                    window.StockFlowAuth &&
-                    typeof
-                    window.StockFlowAuth.logout ===
-                        "function"
+                    buttons.some(
+                        button =>
+                            button.disabled
+                    )
                 ) {
 
-                    await window.StockFlowAuth.logout();
+                    return;
 
                 }
 
-                /*
-                 * If the auth controller does not
-                 * exist, try the API logout.
-                 */
 
-                else if (
-                    window.StockFlowAPI &&
-                    typeof
-                    window.StockFlowAPI.logout ===
-                        "function"
-                ) {
-
-                    await window.StockFlowAPI.logout();
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "STOCKFLOW logout request error:",
-                    error
-                );
-
-            } finally {
-
-                /*
-                 * ALWAYS clear local session state.
-                 */
-
-                try {
-
-                    sessionStorage.clear();
-
-                } catch (error) {
-
-                    console.warn(
-                        "Unable to clear sessionStorage:",
-                        error
+                const confirmed =
+                    window.confirm(
+                        "Are you sure you want to logout from STOCKFLOW?"
                     );
 
+
+                if (!confirmed) {
+
+                    return;
+
                 }
 
 
-                /*
-                 * Remove common STOCKFLOW
-                 * user/session keys.
-                 */
+                buttons.forEach(
+                    button => {
 
-                const localKeys = [
-                    "stockflow_user",
-                    "STOCKFLOW_USER",
-                    "stockflow_token",
-                    "STOCKFLOW_TOKEN",
-                    "stockflow_session",
-                    "STOCKFLOW_SESSION"
-                ];
-
-
-                localKeys.forEach(
-                    key => {
-
-                        localStorage.removeItem(
-                            key
-                        );
+                        button.disabled =
+                            true;
 
                     }
                 );
 
 
-                /*
-                 * IMPORTANT:
-                 *
-                 * Do NOT return to dashboard.
-                 *
-                 * Always send the user to
-                 * the authentication page.
-                 */
+                const originalText =
+                    clickedButton.textContent;
 
-                window.location.replace(
-                    "./auth.html"
-                );
 
-            }
+                clickedButton.textContent =
+                    "Logging out...";
 
-        };
+
+                try {
+
+                    /* -----------------------------------------
+                       AUTH CONTROLLER
+                    ----------------------------------------- */
+
+                    if (
+                        window.StockFlowAuth &&
+                        typeof
+                        window.StockFlowAuth.logout ===
+                            "function"
+                    ) {
+
+                        await
+                        window.StockFlowAuth.logout();
+
+                    }
+
+
+                    /* -----------------------------------------
+                       API FALLBACK
+                    ----------------------------------------- */
+
+                    else if (
+                        window.StockFlowAPI &&
+                        typeof
+                        window.StockFlowAPI.logout ===
+                            "function"
+                    ) {
+
+                        await
+                        window.StockFlowAPI.logout();
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "STOCKFLOW logout request error:",
+                        error
+                    );
+
+                } finally {
+
+                    /* -----------------------------------------
+                       CLEAR SESSION STORAGE
+                    ----------------------------------------- */
+
+                    try {
+
+                        sessionStorage.clear();
+
+                    } catch (error) {
+
+                        console.warn(
+                            "Unable to clear sessionStorage:",
+                            error
+                        );
+
+                    }
+
+
+                    /* -----------------------------------------
+                       CLEAR COMMON AUTH KEYS
+                    ----------------------------------------- */
+
+                    const localKeys = [
+
+                        "stockflow_user",
+
+                        "STOCKFLOW_USER",
+
+                        "stockflow_token",
+
+                        "STOCKFLOW_TOKEN",
+
+                        "stockflow_session",
+
+                        "STOCKFLOW_SESSION"
+
+                    ];
+
+
+                    localKeys.forEach(
+                        key => {
+
+                            localStorage.removeItem(
+                                key
+                            );
+
+                        }
+                    );
+
+
+                    /* -----------------------------------------
+                       REDIRECT TO AUTH
+                    ----------------------------------------- */
+
+                    window.location.replace(
+                        "./auth.html"
+                    );
+
+                }
+
+            };
 
 
         buttons.forEach(
@@ -1092,7 +1197,7 @@ const applyTheme = theme => {
 
             /*
              * Keep compatibility with the
-             * existing authentication system.
+             * existing STOCKFLOW authentication system.
              */
 
             if (
@@ -1137,50 +1242,80 @@ const applyTheme = theme => {
        INITIALIZE
     ===================================================== */
 
-    const initialize = async () => {
+    const initialize =
+        async () => {
 
-        const authenticated =
-            await
-            initializeAuthentication();
-
-
-        if (!authenticated) {
-
-            return;
-
-        }
+            const authenticated =
+                await
+                initializeAuthentication();
 
 
-        loadSettings();
+            if (!authenticated) {
 
-        setupThemePreview();
+                return;
 
-        setupMobileMenu();
-
-        setupLogout();
-
-        setupSystemThemeListener();
+            }
 
 
-        const form =
-            $("settings");
+            /* ---------------------------------------------
+               LOAD SETTINGS
+            --------------------------------------------- */
+
+            loadSettings();
 
 
-        if (form) {
+            /* ---------------------------------------------
+               THEME PREVIEW
+            --------------------------------------------- */
 
-            form.addEventListener(
-                "submit",
-                saveSettings
-            );
+            setupThemePreview();
 
-        }
 
-    };
+            /* ---------------------------------------------
+               MOBILE SIDEBAR
+            --------------------------------------------- */
+
+            setupMobileMenu();
+
+
+            /* ---------------------------------------------
+               LOGOUT
+            --------------------------------------------- */
+
+            setupLogout();
+
+
+            /* ---------------------------------------------
+               SETTINGS FORM
+            --------------------------------------------- */
+
+            const form =
+                $("settings");
+
+
+            if (form) {
+
+                form.addEventListener(
+                    "submit",
+                    saveSettings
+                );
+
+            }
+
+        };
 
 
     /* =====================================================
        START
     ===================================================== */
+
+    /*
+     * Apply the saved theme BEFORE the page finishes
+     * loading to prevent a theme flash.
+     */
+
+    applySavedThemeImmediately();
+
 
     if (
         document.readyState ===
