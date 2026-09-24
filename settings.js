@@ -142,65 +142,83 @@
     };
 
 
-    /* =====================================================
-       APPLY THEME
-    ===================================================== */
+   /* =====================================================
+   APPLY THEME
+===================================================== */
 
-    const applyTheme = theme => {
+const applyTheme = theme => {
 
-        if (
-            !VALID_THEMES.includes(theme)
-        ) {
+    if (!VALID_THEMES.includes(theme)) {
+        theme = "system";
+    }
 
-            theme = "system";
+    const resolvedTheme =
+        theme === "system"
+            ? getSystemTheme()
+            : theme;
 
-        }
+    const html = document.documentElement;
+    const body = document.body;
 
+    /* ---------------------------------------------
+       DATA ATTRIBUTES
+    --------------------------------------------- */
 
-        /*
-         * Store the selected preference
-         * on the root element.
-         */
+    html.setAttribute(
+        "data-theme",
+        theme
+    );
 
-        document.documentElement.setAttribute(
-            "data-theme",
-            theme
-        );
+    body.setAttribute(
+        "data-theme",
+        theme
+    );
 
+    html.setAttribute(
+        "data-resolved-theme",
+        resolvedTheme
+    );
 
-        /*
-         * Also apply to body.
-         */
-
-        document.body.setAttribute(
-            "data-theme",
-            theme
-        );
-
-
-        /*
-         * For "system", expose the actual
-         * resolved theme as a second attribute.
-         */
-
-        const resolvedTheme =
-            theme === "system"
-                ? getSystemTheme()
-                : theme;
+    body.setAttribute(
+        "data-resolved-theme",
+        resolvedTheme
+    );
 
 
-        document.documentElement.setAttribute(
-            "data-resolved-theme",
-            resolvedTheme
-        );
+    /* ---------------------------------------------
+       THEME CLASSES
+    --------------------------------------------- */
+
+    html.classList.remove(
+        "sf-theme-light",
+        "sf-theme-dark"
+    );
+
+    body.classList.remove(
+        "sf-theme-light",
+        "sf-theme-dark"
+    );
 
 
-        document.body.setAttribute(
-            "data-resolved-theme",
-            resolvedTheme
-        );
+    html.classList.add(
+        `sf-theme-${resolvedTheme}`
+    );
 
-    };
+    body.classList.add(
+        `sf-theme-${resolvedTheme}`
+    );
+
+
+    /* ---------------------------------------------
+       COLOR SCHEME
+       Helps browser controls such as inputs,
+       scrollbars, selects, etc.
+    --------------------------------------------- */
+
+    html.style.colorScheme =
+        resolvedTheme;
+
+};
 
 
     /* =====================================================
