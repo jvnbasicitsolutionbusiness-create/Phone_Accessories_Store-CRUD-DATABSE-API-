@@ -1799,3 +1799,142 @@ body.categories-page {
         min-width: 0;
     }
 }
+
+
+/* =========================================================
+   STOCKFLOW — CATEGORY PAGE ENHANCEMENTS
+========================================================= */
+
+
+/* =========================================================
+   CLICKABLE USER ACCOUNT
+========================================================= */
+
+.categories-page .topbar-user,
+.categories-page .sidebar-user {
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        transform .18s ease;
+}
+
+.categories-page .topbar-user:hover {
+
+    opacity: .88;
+}
+
+.categories-page .sidebar-user:hover {
+
+    background: rgba(255,255,255,.055);
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   CATEGORY DATE / LAST USED
+========================================================= */
+
+.categories-page .category-date-cell {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+.categories-page .category-date-cell strong {
+
+    color: #52647c;
+
+    font-size: 10px;
+
+    font-weight: 700;
+}
+
+.categories-page .category-date-cell small {
+
+    color: #9aa6b5;
+
+    font-size: 9px;
+
+    line-height: 1.35;
+}
+
+
+/* =========================================================
+   WARNING CONNECTION MESSAGE
+========================================================= */
+
+.categories-page .connection-message.warning {
+
+    border-color: #f1dfb4;
+
+    background: #fffaf0;
+
+    color: #916d20;
+}
+
+.categories-page .connection-message.error {
+
+    border-color: #f2c8cc;
+
+    background: #fff2f3;
+
+    color: #c44855;
+}
+
+
+/* =========================================================
+   TABLE STATUS ICON
+========================================================= */
+
+.categories-page .status-badge i {
+
+    font-size: 8px;
+}
+
+
+/* =========================================================
+   LOADING BUTTON SPINNER
+========================================================= */
+
+.categories-page .logout-btn .button-spinner {
+
+    width: 12px;
+    height: 12px;
+
+    border: 2px solid rgba(255,255,255,.35);
+
+    border-top-color: #fff;
+
+    border-radius: 50%;
+
+    animation:
+        categoriesSpin .7s linear infinite;
+}
+
+
+/* =========================================================
+   DARK THEME SUPPORT
+========================================================= */
+
+html.sf-theme-dark .categories-page .category-date-cell strong,
+body.sf-theme-dark .categories-page .category-date-cell strong {
+
+    color: #e2e8f0 !important;
+}
+
+html.sf-theme-dark .categories-page .category-date-cell small,
+body.sf-theme-dark .categories-page .category-date-cell small {
+
+    color: #94a3b8 !important;
+}
+
+html.sf-theme-dark .categories-page .topbar-user:hover {
+
+    opacity: .92;
+}
