@@ -1,15 +1,20 @@
 /* =========================================================
    STOCKFLOW — STOCK IN UI CONTROLLER
+   =========================================================
 
    Handles:
+   - Authenticated user detection
+   - Sidebar user display
+   - Clickable profile areas
    - Mobile sidebar
    - Navigation
    - Notifications
-   - User display
    - Logout
    - API connection status
    - Default stock-in date
    - Live stock-in preview
+   - Optional activity/audit logging
+   - Global theme compatibility
 
    NOTE:
    This file handles UI only.
@@ -23,11 +28,1086 @@
 
 
     /* =====================================================
+       INITIALIZATION GUARD
+    ===================================================== */
+
+    if (window.__stockFlowStockInUIInitialized) {
+        return;
+    }
+
+    window.__stockFlowStockInUIInitialized = true;
+
+
+    /* =====================================================
+       CONSTANTS
+    ===================================================== */
+
+    const SESSION_KEY =
+        "STOCKFLOW_SESSION";
+
+
+    const LEGACY_AUTH_KEYS = [
+        "stockflowUser",
+        "stockflow_user",
+        "currentUser",
+        "current_user",
+        "loggedInUser",
+        "logged_in_user",
+        "user",
+        "authUser",
+        "auth_user",
+        "STOCKFLOW_TOKEN"
+    ];
+
+
+    /* =====================================================
        HELPER
     ===================================================== */
 
     const $ = (id) => {
         return document.getElementById(id);
+    };
+
+
+    /* =====================================================
+       SESSION
+    ===================================================== */
+
+    const readSession = () => {
+
+        try {
+
+            const raw =
+                sessionStorage.getItem(
+                    SESSION_KEY
+                );
+
+
+            if (!raw) {
+                return null;
+            }
+
+
+            const session =
+                JSON.parse(raw);
+
+
+            if (!session) {
+                return null;
+            }
+
+
+            return session;
+
+        } catch (error) {
+
+            console.warn(
+                "STOCKFLOW: Unable to read session:",
+                error
+            );
+
+            return null;
+        }
+
+    };
+
+
+    /* =====================================================
+       EXTRACT USER FROM SESSION
+    ===================================================== */
+
+    const extractSessionUser = (
+        session
+    ) => {
+
+        if (!session) {
+            return null;
+        }
+
+
+        /* ---------------------------------------------
+           Standard STOCKFLOW_SESSION structure
+        --------------------------------------------- */
+
+        if (
+            session.user &&
+            typeof session.user === "object"
+        ) {
+
+            return session.user;
+
+        }
+
+
+        /* ---------------------------------------------
+           Possible nested data.user structure
+        --------------------------------------------- */
+
+        if (
+            session.data &&
+            session.data.user &&
+            typeof session.data.user === "object"
+        ) {
+
+            return session.data.user;
+
+        }
+
+
+        /* ---------------------------------------------
+           Possible data object
+        --------------------------------------------- */
+
+        if (
+            session.data &&
+            typeof session.data === "object"
+        ) {
+
+            if (
+                session.data.username ||
+                session.data.email ||
+                session.data.gmail ||
+                session.data.name ||
+                session.data.fullName ||
+                session.data.USERNAME ||
+                session.data.NAME
+            ) {
+
+                return session.data;
+
+            }
+
+        }
+
+
+        /* ---------------------------------------------
+           Session itself may be the user object
+        --------------------------------------------- */
+
+        if (
+            session.username ||
+            session.email ||
+            session.gmail ||
+            session.name ||
+            session.fullName ||
+            session.USERNAME ||
+            session.NAME
+        ) {
+
+            return session;
+
+        }
+
+
+        return null;
+
+    };
+
+
+    /* =====================================================
+       LEGACY USER READER
+    ===================================================== */
+
+    const readLegacyUser = () => {
+
+        for (
+            const key of LEGACY_AUTH_KEYS
+        ) {
+
+            try {
+
+                const raw =
+                    localStorage.getItem(
+                        key
+                    ) ||
+                    sessionStorage.getItem(
+                        key
+                    );
+
+
+                if (!raw) {
+                    continue;
+                }
+
+
+                const parsed =
+                    JSON.parse(raw);
+
+
+                if (
+                    parsed &&
+                    typeof parsed === "object"
+                ) {
+
+                    if (
+                        parsed.user &&
+                        typeof parsed.user === "object"
+                    ) {
+
+                        return parsed.user;
+
+                    }
+
+
+                    if (
+                        parsed.data &&
+                        parsed.data.user &&
+                        typeof parsed.data.user === "object"
+                    ) {
+
+                        return parsed.data.user;
+
+                    }
+
+
+                    return parsed;
+
+                }
+
+            } catch (error) {
+
+                /* Some old storage values may
+                   not contain JSON. */
+
+                continue;
+
+            }
+
+        }
+
+
+        return null;
+
+    };
+
+
+    /* =====================================================
+       USER IDENTITY
+    ===================================================== */
+
+    const getUserIdentity = (
+        user
+    ) => {
+
+        if (!user) {
+            return null;
+        }
+
+
+        const identity = {};
+
+
+        const email =
+            user.email ||
+            user.EMAIL ||
+            user.gmail ||
+            user.GMAIL ||
+            user.emailAddress;
+
+
+        const username =
+            user.username ||
+            user.USERNAME ||
+            user.user_name;
+
+
+        const phone =
+            user.phone ||
+            user.PHONE ||
+            user.phoneNumber ||
+            user["PHONE NO."];
+
+
+        const id =
+            user.userId ||
+            user.user_id ||
+            user.id ||
+            user.ID;
+
+
+        if (email) {
+            identity.email = email;
+        }
+
+
+        if (username) {
+            identity.username = username;
+        }
+
+
+        if (phone) {
+            identity.phone = phone;
+        }
+
+
+        if (id) {
+            identity.userId = id;
+        }
+
+
+        return Object.keys(identity).length
+            ? identity
+            : null;
+
+    };
+
+
+    /* =====================================================
+       AUTH CONTROLLER COMPATIBILITY
+    ===================================================== */
+
+    const getAuthController = () => {
+
+        return (
+            window.StockFlowAuth ||
+            window.StockFlowAuthUI ||
+            window.Auth ||
+            null
+        );
+
+    };
+
+
+    /* =====================================================
+       GET CURRENT USER
+    ===================================================== */
+
+    const getCurrentUser = async () => {
+
+        /* ---------------------------------------------
+           1. PRIMARY:
+              STOCKFLOW_SESSION
+        --------------------------------------------- */
+
+        const session =
+            readSession();
+
+
+        let user =
+            extractSessionUser(
+                session
+            );
+
+
+        /* ---------------------------------------------
+           2. REFRESH USER FROM BACKEND
+        --------------------------------------------- */
+
+        if (
+            user &&
+            window.StockFlowAPI &&
+            typeof
+            window.StockFlowAPI.getUser ===
+                "function"
+        ) {
+
+            try {
+
+                const identity =
+                    getUserIdentity(
+                        user
+                    );
+
+
+                if (identity) {
+
+                    const refreshed =
+                        await
+                        window.StockFlowAPI.getUser(
+                            identity
+                        );
+
+
+                    if (
+                        refreshed &&
+                        typeof refreshed === "object"
+                    ) {
+
+                        /*
+                         * Some API wrappers return:
+                         * { user: {...} }
+                         */
+
+                        if (
+                            refreshed.user &&
+                            typeof refreshed.user === "object"
+                        ) {
+
+                            user =
+                                refreshed.user;
+
+                        } else {
+
+                            user =
+                                refreshed;
+
+                        }
+
+                    }
+
+                }
+
+            } catch (error) {
+
+                /*
+                 * Do not destroy a valid session
+                 * just because profile refresh failed.
+                 */
+
+                console.warn(
+                    "STOCKFLOW: User refresh failed. Using session user.",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* ---------------------------------------------
+           3. LEGACY COMPATIBILITY
+        --------------------------------------------- */
+
+        if (!user) {
+
+            const auth =
+                getAuthController();
+
+
+            try {
+
+                if (
+                    auth &&
+                    typeof auth.getCurrentUser ===
+                        "function"
+                ) {
+
+                    user =
+                        await auth.getCurrentUser();
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "STOCKFLOW: getCurrentUser() failed:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        if (!user) {
+
+            const auth =
+                getAuthController();
+
+
+            try {
+
+                if (
+                    auth &&
+                    typeof auth.getUser ===
+                        "function"
+                ) {
+
+                    user =
+                        await auth.getUser();
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "STOCKFLOW: getUser() failed:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* ---------------------------------------------
+           4. LEGACY STORAGE
+        --------------------------------------------- */
+
+        if (!user) {
+
+            user =
+                readLegacyUser();
+
+        }
+
+
+        return user || null;
+
+    };
+
+
+    /* =====================================================
+       USER INFORMATION
+    ===================================================== */
+
+    const getDisplayName = (
+        user
+    ) => {
+
+        return (
+            user?.name ||
+            user?.fullName ||
+            user?.full_name ||
+            user?.displayName ||
+            user?.username ||
+            user?.USERNAME ||
+            user?.NAME ||
+            user?.email ||
+            user?.EMAIL ||
+            "StockFlow User"
+        );
+
+    };
+
+
+    const getDisplayRole = (
+        user
+    ) => {
+
+        const rawRole =
+            user?.role ||
+            user?.ROLE ||
+            user?.position ||
+            user?.POSITION ||
+            user?.accountStatus ||
+            user?.ACCOUNT_S;
+
+
+        if (!rawRole) {
+            return "Employee";
+        }
+
+
+        const normalized =
+            String(
+                rawRole
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            normalized === "admin" ||
+            normalized === "administrator"
+        ) {
+
+            return "Administrator";
+
+        }
+
+
+        if (
+            normalized === "manager" ||
+            normalized === "supervisor"
+        ) {
+
+            return "Manager";
+
+        }
+
+
+        if (
+            normalized === "employee" ||
+            normalized === "staff" ||
+            normalized === "worker"
+        ) {
+
+            return "Employee";
+
+        }
+
+
+        return String(
+            rawRole
+        );
+
+    };
+
+
+    const getInitials = (
+        name
+    ) => {
+
+        const value =
+            String(
+                name || ""
+            )
+                .trim();
+
+
+        if (!value) {
+            return "SF";
+        }
+
+
+        const parts =
+            value
+                .split(/\s+/)
+                .filter(Boolean);
+
+
+        const initials =
+            parts
+                .slice(0, 2)
+                .map(
+                    part =>
+                        part
+                            .charAt(0)
+                            .toUpperCase()
+                )
+                .join("");
+
+
+        return initials || "SF";
+
+    };
+
+
+    /* =====================================================
+       APPLY USER TO UI
+    ===================================================== */
+
+    const applyUser = (
+        user
+    ) => {
+
+        if (!user) {
+            return;
+        }
+
+
+        const name =
+            getDisplayName(
+                user
+            );
+
+
+        const role =
+            getDisplayRole(
+                user
+            );
+
+
+        const initials =
+            getInitials(
+                name
+            );
+
+
+        /* ---------------------------------------------
+           SIDEBAR NAME
+        --------------------------------------------- */
+
+        const sidebarName =
+            $("sidebarUserName");
+
+
+        if (sidebarName) {
+
+            sidebarName.textContent =
+                name;
+
+        }
+
+
+        /* ---------------------------------------------
+           SIDEBAR ROLE
+        --------------------------------------------- */
+
+        const sidebarRole =
+            $("sidebarUserRole");
+
+
+        if (sidebarRole) {
+
+            sidebarRole.textContent =
+                role;
+
+        }
+
+
+        /* ---------------------------------------------
+           SIDEBAR AVATAR
+        --------------------------------------------- */
+
+        const sidebarAvatar =
+            $("sidebarAvatar") ||
+            document.querySelector(
+                ".sidebar-user-avatar"
+            );
+
+
+        if (sidebarAvatar) {
+
+            sidebarAvatar.textContent =
+                initials;
+
+        }
+
+
+        /* ---------------------------------------------
+           TOPBAR NAME
+        --------------------------------------------- */
+
+        const topbarName =
+            $("topbarUserName");
+
+
+        if (topbarName) {
+
+            topbarName.textContent =
+                name;
+
+        }
+
+
+        /* ---------------------------------------------
+           TOPBAR ROLE
+        --------------------------------------------- */
+
+        const topbarRole =
+            $("topbarUserRole");
+
+
+        if (topbarRole) {
+
+            topbarRole.textContent =
+                role;
+
+        }
+
+
+        /* ---------------------------------------------
+           TOPBAR AVATAR
+        --------------------------------------------- */
+
+        const topbarAvatar =
+            $("topbarAvatar") ||
+            document.querySelector(
+                ".topbar .user-avatar"
+            );
+
+
+        if (topbarAvatar) {
+
+            topbarAvatar.textContent =
+                initials;
+
+        }
+
+
+        /* ---------------------------------------------
+           STORE CURRENT USER FOR OTHER UI CODE
+        --------------------------------------------- */
+
+        window.STOCKFLOW_CURRENT_USER =
+            user;
+
+    };
+
+
+    /* =====================================================
+       PROFILE NAVIGATION
+    ===================================================== */
+
+    const goToProfile = () => {
+
+        window.location.href =
+            "./profile.html";
+
+    };
+
+
+    /* =====================================================
+       MAKE USER AREAS CLICKABLE
+    ===================================================== */
+
+    const setupUserProfileLinks = () => {
+
+        const selectors = [
+
+            "[data-user-profile]",
+
+            "#userProfile",
+
+            "#sidebarUser",
+
+            "#sidebarUserProfile",
+
+            ".sidebar-user",
+
+            ".sidebar-user-profile",
+
+            ".sidebar-profile",
+
+            ".top-user",
+
+            ".topbar-user",
+
+            ".topbar-profile",
+
+            ".top-user-profile",
+
+            ".user-profile"
+
+        ];
+
+
+        const elements = [];
+
+
+        selectors.forEach(
+            selector => {
+
+                document
+                    .querySelectorAll(
+                        selector
+                    )
+                    .forEach(
+                        element => {
+
+                            if (
+                                !elements.includes(
+                                    element
+                                )
+                            ) {
+
+                                elements.push(
+                                    element
+                                );
+
+                            }
+
+                        }
+                    );
+
+            }
+        );
+
+
+        elements.forEach(
+            element => {
+
+                /*
+                 * Never turn logout into profile.
+                 */
+
+                if (
+                    element.id ===
+                        "logoutButton" ||
+                    element.id ===
+                        "logoutBtn" ||
+                    element.closest(
+                        "#logoutButton, #logoutBtn"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    element.tagName ===
+                        "A"
+                ) {
+
+                    element.href =
+                        "./profile.html";
+
+                } else {
+
+                    element.setAttribute(
+                        "role",
+                        "link"
+                    );
+
+
+                    element.setAttribute(
+                        "tabindex",
+                        "0"
+                    );
+
+
+                    if (
+                        !element.dataset.stockflowProfileBound
+                    ) {
+
+                        element.addEventListener(
+                            "click",
+                            event => {
+
+                                /*
+                                 * Do not intercept buttons
+                                 * inside the profile area.
+                                 */
+
+                                if (
+                                    event.target.closest(
+                                        "button"
+                                    )
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                goToProfile();
+
+                            }
+                        );
+
+
+                        element.addEventListener(
+                            "keydown",
+                            event => {
+
+                                if (
+                                    event.key ===
+                                        "Enter" ||
+                                    event.key ===
+                                        " "
+                                ) {
+
+                                    event.preventDefault();
+
+                                    goToProfile();
+
+                                }
+
+                            }
+                        );
+
+
+                        element.dataset.stockflowProfileBound =
+                            "true";
+
+                    }
+
+                }
+
+            }
+        );
+
+
+        /* ---------------------------------------------
+           Direct name/avatar fallback
+        --------------------------------------------- */
+
+        [
+            $("sidebarUserName"),
+            $("sidebarAvatar"),
+            $("topbarUserName"),
+            $("topbarAvatar")
+        ]
+            .filter(Boolean)
+            .forEach(
+                element => {
+
+                    if (
+                        element.dataset.stockflowProfileBound
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    element.style.cursor =
+                        "pointer";
+
+
+                    element.addEventListener(
+                        "click",
+                        event => {
+
+                            event.preventDefault();
+
+                            goToProfile();
+
+                        }
+                    );
+
+
+                    element.dataset.stockflowProfileBound =
+                        "true";
+
+                }
+            );
+
+    };
+
+
+    /* =====================================================
+       USER SETUP
+    ===================================================== */
+
+    const setupUserDisplay = async () => {
+
+        const user =
+            await getCurrentUser();
+
+
+        if (!user) {
+
+            /*
+             * No authenticated session.
+             * Send the user back to the
+             * actual StockFlow authentication page.
+             */
+
+            const currentPath =
+                window.location.pathname
+                    .toLowerCase();
+
+
+            /*
+             * Avoid redirect loops if this script
+             * happens to be loaded somewhere unexpected.
+             */
+
+            if (
+                !currentPath.endsWith(
+                    "/auth.html"
+                ) &&
+                !currentPath.endsWith(
+                    "auth.html"
+                )
+            ) {
+
+                window.location.href =
+                    "./auth.html";
+
+            }
+
+
+            return null;
+
+        }
+
+
+        applyUser(
+            user
+        );
+
+
+        setupUserProfileLinks();
+
+
+        return user;
+
     };
 
 
@@ -40,8 +1120,10 @@
         const sidebar =
             $("sidebar");
 
+
         const overlay =
             $("sidebarOverlay");
+
 
         const menuButton =
             $("mobileMenuBtn");
@@ -51,7 +1133,9 @@
             !sidebar ||
             !menuButton
         ) {
+
             return;
+
         }
 
 
@@ -61,12 +1145,20 @@
 
         const openSidebar = () => {
 
-            sidebar.classList.add("open");
+            sidebar.classList.add(
+                "open"
+            );
+
 
             if (overlay) {
 
-                overlay.classList.add("show");
-                overlay.classList.add("active");
+                overlay.classList.add(
+                    "show"
+                );
+
+                overlay.classList.add(
+                    "active"
+                );
 
             }
 
@@ -162,34 +1254,34 @@
 
 
         /* -------------------------------------------------
-           NAVIGATION LINKS
-        -------------------------------------------------
-
-        New StockFlow HTML uses .nav-item.
+           NAVIGATION
         ------------------------------------------------- */
 
         sidebar
             .querySelectorAll(
                 ".nav-item, a"
             )
-            .forEach(link => {
+            .forEach(
+                link => {
 
-                link.addEventListener(
-                    "click",
-                    () => {
+                    link.addEventListener(
+                        "click",
+                        () => {
 
-                        if (
-                            window.innerWidth <= 900
-                        ) {
+                            if (
+                                window.innerWidth <=
+                                    900
+                            ) {
 
-                            closeSidebar();
+                                closeSidebar();
+
+                            }
 
                         }
+                    );
 
-                    }
-                );
-
-            });
+                }
+            );
 
 
         /* -------------------------------------------------
@@ -220,14 +1312,6 @@
 
     const setupNotifications = () => {
 
-        /*
-         * New HTML:
-         * notificationButton
-         *
-         * Old HTML:
-         * notificationBtn
-         */
-
         const button =
             $("notificationButton") ||
             $("notificationBtn");
@@ -236,14 +1320,6 @@
         const panel =
             $("notificationPanel");
 
-
-        /*
-         * New HTML:
-         * closeNotification
-         *
-         * Old HTML:
-         * closeNotificationBtn
-         */
 
         const closeButton =
             $("closeNotification") ||
@@ -254,7 +1330,9 @@
             !button ||
             !panel
         ) {
+
             return;
+
         }
 
 
@@ -264,7 +1342,9 @@
 
         const closePanel = () => {
 
-            panel.hidden = true;
+            panel.hidden =
+                true;
+
 
             button.setAttribute(
                 "aria-expanded",
@@ -290,7 +1370,9 @@
 
             button.setAttribute(
                 "aria-expanded",
-                String(willOpen)
+                String(
+                    willOpen
+                )
             );
 
         };
@@ -333,7 +1415,7 @@
 
 
         /* -------------------------------------------------
-           PREVENT PANEL CLICK FROM CLOSING
+           PREVENT PANEL CLICK
         ------------------------------------------------- */
 
         panel.addEventListener(
@@ -374,219 +1456,66 @@
 
 
     /* =====================================================
-       USER DISPLAY
+       LOGOUT
     ===================================================== */
 
-    const setupUserDisplay = () => {
+    const clearStockFlowSession = () => {
 
-        let user = null;
-
-
-        /* -------------------------------------------------
-           GET USER FROM STOCKFLOW AUTH
-        ------------------------------------------------- */
+        /* ---------------------------------------------
+           Primary session
+        --------------------------------------------- */
 
         try {
 
-            if (
-                window.StockFlowAuth &&
-                typeof
-                window.StockFlowAuth.getUser ===
-                    "function"
-            ) {
-
-                user =
-                    window.StockFlowAuth.getUser();
-
-            }
+            sessionStorage.removeItem(
+                SESSION_KEY
+            );
 
         } catch (error) {
 
             console.warn(
-                "Unable to read StockFlow user:",
+                "Unable to clear STOCKFLOW_SESSION:",
                 error
             );
 
         }
 
 
-        /*
-         * If no authenticated user is available,
-         * keep the default HTML values.
-         */
+        /* ---------------------------------------------
+           Legacy session/localStorage
+        --------------------------------------------- */
 
-        if (!user) {
-            return;
-        }
+        LEGACY_AUTH_KEYS.forEach(
+            key => {
 
+                try {
 
-        /* -------------------------------------------------
-           USER NAME
-        ------------------------------------------------- */
+                    sessionStorage.removeItem(
+                        key
+                    );
 
-        const name =
-            user.name ||
-            user.fullName ||
-            user.full_name ||
-            user.username ||
-            user.USERNAME ||
-            user.NAME ||
-            user.email ||
-            user.EMAIL ||
-            "StockFlow User";
+                } catch (error) {
+                    /* Ignore */
+                }
 
 
-        /* -------------------------------------------------
-           USER ROLE
-        ------------------------------------------------- */
+                try {
 
-        const role =
-            user.role ||
-            user.ROLE ||
-            user.position ||
-            user.POSITION ||
-            "Employee";
+                    localStorage.removeItem(
+                        key
+                    );
 
+                } catch (error) {
+                    /* Ignore */
+                }
 
-        /* -------------------------------------------------
-           INITIALS
-        ------------------------------------------------- */
-
-        const initials =
-            String(name)
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map(
-                    part =>
-                        part
-                            .charAt(0)
-                            .toUpperCase()
-                )
-                .join("") ||
-            "SF";
-
-
-        /* -------------------------------------------------
-           SIDEBAR NAME
-        ------------------------------------------------- */
-
-        const sidebarName =
-            $("sidebarUserName");
-
-        if (sidebarName) {
-
-            sidebarName.textContent =
-                name;
-
-        }
-
-
-        /* -------------------------------------------------
-           SIDEBAR ROLE
-        ------------------------------------------------- */
-
-        const sidebarRole =
-            $("sidebarUserRole");
-
-        if (sidebarRole) {
-
-            sidebarRole.textContent =
-                role;
-
-        }
-
-
-        /* -------------------------------------------------
-           SIDEBAR AVATAR
-        -------------------------------------------------
-
-        New HTML:
-        .sidebar-user-avatar
-
-        We support both ID and class.
-        ------------------------------------------------- */
-
-        const sidebarAvatar =
-            $("sidebarAvatar") ||
-            document.querySelector(
-                ".sidebar-user-avatar"
-            );
-
-
-        if (sidebarAvatar) {
-
-            sidebarAvatar.textContent =
-                initials;
-
-        }
-
-
-        /* -------------------------------------------------
-           TOPBAR NAME
-        ------------------------------------------------- */
-
-        const topbarName =
-            $("topbarUserName");
-
-        if (topbarName) {
-
-            topbarName.textContent =
-                name;
-
-        }
-
-
-        /* -------------------------------------------------
-           TOPBAR ROLE
-        ------------------------------------------------- */
-
-        const topbarRole =
-            $("topbarUserRole");
-
-        if (topbarRole) {
-
-            topbarRole.textContent =
-                role;
-
-        }
-
-
-        /* -------------------------------------------------
-           TOPBAR AVATAR
-        ------------------------------------------------- */
-
-        const topbarAvatar =
-            $("topbarAvatar") ||
-            document.querySelector(
-                ".topbar .user-avatar"
-            );
-
-
-        if (topbarAvatar) {
-
-            topbarAvatar.textContent =
-                initials;
-
-        }
+            }
+        );
 
     };
 
 
-    /* =====================================================
-       LOGOUT
-    ===================================================== */
-
     const setupLogout = () => {
-
-        /*
-         * New HTML:
-         * logoutButton
-         *
-         * Old HTML:
-         * logoutBtn
-         */
 
         const button =
             $("logoutButton") ||
@@ -596,6 +1525,19 @@
         if (!button) {
             return;
         }
+
+
+        if (
+            button.dataset.stockflowLogoutBound
+        ) {
+
+            return;
+
+        }
+
+
+        button.dataset.stockflowLogoutBound =
+            "true";
 
 
         button.addEventListener(
@@ -609,7 +1551,13 @@
                     button.innerHTML;
 
 
-                button.disabled = true;
+                button.disabled =
+                    true;
+
+
+                button.classList.add(
+                    "loading"
+                );
 
 
                 button.innerHTML = `
@@ -620,61 +1568,67 @@
 
                 try {
 
+                    const auth =
+                        getAuthController();
+
+
                     /* -------------------------------------
-                       STOCKFLOW AUTH
+                       TRY AUTH CONTROLLER
                     ------------------------------------- */
 
                     if (
-                        window.StockFlowAuth &&
-                        typeof
-                        window.StockFlowAuth.logout ===
+                        auth &&
+                        typeof auth.logout ===
                             "function"
                     ) {
 
-                        await
-                            window.StockFlowAuth.logout();
+                        try {
 
-                        return;
+                            await auth.logout();
 
-                    }
+                        } catch (error) {
 
+                            console.warn(
+                                "STOCKFLOW auth logout returned an error:",
+                                error
+                            );
 
-                    /* -------------------------------------
-                       FALLBACK AUTH
-                    ------------------------------------- */
+                        }
 
-                    if (
-                        window.Auth &&
-                        typeof
-                        window.Auth.logout ===
+                    } else if (
+                        auth &&
+                        typeof auth.signOut ===
                             "function"
                     ) {
 
-                        await
-                            window.Auth.logout();
+                        try {
 
-                        return;
+                            await auth.signOut();
 
-                    }
+                        } catch (error) {
 
+                            console.warn(
+                                "STOCKFLOW auth signOut returned an error:",
+                                error
+                            );
 
-                    /* -------------------------------------
-                       FALLBACK SESSION CLEAR
-                    ------------------------------------- */
-
-                    try {
-
-                        sessionStorage.clear();
-
-                    } catch (error) {
-
-                        console.warn(
-                            "Session clear failed:",
-                            error
-                        );
+                        }
 
                     }
 
+
+                    /*
+                     * Always clear our actual
+                     * STOCKFLOW session.
+                     */
+
+                    clearStockFlowSession();
+
+
+                    /*
+                     * Redirect to the actual
+                     * authentication page.
+                     */
 
                     window.location.href =
                         "./auth.html";
@@ -687,17 +1641,17 @@
                     );
 
 
-                    button.disabled =
-                        false;
+                    /*
+                     * Even if a legacy auth
+                     * controller fails, clear
+                     * the StockFlow session.
+                     */
+
+                    clearStockFlowSession();
 
 
-                    button.innerHTML =
-                        originalHTML;
-
-
-                    alert(
-                        "Unable to logout. Please try again."
-                    );
+                    window.location.href =
+                        "./auth.html";
 
                 }
 
@@ -748,11 +1702,6 @@
                         "online"
                     );
 
-
-                    /*
-                     * Try several possible
-                     * text elements.
-                     */
 
                     const text =
                         badge.querySelector(
@@ -858,8 +1807,8 @@
 
 
         /*
-         * Trigger change so the preview
-         * updates immediately.
+         * Trigger change so the
+         * preview updates immediately.
          */
 
         dateInput.dispatchEvent(
@@ -931,7 +1880,9 @@
             (value) => {
 
                 const number =
-                    Number(value || 0);
+                    Number(
+                        value || 0
+                    );
 
 
                 return `₱${number.toLocaleString(
@@ -1185,10 +2136,123 @@
 
 
         /*
-         * Initial preview
+         * Initial preview.
          */
 
         update();
+
+    };
+
+
+    /* =====================================================
+       ACTIVITY / AUDIT LOG
+    ===================================================== */
+
+    const logStockInPageActivity = async () => {
+
+        /*
+         * Only attempt activity logging when
+         * the API exposes a known activity method.
+         *
+         * This will never prevent the Stock In page
+         * from loading.
+         */
+
+        if (!window.StockFlowAPI) {
+            return;
+        }
+
+
+        const api =
+            window.StockFlowAPI;
+
+
+        const activityMethod =
+            [
+                "logActivity",
+                "recordActivity",
+                "createActivity",
+                "addActivity",
+                "createAuditLog"
+            ]
+                .find(
+                    method =>
+                        typeof api[method] ===
+                            "function"
+                );
+
+
+        if (!activityMethod) {
+            return;
+        }
+
+
+        const user =
+            window.STOCKFLOW_CURRENT_USER ||
+            extractSessionUser(
+                readSession()
+            );
+
+
+        const userName =
+            getDisplayName(
+                user
+            );
+
+
+        const payload = {
+
+            action:
+                "VIEW_STOCK_IN",
+
+            module:
+                "Stock In",
+
+            description:
+                `${userName} viewed the Stock In page.`,
+
+            user:
+                userName,
+
+            username:
+                user?.username ||
+                user?.USERNAME ||
+                "",
+
+            email:
+                user?.email ||
+                user?.EMAIL ||
+                user?.gmail ||
+                user?.GMAIL ||
+                "",
+
+            timestamp:
+                new Date().toISOString()
+
+        };
+
+
+        try {
+
+            await api[
+                activityMethod
+            ](
+                payload
+            );
+
+        } catch (error) {
+
+            /*
+             * Activity logging must never
+             * break the Stock In page.
+             */
+
+            console.debug(
+                "STOCKFLOW: Stock In activity logging skipped:",
+                error
+            );
+
+        }
 
     };
 
@@ -1199,13 +2263,11 @@
 
     document.addEventListener(
         "DOMContentLoaded",
-        () => {
+        async () => {
 
             setupSidebar();
 
             setupNotifications();
-
-            setupUserDisplay();
 
             setupLogout();
 
@@ -1214,6 +2276,28 @@
             setupDefaultDate();
 
             setupPreview();
+
+
+            /*
+             * User must be loaded before
+             * profile links/activity are initialized.
+             */
+
+            const user =
+                await setupUserDisplay();
+
+
+            /*
+             * Only audit the page when
+             * an authenticated user exists.
+             */
+
+            if (user) {
+
+                await
+                    logStockInPageActivity();
+
+            }
 
         }
     );
