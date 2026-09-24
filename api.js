@@ -1341,6 +1341,348 @@
         );
     }
 
+   /* =========================================================
+   SEPARATE INVENTORY REQUEST
+   ---------------------------------------------------------
+   Authentication API:
+       request()
+       ↓
+       API_URL
+
+   Inventory API:
+       inventoryRequest()
+       ↓
+       INVENTORY_API_URL
+
+   This keeps Auth and Inventory completely separate.
+   ========================================================= */
+
+async function inventoryRequest(
+    action,
+    payload = {},
+    options = {}
+) {
+
+    if (!INVENTORY_API_URL) {
+
+        throw new StockFlowAPIError(
+
+            "Inventory API URL is not configured.",
+
+            "MISSING_INVENTORY_API_URL"
+        );
+    }
+
+
+    action =
+        safeString(
+            action
+        );
+
+
+    if (!action) {
+
+        throw new StockFlowAPIError(
+
+            "Inventory API action is required.",
+
+            "MISSING_INVENTORY_ACTION"
+        );
+    }
+
+
+    const requestPayload = {
+
+        action:
+
+            action,
+
+        ...(
+            payload &&
+            typeof payload ===
+                "object"
+
+                ? payload
+
+                : {}
+        )
+    };
+
+
+    /*
+     * Attach the logged-in user's token.
+     *
+     * This does NOT send authentication requests
+     * to the inventory backend.
+     *
+     * It only allows the inventory backend to know
+     * which logged-in user is making the request.
+     */
+
+    if (
+        !requestPayload.token
+    ) {
+
+        const token =
+            getToken();
+
+
+        if (token) {
+
+            requestPayload.token =
+                token;
+        }
+    }
+
+
+    const maxRetries =
+        Number.isFinite(
+            Number(
+                options.retries
+            )
+        )
+
+            ? Number(
+                options.retries
+            )
+
+            : RETRY_COUNT;
+
+
+    let lastError =
+        null;
+
+
+    for (
+        let attempt = 0;
+        attempt <= maxRetries;
+        attempt++
+    ) {
+
+        const controller =
+            new AbortController();
+
+
+        const timeoutId =
+            setTimeout(
+
+                () => {
+
+                    controller.abort();
+
+                },
+
+                REQUEST_TIMEOUT
+            );
+
+
+        try {
+
+            console.debug(
+                "STOCKFLOW INVENTORY REQUEST",
+                {
+                    action,
+                    attempt:
+                        attempt + 1
+                }
+            );
+
+
+            const response =
+                await fetch(
+
+                    INVENTORY_API_URL,
+
+                    {
+
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                CONTENT_TYPE,
+
+                            "Accept":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                requestPayload
+                            ),
+
+                        mode:
+                            "cors",
+
+                        credentials:
+                            "omit",
+
+                        redirect:
+                            "follow",
+
+                        cache:
+                            "no-store",
+
+                        signal:
+                            controller.signal
+                    }
+                );
+
+
+            /*
+             * Use the SAME response parser
+             * already used by the main API.
+             *
+             * This preserves:
+             *
+             * - success: false
+             * - error
+             * - message
+             * - code
+             * - invalid JSON
+             * - HTTP errors
+             */
+
+            const result =
+                await parseResponse(
+                    response,
+                    action
+                );
+
+
+            console.debug(
+                "STOCKFLOW INVENTORY RESPONSE",
+                {
+                    action,
+                    result
+                }
+            );
+
+
+            return result;
+
+
+        } catch (error) {
+
+            /*
+             * Timeout
+             */
+
+            if (
+                error?.name ===
+                "AbortError"
+            ) {
+
+                lastError =
+                    new StockFlowAPIError(
+
+                        "The StockFlow Inventory server took too long to respond.",
+
+                        "INVENTORY_TIMEOUT",
+
+                        {
+
+                            action,
+
+                            originalError:
+                                error,
+
+                            isTransportError:
+                                true
+                        }
+                    );
+            }
+
+
+            /*
+             * Existing StockFlow API error.
+             */
+
+            else if (
+                error instanceof
+                StockFlowAPIError
+            ) {
+
+                lastError =
+                    error;
+            }
+
+
+            /*
+             * Network / fetch error.
+             */
+
+            else {
+
+                lastError =
+                    new StockFlowAPIError(
+
+                        "Unable to connect to the StockFlow Inventory server. Please check the Inventory Google Apps Script deployment.",
+
+                        "INVENTORY_NETWORK_ERROR",
+
+                        {
+
+                            action,
+
+                            originalError:
+                                error,
+
+                            apiUrl:
+                                INVENTORY_API_URL,
+
+                            isTransportError:
+                                true
+                        }
+                    );
+            }
+
+
+            /*
+             * Never retry business errors.
+             *
+             * Retry only:
+             * - network errors
+             * - timeout
+             */
+
+            if (
+                !lastError.isTransportError ||
+                attempt >= maxRetries
+            ) {
+
+                throw lastError;
+            }
+
+
+            await wait(
+                RETRY_DELAY
+            );
+
+
+        } finally {
+
+            clearTimeout(
+                timeoutId
+            );
+        }
+    }
+
+
+    throw (
+
+        lastError ||
+
+        new StockFlowAPIError(
+
+            "Unknown StockFlow Inventory API error.",
+
+            "INVENTORY_API_ERROR"
+        )
+    );
+}
+
 
     /* =========================================================
        REGISTER
@@ -3000,3 +3342,26 @@
 
 
 })(window);
+
+/*=================================================================
+INVENTORY STORAGE
+   ---------------------------------------------------------
+   Separate Google Apps Script Web App for:
+   - Categories
+   - Products
+   - Suppliers
+   - Stock
+   - Inventory transactions
+===================================================================*/
+
+const API_URL =
+    String(
+        CONFIG.API_URL ||
+        CONFIG.APPS_SCRIPT_URL ||
+        CONFIG.GOOGLE_APPS_SCRIPT_URL ||
+        CONFIG.BACKEND_URL ||
+        ""
+    ).trim();
+
+const INVENTORY_API_URL =
+    "https://script.google.com/macros/s/AKfycbwhyWms5LL79R3LaHsqLJl3MkgQ6vUssLQriggwSWTp-vFaigiYX87zvFpIpcpFFbRngw/exec";
