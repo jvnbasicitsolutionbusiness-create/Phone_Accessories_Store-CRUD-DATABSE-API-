@@ -2591,3 +2591,853 @@ body.sidebar-collapsed .logout-btn {
     }
 
 }
+
+/* ============================================================
+   STOCKFLOW — DASHBOARD THEME ADDON
+   ============================================================
+   Theme source:
+   settings.js + theme.js
+
+   SYSTEM
+   ------------------------------------------------------------
+   Keeps the original STOCKFLOW white + blue appearance.
+
+   LIGHT
+   ------------------------------------------------------------
+   Grey-white surfaces + black/dark text.
+
+   DARK
+   ------------------------------------------------------------
+   Dark navy/charcoal surfaces + white/light text.
+============================================================ */
+
+
+/* ============================================================
+   THEME VARIABLES
+============================================================ */
+
+html.sf-theme-system,
+body.sf-theme-system {
+
+    --dash-bg:
+        #f4f7fb;
+
+    --dash-surface:
+        #ffffff;
+
+    --dash-surface-2:
+        #f8fafc;
+
+    --dash-border:
+        #dbe3ef;
+
+    --dash-text:
+        #10203a;
+
+    --dash-text-soft:
+        #64748b;
+
+    --dash-heading:
+        #10203a;
+
+    --dash-shadow:
+        0 12px 30px rgba(
+            15,
+            23,
+            42,
+            0.08
+        );
+
+}
+
+
+html.sf-theme-light,
+body.sf-theme-light {
+
+    --dash-bg:
+        #e5e7eb;
+
+    --dash-surface:
+        #ffffff;
+
+    --dash-surface-2:
+        #f8fafc;
+
+    --dash-border:
+        #cbd5e1;
+
+    --dash-text:
+        #111111;
+
+    --dash-text-soft:
+        #374151;
+
+    --dash-heading:
+        #000000;
+
+    --dash-shadow:
+        0 12px 30px rgba(
+            0,
+            0,
+            0,
+            0.10
+        );
+
+}
+
+
+html.sf-theme-dark,
+body.sf-theme-dark {
+
+    --dash-bg:
+        #0b1220;
+
+    --dash-surface:
+        #111827;
+
+    --dash-surface-2:
+        #172033;
+
+    --dash-border:
+        #26344d;
+
+    --dash-text:
+        #f8fafc;
+
+    --dash-text-soft:
+        #cbd5e1;
+
+    --dash-heading:
+        #ffffff;
+
+    --dash-shadow:
+        0 14px 34px rgba(
+            0,
+            0,
+            0,
+            0.35
+        );
+
+}
+
+
+/* ============================================================
+   LIGHT THEME
+============================================================ */
+
+html.sf-theme-light body.dashboard-page {
+
+    background:
+        var(--dash-bg);
+
+    color:
+        var(--dash-text);
+
+}
+
+
+html.sf-theme-light
+.dashboard-main {
+
+    background:
+        var(--dash-bg);
+
+    color:
+        var(--dash-text);
+
+}
+
+
+html.sf-theme-light
+.dash-header {
+
+    background:
+        #ffffff;
+
+    border-color:
+        var(--dash-border);
+
+}
+
+
+html.sf-theme-light
+.dashboard-main h1,
+html.sf-theme-light
+.dashboard-main h2,
+html.sf-theme-light
+.dashboard-main h3,
+html.sf-theme-light
+.dashboard-main strong,
+html.sf-theme-light
+.dashboard-main b {
+
+    color:
+        #000000;
+
+}
+
+
+html.sf-theme-light
+.dashboard-main p,
+html.sf-theme-light
+.dashboard-main small,
+html.sf-theme-light
+.header-subtitle {
+
+    color:
+        #374151;
+
+}
+
+
+html.sf-theme-light
+.connection-card,
+html.sf-theme-light
+.welcome-banner,
+html.sf-theme-light
+.panel {
+
+    background:
+        #ffffff;
+
+    color:
+        #111111;
+
+    border-color:
+        #cbd5e1;
+
+    box-shadow:
+        var(--dash-shadow);
+
+}
+
+
+html.sf-theme-light
+.connection-card span,
+html.sf-theme-light
+.welcome-banner span,
+html.sf-theme-light
+.panel span {
+
+    color:
+        #374151;
+
+}
+
+
+html.sf-theme-light
+.activity-row {
+
+    border-color:
+        #e2e8f0;
+
+}
+
+
+html.sf-theme-light
+.activity-content small,
+html.sf-theme-light
+.activity-meta small {
+
+    color:
+        #475569;
+
+}
+
+
+html.sf-theme-light
+.activity-meta strong {
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.quick-action {
+
+    background:
+        #ffffff;
+
+    border-color:
+        #d1d5db;
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.quick-action:hover {
+
+    background:
+        #f8fafc;
+
+    border-color:
+        #2563eb;
+
+}
+
+
+html.sf-theme-light
+.quick-action strong {
+
+    color:
+        #000000;
+
+}
+
+
+html.sf-theme-light
+.quick-action span {
+
+    color:
+        #4b5563;
+
+}
+
+
+html.sf-theme-light
+.header-icon-btn {
+
+    background:
+        #ffffff;
+
+    border-color:
+        #cbd5e1;
+
+    color:
+        #111827;
+
+}
+
+
+html.sf-theme-light
+.header-user {
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.header-user-info small {
+
+    color:
+        #475569;
+
+}
+
+
+html.sf-theme-light
+.inventory-alert {
+
+    background:
+        #ffffff;
+
+    border-color:
+        #d1d5db;
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.empty-state {
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.empty-state p {
+
+    color:
+        #475569;
+
+}
+
+
+/* ============================================================
+   DARK THEME
+============================================================ */
+
+html.sf-theme-dark body.dashboard-page {
+
+    background:
+        #0b1220;
+
+    color:
+        #f8fafc;
+
+}
+
+
+html.sf-theme-dark
+.dashboard-main {
+
+    background:
+        #0b1220;
+
+    color:
+        #f8fafc;
+
+}
+
+
+html.sf-theme-dark
+.dash-header {
+
+    background:
+        #111827;
+
+    border-color:
+        #26344d;
+
+}
+
+
+html.sf-theme-dark
+.dashboard-main h1,
+html.sf-theme-dark
+.dashboard-main h2,
+html.sf-theme-dark
+.dashboard-main h3,
+html.sf-theme-dark
+.dashboard-main strong,
+html.sf-theme-dark
+.dashboard-main b {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.dashboard-main p,
+html.sf-theme-dark
+.dashboard-main small,
+html.sf-theme-dark
+.header-subtitle {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+html.sf-theme-dark
+.connection-card,
+html.sf-theme-dark
+.welcome-banner,
+html.sf-theme-dark
+.panel {
+
+    background:
+        #111827;
+
+    color:
+        #f8fafc;
+
+    border-color:
+        #26344d;
+
+    box-shadow:
+        var(--dash-shadow);
+
+}
+
+
+html.sf-theme-dark
+.connection-card span,
+html.sf-theme-dark
+.welcome-banner span,
+html.sf-theme-dark
+.panel span {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+html.sf-theme-dark
+.activity-row {
+
+    border-color:
+        #26344d;
+
+}
+
+
+html.sf-theme-dark
+.activity-content small,
+html.sf-theme-dark
+.activity-meta small {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+html.sf-theme-dark
+.activity-meta strong {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.quick-action {
+
+    background:
+        #172033;
+
+    border-color:
+        #2d3b55;
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.quick-action:hover {
+
+    background:
+        #1d293d;
+
+    border-color:
+        #3b82f6;
+
+}
+
+
+html.sf-theme-dark
+.quick-action strong {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.quick-action span {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+html.sf-theme-dark
+.header-icon-btn {
+
+    background:
+        #172033;
+
+    border-color:
+        #334155;
+
+    color:
+        #f8fafc;
+
+}
+
+
+html.sf-theme-dark
+.header-user {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.header-user-info small {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+html.sf-theme-dark
+.inventory-alert {
+
+    background:
+        #172033;
+
+    border-color:
+        #334155;
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.empty-state {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.empty-state p {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+/* ============================================================
+   NOTIFICATIONS
+============================================================ */
+
+html.sf-theme-light
+.notification-panel {
+
+    background:
+        #ffffff;
+
+    border-color:
+        #cbd5e1;
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-light
+.notification-panel strong {
+
+    color:
+        #000000;
+
+}
+
+
+html.sf-theme-light
+.notification-panel span {
+
+    color:
+        #475569;
+
+}
+
+
+html.sf-theme-dark
+.notification-panel {
+
+    background:
+        #111827;
+
+    border-color:
+        #334155;
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.notification-panel strong {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.notification-panel span {
+
+    color:
+        #cbd5e1;
+
+}
+
+
+/* ============================================================
+   CONNECTION STATUS
+============================================================ */
+
+html.sf-theme-light
+.connection-status {
+
+    color:
+        #111111;
+
+}
+
+
+html.sf-theme-dark
+.connection-status {
+
+    color:
+        #ffffff;
+
+}
+
+
+html.sf-theme-dark
+.connection-card.offline {
+
+    background:
+        #24151a;
+
+    border-color:
+        #7f1d1d;
+
+}
+
+
+html.sf-theme-light
+.connection-card.offline {
+
+    background:
+        #fff7f7;
+
+    border-color:
+        #fecaca;
+
+}
+
+
+/* ============================================================
+   CLICKABLE USER ACCOUNT
+============================================================ */
+
+.mini-user {
+
+    cursor:
+        pointer;
+
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease;
+
+}
+
+
+.mini-user:hover {
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+html.sf-theme-light
+.mini-user:hover {
+
+    background:
+        #f1f5f9;
+
+}
+
+
+html.sf-theme-dark
+.mini-user:hover {
+
+    background:
+        #172033;
+
+}
+
+
+/* ============================================================
+   LOGOUT BUTTON
+============================================================ */
+
+.logout-btn {
+
+    cursor:
+        pointer;
+
+}
+
+
+.logout-btn.loading {
+
+    pointer-events:
+        none;
+
+    opacity:
+        0.75;
+
+}
+
+
+.sf-btn-spinner {
+
+    width:
+        15px;
+
+    height:
+        15px;
+
+    border:
+        2px solid currentColor;
+
+    border-right-color:
+        transparent;
+
+    border-radius:
+        50%;
+
+    display:
+        inline-block;
+
+    animation:
+        sfDashboardSpin 0.7s linear infinite;
+
+}
+
+
+@keyframes sfDashboardSpin {
+
+    to {
+
+        transform:
+            rotate(360deg);
+
+    }
+
+}
+
+
+/* ============================================================
+   SYSTEM THEME
+   IMPORTANT:
+   No dark-mode media query is used here.
+   "System" means original STOCKFLOW design.
+============================================================ */
+
+html.sf-theme-system body.dashboard-page {
+
+    background:
+        #f4f7fb;
+
+}
