@@ -1,9 +1,44 @@
 /* =========================================================
    STOCKFLOW — SUPPLIERS MODULE
    Supplier Management + CRUD
+
+   GOOGLE SHEET COLUMNS
+   ---------------------------------------------------------
+   A = S_Name
+   B = contact person
+   C = email address
+   D = phone number
+   E = address
+   F = active/inactive
+
+   FRONTEND MODEL
+   ---------------------------------------------------------
+   {
+       id,
+       name,
+       contactPerson,
+       email,
+       phone,
+       address,
+       status
+   }
+
+   STATUS VALUES
+   ---------------------------------------------------------
+   Active
+   Inactive
+
+   IMPORTANT
+   ---------------------------------------------------------
+   Load ONLY this suppliers.js.
+
+   Do not load another duplicate Suppliers IIFE at the
+   same time, otherwise multiple module states/listeners
+   can exist on the same page.
 ========================================================= */
 
 (() => {
+
     "use strict";
 
 
@@ -31,14 +66,21 @@
 
 
     /* =====================================================
-       HELPERS
+       DOM HELPER
     ===================================================== */
 
-    const $ = (id) =>
-        document.getElementById(id);
+    const $ = id => {
+
+        return document.getElementById(id);
+
+    };
 
 
-    const escapeHTML = (value) => {
+    /* =====================================================
+       HTML ESCAPING
+    ===================================================== */
+
+    const escapeHTML = value => {
 
         return String(value ?? "")
             .replace(/&/g, "&amp;")
@@ -50,26 +92,35 @@
     };
 
 
-    const getSupplierId = (
-        supplier
-    ) => {
+    /* =====================================================
+       SUPPLIER FIELD HELPERS
+       Supports both Google Sheet/API naming styles.
+    ===================================================== */
+
+    const getSupplierId = supplier => {
 
         return (
             supplier?.ID ??
             supplier?.id ??
             supplier?.supplierId ??
             supplier?.supplier_id ??
+            supplier?._id ??
+            supplier?.rowId ??
+            supplier?.row ??
+            supplier?.rowNumber ??
             ""
         );
 
     };
 
 
-    const getSupplierName = (
-        supplier
-    ) => {
+    const getSupplierName = supplier => {
 
         return (
+            supplier?.S_Name ??
+            supplier?.s_name ??
+            supplier?.["S Name"] ??
+            supplier?.["s name"] ??
             supplier?.NAME ??
             supplier?.name ??
             supplier?.supplierName ??
@@ -79,38 +130,27 @@
     };
 
 
-    const getContactPerson = (
-        supplier
-    ) => {
+    const getContactPerson = supplier => {
 
         return (
-            supplier?.CONTACT_PERSON ??
+            supplier?.["contact person"] ??
             supplier?.contactPerson ??
+            supplier?.CONTACT_PERSON ??
             supplier?.contact_person ??
+            supplier?.CONTACT ??
+            supplier?.contact ??
             ""
         );
 
     };
 
 
-    const getPhone = (
-        supplier
-    ) => {
+    const getEmail = supplier => {
 
         return (
-            supplier?.PHONE ??
-            supplier?.phone ??
-            ""
-        );
-
-    };
-
-
-    const getEmail = (
-        supplier
-    ) => {
-
-        return (
+            supplier?.["email address"] ??
+            supplier?.emailAddress ??
+            supplier?.EMAIL_ADDRESS ??
             supplier?.EMAIL ??
             supplier?.email ??
             ""
@@ -119,30 +159,99 @@
     };
 
 
-    const getAddress = (
-        supplier
-    ) => {
+    const getPhone = supplier => {
 
         return (
-            supplier?.ADDRESS ??
-            supplier?.address ??
+            supplier?.["phone number"] ??
+            supplier?.phoneNumber ??
+            supplier?.PHONE_NUMBER ??
+            supplier?.PHONE ??
+            supplier?.phone ??
             ""
         );
 
     };
 
 
-    const getStatus = (
-        supplier
-    ) => {
+    const getAddress = supplier => {
 
-        return String(
+        return (
+            supplier?.address ??
+            supplier?.ADDRESS ??
+            supplier?.["supplier address"] ??
+            supplier?.supplierAddress ??
+            ""
+        );
+
+    };
+
+
+    const getStatus = supplier => {
+
+        const raw =
+            supplier?.["active/inactive"] ??
+            supplier?.activeInactive ??
+            supplier?.ACTIVE_INACTIVE ??
             supplier?.STATUS ??
             supplier?.status ??
-            "ACTIVE"
-        )
-            .trim()
-            .toUpperCase();
+            "Active";
+
+        const normalized =
+            String(raw)
+                .trim()
+                .toLowerCase();
+
+        return normalized === "inactive"
+            ? "Inactive"
+            : "Active";
+
+    };
+
+
+    /* =====================================================
+       NORMALIZE SUPPLIER
+    ===================================================== */
+
+    const normalizeSupplier = supplier => {
+
+        if (!supplier) {
+            return null;
+        }
+
+        return {
+
+            id:
+                getSupplierId(supplier),
+
+            name:
+                String(
+                    getSupplierName(supplier)
+                ).trim(),
+
+            contactPerson:
+                String(
+                    getContactPerson(supplier)
+                ).trim(),
+
+            email:
+                String(
+                    getEmail(supplier)
+                ).trim(),
+
+            phone:
+                String(
+                    getPhone(supplier)
+                ).trim(),
+
+            address:
+                String(
+                    getAddress(supplier)
+                ).trim(),
+
+            status:
+                getStatus(supplier)
+
+        };
 
     };
 
@@ -160,20 +269,16 @@
                     "STOCKFLOW_SESSION"
                 );
 
-
             if (!raw) {
                 return null;
             }
 
-
             const session =
                 JSON.parse(raw);
-
 
             if (!session) {
                 return null;
             }
-
 
             return (
                 session.user ||
@@ -200,9 +305,7 @@
        USER HELPERS
     ===================================================== */
 
-    const getUserName = (
-        user
-    ) => {
+    const getUserName = user => {
 
         return (
             user?.name ||
@@ -217,9 +320,7 @@
     };
 
 
-    const getUserRole = (
-        user
-    ) => {
+    const getUserRole = user => {
 
         return (
             user?.role ||
@@ -232,9 +333,7 @@
     };
 
 
-    const getUserIdentity = (
-        user
-    ) => {
+    const getUserIdentity = user => {
 
         return (
             user?.username ||
@@ -251,37 +350,27 @@
     };
 
 
-    const getInitials = (
-        name
-    ) => {
+    const getInitials = name => {
 
         const value =
-            String(
-                name || "SF"
-            ).trim();
-
+            String(name || "SF").trim();
 
         if (!value) {
             return "SF";
         }
-
 
         const parts =
             value
                 .split(/\s+/)
                 .filter(Boolean);
 
-
-        if (
-            parts.length === 1
-        ) {
+        if (parts.length === 1) {
 
             return parts[0]
                 .substring(0, 2)
                 .toUpperCase();
 
         }
-
 
         return (
             parts[0][0] +
@@ -295,56 +384,54 @@
        API RESPONSE NORMALIZATION
     ===================================================== */
 
-    const extractSuppliers = (
-        response
-    ) => {
+    const extractSuppliers = response => {
 
         if (!response) {
             return [];
         }
 
-
         if (Array.isArray(response)) {
             return response;
         }
 
-
-        if (
-            Array.isArray(
-                response.suppliers
-            )
-        ) {
+        if (Array.isArray(response.suppliers)) {
             return response.suppliers;
         }
 
-
-        if (
-            Array.isArray(
-                response.data
-            )
-        ) {
+        if (Array.isArray(response.data)) {
             return response.data;
         }
 
-
-        if (
-            Array.isArray(
-                response.rows
-            )
-        ) {
+        if (Array.isArray(response.rows)) {
             return response.rows;
         }
 
-
         if (
             response.data &&
-            Array.isArray(
-                response.data.suppliers
-            )
+            Array.isArray(response.data.suppliers)
         ) {
+
             return response.data.suppliers;
+
         }
 
+        if (
+            response.result &&
+            Array.isArray(response.result)
+        ) {
+
+            return response.result;
+
+        }
+
+        if (
+            response.result &&
+            Array.isArray(response.result.suppliers)
+        ) {
+
+            return response.result.suppliers;
+
+        }
 
         return [];
 
@@ -360,35 +447,25 @@
         type = "success"
     ) => {
 
-        const alert =
-            $("alert");
-
+        const alert = $("alert");
 
         if (!alert) {
             return;
         }
 
-
         alert.textContent =
             message || "";
 
-
         alert.className =
             `sf-alert ${type} show`;
-
 
         window.clearTimeout(
             showAlert.timeout
         );
 
-
         showAlert.timeout =
             window.setTimeout(
-                () => {
-
-                    hideAlert();
-
-                },
+                hideAlert,
                 4500
             );
 
@@ -397,18 +474,13 @@
 
     const hideAlert = () => {
 
-        const alert =
-            $("alert");
-
+        const alert = $("alert");
 
         if (!alert) {
             return;
         }
 
-
-        alert.textContent =
-            "";
-
+        alert.textContent = "";
 
         alert.className =
             "sf-alert";
@@ -427,26 +499,21 @@
             let user =
                 getSessionUser();
 
-
             /*
              * Compatibility fallback.
-             *
-             * This does NOT use requireAuth().
              */
 
             if (
                 !user &&
                 window.StockFlowAuth &&
-                typeof
-                window.StockFlowAuth.getUser ===
+                typeof window.StockFlowAuth.getUser ===
                     "function"
             ) {
 
                 try {
 
                     user =
-                        window.StockFlowAuth
-                            .getUser();
+                        window.StockFlowAuth.getUser();
 
                 } catch (error) {
 
@@ -459,95 +526,53 @@
 
             }
 
-
             if (!user) {
-
-                console.warn(
-                    "STOCKFLOW: No active session user found."
-                );
-
                 return;
-
             }
-
 
             state.currentUser =
                 user;
 
-
             const name =
                 getUserName(user);
-
 
             const role =
                 getUserRole(user);
 
-
             const initials =
                 getInitials(name);
 
-
-            /*
-             * User names
-             */
-
-            const nameElements = [
-
-                $("headerUserName"),
-
-                $("sidebarUserName"),
-
-                $("topbarUserName"),
-
-                $("userName"),
-
-                $("topUserName")
-
-            ].filter(Boolean);
-
-
-            nameElements.forEach(
-                element => {
+            [
+                "headerUserName",
+                "sidebarUserName",
+                "topbarUserName",
+                "userName",
+                "topUserName"
+            ]
+                .map($)
+                .filter(Boolean)
+                .forEach(element => {
 
                     element.textContent =
                         name;
 
-                }
-            );
+                });
 
-
-            /*
-             * User roles
-             */
-
-            const roleElements = [
-
-                $("headerUserRole"),
-
-                $("sidebarUserRole"),
-
-                $("topbarUserRole"),
-
-                $("userRole"),
-
-                $("topUserRole")
-
-            ].filter(Boolean);
-
-
-            roleElements.forEach(
-                element => {
+            [
+                "headerUserRole",
+                "sidebarUserRole",
+                "topbarUserRole",
+                "userRole",
+                "topUserRole"
+            ]
+                .map($)
+                .filter(Boolean)
+                .forEach(element => {
 
                     element.textContent =
                         role;
 
-                }
-            );
-
-
-            /*
-             * User avatars
-             */
+                });
 
             document
                 .querySelectorAll(
@@ -561,46 +586,35 @@
                         "#userAvatar"
                     ].join(",")
                 )
-                .forEach(
-                    avatar => {
+                .forEach(avatar => {
 
-                        avatar.textContent =
-                            initials;
+                    avatar.textContent =
+                        initials;
 
-                    }
-                );
-
-
-            /*
-             * Optional email
-             */
+                });
 
             const email =
                 user.email ||
                 user.gmail ||
                 "";
 
+            [
+                "headerUserEmail",
+                "sidebarUserEmail",
+                "topbarUserEmail"
+            ]
+                .map($)
+                .filter(Boolean)
+                .forEach(element => {
 
-            document
-                .querySelectorAll(
-                    [
-                        "#headerUserEmail",
-                        "#sidebarUserEmail",
-                        "#topbarUserEmail"
-                    ].join(",")
-                )
-                .forEach(
-                    element => {
+                    if (email) {
 
-                        if (email) {
-
-                            element.textContent =
-                                email;
-
-                        }
+                        element.textContent =
+                            email;
 
                     }
-                );
+
+                });
 
         } catch (error) {
 
@@ -644,28 +658,19 @@
 
         ];
 
-
-        const elements =
-            document.querySelectorAll(
+        document
+            .querySelectorAll(
                 selectors.join(",")
-            );
-
-
-        elements.forEach(
-            element => {
+            )
+            .forEach(element => {
 
                 /*
-                 * Never turn logout into profile.
+                 * Never convert logout into profile.
                  */
 
                 if (
-                    element.id ===
-                    "logoutButton" ||
-
-                    element.closest(
-                        "#logoutButton"
-                    ) ||
-
+                    element.id === "logoutButton" ||
+                    element.closest("#logoutButton") ||
                     element.matches(
                         "[data-logout], .logout-button"
                     )
@@ -675,7 +680,6 @@
 
                 }
 
-
                 if (
                     element.dataset
                         .stockflowProfileBound ===
@@ -686,154 +690,66 @@
 
                 }
 
-
                 element.dataset
                     .stockflowProfileBound =
                     "true";
 
-
                 if (
-                    element.tagName
-                        .toLowerCase() ===
+                    element.tagName.toLowerCase() ===
                     "a"
                 ) {
 
-                    element.setAttribute(
-                        "href",
-                        "./profile.html"
-                    );
+                    element.href =
+                        "./profile.html";
 
                     return;
 
                 }
-
 
                 element.setAttribute(
                     "role",
                     "link"
                 );
 
-
                 element.setAttribute(
                     "tabindex",
                     "0"
                 );
 
-
                 element.style.cursor =
                     "pointer";
 
+                const openProfile = () => {
+
+                    window.location.href =
+                        "./profile.html";
+
+                };
 
                 element.addEventListener(
                     "click",
-                    () => {
-
-                        window.location.href =
-                            "./profile.html";
-
-                    }
+                    openProfile
                 );
-
 
                 element.addEventListener(
                     "keydown",
                     event => {
 
                         if (
-                            event.key ===
-                                "Enter" ||
-
-                            event.key ===
-                                " "
+                            event.key === "Enter" ||
+                            event.key === " "
                         ) {
 
                             event.preventDefault();
 
-
-                            window.location.href =
-                                "./profile.html";
+                            openProfile();
 
                         }
 
                     }
                 );
 
-            }
-        );
-
-
-        /*
-         * Fallback:
-         * make direct name/avatar elements
-         * clickable if the HTML does not
-         * provide a user-profile wrapper.
-         */
-
-        const clickableIds = [
-
-            "headerUserName",
-
-            "sidebarUserName",
-
-            "topbarUserName",
-
-            "userName",
-
-            "headerUserAvatar",
-
-            "sidebarUserAvatar",
-
-            "topbarAvatar",
-
-            "userAvatar"
-
-        ];
-
-
-        clickableIds.forEach(
-            id => {
-
-                const element =
-                    $(id);
-
-
-                if (!element) {
-                    return;
-                }
-
-
-                if (
-                    element.dataset
-                        .stockflowProfileBound ===
-                    "true"
-                ) {
-
-                    return;
-
-                }
-
-
-                element.dataset
-                    .stockflowProfileBound =
-                    "true";
-
-
-                element.style.cursor =
-                    "pointer";
-
-
-                element.addEventListener(
-                    "click",
-                    () => {
-
-                        window.location.href =
-                            "./profile.html";
-
-                    }
-                );
-
-            }
-        );
+            });
 
     };
 
@@ -847,114 +763,72 @@
         const sessionKeys = [
 
             "STOCKFLOW_SESSION",
-
             "STOCKFLOW_TOKEN",
-
             "stockflow_auth",
-
             "stockflow_user",
-
             "AUTH_TOKEN",
-
             "TOKEN",
-
             "authToken",
-
             "accessToken"
 
         ];
 
+        sessionKeys.forEach(key => {
 
-        sessionKeys.forEach(
-            key => {
+            try {
 
-                try {
+                sessionStorage.removeItem(
+                    key
+                );
 
-                    sessionStorage.removeItem(
-                        key
-                    );
+            } catch (_) {}
 
-                } catch (error) {
-
-                    console.warn(
-                        `Unable to remove session key ${key}:`,
-                        error
-                    );
-
-                }
-
-            }
-        );
+        });
 
 
         /*
-         * Remove only legacy authentication
-         * keys from localStorage.
-         *
-         * DO NOT remove:
-         *
-         * stockflow_settings
-         *
-         * because that contains the
-         * selected application theme.
+         * Do NOT delete application settings
+         * from localStorage.
          */
 
         const localKeys = [
 
             "STOCKFLOW_TOKEN",
-
             "stockflow_auth",
-
             "stockflow_user",
-
             "AUTH_TOKEN",
-
             "TOKEN",
-
             "authToken",
-
             "accessToken"
 
         ];
 
+        localKeys.forEach(key => {
 
-        localKeys.forEach(
-            key => {
+            try {
 
-                try {
+                localStorage.removeItem(
+                    key
+                );
 
-                    localStorage.removeItem(
-                        key
-                    );
+            } catch (_) {}
 
-                } catch (error) {
-
-                    console.warn(
-                        `Unable to remove local key ${key}:`,
-                        error
-                    );
-
-                }
-
-            }
-        );
+        });
 
     };
 
 
     const setupLogout = () => {
 
-        const logoutButton =
+        const button =
             $("logoutButton");
 
-
-        if (!logoutButton) {
+        if (!button) {
             return;
         }
 
-
         if (
-            logoutButton.dataset
+            button.dataset
                 .stockflowLogoutBound ===
             "true"
         ) {
@@ -963,82 +837,36 @@
 
         }
 
-
-        logoutButton.dataset
+        button.dataset
             .stockflowLogoutBound =
             "true";
 
-
-        logoutButton.addEventListener(
+        button.addEventListener(
             "click",
-            async event => {
+            event => {
 
                 event.preventDefault();
 
+                button.disabled =
+                    true;
 
-                if (
-                    state.deleting ||
-                    state.saving
-                ) {
+                button.innerHTML = `
+                    <span>↪</span>
+                    <span>Signing out...</span>
+                `;
 
-                    /*
-                     * Logout is still allowed,
-                     * but don't interrupt a form
-                     * operation unexpectedly.
-                     */
+                clearStockFlowSession();
 
-                }
+                window.setTimeout(
+                    () => {
 
+                        window.location.replace(
+                            "./auth.html"
+                        );
 
-                try {
-
-                    logoutButton.disabled =
-                        true;
-
-
-                    logoutButton.innerHTML =
-                        `
-                        <span>↪</span>
-                        <span>Signing out...</span>
-                        `;
-
-
-                    /*
-                     * Use STOCKFLOW_SESSION as
-                     * the actual application
-                     * session source.
-                     */
-
-                    clearStockFlowSession();
-
-
-                    setTimeout(
-                        () => {
-
-                            window.location.replace(
-                                "./auth.html"
-                            );
-
-                        },
-                        150
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        "STOCKFLOW logout error:",
-                        error
-                    );
-
-
-                    clearStockFlowSession();
-
-
-                    window.location.replace(
-                        "./auth.html"
-                    );
-
-                }
+                    },
+                    150
+                );
 
             }
         );
@@ -1057,32 +885,19 @@
                 "[data-menu]"
             );
 
-
         const sidebar =
             document.querySelector(
                 ".sf-side"
             );
 
-
-        if (
-            !button ||
-            !sidebar
-        ) {
-
+        if (!button || !sidebar) {
             return;
-
         }
-
-
-        /*
-         * Prevent duplicate overlays.
-         */
 
         let overlay =
             document.querySelector(
                 ".sf-mobile-overlay"
             );
-
 
         if (!overlay) {
 
@@ -1091,10 +906,8 @@
                     "div"
                 );
 
-
             overlay.className =
                 "sf-mobile-overlay";
-
 
             document.body.appendChild(
                 overlay
@@ -1102,6 +915,20 @@
 
         }
 
+        const closeMenu = () => {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+            overlay.classList.remove(
+                "show"
+            );
+
+            document.body.style.overflow =
+                "";
+
+        };
 
         const openMenu = () => {
 
@@ -1109,35 +936,14 @@
                 "open"
             );
 
-
             overlay.classList.add(
                 "show"
             );
-
 
             document.body.style.overflow =
                 "hidden";
 
         };
-
-
-        const closeMenu = () => {
-
-            sidebar.classList.remove(
-                "open"
-            );
-
-
-            overlay.classList.remove(
-                "show"
-            );
-
-
-            document.body.style.overflow =
-                "";
-
-        };
-
 
         if (
             button.dataset
@@ -1148,7 +954,6 @@
             button.dataset
                 .stockflowMenuBound =
                 "true";
-
 
             button.addEventListener(
                 "click",
@@ -1173,7 +978,6 @@
 
         }
 
-
         if (
             overlay.dataset
                 .stockflowOverlayBound !==
@@ -1184,7 +988,6 @@
                 .stockflowOverlayBound =
                 "true";
 
-
             overlay.addEventListener(
                 "click",
                 closeMenu
@@ -1192,36 +995,30 @@
 
         }
 
-
         sidebar
             .querySelectorAll("a")
-            .forEach(
-                link => {
+            .forEach(link => {
 
-                    if (
-                        link.dataset
-                            .stockflowSidebarBound ===
-                        "true"
-                    ) {
-
-                        return;
-
-                    }
-
-
+                if (
                     link.dataset
-                        .stockflowSidebarBound =
-                        "true";
+                        .stockflowSidebarBound ===
+                    "true"
+                ) {
 
-
-                    link.addEventListener(
-                        "click",
-                        closeMenu
-                    );
+                    return;
 
                 }
-            );
 
+                link.dataset
+                    .stockflowSidebarBound =
+                    "true";
+
+                link.addEventListener(
+                    "click",
+                    closeMenu
+                );
+
+            });
 
         if (
             document.body.dataset
@@ -1233,14 +1030,12 @@
                 .stockflowEscapeBound =
                 "true";
 
-
             document.addEventListener(
                 "keydown",
                 event => {
 
                     if (
-                        event.key ===
-                        "Escape"
+                        event.key === "Escape"
                     ) {
 
                         closeMenu();
@@ -1261,19 +1056,16 @@
 
     const setupNotifications = () => {
 
-        const notificationButtons =
-            document.querySelectorAll(
+        document
+            .querySelectorAll(
                 [
                     "#notificationButton",
                     "#notificationsButton",
                     ".notification-button",
                     ".sf-notification-button"
                 ].join(",")
-            );
-
-
-        notificationButtons.forEach(
-            button => {
+            )
+            .forEach(button => {
 
                 if (
                     button.dataset
@@ -1285,11 +1077,9 @@
 
                 }
 
-
                 button.dataset
                     .stockflowNotificationBound =
                     "true";
-
 
                 button.addEventListener(
                     "click",
@@ -1297,46 +1087,106 @@
 
                         event.preventDefault();
 
-
                         const panel =
                             document.querySelector(
                                 "#notificationPanel, .notification-panel, .sf-notification-panel"
                             );
-
 
                         if (panel) {
 
                             panel.hidden =
                                 !panel.hidden;
 
-
                             return;
 
                         }
-
 
                         showAlert(
                             "No new notifications.",
                             "success"
                         );
 
-
-                        window.setTimeout(
-                            hideAlert,
-                            2500
-                        );
-
                     }
                 );
 
-            }
-        );
+            });
 
     };
 
 
     /* =====================================================
-       API AUTH REFRESH
+       AUTHENTICATION
+    ===================================================== */
+
+    const initializeAuthentication =
+        async () => {
+
+            const sessionUser =
+                getSessionUser();
+
+            if (sessionUser) {
+
+                state.currentUser =
+                    sessionUser;
+
+                populateUser();
+
+                return true;
+
+            }
+
+            /*
+             * Compatibility fallback only.
+             */
+
+            if (
+                window.StockFlowAuth &&
+                typeof window.StockFlowAuth.getUser ===
+                    "function"
+            ) {
+
+                try {
+
+                    const legacyUser =
+                        window.StockFlowAuth.getUser();
+
+                    if (legacyUser) {
+
+                        state.currentUser =
+                            legacyUser;
+
+                        populateUser();
+
+                        return true;
+
+                    }
+
+                } catch (error) {
+
+                    console.warn(
+                        "Legacy authentication lookup failed:",
+                        error
+                    );
+
+                }
+
+            }
+
+            /*
+             * No session.
+             */
+
+            window.location.replace(
+                "./auth.html"
+            );
+
+            return false;
+
+        };
+
+
+    /* =====================================================
+       REFRESH SESSION USER
     ===================================================== */
 
     const refreshSessionUser =
@@ -1345,46 +1195,38 @@
             const sessionUser =
                 getSessionUser();
 
-
             if (!sessionUser) {
                 return;
             }
 
-
             state.currentUser =
                 sessionUser;
-
 
             const identity =
                 getUserIdentity(
                     sessionUser
                 );
 
-
             /*
-             * Refresh the profile only if
-             * the API exposes getUser().
+             * Optional API profile refresh.
              *
-             * If it fails, KEEP the existing
+             * If unavailable/fails, keep the existing
              * session user.
              */
 
             if (
                 identity &&
                 window.StockFlowAPI &&
-                typeof
-                window.StockFlowAPI.getUser ===
+                typeof window.StockFlowAPI.getUser ===
                     "function"
             ) {
 
                 try {
 
                     const freshUser =
-                        await window.StockFlowAPI
-                            .getUser(
-                                identity
-                            );
-
+                        await window.StockFlowAPI.getUser(
+                            identity
+                        );
 
                     if (freshUser) {
 
@@ -1396,127 +1238,15 @@
                 } catch (error) {
 
                     console.warn(
-                        "STOCKFLOW: Unable to refresh user profile. Keeping session user.",
+                        "Unable to refresh user profile. Keeping session user.",
                         error
                     );
 
                 }
 
             }
-
 
             populateUser();
-
-        };
-
-
-    /* =====================================================
-       AUTHENTICATION
-    ===================================================== */
-
-    const initializeAuthentication =
-        async () => {
-
-            /*
-             * PRIMARY AUTH SOURCE:
-             *
-             * STOCKFLOW_SESSION
-             *
-             * We intentionally do NOT call:
-             *
-             * StockFlowAuth.requireAuth()
-             *
-             * because that can conflict with the
-             * current login/session architecture
-             * and unexpectedly redirect the user.
-             */
-
-            const sessionUser =
-                getSessionUser();
-
-
-            if (sessionUser) {
-
-                state.currentUser =
-                    sessionUser;
-
-
-                /*
-                 * Optional user refresh.
-                 *
-                 * Failure does not log the user out.
-                 */
-
-                await refreshSessionUser();
-
-
-                return true;
-
-            }
-
-
-            /*
-             * Compatibility fallback only.
-             */
-
-            if (
-                window.StockFlowAuth &&
-                typeof
-                window.StockFlowAuth.getUser ===
-                    "function"
-            ) {
-
-                try {
-
-                    const legacyUser =
-                        window.StockFlowAuth
-                            .getUser();
-
-
-                    if (legacyUser) {
-
-                        state.currentUser =
-                            legacyUser;
-
-
-                        populateUser();
-
-
-                        return true;
-
-                    }
-
-                } catch (error) {
-
-                    console.warn(
-                        "Legacy StockFlowAuth user lookup failed:",
-                        error
-                    );
-
-                }
-
-            }
-
-
-            /*
-             * No authenticated session.
-             *
-             * Redirect to LOGIN.
-             *
-             * Never redirect to dashboard.
-             */
-
-            console.warn(
-                "STOCKFLOW: No active login session."
-            );
-
-
-            window.location.replace(
-                "./auth.html"
-            );
-
-
-            return false;
 
         };
 
@@ -1530,8 +1260,7 @@
 
             if (
                 !window.StockFlowAPI ||
-                typeof
-                window.StockFlowAPI.listSuppliers !==
+                typeof window.StockFlowAPI.listSuppliers !==
                     "function"
             ) {
 
@@ -1541,13 +1270,9 @@
 
             }
 
-
-            state.loading =
-                true;
-
+            state.loading = true;
 
             renderLoading();
-
 
             try {
 
@@ -1555,11 +1280,9 @@
                     await window.StockFlowAPI
                         .listSuppliers();
 
-
                 if (
                     response &&
-                    response.success ===
-                        false
+                    response.success === false
                 ) {
 
                     throw new Error(
@@ -1569,15 +1292,14 @@
 
                 }
 
-
                 state.suppliers =
                     extractSuppliers(
                         response
-                    );
-
+                    )
+                    .map(normalizeSupplier)
+                    .filter(Boolean);
 
                 renderSuppliers();
-
 
             } catch (error) {
 
@@ -1586,12 +1308,10 @@
                     error
                 );
 
-
                 renderError(
                     error.message ||
                     "Unable to load suppliers."
                 );
-
 
                 showAlert(
                     error.message ||
@@ -1599,14 +1319,11 @@
                     "error"
                 );
 
-
                 throw error;
-
 
             } finally {
 
-                state.loading =
-                    false;
+                state.loading = false;
 
             }
 
@@ -1614,7 +1331,7 @@
 
 
     /* =====================================================
-       LOADING STATE
+       LOADING UI
     ===================================================== */
 
     const renderLoading = () => {
@@ -1622,28 +1339,22 @@
         const rows =
             $("rows");
 
-
         if (!rows) {
             return;
         }
-
 
         rows.innerHTML = `
 
             <tr>
 
                 <td
-                    colspan="6"
+                    colspan="7"
                     class="sf-empty"
                 >
 
-                    <span
-                        class="sf-loading"
-                    >
+                    <span class="sf-loading">
 
-                        <span
-                            class="sf-spinner"
-                        ></span>
+                        <span class="sf-spinner"></span>
 
                         Loading suppliers...
 
@@ -1659,28 +1370,24 @@
 
 
     /* =====================================================
-       ERROR STATE
+       ERROR UI
     ===================================================== */
 
-    const renderError = (
-        message
-    ) => {
+    const renderError = message => {
 
         const rows =
             $("rows");
 
-
         if (!rows) {
             return;
         }
-
 
         rows.innerHTML = `
 
             <tr>
 
                 <td
-                    colspan="6"
+                    colspan="7"
                     class="sf-empty"
                 >
 
@@ -1715,22 +1422,18 @@
         const rows =
             $("rows");
 
-
         if (!rows) {
             return;
         }
 
-
-        if (
-            !state.suppliers.length
-        ) {
+        if (!state.suppliers.length) {
 
             rows.innerHTML = `
 
                 <tr>
 
                     <td
-                        colspan="6"
+                        colspan="7"
                         class="sf-empty"
                     >
 
@@ -1742,19 +1445,14 @@
 
             `;
 
-
             return;
 
         }
 
-
         rows.innerHTML =
             state.suppliers
-                .map(
-                    renderSupplierRow
-                )
+                .map(renderSupplierRow)
                 .join("");
-
 
         bindRowActions();
 
@@ -1766,13 +1464,12 @@
     ===================================================== */
 
     const renderSupplierRow =
-        (supplier) => {
+        supplier => {
 
             const id =
                 getSupplierId(
                     supplier
                 );
-
 
             const name =
                 getSupplierName(
@@ -1780,20 +1477,11 @@
                 ) ||
                 "Unnamed Supplier";
 
-
             const contact =
                 getContactPerson(
                     supplier
                 ) ||
                 "—";
-
-
-            const phone =
-                getPhone(
-                    supplier
-                ) ||
-                "—";
-
 
             const email =
                 getEmail(
@@ -1801,18 +1489,27 @@
                 ) ||
                 "—";
 
+            const phone =
+                getPhone(
+                    supplier
+                ) ||
+                "—";
+
+            const address =
+                getAddress(
+                    supplier
+                ) ||
+                "—";
 
             const status =
                 getStatus(
                     supplier
                 );
 
-
             const statusClass =
-                status === "ACTIVE"
+                status === "Active"
                     ? "active"
                     : "inactive";
-
 
             return `
 
@@ -1828,20 +1525,11 @@
 
                     </td>
 
-
                     <td>
                         ${escapeHTML(
                             contact
                         )}
                     </td>
-
-
-                    <td>
-                        ${escapeHTML(
-                            phone
-                        )}
-                    </td>
-
 
                     <td>
                         ${escapeHTML(
@@ -1849,27 +1537,33 @@
                         )}
                     </td>
 
+                    <td>
+                        ${escapeHTML(
+                            phone
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            address
+                        )}
+                    </td>
 
                     <td>
 
                         <span
                             class="sf-status ${statusClass}"
                         >
-
                             ${escapeHTML(
                                 status
                             )}
-
                         </span>
 
                     </td>
 
-
                     <td>
 
-                        <div
-                            class="sf-actions"
-                        >
+                        <div class="sf-actions">
 
                             <button
                                 type="button"
@@ -1885,7 +1579,6 @@
                             >
                                 ✎
                             </button>
-
 
                             <button
                                 type="button"
@@ -1914,6 +1607,24 @@
 
 
     /* =====================================================
+       FIND SUPPLIER
+    ===================================================== */
+
+    const findSupplierById = id => {
+
+        return state.suppliers.find(
+            supplier =>
+                String(
+                    getSupplierId(
+                        supplier
+                    )
+                ) === String(id)
+        );
+
+    };
+
+
+    /* =====================================================
        ROW ACTIONS
     ===================================================== */
 
@@ -1923,82 +1634,54 @@
             .querySelectorAll(
                 '[data-action="edit"]'
             )
-            .forEach(
-                button => {
+            .forEach(button => {
 
-                    button.addEventListener(
-                        "click",
-                        () => {
+                button.onclick =
+                    () => {
 
-                            const supplier =
-                                state.suppliers.find(
-                                    item =>
-                                        String(
-                                            getSupplierId(
-                                                item
-                                            )
-                                        ) ===
-                                        String(
-                                            button.dataset
-                                                .id
-                                        )
-                                );
+                        const supplier =
+                            findSupplierById(
+                                button.dataset.id
+                            );
 
+                        if (supplier) {
 
-                            if (supplier) {
-
-                                editSupplier(
-                                    supplier
-                                );
-
-                            }
+                            editSupplier(
+                                supplier
+                            );
 
                         }
-                    );
 
-                }
-            );
+                    };
+
+            });
 
 
         document
             .querySelectorAll(
                 '[data-action="delete"]'
             )
-            .forEach(
-                button => {
+            .forEach(button => {
 
-                    button.addEventListener(
-                        "click",
-                        () => {
+                button.onclick =
+                    () => {
 
-                            const supplier =
-                                state.suppliers.find(
-                                    item =>
-                                        String(
-                                            getSupplierId(
-                                                item
-                                            )
-                                        ) ===
-                                        String(
-                                            button.dataset
-                                                .id
-                                        )
-                                );
+                        const supplier =
+                            findSupplierById(
+                                button.dataset.id
+                            );
 
+                        if (supplier) {
 
-                            if (supplier) {
-
-                                deleteSupplier(
-                                    supplier
-                                );
-
-                            }
+                            deleteSupplier(
+                                supplier
+                            );
 
                         }
-                    );
 
-                }
-            );
+                    };
+
+            });
 
     };
 
@@ -2007,112 +1690,111 @@
        EDIT SUPPLIER
     ===================================================== */
 
-    const editSupplier =
-        (supplier) => {
+    const editSupplier = supplier => {
 
-            state.editingId =
-                String(
-                    getSupplierId(
-                        supplier
-                    )
-                );
+        const normalized =
+            normalizeSupplier(
+                supplier
+            );
 
+        if (!normalized) {
+            return;
+        }
 
-            if ($("id")) {
+        const id =
+            getSupplierId(
+                normalized
+            );
 
-                $("id").value =
-                    getSupplierId(
-                        supplier
-                    );
+        /*
+         * Editing requires a row/id reference.
+         */
 
-            }
+        if (!id) {
 
+            showAlert(
+                "This supplier has no row/ID reference, so it cannot be edited.",
+                "error"
+            );
 
-            if ($("name")) {
+            return;
 
-                $("name").value =
-                    getSupplierName(
-                        supplier
-                    );
+        }
 
-            }
+        state.editingId =
+            String(id);
 
+        if ($("id")) {
 
-            if ($("contactPerson")) {
+            $("id").value =
+                id;
 
-                $("contactPerson").value =
-                    getContactPerson(
-                        supplier
-                    );
+        }
 
-            }
+        if ($("name")) {
 
+            $("name").value =
+                normalized.name;
 
-            if ($("phone")) {
+        }
 
-                $("phone").value =
-                    getPhone(
-                        supplier
-                    );
+        if ($("contactPerson")) {
 
-            }
+            $("contactPerson").value =
+                normalized.contactPerson;
 
+        }
 
-            if ($("email")) {
+        if ($("email")) {
 
-                $("email").value =
-                    getEmail(
-                        supplier
-                    );
+            $("email").value =
+                normalized.email;
 
-            }
+        }
 
+        if ($("phone")) {
 
-            if ($("address")) {
+            $("phone").value =
+                normalized.phone;
 
-                $("address").value =
-                    getAddress(
-                        supplier
-                    );
+        }
 
-            }
+        if ($("address")) {
 
+            $("address").value =
+                normalized.address;
 
-            if ($("status")) {
+        }
 
-                $("status").value =
-                    getStatus(
-                        supplier
-                    );
+        if ($("status")) {
 
-            }
+            $("status").value =
+                normalized.status;
 
+        }
 
-            const saveButton =
-                $("saveButton");
+        const saveButton =
+            $("saveButton");
 
+        if (saveButton) {
 
-            if (saveButton) {
+            saveButton.textContent =
+                "Update Supplier";
 
-                saveButton.textContent =
-                    "Update Supplier";
+        }
 
-            }
+        document
+            .querySelector(
+                ".sf-card form"
+            )
+            ?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
 
+        $("name")?.focus();
 
-            document
-                .querySelector(
-                    ".sf-card form"
-                )
-                ?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-
-            $("name")?.focus();
-
-        };
+    };
 
 
     /* =====================================================
@@ -2124,14 +1806,11 @@
         const form =
             $("supplierForm");
 
-
         if (!form) {
             return;
         }
 
-
         form.reset();
-
 
         if ($("id")) {
 
@@ -2140,22 +1819,18 @@
 
         }
 
-
         if ($("status")) {
 
             $("status").value =
-                "ACTIVE";
+                "Active";
 
         }
-
 
         state.editingId =
             null;
 
-
         const saveButton =
             $("saveButton");
-
 
         if (saveButton) {
 
@@ -2163,7 +1838,6 @@
                 "Save Supplier";
 
         }
-
 
         hideAlert();
 
@@ -2174,125 +1848,243 @@
        VALIDATION
     ===================================================== */
 
-    const validateSupplier =
-        () => {
+    const validateSupplier = () => {
 
-            const name =
+        const name =
+            $("name")
+                ?.value
+                .trim() ||
+            "";
+
+        const contact =
+            $("contactPerson")
+                ?.value
+                .trim() ||
+            "";
+
+        const email =
+            $("email")
+                ?.value
+                .trim() ||
+            "";
+
+        const phone =
+            $("phone")
+                ?.value
+                .trim() ||
+            "";
+
+        const address =
+            $("address")
+                ?.value
+                .trim() ||
+            "";
+
+        const status =
+            $("status")
+                ?.value ||
+            "Active";
+
+
+        if (!name) {
+
+            showAlert(
+                "Supplier name is required.",
+                "error"
+            );
+
+            $("name")?.focus();
+
+            return false;
+
+        }
+
+
+        if (name.length > 100) {
+
+            showAlert(
+                "Supplier name cannot exceed 100 characters.",
+                "error"
+            );
+
+            $("name")?.focus();
+
+            return false;
+
+        }
+
+
+        if (contact.length > 100) {
+
+            showAlert(
+                "Contact person cannot exceed 100 characters.",
+                "error"
+            );
+
+            $("contactPerson")?.focus();
+
+            return false;
+
+        }
+
+
+        if (email.length > 150) {
+
+            showAlert(
+                "Email address cannot exceed 150 characters.",
+                "error"
+            );
+
+            $("email")?.focus();
+
+            return false;
+
+        }
+
+
+        if (
+            email &&
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                email
+            )
+        ) {
+
+            showAlert(
+                "Please enter a valid email address.",
+                "error"
+            );
+
+            $("email")?.focus();
+
+            return false;
+
+        }
+
+
+        if (
+            phone &&
+            !/^[0-9+\-\s()]{7,20}$/.test(
+                phone
+            )
+        ) {
+
+            showAlert(
+                "Please enter a valid phone number.",
+                "error"
+            );
+
+            $("phone")?.focus();
+
+            return false;
+
+        }
+
+
+        if (address.length > 300) {
+
+            showAlert(
+                "Address cannot exceed 300 characters.",
+                "error"
+            );
+
+            $("address")?.focus();
+
+            return false;
+
+        }
+
+
+        if (
+            status !== "Active" &&
+            status !== "Inactive"
+        ) {
+
+            showAlert(
+                "Supplier status must be Active or Inactive.",
+                "error"
+            );
+
+            $("status")?.focus();
+
+            return false;
+
+        }
+
+
+        return true;
+
+    };
+
+
+    /* =====================================================
+       BUILD SUPPLIER PAYLOAD
+    ===================================================== */
+
+    const getSupplierPayload = () => {
+
+        const id =
+            $("id")?.value ||
+            state.editingId ||
+            "";
+
+        const payload = {
+
+            name:
                 $("name")
                     ?.value
                     .trim() ||
-                "";
+                "",
 
-
-            const phone =
-                $("phone")
+            contactPerson:
+                $("contactPerson")
                     ?.value
                     .trim() ||
-                "";
+                "",
 
-
-            const email =
+            email:
                 $("email")
                     ?.value
                     .trim() ||
-                "";
+                "",
 
+            phone:
+                $("phone")
+                    ?.value
+                    .trim() ||
+                "",
 
-            if (!name) {
+            address:
+                $("address")
+                    ?.value
+                    .trim() ||
+                "",
 
-                showAlert(
-                    "Supplier name is required.",
-                    "error"
-                );
-
-
-                $("name")?.focus();
-
-
-                return false;
-
-            }
-
-
-            if (
-                name.length >
-                100
-            ) {
-
-                showAlert(
-                    "Supplier name cannot exceed 100 characters.",
-                    "error"
-                );
-
-
-                $("name")?.focus();
-
-
-                return false;
-
-            }
-
-
-            if (
-                phone &&
-                !/^[0-9+\-\s()]{7,20}$/
-                    .test(phone)
-            ) {
-
-                showAlert(
-                    "Please enter a valid phone number.",
-                    "error"
-                );
-
-
-                $("phone")?.focus();
-
-
-                return false;
-
-            }
-
-
-            if (
-                email &&
-                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
-                    .test(email)
-            ) {
-
-                showAlert(
-                    "Please enter a valid email address.",
-                    "error"
-                );
-
-
-                $("email")?.focus();
-
-
-                return false;
-
-            }
-
-
-            return true;
+            status:
+                $("status")
+                    ?.value === "Inactive"
+                    ? "Inactive"
+                    : "Active"
 
         };
+
+        /*
+         * Only send ID when editing.
+         */
+
+        if (id) {
+
+            payload.id =
+                id;
+
+        }
+
+        return payload;
+
+    };
 
 
     /* =====================================================
        SAVE SUPPLIER
-
-       FIX APPLIED HERE:
-
-       The API never had a "saveSupplier" method.
-       api.js only exposes createSupplier / updateSupplier.
-       We now pick the correct one based on whether we're
-       editing an existing supplier (state.editingId) or
-       adding a brand new one.
-
-       We also give the post-save reload (loadSuppliers)
-       its own try/catch, so that a reload failure can
-       never overwrite a genuinely successful save with
-       an error message.
     ===================================================== */
 
     const saveSupplier =
@@ -2300,46 +2092,27 @@
 
             event.preventDefault();
 
-
             if (state.saving) {
                 return;
             }
 
-
-            if (
-                !validateSupplier()
-            ) {
-
+            if (!validateSupplier()) {
                 return;
-
             }
-
 
             const wasEditing =
                 Boolean(
                     state.editingId
                 );
 
-
-            /*
-             * Pick the correct API method.
-             *
-             * Adding a new supplier  -> createSupplier
-             * Editing a supplier     -> updateSupplier
-             */
-
-            const apiMethodName =
+            const method =
                 wasEditing
                     ? "updateSupplier"
                     : "createSupplier";
 
-
             if (
                 !window.StockFlowAPI ||
-                typeof
-                window.StockFlowAPI[
-                    apiMethodName
-                ] !==
+                typeof window.StockFlowAPI[method] !==
                     "function"
             ) {
 
@@ -2350,90 +2123,58 @@
                     "error"
                 );
 
-
                 return;
 
             }
 
+            /*
+             * When editing, an ID/row reference is required.
+             */
 
-            const payload = {
+            if (wasEditing) {
 
-                id:
+                const id =
                     $("id")?.value ||
                     state.editingId ||
-                    "",
+                    "";
 
+                if (!id) {
 
-                name:
-                    $("name")
-                        ?.value
-                        .trim() ||
-                    "",
+                    showAlert(
+                        "Supplier row/ID reference is missing.",
+                        "error"
+                    );
 
+                    return;
 
-                contactPerson:
-                    $("contactPerson")
-                        ?.value
-                        .trim() ||
-                    "",
+                }
 
+            }
 
-                phone:
-                    $("phone")
-                        ?.value
-                        .trim() ||
-                    "",
-
-
-                email:
-                    $("email")
-                        ?.value
-                        .trim() ||
-                    "",
-
-
-                address:
-                    $("address")
-                        ?.value
-                        .trim() ||
-                    "",
-
-
-                status:
-                    $("status")
-                        ?.value ||
-                    "ACTIVE"
-
-            };
-
+            const payload =
+                getSupplierPayload();
 
             state.saving =
                 true;
 
-
             const button =
                 $("saveButton");
-
 
             const originalText =
                 wasEditing
                     ? "Update Supplier"
                     : "Save Supplier";
 
-
             if (button) {
 
                 button.disabled =
                     true;
 
-
                 button.innerHTML = `
 
                     <span class="sf-loading">
 
-                        <span
-                            class="sf-spinner"
-                        ></span>
+                        <span class="sf-spinner"></span>
 
                         Saving...
 
@@ -2443,31 +2184,28 @@
 
             }
 
-
             hideAlert();
-
 
             try {
 
                 /*
-                 * Call the correct API method
-                 * (createSupplier / updateSupplier)
-                 * instead of the nonexistent
-                 * saveSupplier.
+                 * IMPORTANT:
+                 *
+                 * createSupplier()
+                 * and
+                 * updateSupplier()
+                 *
+                 * are the supported API methods.
                  */
 
                 const response =
-                    await window.StockFlowAPI[
-                        apiMethodName
-                    ](
+                    await window.StockFlowAPI[method](
                         payload
                     );
 
-
                 if (
                     response &&
-                    response.success ===
-                        false
+                    response.success === false
                 ) {
 
                     throw new Error(
@@ -2477,9 +2215,12 @@
 
                 }
 
+                /*
+                 * Clear form immediately after the
+                 * API confirms the save.
+                 */
 
                 clearForm();
-
 
                 showAlert(
                     response?.message ||
@@ -2491,16 +2232,11 @@
                     "success"
                 );
 
-
                 /*
-                 * FIX:
+                 * Reload separately.
                  *
-                 * Give the reload its own try/catch.
-                 *
-                 * If listSuppliers() fails here, it must
-                 * NOT be allowed to fall into the outer
-                 * catch block and overwrite the success
-                 * alert we just showed above.
+                 * A reload failure must NOT convert
+                 * a successful save into a failed save.
                  */
 
                 try {
@@ -2510,12 +2246,11 @@
                 } catch (reloadError) {
 
                     console.error(
-                        "StockFlow: supplier saved successfully, but reloading the list failed:",
+                        "Supplier saved successfully, but list reload failed:",
                         reloadError
                     );
 
                 }
-
 
             } catch (error) {
 
@@ -2524,25 +2259,21 @@
                     error
                 );
 
-
                 showAlert(
                     error.message ||
                     "Unable to save supplier.",
                     "error"
                 );
 
-
             } finally {
 
                 state.saving =
                     false;
 
-
                 if (button) {
 
                     button.disabled =
                         false;
-
 
                     button.textContent =
                         originalText;
@@ -2565,12 +2296,10 @@
                 return;
             }
 
-
             const id =
                 getSupplierId(
                     supplier
                 );
-
 
             const name =
                 getSupplierName(
@@ -2578,36 +2307,29 @@
                 ) ||
                 "this supplier";
 
-
             if (!id) {
 
                 showAlert(
-                    "Supplier ID is missing.",
+                    "Supplier row/ID reference is missing.",
                     "error"
                 );
-
 
                 return;
 
             }
-
 
             const confirmed =
                 window.confirm(
                     `Delete ${name}?\n\nThis action cannot be undone.`
                 );
 
-
             if (!confirmed) {
                 return;
             }
 
-
             if (
                 !window.StockFlowAPI ||
-                typeof
-                window.StockFlowAPI
-                    .deleteSupplier !==
+                typeof window.StockFlowAPI.deleteSupplier !==
                     "function"
             ) {
 
@@ -2616,15 +2338,12 @@
                     "error"
                 );
 
-
                 return;
 
             }
 
-
             state.deleting =
                 true;
-
 
             try {
 
@@ -2634,11 +2353,9 @@
                             id
                         );
 
-
                 if (
                     response &&
-                    response.success ===
-                        false
+                    response.success === false
                 ) {
 
                     throw new Error(
@@ -2648,6 +2365,21 @@
 
                 }
 
+                /*
+                 * If the deleted supplier was being edited,
+                 * clear the form.
+                 */
+
+                if (
+                    String(
+                        state.editingId
+                    ) ===
+                    String(id)
+                ) {
+
+                    clearForm();
+
+                }
 
                 showAlert(
                     response?.message ||
@@ -2655,9 +2387,23 @@
                     "success"
                 );
 
+                /*
+                 * Reload separately so a successful delete
+                 * is not overwritten by a refresh failure.
+                 */
 
-                await loadSuppliers();
+                try {
 
+                    await loadSuppliers();
+
+                } catch (reloadError) {
+
+                    console.error(
+                        "Supplier deleted successfully, but list reload failed:",
+                        reloadError
+                    );
+
+                }
 
             } catch (error) {
 
@@ -2666,13 +2412,11 @@
                     error
                 );
 
-
                 showAlert(
                     error.message ||
                     "Unable to delete supplier.",
                     "error"
                 );
-
 
             } finally {
 
@@ -2690,19 +2434,13 @@
 
     const setupRefresh = () => {
 
-        const buttons = [
-
+        [
             $("refreshButton"),
-
             $("bottomRefreshButton"),
-
             $("supplierRefreshButton")
-
-        ].filter(Boolean);
-
-
-        buttons.forEach(
-            button => {
+        ]
+            .filter(Boolean)
+            .forEach(button => {
 
                 if (
                     button.dataset
@@ -2714,11 +2452,9 @@
 
                 }
 
-
                 button.dataset
                     .stockflowRefreshBound =
                     "true";
-
 
                 button.addEventListener(
                     "click",
@@ -2726,24 +2462,20 @@
 
                         event.preventDefault();
 
-
                         loadSuppliers()
-                            .catch(
-                                error => {
+                            .catch(error => {
 
-                                    console.error(
-                                        "Supplier refresh error:",
-                                        error
-                                    );
+                                console.error(
+                                    "Supplier refresh error:",
+                                    error
+                                );
 
-                                }
-                            );
+                            });
 
                     }
                 );
 
-            }
-        );
+            });
 
     };
 
@@ -2757,7 +2489,6 @@
         const form =
             $("supplierForm");
 
-
         if (
             form &&
             form.dataset
@@ -2768,7 +2499,6 @@
             form.dataset
                 .stockflowFormBound =
                 "true";
-
 
             form.addEventListener(
                 "submit",
@@ -2781,7 +2511,6 @@
         const clearButton =
             $("clearButton");
 
-
         if (
             clearButton &&
             clearButton.dataset
@@ -2792,7 +2521,6 @@
             clearButton.dataset
                 .stockflowClearBound =
                 "true";
-
 
             clearButton.addEventListener(
                 "click",
@@ -2811,7 +2539,7 @@
 
 
     /* =====================================================
-       SESSION CHANGE / VISIBILITY
+       SESSION VISIBILITY REFRESH
     ===================================================== */
 
     const setupSessionRefresh = () => {
@@ -2829,16 +2557,13 @@
 
                 }
 
-
                 const user =
                     getSessionUser();
-
 
                 if (user) {
 
                     state.currentUser =
                         user;
-
 
                     populateUser();
 
@@ -2857,18 +2582,12 @@
     const initialize =
         async () => {
 
-            if (
-                state.initialized
-            ) {
-
+            if (state.initialized) {
                 return;
-
             }
-
 
             state.initialized =
                 true;
-
 
             setupSidebar();
 
@@ -2884,32 +2603,20 @@
 
             setupSessionRefresh();
 
-
             try {
 
                 const authenticated =
                     await initializeAuthentication();
 
-
                 if (!authenticated) {
-
                     return;
-
                 }
 
-
-                /*
-                 * Refresh user UI after
-                 * authentication.
-                 */
-
-                populateUser();
+                await refreshSessionUser();
 
                 setupUserProfileLinks();
 
-
                 await loadSuppliers();
-
 
             } catch (error) {
 
@@ -2917,7 +2624,6 @@
                     "StockFlow Suppliers initialization error:",
                     error
                 );
-
 
                 showAlert(
                     error.message ||
